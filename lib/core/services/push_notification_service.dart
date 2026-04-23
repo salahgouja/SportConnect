@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -180,7 +181,7 @@ class PushNotificationService {
             .set(user!.copyWith(fcmToken: newToken), SetOptions(merge: true));
         TalkerService.info('FCM token refreshed for user $userId');
       });
-    } on Exception catch (e) {
+    } catch (e, st) {
       TalkerService.error('Failed to save FCM token', e);
     }
   }
@@ -243,7 +244,7 @@ class PushNotificationService {
           try {
             final data = jsonDecode(response.payload!) as Map<String, dynamic>;
             _navigateFromData(data);
-          } on Exception catch (_) {}
+          } catch (e, st) {}
         }
       },
     );
@@ -333,10 +334,12 @@ class PushNotificationService {
             }),
           );
         }
-      } on Exception catch (_) {
+      } catch (e, st) {
         // Best-effort — navigation must not fail if this read fails.
       }
     }
+
+    if (!context.mounted) return;
 
     switch (type) {
       case 'message':
@@ -350,6 +353,7 @@ class PushNotificationService {
               (data['senderPhotoUrl'] as String?) ??
               (data['userPhotoUrl'] as String?),
         );
+        if (!context.mounted) return;
 
         if (receiver == null) {
           TalkerService.warning(
@@ -423,7 +427,7 @@ class PushNotificationService {
           receiver: UserModel.rider(
             uid: hintUserId ?? chatId,
             email: '',
-            displayName: hintDisplayName ?? 'User',
+            username: hintDisplayName ?? 'User',
             photoUrl: hintPhotoUrl,
           ),
           chatType: ChatType.private,
@@ -439,7 +443,7 @@ class PushNotificationService {
           receiver: UserModel.rider(
             uid: chatId,
             email: '',
-            displayName: title.isEmpty ? 'Group Chat' : title,
+            username: title.isEmpty ? 'Group Chat' : title,
             photoUrl: hintPhotoUrl ?? chat.groupPhotoUrl,
           ),
           chatType: chat.type,
@@ -463,18 +467,18 @@ class PushNotificationService {
 
       final displayName =
           hintDisplayName ??
-          otherParticipant?.displayName ??
+          otherParticipant?.username ??
           chat.getChatTitle(currentUserId ?? '');
       return (
         receiver: UserModel.rider(
           uid: participantId ?? chatId,
           email: '',
-          displayName: displayName.isEmpty ? 'User' : displayName,
+          username: displayName.isEmpty ? 'User' : displayName,
           photoUrl: hintPhotoUrl ?? otherParticipant?.photoUrl,
         ),
         chatType: ChatType.private,
       );
-    } on Exception catch (e) {
+    } catch (e, st) {
       TalkerService.error(
         'Failed to resolve chat receiver from notification',
         e,

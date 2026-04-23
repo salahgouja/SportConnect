@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 
@@ -13,14 +14,14 @@ abstract class IAuthRepository {
   // Email & Password Auth
   Future<UserModel?> signInWithEmail(
     String email,
-    String password,
-    bool rememberMe,
-  );
+    String password, {
+    bool rememberMe = false,
+  });
 
   Future<UserModel?> registerWithEmail({
     required String email,
     required String password,
-    required String displayName,
+    required String username,
     required UserRole role,
     String? phone,
     File? profileImage,
@@ -33,7 +34,6 @@ abstract class IAuthRepository {
   // User Management
   Future<UserModel?> getUserData(String uid);
   Stream<UserModel?> getUserDataStream(String uid);
-  Future<void> updateUserData(UserModel user);
   Future<void> signOut();
   Future<void> deleteAccount();
 
@@ -50,32 +50,10 @@ abstract class IAuthRepository {
   Future<bool> isEmailVerified();
   Future<void> reloadUser();
 
-  // Phone Auth / OTP
-  Future<void> verifyPhoneNumber({
-    required String phoneNumber,
-    required void Function(String verificationId, int? resendToken) onCodeSent,
-    required void Function(String verificationId) onAutoRetrievalTimeout,
-    required void Function(FirebaseAuthException error) onVerificationFailed,
-    required void Function(PhoneAuthCredential credential)
-    onVerificationCompleted,
-    int? forceResendingToken,
-  });
-  Future<UserCredential> signInWithPhoneCredential({
-    required String verificationId,
-    required String smsCode,
-  });
-
-  /// Sign in with a [PhoneAuthCredential] obtained from auto-verification
-  /// (Android auto-retrieval). Allows DI-aware sign-in without needing
-  /// a raw verificationId/smsCode pair.
-  Future<UserCredential> signInWithPhoneAutoCredential(
-    PhoneAuthCredential credential,
-  );
-
   // Profile Management
   Future<String?> uploadProfileImage(File image, String uid);
   Future<void> updateUserRole(String uid, UserRole role);
-  Future<void> clearNeedsRoleSelection(String uid);
+  Future<UserModel> finalizeRoleAs(String uid, UserRole role);
 
   // User Document Management
   Future<UserModel> createUserDocument(UserModel user);

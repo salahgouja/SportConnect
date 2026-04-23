@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
@@ -6,7 +7,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:crypto/crypto.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
@@ -26,17 +26,15 @@ class AuthRepository implements IAuthRepository {
   final FirebaseStorage _storage;
   final FirebaseFirestore _firestore;
 
-  /// One-time initialization future for GoogleSignIn.
-  /// google_sign_in v7 requires [GoogleSignIn.initialize] to be called exactly
-  /// once per app lifecycle — storing the Future here guarantees that.
-  final Future<void> _googleSignInInitialized = GoogleSignIn.instance
-      .initialize();
-
   CollectionReference<UserModel> get _usersCollection => _firestore
       .collection(AppConstants.usersCollection)
       .withConverter<UserModel>(
         fromFirestore: (snap, _) => UserModel.fromJson(snap.data()!),
-        toFirestore: (user, _) => user.toJson(),
+        toFirestore: (user, _) => {
+          ...user.toJson(),
+          if (user.createdAt == null) 'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        },
       );
 
   /// Get current user stream
@@ -59,15 +57,10 @@ class AuthRepository implements IAuthRepository {
   @override
   Future<UserModel?> signInWithEmail(
     String email,
-    String password,
-    bool rememberMe,
-  ) async {
+    String password, {
+    bool rememberMe = false,
+  }) async {
     try {
-      if (kIsWeb) {
-        await _auth.setPersistence(
-          rememberMe ? Persistence.LOCAL : Persistence.SESSION,
-        );
-      }
       final credential = await _auth.signInWithEmailAndPassword(
         email: email.trim(),
         password: password,
@@ -77,10 +70,10 @@ class AuthRepository implements IAuthRepository {
         return await getUserData(credential.user!.uid);
       }
     } on FirebaseAuthException catch (e) {
-      TalkerService.error('Sign in error: ${e.message}');
+      TalkerService.error('Sign in error: ${e.code}');
       throw _handleAuthException(e);
-    } on Exception catch (e) {
-      TalkerService.error('Sign in error', e);
+    } catch (e, st) {
+      TalkerService.error('Sign in error', e, st);
       rethrow;
     }
     return null;
@@ -91,7 +84,7 @@ class AuthRepository implements IAuthRepository {
   Future<UserModel?> registerWithEmail({
     required String email,
     required String password,
-    required String displayName,
+    required String username,
     required UserRole role,
     String? phone,
     File? profileImage,
@@ -118,26 +111,26 @@ class AuthRepository implements IAuthRepository {
           userModel = UserModel.driver(
             uid: uid,
             email: email.trim(),
-            displayName: displayName.trim(),
+            username: username.trim(),
             phoneNumber: phone?.trim(),
             photoUrl: photoUrl,
-            createdAt: DateTime.now(),
-            lastSeenAt: DateTime.now(),
           );
         } else {
           userModel = UserModel.rider(
             uid: uid,
             email: email.trim(),
-            displayName: displayName.trim(),
+            username: username.trim(),
             phoneNumber: phone?.trim(),
             photoUrl: photoUrl,
-            createdAt: DateTime.now(),
-            lastSeenAt: DateTime.now(),
           );
         }
 
-        await _usersCollection.doc(uid).set(userModel);
-        await credential.user!.updateDisplayName(displayName);
+        await _usersCollection
+            .doc(uid)
+            .set(
+              userModel,
+            );
+        await credential.user!.updateDisplayName(username);
 
         if (photoUrl != null) {
           await credential.user!.updatePhotoURL(photoUrl);
@@ -151,14 +144,14 @@ class AuthRepository implements IAuthRepository {
         return userModel;
       }
     } on FirebaseAuthException catch (e) {
-      TalkerService.error('Register error: ${e.message}');
+      TalkerService.error('Register error: ${e.code}');
       throw _handleAuthException(e);
-    } on Exception catch (e) {
+    } catch (e, st) {
       if (credential?.user != null) {
         TalkerService.warning('Rolling back user creation due to error');
         await credential!.user!.delete();
       }
-      TalkerService.error('Register error', e);
+      TalkerService.error('Register error', e, st);
       rethrow;
     }
     return null;
@@ -190,8 +183,8 @@ class AuthRepository implements IAuthRepository {
       // Get the download URL
       final url = await uploadTask.ref.getDownloadURL();
       return url;
-    } on Exception catch (e) {
-      TalkerService.error('Image upload failed', e);
+    } catch (e, st) {
+      TalkerService.error('Image upload failed', e, st);
       // We return null so the registration doesn't fail completely
       // just because the image failed.
       return null;
@@ -207,8 +200,8 @@ class AuthRepository implements IAuthRepository {
       if (doc.exists && doc.data() != null) {
         return doc.data()!;
       }
-    } on Exception catch (e) {
-      TalkerService.error('Get user data error', e);
+    } catch (e, st) {
+      TalkerService.error('Get user data error', e, st);
     }
     return null;
   }
@@ -227,13 +220,20 @@ class AuthRepository implements IAuthRepository {
   @override
   Future<void> signOut() async {
     try {
-      final googleSignIn = GoogleSignIn.instance;
-      await googleSignIn.signOut();
       await _auth.signOut();
+      unawaited(_signOutGoogleBestEffort());
       TalkerService.info('User signed out');
-    } on Exception catch (e) {
-      TalkerService.error('Sign out error', e);
+    } catch (e, st) {
+      TalkerService.error('Sign out error', e, st);
       rethrow;
+    }
+  }
+
+  Future<void> _signOutGoogleBestEffort() async {
+    try {
+      await GoogleSignIn.instance.signOut().timeout(const Duration(seconds: 2));
+    } catch (e) {
+      TalkerService.warning('Google sign-out cleanup skipped: $e');
     }
   }
 
@@ -316,7 +316,7 @@ class AuthRepository implements IAuthRepository {
       for (final chatDoc in chatsQuery.docs) {
         await chatDoc.reference.update({
           'participantIds': FieldValue.arrayRemove([uid]),
-          'updatedAt': DateTime.now(),
+          'updatedAt': FieldValue.serverTimestamp(),
         });
       }
 
@@ -328,9 +328,7 @@ class AuthRepository implements IAuthRepository {
           i + batchLimit > refs.length ? refs.length : i + batchLimit,
         );
         final batch = _firestore.batch();
-        for (final ref in chunk) {
-          batch.delete(ref);
-        }
+        chunk.forEach(batch.delete);
         await batch.commit();
       }
 
@@ -345,7 +343,7 @@ class AuthRepository implements IAuthRepository {
         }
       } on FirebaseException catch (e) {
         TalkerService.warning(
-          'Storage cleanup failed (best-effort): ${e.message}',
+          'Storage cleanup failed (best-effort): ${e.code}',
         );
       }
       final googleSignIn = GoogleSignIn.instance;
@@ -354,7 +352,7 @@ class AuthRepository implements IAuthRepository {
 
       TalkerService.info('User account and data deleted: $uid');
     } on FirebaseAuthException catch (e) {
-      TalkerService.error('Delete account error: ${e.message}');
+      TalkerService.error('Delete account error: ${e.code}');
       if (e.code == 'requires-recent-login') {
         throw AuthException(
           code: e.code,
@@ -362,8 +360,8 @@ class AuthRepository implements IAuthRepository {
         );
       }
       throw _handleAuthException(e);
-    } on Exception catch (e) {
-      TalkerService.error('Delete account error', e);
+    } catch (e, st) {
+      TalkerService.error('Delete account error', e, st);
       rethrow;
     }
   }
@@ -372,17 +370,9 @@ class AuthRepository implements IAuthRepository {
   @override
   Future<SocialSignInResult> signInWithGoogle() async {
     try {
-      // initialize() must be called exactly once per app lifecycle (v7 rule).
-      await _googleSignInInitialized;
-
-      // authenticate() triggers the Credential Manager sheet.
-      // Throws GoogleSignInException on cancellation — never returns null.
+      await GoogleSignIn.instance.initialize();
       final googleUser = await GoogleSignIn.instance.authenticate();
 
-      // Firebase Auth only needs idToken. authorizeScopes() would open a
-      // second Credential Manager dialog that gets canceled, causing a
-      // spurious GoogleSignInException(canceled). accessToken is not needed
-      // for signInWithCredential — it is nullable in GoogleAuthProvider.
       final credential = GoogleAuthProvider.credential(
         idToken: googleUser.authentication.idToken,
       );
@@ -390,13 +380,10 @@ class AuthRepository implements IAuthRepository {
       final userCredential = await _auth.signInWithCredential(credential);
 
       if (userCredential.user != null) {
-        var existingUser = await getUserData(userCredential.user!.uid);
+        final existingUser = await getUserData(userCredential.user!.uid);
 
         if (existingUser != null) {
-          // FIX A-4: A banned/suspended user must not regain access simply by
-          // re-authenticating via a social provider.  Sign them out of Firebase
-          // Auth immediately and surface a clear error.
-          if (!existingUser.isActive) {
+          if (existingUser.isBanned) {
             await _auth.signOut();
             throw const AuthException(
               code: 'account-disabled',
@@ -404,21 +391,28 @@ class AuthRepository implements IAuthRepository {
                   'Your account has been suspended. Please contact support.',
             );
           }
-          existingUser = existingUser.copyWith(lastSeenAt: DateTime.now());
-          await _usersCollection
-              .doc(userCredential.user!.uid)
-              .set(existingUser, SetOptions(merge: true));
-          return SocialSignInResult(user: existingUser);
+
+          // A pending user never finished role selection + onboarding.
+          // Treat them as new so the router sends them back through onboarding,
+          // not directly into the app.
+          final isPending = existingUser.role == UserRole.pending;
+
+          // Only write back if fully onboarded — writing a pending doc with
+          // merge:true is a no-op at best and can corrupt timestamps at worst.
+          if (!isPending) {
+            await _usersCollection
+                .doc(userCredential.user!.uid)
+                .set(existingUser, SetOptions(merge: true));
+          }
+
+          return SocialSignInResult(user: existingUser, isNewUser: isPending);
         } else {
-          // New users default to riders with pending role selection
-          final newUser = UserModel.rider(
+          final newUser = UserModel.pending(
             uid: userCredential.user!.uid,
             email: userCredential.user!.email ?? '',
-            displayName: userCredential.user!.displayName ?? 'User',
+            username: userCredential.user!.displayName ?? 'User',
             photoUrl: userCredential.user!.photoURL,
-            needsRoleSelection: true,
-            createdAt: DateTime.now(),
-            lastSeenAt: DateTime.now(),
+            isEmailVerified: true,
           );
 
           await _usersCollection.doc(userCredential.user!.uid).set(newUser);
@@ -433,16 +427,12 @@ class AuthRepository implements IAuthRepository {
       TalkerService.error(
         'GoogleSignInException: code=${e.code.name} description=${e.description}',
       );
-      // User simply dismissed the sheet — not a real error, handle silently.
       if (e.code == GoogleSignInExceptionCode.canceled) {
         throw const AuthException(
           code: 'google-sign-in-canceled',
           message: 'Sign-in was cancelled.',
         );
       }
-      // Any other code (clientConfigurationError, responseError, interrupted)
-      // is a genuine problem. Record to Crashlytics so it appears in the
-      // Firebase console without needing a device attached to a debugger.
       AnalyticsService.instance.recordError(
         e,
         StackTrace.current,
@@ -453,10 +443,10 @@ class AuthRepository implements IAuthRepository {
         message: 'Google sign-in failed (${e.code.name}). Please try again.',
       );
     } on FirebaseAuthException catch (e) {
-      TalkerService.error('Google sign in error: ${e.message}');
+      TalkerService.error('Google sign in error: ${e.code}');
       throw _handleAuthException(e);
-    } on Exception catch (e) {
-      TalkerService.error('Google sign in error', e);
+    } catch (e, st) {
+      TalkerService.error('Google sign in error', e, st);
       rethrow;
     }
   }
@@ -476,19 +466,18 @@ class AuthRepository implements IAuthRepository {
         nonce: nonce,
       );
 
-      final oauthCredential = OAuthProvider(
-        'apple.com',
-      ).credential(idToken: appleCredential.identityToken, rawNonce: rawNonce);
+      final oauthCredential = OAuthProvider('apple.com').credential(
+        idToken: appleCredential.identityToken,
+        rawNonce: rawNonce,
+      );
 
       final userCredential = await _auth.signInWithCredential(oauthCredential);
 
       if (userCredential.user != null) {
-        var existingUser = await getUserData(userCredential.user!.uid);
+        final existingUser = await getUserData(userCredential.user!.uid);
 
         if (existingUser != null) {
-          // FIX A-4: Same ban check as Google sign-in — banned users must not
-          // re-enter via Apple OAuth either.
-          if (!existingUser.isActive) {
+          if (existingUser.isBanned) {
             await _auth.signOut();
             throw const AuthException(
               code: 'account-disabled',
@@ -496,11 +485,19 @@ class AuthRepository implements IAuthRepository {
                   'Your account has been suspended. Please contact support.',
             );
           }
-          existingUser = existingUser.copyWith(lastSeenAt: DateTime.now());
-          await _usersCollection
-              .doc(userCredential.user!.uid)
-              .set(existingUser, SetOptions(merge: true));
-          return SocialSignInResult(user: existingUser);
+
+          // A pending user never finished role selection + onboarding.
+          // Treat them as new so the router sends them back through onboarding,
+          // not directly into the app.
+          final isPending = existingUser.role == UserRole.pending;
+
+          if (!isPending) {
+            await _usersCollection
+                .doc(userCredential.user!.uid)
+                .set(existingUser, SetOptions(merge: true));
+          }
+
+          return SocialSignInResult(user: existingUser, isNewUser: isPending);
         } else {
           var displayName = 'User';
           if (appleCredential.givenName != null) {
@@ -511,14 +508,11 @@ class AuthRepository implements IAuthRepository {
             displayName = userCredential.user!.displayName!;
           }
 
-          // New users default to riders with pending role selection
-          final newUser = UserModel.rider(
+          final newUser = UserModel.pending(
             uid: userCredential.user!.uid,
             email: userCredential.user!.email ?? appleCredential.email ?? '',
-            displayName: displayName,
-            needsRoleSelection: true,
-            createdAt: DateTime.now(),
-            lastSeenAt: DateTime.now(),
+            username: displayName,
+            isEmailVerified: true,
           );
 
           await _usersCollection.doc(userCredential.user!.uid).set(newUser);
@@ -530,13 +524,26 @@ class AuthRepository implements IAuthRepository {
 
       throw Exception('Apple sign-in failed: no user returned');
     } on SignInWithAppleAuthorizationException catch (e) {
-      TalkerService.error('Apple sign in error: ${e.message}');
-      throw Exception('Apple sign-in failed: ${e.message}');
+      if (e.code == AuthorizationErrorCode.canceled) {
+        TalkerService.info('Apple sign-in cancelled by user');
+        throw const AuthException(
+          code: 'apple-sign-in-canceled',
+          message: 'Sign-in was cancelled.',
+        );
+      } else {
+        TalkerService.error(
+          'Apple sign-in error: code=${e.code.name} message=${e.message}',
+        );
+        throw AuthException(
+          code: 'apple-sign-in-failed',
+          message: 'Apple sign-in failed (${e.code.name}). Please try again.',
+        );
+      }
     } on FirebaseAuthException catch (e) {
-      TalkerService.error('Apple sign in Firebase error: ${e.message}');
+      TalkerService.error('Apple sign in Firebase error: ${e.code}');
       throw _handleAuthException(e);
-    } on Exception catch (e) {
-      TalkerService.error('Apple sign in error', e);
+    } catch (e, st) {
+      TalkerService.error('Apple sign in error', e, st);
       rethrow;
     }
   }
@@ -567,8 +574,8 @@ class AuthRepository implements IAuthRepository {
       await _usersCollection.doc(user.uid).set(user, SetOptions(merge: true));
       TalkerService.info('User document created/updated for ${user.uid}');
       return user;
-    } on Exception catch (e) {
-      TalkerService.error('Create user document error', e);
+    } catch (e, st) {
+      TalkerService.error('Create user document error', e, st);
       rethrow;
     }
   }
@@ -582,23 +589,15 @@ class AuthRepository implements IAuthRepository {
     int? ridesCompletedIncrement,
   }) async {
     try {
-      var userModel = await getUserData(userId);
-      userModel = userModel?.copyWith(
-        updatedAt: DateTime.now(),
-        gamification: userModel.gamification.copyWith(
-          totalXP: xpIncrement != null
-              ? userModel.gamification.totalXP + xpIncrement
-              : userModel.gamification.totalXP,
-          totalRides: ridesCompletedIncrement != null
-              ? userModel.gamification.totalRides + ridesCompletedIncrement
-              : userModel.gamification.totalRides,
+      await _usersCollection.doc(userId).update({
+        'gamification.totalXP': FieldValue.increment(xpIncrement ?? 0),
+        'gamification.totalRides': FieldValue.increment(
+          ridesCompletedIncrement ?? 0,
         ),
-      );
-
-      await _usersCollection.doc(userId).update(userModel?.toJson() ?? {});
+      });
       TalkerService.info('User stats updated for $userId');
-    } on Exception catch (e) {
-      TalkerService.error('Update user stats error', e);
+    } catch (e, st) {
+      TalkerService.error('Update user stats error', e, st);
       rethrow;
     }
   }
@@ -609,27 +608,10 @@ class AuthRepository implements IAuthRepository {
     try {
       await _usersCollection.doc(userId).update({
         'role': role.name,
-        'isDriver': role == UserRole.driver,
-        'updatedAt': DateTime.now(),
       });
       TalkerService.info('User role updated to ${role.name} for $userId');
-    } on Exception catch (e) {
-      TalkerService.error('Update user role error', e);
-      rethrow;
-    }
-  }
-
-  /// Clear the needsRoleSelection flag after onboarding is complete
-  @override
-  Future<void> clearNeedsRoleSelection(String userId) async {
-    try {
-      await _usersCollection.doc(userId).update({
-        'needsRoleSelection': false,
-        'updatedAt': DateTime.now(),
-      });
-      TalkerService.info('Cleared needsRoleSelection for $userId');
-    } on Exception catch (e) {
-      TalkerService.error('Clear needsRoleSelection error', e);
+    } catch (e, st) {
+      TalkerService.error('Update user role error', e, st);
       rethrow;
     }
   }
@@ -640,10 +622,10 @@ class AuthRepository implements IAuthRepository {
       await _auth.sendPasswordResetEmail(email: email.trim());
       TalkerService.info('Password reset email sent to $email');
     } on FirebaseAuthException catch (e) {
-      TalkerService.error('Password reset error: ${e.message}');
+      TalkerService.error('Password reset error: ${e.code}');
       throw _handleAuthException(e);
-    } on Exception catch (e) {
-      TalkerService.error('Password reset error', e);
+    } catch (e, st) {
+      TalkerService.error('Password reset error', e, st);
       rethrow;
     }
   }
@@ -659,24 +641,10 @@ class AuthRepository implements IAuthRepository {
       await user.updatePassword(newPassword);
       TalkerService.info('Password updated successfully');
     } on FirebaseAuthException catch (e) {
-      TalkerService.error('Update password error: ${e.message}');
+      TalkerService.error('Update password error: ${e.code}');
       throw _handleAuthException(e);
-    } on Exception catch (e) {
-      TalkerService.error('Update password error', e);
-      rethrow;
-    }
-  }
-
-  @override
-  Future<void> updateUserData(UserModel user) async {
-    try {
-      await _usersCollection.doc(user.uid).update({
-        ...user.toJson(),
-        'updatedAt': DateTime.now(),
-      });
-      TalkerService.info('User data updated for ${user.uid}');
-    } on Exception catch (e) {
-      TalkerService.error('Update user data error', e);
+    } catch (e, st) {
+      TalkerService.error('Update password error', e, st);
       rethrow;
     }
   }
@@ -684,6 +652,115 @@ class AuthRepository implements IAuthRepository {
   @override
   Future<String?> uploadProfileImage(File image, String uid) async {
     return _uploadProfileImage(image, uid);
+  }
+
+  /// Resolves a [PendingUserModel] into a fully-typed [RiderModel] or [DriverModel].
+  ///
+  /// Called exactly once per user — when they complete role selection after
+  /// a social sign-in. Reads the existing pending document to preserve all
+  /// fields written at sign-in (email, username, photoUrl, fcmToken, etc.),
+  /// then replaces it with a complete typed document.
+  ///
+  /// Throws [StateError] if:
+  /// - No document exists for [uid]
+  /// - [role] is [UserRole.pending] (cannot finalize into pending)
+  @override
+  Future<UserModel> finalizeRoleAs(String uid, UserRole role) async {
+    assert(
+      role != UserRole.pending,
+      'finalizeRoleAs: cannot finalize into pending role',
+    );
+
+    try {
+      final existing = await getUserData(uid);
+      if (existing == null) {
+        throw StateError('finalizeRoleAs: no user document found for $uid');
+      }
+
+      final rawDoc = await _firestore
+          .collection(AppConstants.usersCollection)
+          .doc(uid)
+          .get();
+      final rawData = rawDoc.data() ?? const <String, dynamic>{};
+
+      final phoneNumber = rawData['phoneNumber'] as String?;
+      final gender = rawData['gender'] as String?;
+      final city = rawData['city'] as String?;
+      final country = rawData['country'] as String?;
+      final address = rawData['address'] as String?;
+      final latitude = (rawData['latitude'] as num?)?.toDouble();
+      final longitude = (rawData['longitude'] as num?)?.toDouble();
+      final dateOfBirthTs = rawData['dateOfBirth'] as Timestamp?;
+      final dateOfBirth = dateOfBirthTs?.toDate();
+      final vehicleIds = (rawData['vehicleIds'] as List<dynamic>? ?? const [])
+          .whereType<String>()
+          .toList(growable: false);
+      final stripeAccountId = rawData['stripeAccountId'] as String?;
+
+      // Guard against double-finalization — if already finalized, return as-is
+      // without overwriting onboarding data written by the first call.
+      if (existing.role != UserRole.pending) {
+        TalkerService.warning(
+          'finalizeRoleAs: user $uid already has role ${existing.role.name}, skipping.',
+        );
+        return existing;
+      }
+
+      final UserModel finalized = switch (role) {
+        UserRole.rider => UserModel.rider(
+          uid: existing.uid,
+          email: existing.email,
+          username: existing.username,
+          photoUrl: existing.photoUrl,
+          phoneNumber: phoneNumber,
+          gender: gender,
+          city: city,
+          country: country,
+          address: address,
+          latitude: latitude,
+          longitude: longitude,
+          dateOfBirth: dateOfBirth,
+          expertise: existing.expertise,
+          isEmailVerified: existing.isEmailVerified,
+          isBanned: existing.isBanned,
+          fcmToken: existing.fcmToken,
+          createdAt: existing.createdAt,
+        ),
+        UserRole.driver => UserModel.driver(
+          uid: existing.uid,
+          email: existing.email,
+          username: existing.username,
+          photoUrl: existing.photoUrl,
+          phoneNumber: phoneNumber,
+          gender: gender,
+          city: city,
+          country: country,
+          address: address,
+          latitude: latitude,
+          longitude: longitude,
+          dateOfBirth: dateOfBirth,
+          expertise: existing.expertise,
+          isEmailVerified: existing.isEmailVerified,
+          isBanned: existing.isBanned,
+          fcmToken: existing.fcmToken,
+          vehicleIds: vehicleIds,
+          stripeAccountId: stripeAccountId,
+          createdAt: existing.createdAt,
+        ),
+        UserRole.pending => throw StateError(
+          'finalizeRoleAs: cannot finalize into pending role',
+        ),
+      };
+
+      await _usersCollection.doc(uid).set(finalized);
+
+      TalkerService.info('User $uid finalized role as ${role.name}');
+
+      return finalized;
+    } catch (e, st) {
+      TalkerService.error('finalizeRoleAs error', e, st);
+      rethrow;
+    }
   }
 
   AuthException _handleAuthException(FirebaseAuthException e) {
@@ -695,6 +772,11 @@ class AuthRepository implements IAuthRepository {
         );
       case 'wrong-password':
         return AuthException(code: e.code, message: 'Wrong password');
+      case 'invalid-credential':
+        return AuthException(
+          code: e.code,
+          message: 'Invalid email or password',
+        );
       case 'email-already-in-use':
         return AuthException(code: e.code, message: 'Email already in use');
       case 'invalid-email':
@@ -721,7 +803,7 @@ class AuthRepository implements IAuthRepository {
       default:
         return AuthException(
           code: e.code,
-          message: e.message ?? 'An error occurred',
+          message: e.message ?? 'An unknown error occurred',
         );
     }
   }
@@ -745,10 +827,10 @@ class AuthRepository implements IAuthRepository {
       await user.reauthenticateWithCredential(credential);
       TalkerService.info('User re-authenticated successfully');
     } on FirebaseAuthException catch (e) {
-      TalkerService.error('Re-authentication error: ${e.message}');
+      TalkerService.error('Re-authentication error: ${e.code}');
       throw _handleAuthException(e);
-    } on Exception catch (e) {
-      TalkerService.error('Re-authentication error', e);
+    } catch (e, st) {
+      TalkerService.error('Re-authentication error', e, st);
       rethrow;
     }
   }
@@ -757,7 +839,7 @@ class AuthRepository implements IAuthRepository {
   @override
   Future<void> reauthenticateWithGoogle() async {
     try {
-      await _googleSignInInitialized;
+      await GoogleSignIn.instance.initialize();
       final googleUser = await GoogleSignIn.instance.authenticate();
 
       // FIX A-7: Verify the Google account email matches the current user's email
@@ -782,8 +864,8 @@ class AuthRepository implements IAuthRepository {
       }
       await user.reauthenticateWithCredential(credential);
       TalkerService.info('User re-authenticated with Google');
-    } on Exception catch (e) {
-      TalkerService.error('Google re-authentication error', e);
+    } catch (e, st) {
+      TalkerService.error('Google re-authentication error', e, st);
       rethrow;
     }
   }
@@ -829,11 +911,11 @@ class AuthRepository implements IAuthRepository {
             'lastEmailVerificationSentAt': FieldValue.serverTimestamp(),
           });
       TalkerService.info('Verification email sent to ${user.email}');
-    } on FirebaseAuthException catch (e) {
-      TalkerService.error('Send verification email error: ${e.message}');
+    } on FirebaseAuthException catch (e, st) {
+      TalkerService.error('Send verification email error: ${e.code}', e, st);
       throw _handleAuthException(e);
-    } on Exception catch (e) {
-      TalkerService.error('Send verification email error', e);
+    } catch (e, st) {
+      TalkerService.error('Send verification email error', e, st);
       rethrow;
     }
   }
@@ -854,113 +936,5 @@ class AuthRepository implements IAuthRepository {
   @override
   Future<void> reloadUser() async {
     await _auth.currentUser?.reload();
-  }
-
-  // =========================================================================
-  // Phone Auth / OTP
-  // =========================================================================
-
-  /// Start phone number verification — Firebase sends an SMS OTP.
-  ///
-  /// The caller provides callbacks for each phase of the verification:
-  /// - [onCodeSent]: SMS sent; use the verificationId to create credential.
-  /// - [onVerificationCompleted]: Auto-verified (Android auto-retrieval).
-  /// - [onVerificationFailed]: Error (invalid number, quota exceeded, etc).
-  /// - [onAutoRetrievalTimeout]: Auto-retrieval timed out; user must enter OTP manually.
-  @override
-  Future<void> verifyPhoneNumber({
-    required String phoneNumber,
-    required void Function(String verificationId, int? resendToken) onCodeSent,
-    required void Function(String verificationId) onAutoRetrievalTimeout,
-    required void Function(FirebaseAuthException error) onVerificationFailed,
-    required void Function(PhoneAuthCredential credential)
-    onVerificationCompleted,
-    int? forceResendingToken,
-  }) async {
-    // FIX A-6: Throttle OTP send/resend requests (max 3 per 10-minute window)
-    final uid = _auth.currentUser?.uid;
-    if (uid != null) {
-      const maxResends = 3;
-      const windowMinutes = 10;
-      final userRef = _firestore
-          .collection(AppConstants.usersCollection)
-          .doc(uid);
-      final snap = await userRef.get();
-      final data = snap.data() ?? {};
-      final windowStart = (data['phoneOtpWindowStart'] as Timestamp?)?.toDate();
-      final resendCount = (data['phoneOtpResendCount'] as int?) ?? 0;
-      final now = DateTime.now();
-      final windowExpired =
-          windowStart == null ||
-          now.difference(windowStart).inMinutes >= windowMinutes;
-
-      if (!windowExpired && resendCount >= maxResends) {
-        final minutesLeft =
-            windowMinutes - now.difference(windowStart).inMinutes;
-        throw Exception(
-          'Too many OTP requests. Please wait $minutesLeft minutes before trying again.',
-        );
-      }
-
-      await userRef.update(
-        windowExpired
-            ? {
-                'phoneOtpResendCount': 1,
-                'phoneOtpWindowStart': FieldValue.serverTimestamp(),
-              }
-            : {'phoneOtpResendCount': resendCount + 1},
-      );
-    }
-
-    await _auth.verifyPhoneNumber(
-      phoneNumber: phoneNumber,
-      verificationCompleted: onVerificationCompleted,
-      verificationFailed: onVerificationFailed,
-      codeSent: onCodeSent,
-      codeAutoRetrievalTimeout: onAutoRetrievalTimeout,
-      forceResendingToken: forceResendingToken,
-      timeout: const Duration(seconds: 60),
-    );
-  }
-
-  /// Sign in (or link) with a phone credential built from verificationId + smsCode.
-  @override
-  Future<UserCredential> signInWithPhoneCredential({
-    required String verificationId,
-    required String smsCode,
-  }) async {
-    try {
-      final credential = PhoneAuthProvider.credential(
-        verificationId: verificationId,
-        smsCode: smsCode,
-      );
-      final result = await _auth.signInWithCredential(credential);
-      TalkerService.info('Phone OTP sign-in successful');
-      return result;
-    } on FirebaseAuthException catch (e) {
-      TalkerService.error('Phone OTP error: ${e.message}');
-      throw _handleAuthException(e);
-    } on Exception catch (e) {
-      TalkerService.error('Phone OTP error', e);
-      rethrow;
-    }
-  }
-
-  /// Signs in with a pre-built [PhoneAuthCredential] from auto-verification.
-  @override
-  Future<UserCredential> signInWithPhoneAutoCredential(
-    PhoneAuthCredential credential,
-  ) async {
-    try {
-      final result = await _auth.signInWithCredential(credential);
-      TalkerService.info('Phone auto-verification sign-in successful');
-      return result;
-    } on FirebaseAuthException catch (e) {
-      TalkerService.error('Phone auto-verification error: ${e.message}');
-      throw _handleAuthException(e);
-    } on Exception catch (e) {
-      TalkerService.error('Phone auto-verification error', e);
-      rethrow;
-    }
   }
 }

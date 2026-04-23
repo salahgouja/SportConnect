@@ -1,3 +1,4 @@
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -10,10 +11,12 @@ import 'package:latlong2/latlong.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:sport_connect/core/animations/feedback_animations.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
-import 'package:sport_connect/core/models/location/location_point.dart';
-import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
+import 'package:sport_connect/core/models/location/location_point.dart';
+import 'package:sport_connect/core/models/user/models.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
 import 'package:sport_connect/core/widgets/driver_info_widget.dart';
 import 'package:sport_connect/core/widgets/map_location_picker.dart';
@@ -61,8 +64,14 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
 
   void _showSnackBar(String message, {Color? backgroundColor}) {
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: backgroundColor),
+    AdaptiveSnackBar.show(
+      context,
+      message: message,
+      type: backgroundColor == AppColors.error
+          ? AdaptiveSnackBarType.error
+          : backgroundColor == AppColors.success
+          ? AdaptiveSnackBarType.success
+          : AdaptiveSnackBarType.info,
     );
   }
 
@@ -84,8 +93,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
     final vmState = ref.watch(rideDetailViewModelProvider(widget.rideId));
     final bookings = vmState.bookings;
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return AdaptiveScaffold(
       body: vmState.ride.when(
         loading: _buildLoadingSkeleton,
         error: (error, _) => _buildErrorState(error.toString()),
@@ -118,11 +126,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
           flexibleSpace: FlexibleSpaceBar(
             background: Container(
               decoration: const BoxDecoration(gradient: AppColors.heroGradient),
-              child: const Center(
-                child: CircularProgressIndicator.adaptive(
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-              ),
+              child: const SkeletonLoader(type: SkeletonType.rideCard, itemCount: 1),
             ),
           ),
         ),
@@ -286,8 +290,8 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
 
                   // Walking distance to pickup
                   if (uiState.routeInfo != null &&
-                      currentUser?.latitude != null &&
-                      currentUser?.longitude != null)
+                      currentUser!.asRider?.latitude != null &&
+                      currentUser.asRider?.longitude != null)
                     Padding(
                       padding: EdgeInsets.symmetric(
                         horizontal: 20.w,
@@ -297,15 +301,15 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                         distanceMeters: const Distance().as(
                           LengthUnit.Meter,
                           LatLng(
-                            currentUser!.latitude!,
-                            currentUser.longitude!,
+                            currentUser!.asRider!.latitude!,
+                            currentUser.asRider!.longitude!,
                           ),
                           LatLng(ride.origin.latitude, ride.origin.longitude),
                         ),
                         onGetDirections: () {
                           final url = Uri.parse(
                             'https://www.google.com/maps/dir/?api=1'
-                            '&origin=${currentUser.latitude},${currentUser.longitude}'
+                            '&origin=${currentUser.asRider!.latitude},${currentUser.asRider!.longitude}'
                             '&destination=${ride.origin.latitude},${ride.origin.longitude}'
                             '&travelmode=walking',
                           );
@@ -1527,11 +1531,13 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
           .read(rideDetailViewModelProvider(rideId).notifier)
           .acceptBooking(bookingId);
 
+      if (!mounted) return;
       _showSnackBar(
         AppLocalizations.of(context).requestAccepted,
         backgroundColor: Colors.green,
       );
-    } on Exception catch (e) {
+    } catch (e, st) {
+      if (!mounted) return;
       _showSnackBar(
         AppLocalizations.of(context).errorValue(e),
         backgroundColor: Colors.red,
@@ -1546,8 +1552,10 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
           .read(rideDetailViewModelProvider(rideId).notifier)
           .rejectBooking(bookingId);
 
+      if (!mounted) return;
       _showSnackBar(AppLocalizations.of(context).requestDeclined);
-    } on Exception catch (e) {
+    } catch (e, st) {
+      if (!mounted) return;
       _showSnackBar(
         AppLocalizations.of(context).errorValue(e),
         backgroundColor: Colors.red,
@@ -1564,6 +1572,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
     final acceptedCount = bookings
         .where((b) => b.status == BookingStatus.accepted)
         .length;
+    final earningsPreview = (ride.pricePerSeatInCents * acceptedCount) / 100.0;
 
     return Container(
       padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 16.h + bottomPadding),
@@ -1695,9 +1704,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                     children: [
                       Text(
                         AppLocalizations.of(context).value5(
-                          (ride.pricePerSeat * acceptedCount).toStringAsFixed(
-                            0,
-                          ),
+                          earningsPreview.toStringAsFixed(2),
                         ),
                         style: TextStyle(
                           fontSize: 18.sp,
@@ -1897,10 +1904,11 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
 
   Widget _buildBookingSheet(RideModel ride) {
     final uiState = _uiState;
-    final totalPrice = ride.pricePerSeat * uiState.selectedSeats;
+    final totalPriceInCents = ride.pricePerSeatInCents * uiState.selectedSeats;
+    final totalPrice = totalPriceInCents / 100.0;
+    final pricePerSeat = ride.pricePerSeatInCents / 100.0;
     final bottomPadding = MediaQuery.paddingOf(context).bottom;
-    final currencySymbol = _getCurrencySymbol(ride.currency ?? 'eur');
-
+    final currencySymbol = _getCurrencySymbol();
     return Container(
       padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 16.h + bottomPadding),
       decoration: BoxDecoration(
@@ -2182,7 +2190,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                   AppLocalizations.of(context).pricePerSeat2,
                   AppLocalizations.of(context).valueValue5(
                     currencySymbol,
-                    ride.pricePerSeat.toStringAsFixed(2),
+                    pricePerSeat.toStringAsFixed(2),
                   ),
                 ),
                 if (uiState.selectedSeats > 1) ...[
@@ -2344,26 +2352,14 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
   }
 
   /// Gets the currency symbol for display
-  String _getCurrencySymbol(String currency) {
-    const symbolMap = {
-      'eur': '€',
-      'usd': r'$',
-      'gbp': '£',
-      'jpy': '¥',
-      'inr': '₹',
-      'chf': 'CHF ',
-      'aud': r'A$',
-      'cad': r'C$',
-    };
-    return symbolMap[currency.toLowerCase()] ?? '€';
-  }
+  String _getCurrencySymbol() => '€';
 
   String _buildRideShareText(RideModel ride, String link) {
     return AppLocalizations.of(context).rideShareText(
       ride.origin.city ?? ride.origin.address,
       ride.destination.city ?? ride.destination.address,
       DateFormat('MMM d, h:mm a').format(ride.departureTime),
-      ride.pricePerSeat.toStringAsFixed(0),
+      (ride.pricePerSeatInCents / 100.0).toStringAsFixed(2),
       ride.remainingSeats,
       link,
     );
@@ -2377,7 +2373,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
       final driverProfile = await ref.read(
         userProfileProvider(driverId).future,
       );
-      if (!context.mounted) return;
+      if (!mounted) return;
       if (driverProfile == null) {
         _showSnackBar(AppLocalizations.of(context).passengerProfileNotFound);
         return;
@@ -2386,20 +2382,20 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
         getOrCreateChatProvider(
           userId1: currentUser.uid,
           userId2: driverId,
-          userName1: currentUser.displayName,
-          userName2: driverProfile.displayName,
+          userName1: currentUser.username,
+          userName2: driverProfile.username,
           userPhoto1: currentUser.photoUrl,
           userPhoto2: driverProfile.photoUrl,
         ).future,
       );
-      if (!context.mounted) return;
+      if (!mounted) return;
       context.pushNamed(
         AppRoutes.chatDetail.name,
         pathParameters: {'id': chat.id},
         extra: driverProfile,
       );
-    } on Exception catch (_) {
-      if (context.mounted) {
+    } catch (e, st) {
+      if (mounted) {
         _showSnackBar(AppLocalizations.of(context).failedToOpenChatTryAgain);
       }
     }
@@ -2413,7 +2409,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
       final passengerProfile = await ref.read(
         userProfileProvider(passengerId).future,
       );
-      if (!context.mounted) return;
+      if (!mounted) return;
       if (passengerProfile == null) {
         _showSnackBar(AppLocalizations.of(context).passengerProfileNotFound);
         return;
@@ -2422,20 +2418,20 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
         getOrCreateChatProvider(
           userId1: currentUser.uid,
           userId2: passengerId,
-          userName1: currentUser.displayName,
-          userName2: passengerProfile.displayName,
+          userName1: currentUser.username,
+          userName2: passengerProfile.username,
           userPhoto1: currentUser.photoUrl,
           userPhoto2: passengerProfile.photoUrl,
         ).future,
       );
-      if (!context.mounted) return;
+      if (!mounted) return;
       context.pushNamed(
         AppRoutes.chatDetail.name,
         pathParameters: {'id': chat.id},
         extra: passengerProfile,
       );
-    } on Exception catch (_) {
-      if (context.mounted) {
+    } catch (e, st) {
+      if (mounted) {
         _showSnackBar(AppLocalizations.of(context).failedToOpenChatTryAgain);
       }
     }
@@ -2463,25 +2459,17 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
             pickupLocation: uiState.pickupLocation,
           );
 
-      if (!context.mounted) return;
+      if (!mounted) return;
       _uiNotifier.setBooking(false);
 
       if (success) {
-        final currencySymbol = _getCurrencySymbol(ride.currency ?? 'eur');
-        final arrivalTime = ride.departureTime.add(
-          Duration(minutes: ride.route.durationMinutes ?? 60),
-        );
-        final driverProfile = await ref.read(
-          userProfileProvider(ride.driverId).future,
-        );
-        if (!context.mounted) return;
         await FeedbackAnimations.showBookingConfirmation(
           context,
           rideInfo:
               '${ride.origin.city ?? ride.origin.address} → ${ride.destination.city ?? ride.destination.address}',
           dateTime: DateFormat('MMM d, HH:mm').format(ride.departureTime),
         );
-        if (!context.mounted) return;
+        if (!mounted) return;
         context.push(
           AppRoutes.rideBookingPending.path.replaceFirst(':rideId', ride.id),
         );
@@ -2491,8 +2479,8 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
           message: AppLocalizations.of(context).failedToBookRidePlease,
         );
       }
-    } on Exception catch (e) {
-      if (!context.mounted) return;
+    } catch (e, st) {
+      if (!mounted) return;
       _uiNotifier.setBooking(false);
       await FeedbackAnimations.showError(
         context,

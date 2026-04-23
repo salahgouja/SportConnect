@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$UserPreferences {
 
- bool get notificationsEnabled; bool get emailNotifications; bool get rideReminders; bool get chatNotifications; String get language; double get maxPickupRadius; bool get allowMessages;
+ bool get notificationsEnabled; bool get emailNotifications; bool get rideReminders; bool get chatNotifications; AppLocale get language; double get maxPickupRadius; bool get allowMessages;
 /// Create a copy of UserPreferences
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -48,7 +48,7 @@ abstract mixin class $UserPreferencesCopyWith<$Res>  {
   factory $UserPreferencesCopyWith(UserPreferences value, $Res Function(UserPreferences) _then) = _$UserPreferencesCopyWithImpl;
 @useResult
 $Res call({
- bool notificationsEnabled, bool emailNotifications, bool rideReminders, bool chatNotifications, String language, double maxPickupRadius, bool allowMessages
+ bool notificationsEnabled, bool emailNotifications, bool rideReminders, bool chatNotifications, AppLocale language, double maxPickupRadius, bool allowMessages
 });
 
 
@@ -72,7 +72,7 @@ as bool,emailNotifications: null == emailNotifications ? _self.emailNotification
 as bool,rideReminders: null == rideReminders ? _self.rideReminders : rideReminders // ignore: cast_nullable_to_non_nullable
 as bool,chatNotifications: null == chatNotifications ? _self.chatNotifications : chatNotifications // ignore: cast_nullable_to_non_nullable
 as bool,language: null == language ? _self.language : language // ignore: cast_nullable_to_non_nullable
-as String,maxPickupRadius: null == maxPickupRadius ? _self.maxPickupRadius : maxPickupRadius // ignore: cast_nullable_to_non_nullable
+as AppLocale,maxPickupRadius: null == maxPickupRadius ? _self.maxPickupRadius : maxPickupRadius // ignore: cast_nullable_to_non_nullable
 as double,allowMessages: null == allowMessages ? _self.allowMessages : allowMessages // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
@@ -159,7 +159,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( bool notificationsEnabled,  bool emailNotifications,  bool rideReminders,  bool chatNotifications,  String language,  double maxPickupRadius,  bool allowMessages)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( bool notificationsEnabled,  bool emailNotifications,  bool rideReminders,  bool chatNotifications,  AppLocale language,  double maxPickupRadius,  bool allowMessages)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _UserPreferences() when $default != null:
 return $default(_that.notificationsEnabled,_that.emailNotifications,_that.rideReminders,_that.chatNotifications,_that.language,_that.maxPickupRadius,_that.allowMessages);case _:
@@ -180,7 +180,7 @@ return $default(_that.notificationsEnabled,_that.emailNotifications,_that.rideRe
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool notificationsEnabled,  bool emailNotifications,  bool rideReminders,  bool chatNotifications,  String language,  double maxPickupRadius,  bool allowMessages)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool notificationsEnabled,  bool emailNotifications,  bool rideReminders,  bool chatNotifications,  AppLocale language,  double maxPickupRadius,  bool allowMessages)  $default,) {final _that = this;
 switch (_that) {
 case _UserPreferences():
 return $default(_that.notificationsEnabled,_that.emailNotifications,_that.rideReminders,_that.chatNotifications,_that.language,_that.maxPickupRadius,_that.allowMessages);case _:
@@ -200,7 +200,7 @@ return $default(_that.notificationsEnabled,_that.emailNotifications,_that.rideRe
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( bool notificationsEnabled,  bool emailNotifications,  bool rideReminders,  bool chatNotifications,  String language,  double maxPickupRadius,  bool allowMessages)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( bool notificationsEnabled,  bool emailNotifications,  bool rideReminders,  bool chatNotifications,  AppLocale language,  double maxPickupRadius,  bool allowMessages)?  $default,) {final _that = this;
 switch (_that) {
 case _UserPreferences() when $default != null:
 return $default(_that.notificationsEnabled,_that.emailNotifications,_that.rideReminders,_that.chatNotifications,_that.language,_that.maxPickupRadius,_that.allowMessages);case _:
@@ -215,14 +215,14 @@ return $default(_that.notificationsEnabled,_that.emailNotifications,_that.rideRe
 @JsonSerializable()
 
 class _UserPreferences implements UserPreferences {
-  const _UserPreferences({this.notificationsEnabled = true, this.emailNotifications = true, this.rideReminders = true, this.chatNotifications = true, this.language = 'en', this.maxPickupRadius = 20.0, this.allowMessages = true});
+  const _UserPreferences({this.notificationsEnabled = true, this.emailNotifications = true, this.rideReminders = true, this.chatNotifications = true, this.language = AppLocale.french, this.maxPickupRadius = 20.0, this.allowMessages = true});
   factory _UserPreferences.fromJson(Map<String, dynamic> json) => _$UserPreferencesFromJson(json);
 
 @override@JsonKey() final  bool notificationsEnabled;
 @override@JsonKey() final  bool emailNotifications;
 @override@JsonKey() final  bool rideReminders;
 @override@JsonKey() final  bool chatNotifications;
-@override@JsonKey() final  String language;
+@override@JsonKey() final  AppLocale language;
 @override@JsonKey() final  double maxPickupRadius;
 @override@JsonKey() final  bool allowMessages;
 
@@ -259,7 +259,7 @@ abstract mixin class _$UserPreferencesCopyWith<$Res> implements $UserPreferences
   factory _$UserPreferencesCopyWith(_UserPreferences value, $Res Function(_UserPreferences) _then) = __$UserPreferencesCopyWithImpl;
 @override @useResult
 $Res call({
- bool notificationsEnabled, bool emailNotifications, bool rideReminders, bool chatNotifications, String language, double maxPickupRadius, bool allowMessages
+ bool notificationsEnabled, bool emailNotifications, bool rideReminders, bool chatNotifications, AppLocale language, double maxPickupRadius, bool allowMessages
 });
 
 
@@ -283,7 +283,7 @@ as bool,emailNotifications: null == emailNotifications ? _self.emailNotification
 as bool,rideReminders: null == rideReminders ? _self.rideReminders : rideReminders // ignore: cast_nullable_to_non_nullable
 as bool,chatNotifications: null == chatNotifications ? _self.chatNotifications : chatNotifications // ignore: cast_nullable_to_non_nullable
 as bool,language: null == language ? _self.language : language // ignore: cast_nullable_to_non_nullable
-as String,maxPickupRadius: null == maxPickupRadius ? _self.maxPickupRadius : maxPickupRadius // ignore: cast_nullable_to_non_nullable
+as AppLocale,maxPickupRadius: null == maxPickupRadius ? _self.maxPickupRadius : maxPickupRadius // ignore: cast_nullable_to_non_nullable
 as double,allowMessages: null == allowMessages ? _self.allowMessages : allowMessages // ignore: cast_nullable_to_non_nullable
 as bool,
   ));

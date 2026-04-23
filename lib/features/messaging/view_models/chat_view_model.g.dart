@@ -8,6 +8,69 @@ part of 'chat_view_model.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// Plain-class wrapper for one-shot chat operations (upload, mute, block, etc.)
+/// that don't require reactive state of their own.
+
+@ProviderFor(ChatActionsViewModel)
+final chatActionsViewModelProvider = ChatActionsViewModelProvider._();
+
+/// Plain-class wrapper for one-shot chat operations (upload, mute, block, etc.)
+/// that don't require reactive state of their own.
+final class ChatActionsViewModelProvider
+    extends $NotifierProvider<ChatActionsViewModel, void> {
+  /// Plain-class wrapper for one-shot chat operations (upload, mute, block, etc.)
+  /// that don't require reactive state of their own.
+  ChatActionsViewModelProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'chatActionsViewModelProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$chatActionsViewModelHash();
+
+  @$internal
+  @override
+  ChatActionsViewModel create() => ChatActionsViewModel();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(void value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<void>(value),
+    );
+  }
+}
+
+String _$chatActionsViewModelHash() =>
+    r'c5c77ea4e18847208025cb3fb12e168a97314bb9';
+
+/// Plain-class wrapper for one-shot chat operations (upload, mute, block, etc.)
+/// that don't require reactive state of their own.
+
+abstract class _$ChatActionsViewModel extends $Notifier<void> {
+  void build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<void, void>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<void, void>,
+              void,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}
+
 /// Live stream of the user's chat list, ordered by last message time.
 
 @ProviderFor(userChats)
@@ -90,6 +153,81 @@ final class UserChatsFamily extends $Family
 
   @override
   String toString() => r'userChatsProvider';
+}
+
+@ProviderFor(blockedUserIds)
+final blockedUserIdsProvider = BlockedUserIdsFamily._();
+
+final class BlockedUserIdsProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<String>>,
+          List<String>,
+          Stream<List<String>>
+        >
+    with $FutureModifier<List<String>>, $StreamProvider<List<String>> {
+  BlockedUserIdsProvider._({
+    required BlockedUserIdsFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'blockedUserIdsProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$blockedUserIdsHash();
+
+  @override
+  String toString() {
+    return r'blockedUserIdsProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<List<String>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<String>> create(Ref ref) {
+    final argument = this.argument as String;
+    return blockedUserIds(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is BlockedUserIdsProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$blockedUserIdsHash() => r'd820ab67b5f978a2c84d148d4cb55c95d62f967b';
+
+final class BlockedUserIdsFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<List<String>>, String> {
+  BlockedUserIdsFamily._()
+    : super(
+        retry: null,
+        name: r'blockedUserIdsProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  BlockedUserIdsProvider call(String userId) =>
+      BlockedUserIdsProvider._(argument: userId, from: this);
+
+  @override
+  String toString() => r'blockedUserIdsProvider';
 }
 
 /// Messages stream for a single chat, filtered to non-deleted only.
@@ -314,7 +452,7 @@ final class ChatDetailViewModelProvider
 }
 
 String _$chatDetailViewModelHash() =>
-    r'920028a5e9cf3d7252cfb0568a252010411a0d45';
+    r'8db17796282336ce9e4a8a8820385769a35a7089';
 
 final class ChatDetailViewModelFamily extends $Family
     with
@@ -453,7 +591,7 @@ final class GetOrCreateChatProvider
   }
 }
 
-String _$getOrCreateChatHash() => r'47ac931225ce77e4b9437c46d58b4d2baa35a032';
+String _$getOrCreateChatHash() => r'82e34af561bcddcb5f188b6251cc8d9d713e57a0';
 
 /// Returns an existing direct chat or a local draft. The draft is persisted
 /// to Firestore on first message send.

@@ -41,7 +41,7 @@ class OnboardingRepository {
 }
 
 /// Provider for checking if onboarding is complete
-@riverpod
+@Riverpod(keepAlive: true)
 Future<bool> isOnboardingComplete(Ref ref) async {
   final repository = await ref.watch(onboardingRepositoryProvider.future);
   return repository.isOnboardingComplete;

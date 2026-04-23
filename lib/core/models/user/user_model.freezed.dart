@@ -23,6 +23,10 @@ UserModel _$UserModelFromJson(
           return DriverModel.fromJson(
             json
           );
+                case 'pending':
+          return PendingUserModel.fromJson(
+            json
+          );
         
           default:
             throw CheckedFromJsonException(
@@ -38,17 +42,10 @@ UserModel _$UserModelFromJson(
 /// @nodoc
 mixin _$UserModel {
 
- String get uid; String get email; String get displayName; String? get photoUrl; String? get phoneNumber;@TimestampConverter() DateTime? get dateOfBirth; String? get gender; String get fcmToken;// Address & location
- String? get address; double? get latitude; double? get longitude; String? get city; String? get country;// Verification & status
- bool get isEmailVerified; bool get isPhoneVerified; bool get isIdVerified; bool get isActive; bool get isPremium;// Social
- List<String> get blockedUsers;// Rider-specific: Passenger rating
- RatingBreakdown get rating;// Rider-specific: Gamification
-// CHANGED: Use the factory constructor .rider()
- GamificationStats get gamification;// Onboarding
- bool get needsRoleSelection;// Preferences
- UserPreferences get preferences;// Expertise
+ String get uid; String get email; String get username; String? get photoUrl; String get fcmToken;// Verification & status
+ bool get isEmailVerified; bool get isBanned;// Expertise
  Expertise get expertise;// Timestamps
-@TimestampConverter() DateTime? get createdAt;@TimestampConverter() DateTime? get updatedAt;@TimestampConverter() DateTime? get lastSeenAt;
+@TimestampConverter() DateTime? get createdAt;@TimestampConverter() DateTime? get updatedAt;
 /// Create a copy of UserModel
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -61,16 +58,16 @@ $UserModelCopyWith<UserModel> get copyWith => _$UserModelCopyWithImpl<UserModel>
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is UserModel&&(identical(other.uid, uid) || other.uid == uid)&&(identical(other.email, email) || other.email == email)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.photoUrl, photoUrl) || other.photoUrl == photoUrl)&&(identical(other.phoneNumber, phoneNumber) || other.phoneNumber == phoneNumber)&&(identical(other.dateOfBirth, dateOfBirth) || other.dateOfBirth == dateOfBirth)&&(identical(other.gender, gender) || other.gender == gender)&&(identical(other.fcmToken, fcmToken) || other.fcmToken == fcmToken)&&(identical(other.address, address) || other.address == address)&&(identical(other.latitude, latitude) || other.latitude == latitude)&&(identical(other.longitude, longitude) || other.longitude == longitude)&&(identical(other.city, city) || other.city == city)&&(identical(other.country, country) || other.country == country)&&(identical(other.isEmailVerified, isEmailVerified) || other.isEmailVerified == isEmailVerified)&&(identical(other.isPhoneVerified, isPhoneVerified) || other.isPhoneVerified == isPhoneVerified)&&(identical(other.isIdVerified, isIdVerified) || other.isIdVerified == isIdVerified)&&(identical(other.isActive, isActive) || other.isActive == isActive)&&(identical(other.isPremium, isPremium) || other.isPremium == isPremium)&&const DeepCollectionEquality().equals(other.blockedUsers, blockedUsers)&&(identical(other.rating, rating) || other.rating == rating)&&(identical(other.gamification, gamification) || other.gamification == gamification)&&(identical(other.needsRoleSelection, needsRoleSelection) || other.needsRoleSelection == needsRoleSelection)&&(identical(other.preferences, preferences) || other.preferences == preferences)&&(identical(other.expertise, expertise) || other.expertise == expertise)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.lastSeenAt, lastSeenAt) || other.lastSeenAt == lastSeenAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is UserModel&&(identical(other.uid, uid) || other.uid == uid)&&(identical(other.email, email) || other.email == email)&&(identical(other.username, username) || other.username == username)&&(identical(other.photoUrl, photoUrl) || other.photoUrl == photoUrl)&&(identical(other.fcmToken, fcmToken) || other.fcmToken == fcmToken)&&(identical(other.isEmailVerified, isEmailVerified) || other.isEmailVerified == isEmailVerified)&&(identical(other.isBanned, isBanned) || other.isBanned == isBanned)&&(identical(other.expertise, expertise) || other.expertise == expertise)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hashAll([runtimeType,uid,email,displayName,photoUrl,phoneNumber,dateOfBirth,gender,fcmToken,address,latitude,longitude,city,country,isEmailVerified,isPhoneVerified,isIdVerified,isActive,isPremium,const DeepCollectionEquality().hash(blockedUsers),rating,gamification,needsRoleSelection,preferences,expertise,createdAt,updatedAt,lastSeenAt]);
+int get hashCode => Object.hash(runtimeType,uid,email,username,photoUrl,fcmToken,isEmailVerified,isBanned,expertise,createdAt,updatedAt);
 
 @override
 String toString() {
-  return 'UserModel(uid: $uid, email: $email, displayName: $displayName, photoUrl: $photoUrl, phoneNumber: $phoneNumber, dateOfBirth: $dateOfBirth, gender: $gender, fcmToken: $fcmToken, address: $address, latitude: $latitude, longitude: $longitude, city: $city, country: $country, isEmailVerified: $isEmailVerified, isPhoneVerified: $isPhoneVerified, isIdVerified: $isIdVerified, isActive: $isActive, isPremium: $isPremium, blockedUsers: $blockedUsers, rating: $rating, gamification: $gamification, needsRoleSelection: $needsRoleSelection, preferences: $preferences, expertise: $expertise, createdAt: $createdAt, updatedAt: $updatedAt, lastSeenAt: $lastSeenAt)';
+  return 'UserModel(uid: $uid, email: $email, username: $username, photoUrl: $photoUrl, fcmToken: $fcmToken, isEmailVerified: $isEmailVerified, isBanned: $isBanned, expertise: $expertise, createdAt: $createdAt, updatedAt: $updatedAt)';
 }
 
 
@@ -81,11 +78,11 @@ abstract mixin class $UserModelCopyWith<$Res>  {
   factory $UserModelCopyWith(UserModel value, $Res Function(UserModel) _then) = _$UserModelCopyWithImpl;
 @useResult
 $Res call({
- String uid, String email, String displayName, String? photoUrl, String? phoneNumber,@TimestampConverter() DateTime? dateOfBirth, String? gender, String fcmToken, String? address, double? latitude, double? longitude, String? city, String? country, bool isEmailVerified, bool isPhoneVerified, bool isIdVerified, bool isActive, bool isPremium, List<String> blockedUsers, RatingBreakdown rating, GamificationStats gamification, bool needsRoleSelection, UserPreferences preferences, Expertise expertise,@TimestampConverter() DateTime? createdAt,@TimestampConverter() DateTime? updatedAt,@TimestampConverter() DateTime? lastSeenAt
+ String uid, String email, String username, String? photoUrl, String fcmToken, bool isEmailVerified, bool isBanned, Expertise expertise,@TimestampConverter() DateTime? createdAt,@TimestampConverter() DateTime? updatedAt
 });
 
 
-$RatingBreakdownCopyWith<$Res> get rating;$GamificationStatsCopyWith<$Res> get gamification;$UserPreferencesCopyWith<$Res> get preferences;
+
 
 }
 /// @nodoc
@@ -98,66 +95,22 @@ class _$UserModelCopyWithImpl<$Res>
 
 /// Create a copy of UserModel
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? uid = null,Object? email = null,Object? displayName = null,Object? photoUrl = freezed,Object? phoneNumber = freezed,Object? dateOfBirth = freezed,Object? gender = freezed,Object? fcmToken = null,Object? address = freezed,Object? latitude = freezed,Object? longitude = freezed,Object? city = freezed,Object? country = freezed,Object? isEmailVerified = null,Object? isPhoneVerified = null,Object? isIdVerified = null,Object? isActive = null,Object? isPremium = null,Object? blockedUsers = null,Object? rating = null,Object? gamification = null,Object? needsRoleSelection = null,Object? preferences = null,Object? expertise = null,Object? createdAt = freezed,Object? updatedAt = freezed,Object? lastSeenAt = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? uid = null,Object? email = null,Object? username = null,Object? photoUrl = freezed,Object? fcmToken = null,Object? isEmailVerified = null,Object? isBanned = null,Object? expertise = null,Object? createdAt = freezed,Object? updatedAt = freezed,}) {
   return _then(_self.copyWith(
 uid: null == uid ? _self.uid : uid // ignore: cast_nullable_to_non_nullable
 as String,email: null == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
-as String,displayName: null == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
+as String,username: null == username ? _self.username : username // ignore: cast_nullable_to_non_nullable
 as String,photoUrl: freezed == photoUrl ? _self.photoUrl : photoUrl // ignore: cast_nullable_to_non_nullable
-as String?,phoneNumber: freezed == phoneNumber ? _self.phoneNumber : phoneNumber // ignore: cast_nullable_to_non_nullable
-as String?,dateOfBirth: freezed == dateOfBirth ? _self.dateOfBirth : dateOfBirth // ignore: cast_nullable_to_non_nullable
-as DateTime?,gender: freezed == gender ? _self.gender : gender // ignore: cast_nullable_to_non_nullable
 as String?,fcmToken: null == fcmToken ? _self.fcmToken : fcmToken // ignore: cast_nullable_to_non_nullable
-as String,address: freezed == address ? _self.address : address // ignore: cast_nullable_to_non_nullable
-as String?,latitude: freezed == latitude ? _self.latitude : latitude // ignore: cast_nullable_to_non_nullable
-as double?,longitude: freezed == longitude ? _self.longitude : longitude // ignore: cast_nullable_to_non_nullable
-as double?,city: freezed == city ? _self.city : city // ignore: cast_nullable_to_non_nullable
-as String?,country: freezed == country ? _self.country : country // ignore: cast_nullable_to_non_nullable
-as String?,isEmailVerified: null == isEmailVerified ? _self.isEmailVerified : isEmailVerified // ignore: cast_nullable_to_non_nullable
-as bool,isPhoneVerified: null == isPhoneVerified ? _self.isPhoneVerified : isPhoneVerified // ignore: cast_nullable_to_non_nullable
-as bool,isIdVerified: null == isIdVerified ? _self.isIdVerified : isIdVerified // ignore: cast_nullable_to_non_nullable
-as bool,isActive: null == isActive ? _self.isActive : isActive // ignore: cast_nullable_to_non_nullable
-as bool,isPremium: null == isPremium ? _self.isPremium : isPremium // ignore: cast_nullable_to_non_nullable
-as bool,blockedUsers: null == blockedUsers ? _self.blockedUsers : blockedUsers // ignore: cast_nullable_to_non_nullable
-as List<String>,rating: null == rating ? _self.rating : rating // ignore: cast_nullable_to_non_nullable
-as RatingBreakdown,gamification: null == gamification ? _self.gamification : gamification // ignore: cast_nullable_to_non_nullable
-as GamificationStats,needsRoleSelection: null == needsRoleSelection ? _self.needsRoleSelection : needsRoleSelection // ignore: cast_nullable_to_non_nullable
-as bool,preferences: null == preferences ? _self.preferences : preferences // ignore: cast_nullable_to_non_nullable
-as UserPreferences,expertise: null == expertise ? _self.expertise : expertise // ignore: cast_nullable_to_non_nullable
+as String,isEmailVerified: null == isEmailVerified ? _self.isEmailVerified : isEmailVerified // ignore: cast_nullable_to_non_nullable
+as bool,isBanned: null == isBanned ? _self.isBanned : isBanned // ignore: cast_nullable_to_non_nullable
+as bool,expertise: null == expertise ? _self.expertise : expertise // ignore: cast_nullable_to_non_nullable
 as Expertise,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,updatedAt: freezed == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
-as DateTime?,lastSeenAt: freezed == lastSeenAt ? _self.lastSeenAt : lastSeenAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,
   ));
 }
-/// Create a copy of UserModel
-/// with the given fields replaced by the non-null parameter values.
-@override
-@pragma('vm:prefer-inline')
-$RatingBreakdownCopyWith<$Res> get rating {
-  
-  return $RatingBreakdownCopyWith<$Res>(_self.rating, (value) {
-    return _then(_self.copyWith(rating: value));
-  });
-}/// Create a copy of UserModel
-/// with the given fields replaced by the non-null parameter values.
-@override
-@pragma('vm:prefer-inline')
-$GamificationStatsCopyWith<$Res> get gamification {
-  
-  return $GamificationStatsCopyWith<$Res>(_self.gamification, (value) {
-    return _then(_self.copyWith(gamification: value));
-  });
-}/// Create a copy of UserModel
-/// with the given fields replaced by the non-null parameter values.
-@override
-@pragma('vm:prefer-inline')
-$UserPreferencesCopyWith<$Res> get preferences {
-  
-  return $UserPreferencesCopyWith<$Res>(_self.preferences, (value) {
-    return _then(_self.copyWith(preferences: value));
-  });
-}
+
 }
 
 
@@ -175,12 +128,13 @@ extension UserModelPatterns on UserModel {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( RiderModel value)?  rider,TResult Function( DriverModel value)?  driver,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( RiderModel value)?  rider,TResult Function( DriverModel value)?  driver,TResult Function( PendingUserModel value)?  pending,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case RiderModel() when rider != null:
 return rider(_that);case DriverModel() when driver != null:
-return driver(_that);case _:
+return driver(_that);case PendingUserModel() when pending != null:
+return pending(_that);case _:
   return orElse();
 
 }
@@ -198,12 +152,13 @@ return driver(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( RiderModel value)  rider,required TResult Function( DriverModel value)  driver,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( RiderModel value)  rider,required TResult Function( DriverModel value)  driver,required TResult Function( PendingUserModel value)  pending,}){
 final _that = this;
 switch (_that) {
 case RiderModel():
 return rider(_that);case DriverModel():
-return driver(_that);}
+return driver(_that);case PendingUserModel():
+return pending(_that);}
 }
 /// A variant of `map` that fallback to returning `null`.
 ///
@@ -217,12 +172,13 @@ return driver(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( RiderModel value)?  rider,TResult? Function( DriverModel value)?  driver,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( RiderModel value)?  rider,TResult? Function( DriverModel value)?  driver,TResult? Function( PendingUserModel value)?  pending,}){
 final _that = this;
 switch (_that) {
 case RiderModel() when rider != null:
 return rider(_that);case DriverModel() when driver != null:
-return driver(_that);case _:
+return driver(_that);case PendingUserModel() when pending != null:
+return pending(_that);case _:
   return null;
 
 }
@@ -239,11 +195,12 @@ return driver(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String uid,  String email,  String displayName,  String? photoUrl,  String? phoneNumber, @TimestampConverter()  DateTime? dateOfBirth,  String? gender,  String fcmToken,  String? address,  double? latitude,  double? longitude,  String? city,  String? country,  bool isEmailVerified,  bool isPhoneVerified,  bool isIdVerified,  bool isActive,  bool isPremium,  List<String> blockedUsers,  List<String> favoriteRoutes,  RatingBreakdown rating,  GamificationStats gamification,  bool needsRoleSelection,  UserPreferences preferences,  Expertise expertise, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt, @TimestampConverter()  DateTime? lastSeenAt)?  rider,TResult Function( String uid,  String email,  String displayName,  String? photoUrl,  String? phoneNumber, @TimestampConverter()  DateTime? dateOfBirth,  String? gender,  String fcmToken,  String? address,  double? latitude,  double? longitude,  String? city,  String? country,  bool isEmailVerified,  bool isPhoneVerified,  bool isIdVerified,  bool isActive,  bool isPremium,  List<String> blockedUsers,  List<String> vehicleIds,  RatingBreakdown rating,  GamificationStats gamification,  String? stripeAccountId,  String? stripeCustomerId,  bool isStripeEnabled,  bool isStripeOnboarded,  String? stripeAccountStatus,  bool chargesEnabled,  bool payoutsEnabled,  bool detailsSubmitted,  List<String> stripeRequirements,  String? stripeDisabledReason,  bool needsRoleSelection,  UserPreferences preferences,  Expertise expertise, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt, @TimestampConverter()  DateTime? lastSeenAt)?  driver,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String uid,  String email,  String username,  String? photoUrl,  String? phoneNumber, @TimestampConverter()  DateTime? dateOfBirth,  String? gender,  String fcmToken,  String? address,  double? latitude,  double? longitude,  String? city,  String? country,  bool isEmailVerified,  bool isBanned,  bool isPremium,  List<String> blockedUsers,  RatingBreakdown rating,  GamificationStats gamification,  UserPreferences preferences,  Expertise expertise,  String? stripeCustomerId,  bool isStripeCustomerCreated, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt)?  rider,TResult Function( String uid,  String email,  String username,  String? photoUrl,  String? phoneNumber, @TimestampConverter()  DateTime? dateOfBirth,  String? gender,  String fcmToken,  String? address,  double? latitude,  double? longitude,  String? city,  String? country,  bool isEmailVerified,  bool isBanned,  bool isPremium,  List<String> blockedUsers,  RatingBreakdown rating,  GamificationStats gamification,  UserPreferences preferences,  Expertise expertise,  List<String> vehicleIds,  String? stripeAccountId, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt)?  driver,TResult Function( String uid,  String email,  String username,  String? photoUrl,  Expertise expertise,  bool isEmailVerified,  bool isBanned,  String fcmToken, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt)?  pending,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case RiderModel() when rider != null:
-return rider(_that.uid,_that.email,_that.displayName,_that.photoUrl,_that.phoneNumber,_that.dateOfBirth,_that.gender,_that.fcmToken,_that.address,_that.latitude,_that.longitude,_that.city,_that.country,_that.isEmailVerified,_that.isPhoneVerified,_that.isIdVerified,_that.isActive,_that.isPremium,_that.blockedUsers,_that.favoriteRoutes,_that.rating,_that.gamification,_that.needsRoleSelection,_that.preferences,_that.expertise,_that.createdAt,_that.updatedAt,_that.lastSeenAt);case DriverModel() when driver != null:
-return driver(_that.uid,_that.email,_that.displayName,_that.photoUrl,_that.phoneNumber,_that.dateOfBirth,_that.gender,_that.fcmToken,_that.address,_that.latitude,_that.longitude,_that.city,_that.country,_that.isEmailVerified,_that.isPhoneVerified,_that.isIdVerified,_that.isActive,_that.isPremium,_that.blockedUsers,_that.vehicleIds,_that.rating,_that.gamification,_that.stripeAccountId,_that.stripeCustomerId,_that.isStripeEnabled,_that.isStripeOnboarded,_that.stripeAccountStatus,_that.chargesEnabled,_that.payoutsEnabled,_that.detailsSubmitted,_that.stripeRequirements,_that.stripeDisabledReason,_that.needsRoleSelection,_that.preferences,_that.expertise,_that.createdAt,_that.updatedAt,_that.lastSeenAt);case _:
+return rider(_that.uid,_that.email,_that.username,_that.photoUrl,_that.phoneNumber,_that.dateOfBirth,_that.gender,_that.fcmToken,_that.address,_that.latitude,_that.longitude,_that.city,_that.country,_that.isEmailVerified,_that.isBanned,_that.isPremium,_that.blockedUsers,_that.rating,_that.gamification,_that.preferences,_that.expertise,_that.stripeCustomerId,_that.isStripeCustomerCreated,_that.createdAt,_that.updatedAt);case DriverModel() when driver != null:
+return driver(_that.uid,_that.email,_that.username,_that.photoUrl,_that.phoneNumber,_that.dateOfBirth,_that.gender,_that.fcmToken,_that.address,_that.latitude,_that.longitude,_that.city,_that.country,_that.isEmailVerified,_that.isBanned,_that.isPremium,_that.blockedUsers,_that.rating,_that.gamification,_that.preferences,_that.expertise,_that.vehicleIds,_that.stripeAccountId,_that.createdAt,_that.updatedAt);case PendingUserModel() when pending != null:
+return pending(_that.uid,_that.email,_that.username,_that.photoUrl,_that.expertise,_that.isEmailVerified,_that.isBanned,_that.fcmToken,_that.createdAt,_that.updatedAt);case _:
   return orElse();
 
 }
@@ -261,11 +218,12 @@ return driver(_that.uid,_that.email,_that.displayName,_that.photoUrl,_that.phone
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String uid,  String email,  String displayName,  String? photoUrl,  String? phoneNumber, @TimestampConverter()  DateTime? dateOfBirth,  String? gender,  String fcmToken,  String? address,  double? latitude,  double? longitude,  String? city,  String? country,  bool isEmailVerified,  bool isPhoneVerified,  bool isIdVerified,  bool isActive,  bool isPremium,  List<String> blockedUsers,  List<String> favoriteRoutes,  RatingBreakdown rating,  GamificationStats gamification,  bool needsRoleSelection,  UserPreferences preferences,  Expertise expertise, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt, @TimestampConverter()  DateTime? lastSeenAt)  rider,required TResult Function( String uid,  String email,  String displayName,  String? photoUrl,  String? phoneNumber, @TimestampConverter()  DateTime? dateOfBirth,  String? gender,  String fcmToken,  String? address,  double? latitude,  double? longitude,  String? city,  String? country,  bool isEmailVerified,  bool isPhoneVerified,  bool isIdVerified,  bool isActive,  bool isPremium,  List<String> blockedUsers,  List<String> vehicleIds,  RatingBreakdown rating,  GamificationStats gamification,  String? stripeAccountId,  String? stripeCustomerId,  bool isStripeEnabled,  bool isStripeOnboarded,  String? stripeAccountStatus,  bool chargesEnabled,  bool payoutsEnabled,  bool detailsSubmitted,  List<String> stripeRequirements,  String? stripeDisabledReason,  bool needsRoleSelection,  UserPreferences preferences,  Expertise expertise, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt, @TimestampConverter()  DateTime? lastSeenAt)  driver,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String uid,  String email,  String username,  String? photoUrl,  String? phoneNumber, @TimestampConverter()  DateTime? dateOfBirth,  String? gender,  String fcmToken,  String? address,  double? latitude,  double? longitude,  String? city,  String? country,  bool isEmailVerified,  bool isBanned,  bool isPremium,  List<String> blockedUsers,  RatingBreakdown rating,  GamificationStats gamification,  UserPreferences preferences,  Expertise expertise,  String? stripeCustomerId,  bool isStripeCustomerCreated, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt)  rider,required TResult Function( String uid,  String email,  String username,  String? photoUrl,  String? phoneNumber, @TimestampConverter()  DateTime? dateOfBirth,  String? gender,  String fcmToken,  String? address,  double? latitude,  double? longitude,  String? city,  String? country,  bool isEmailVerified,  bool isBanned,  bool isPremium,  List<String> blockedUsers,  RatingBreakdown rating,  GamificationStats gamification,  UserPreferences preferences,  Expertise expertise,  List<String> vehicleIds,  String? stripeAccountId, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt)  driver,required TResult Function( String uid,  String email,  String username,  String? photoUrl,  Expertise expertise,  bool isEmailVerified,  bool isBanned,  String fcmToken, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt)  pending,}) {final _that = this;
 switch (_that) {
 case RiderModel():
-return rider(_that.uid,_that.email,_that.displayName,_that.photoUrl,_that.phoneNumber,_that.dateOfBirth,_that.gender,_that.fcmToken,_that.address,_that.latitude,_that.longitude,_that.city,_that.country,_that.isEmailVerified,_that.isPhoneVerified,_that.isIdVerified,_that.isActive,_that.isPremium,_that.blockedUsers,_that.favoriteRoutes,_that.rating,_that.gamification,_that.needsRoleSelection,_that.preferences,_that.expertise,_that.createdAt,_that.updatedAt,_that.lastSeenAt);case DriverModel():
-return driver(_that.uid,_that.email,_that.displayName,_that.photoUrl,_that.phoneNumber,_that.dateOfBirth,_that.gender,_that.fcmToken,_that.address,_that.latitude,_that.longitude,_that.city,_that.country,_that.isEmailVerified,_that.isPhoneVerified,_that.isIdVerified,_that.isActive,_that.isPremium,_that.blockedUsers,_that.vehicleIds,_that.rating,_that.gamification,_that.stripeAccountId,_that.stripeCustomerId,_that.isStripeEnabled,_that.isStripeOnboarded,_that.stripeAccountStatus,_that.chargesEnabled,_that.payoutsEnabled,_that.detailsSubmitted,_that.stripeRequirements,_that.stripeDisabledReason,_that.needsRoleSelection,_that.preferences,_that.expertise,_that.createdAt,_that.updatedAt,_that.lastSeenAt);}
+return rider(_that.uid,_that.email,_that.username,_that.photoUrl,_that.phoneNumber,_that.dateOfBirth,_that.gender,_that.fcmToken,_that.address,_that.latitude,_that.longitude,_that.city,_that.country,_that.isEmailVerified,_that.isBanned,_that.isPremium,_that.blockedUsers,_that.rating,_that.gamification,_that.preferences,_that.expertise,_that.stripeCustomerId,_that.isStripeCustomerCreated,_that.createdAt,_that.updatedAt);case DriverModel():
+return driver(_that.uid,_that.email,_that.username,_that.photoUrl,_that.phoneNumber,_that.dateOfBirth,_that.gender,_that.fcmToken,_that.address,_that.latitude,_that.longitude,_that.city,_that.country,_that.isEmailVerified,_that.isBanned,_that.isPremium,_that.blockedUsers,_that.rating,_that.gamification,_that.preferences,_that.expertise,_that.vehicleIds,_that.stripeAccountId,_that.createdAt,_that.updatedAt);case PendingUserModel():
+return pending(_that.uid,_that.email,_that.username,_that.photoUrl,_that.expertise,_that.isEmailVerified,_that.isBanned,_that.fcmToken,_that.createdAt,_that.updatedAt);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -279,11 +237,12 @@ return driver(_that.uid,_that.email,_that.displayName,_that.photoUrl,_that.phone
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String uid,  String email,  String displayName,  String? photoUrl,  String? phoneNumber, @TimestampConverter()  DateTime? dateOfBirth,  String? gender,  String fcmToken,  String? address,  double? latitude,  double? longitude,  String? city,  String? country,  bool isEmailVerified,  bool isPhoneVerified,  bool isIdVerified,  bool isActive,  bool isPremium,  List<String> blockedUsers,  List<String> favoriteRoutes,  RatingBreakdown rating,  GamificationStats gamification,  bool needsRoleSelection,  UserPreferences preferences,  Expertise expertise, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt, @TimestampConverter()  DateTime? lastSeenAt)?  rider,TResult? Function( String uid,  String email,  String displayName,  String? photoUrl,  String? phoneNumber, @TimestampConverter()  DateTime? dateOfBirth,  String? gender,  String fcmToken,  String? address,  double? latitude,  double? longitude,  String? city,  String? country,  bool isEmailVerified,  bool isPhoneVerified,  bool isIdVerified,  bool isActive,  bool isPremium,  List<String> blockedUsers,  List<String> vehicleIds,  RatingBreakdown rating,  GamificationStats gamification,  String? stripeAccountId,  String? stripeCustomerId,  bool isStripeEnabled,  bool isStripeOnboarded,  String? stripeAccountStatus,  bool chargesEnabled,  bool payoutsEnabled,  bool detailsSubmitted,  List<String> stripeRequirements,  String? stripeDisabledReason,  bool needsRoleSelection,  UserPreferences preferences,  Expertise expertise, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt, @TimestampConverter()  DateTime? lastSeenAt)?  driver,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String uid,  String email,  String username,  String? photoUrl,  String? phoneNumber, @TimestampConverter()  DateTime? dateOfBirth,  String? gender,  String fcmToken,  String? address,  double? latitude,  double? longitude,  String? city,  String? country,  bool isEmailVerified,  bool isBanned,  bool isPremium,  List<String> blockedUsers,  RatingBreakdown rating,  GamificationStats gamification,  UserPreferences preferences,  Expertise expertise,  String? stripeCustomerId,  bool isStripeCustomerCreated, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt)?  rider,TResult? Function( String uid,  String email,  String username,  String? photoUrl,  String? phoneNumber, @TimestampConverter()  DateTime? dateOfBirth,  String? gender,  String fcmToken,  String? address,  double? latitude,  double? longitude,  String? city,  String? country,  bool isEmailVerified,  bool isBanned,  bool isPremium,  List<String> blockedUsers,  RatingBreakdown rating,  GamificationStats gamification,  UserPreferences preferences,  Expertise expertise,  List<String> vehicleIds,  String? stripeAccountId, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt)?  driver,TResult? Function( String uid,  String email,  String username,  String? photoUrl,  Expertise expertise,  bool isEmailVerified,  bool isBanned,  String fcmToken, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt)?  pending,}) {final _that = this;
 switch (_that) {
 case RiderModel() when rider != null:
-return rider(_that.uid,_that.email,_that.displayName,_that.photoUrl,_that.phoneNumber,_that.dateOfBirth,_that.gender,_that.fcmToken,_that.address,_that.latitude,_that.longitude,_that.city,_that.country,_that.isEmailVerified,_that.isPhoneVerified,_that.isIdVerified,_that.isActive,_that.isPremium,_that.blockedUsers,_that.favoriteRoutes,_that.rating,_that.gamification,_that.needsRoleSelection,_that.preferences,_that.expertise,_that.createdAt,_that.updatedAt,_that.lastSeenAt);case DriverModel() when driver != null:
-return driver(_that.uid,_that.email,_that.displayName,_that.photoUrl,_that.phoneNumber,_that.dateOfBirth,_that.gender,_that.fcmToken,_that.address,_that.latitude,_that.longitude,_that.city,_that.country,_that.isEmailVerified,_that.isPhoneVerified,_that.isIdVerified,_that.isActive,_that.isPremium,_that.blockedUsers,_that.vehicleIds,_that.rating,_that.gamification,_that.stripeAccountId,_that.stripeCustomerId,_that.isStripeEnabled,_that.isStripeOnboarded,_that.stripeAccountStatus,_that.chargesEnabled,_that.payoutsEnabled,_that.detailsSubmitted,_that.stripeRequirements,_that.stripeDisabledReason,_that.needsRoleSelection,_that.preferences,_that.expertise,_that.createdAt,_that.updatedAt,_that.lastSeenAt);case _:
+return rider(_that.uid,_that.email,_that.username,_that.photoUrl,_that.phoneNumber,_that.dateOfBirth,_that.gender,_that.fcmToken,_that.address,_that.latitude,_that.longitude,_that.city,_that.country,_that.isEmailVerified,_that.isBanned,_that.isPremium,_that.blockedUsers,_that.rating,_that.gamification,_that.preferences,_that.expertise,_that.stripeCustomerId,_that.isStripeCustomerCreated,_that.createdAt,_that.updatedAt);case DriverModel() when driver != null:
+return driver(_that.uid,_that.email,_that.username,_that.photoUrl,_that.phoneNumber,_that.dateOfBirth,_that.gender,_that.fcmToken,_that.address,_that.latitude,_that.longitude,_that.city,_that.country,_that.isEmailVerified,_that.isBanned,_that.isPremium,_that.blockedUsers,_that.rating,_that.gamification,_that.preferences,_that.expertise,_that.vehicleIds,_that.stripeAccountId,_that.createdAt,_that.updatedAt);case PendingUserModel() when pending != null:
+return pending(_that.uid,_that.email,_that.username,_that.photoUrl,_that.expertise,_that.isEmailVerified,_that.isBanned,_that.fcmToken,_that.createdAt,_that.updatedAt);case _:
   return null;
 
 }
@@ -295,62 +254,49 @@ return driver(_that.uid,_that.email,_that.displayName,_that.photoUrl,_that.phone
 @JsonSerializable()
 
 class RiderModel extends UserModel {
-  const RiderModel({required this.uid, required this.email, required this.displayName, this.photoUrl, this.phoneNumber, @TimestampConverter() this.dateOfBirth, this.gender, this.fcmToken = '', this.address, this.latitude, this.longitude, this.city, this.country, this.isEmailVerified = false, this.isPhoneVerified = false, this.isIdVerified = false, this.isActive = true, this.isPremium = false, final  List<String> blockedUsers = const [], final  List<String> favoriteRoutes = const [], this.rating = const RatingBreakdown(), this.gamification = const GamificationStats.rider(), this.needsRoleSelection = false, this.preferences = const UserPreferences(), this.expertise = Expertise.rookie, @TimestampConverter() this.createdAt, @TimestampConverter() this.updatedAt, @TimestampConverter() this.lastSeenAt, final  String? $type}): _blockedUsers = blockedUsers,_favoriteRoutes = favoriteRoutes,$type = $type ?? 'rider',super._();
+  const RiderModel({required this.uid, required this.email, required this.username, this.photoUrl, this.phoneNumber, @TimestampConverter() this.dateOfBirth, this.gender, this.fcmToken = '', this.address, this.latitude, this.longitude, this.city, this.country, this.isEmailVerified = false, this.isBanned = false, this.isPremium = false, final  List<String> blockedUsers = const [], this.rating = const RatingBreakdown(), this.gamification = const GamificationStats(), this.preferences = const UserPreferences(), this.expertise = Expertise.rookie, this.stripeCustomerId, this.isStripeCustomerCreated = false, @TimestampConverter() this.createdAt, @TimestampConverter() this.updatedAt, final  String? $type}): _blockedUsers = blockedUsers,$type = $type ?? 'rider',super._();
   factory RiderModel.fromJson(Map<String, dynamic> json) => _$RiderModelFromJson(json);
 
 @override final  String uid;
 @override final  String email;
-@override final  String displayName;
+@override final  String username;
 @override final  String? photoUrl;
-@override final  String? phoneNumber;
-@override@TimestampConverter() final  DateTime? dateOfBirth;
-@override final  String? gender;
+ final  String? phoneNumber;
+@TimestampConverter() final  DateTime? dateOfBirth;
+ final  String? gender;
 @override@JsonKey() final  String fcmToken;
 // Address & location
-@override final  String? address;
-@override final  double? latitude;
-@override final  double? longitude;
-@override final  String? city;
-@override final  String? country;
+ final  String? address;
+ final  double? latitude;
+ final  double? longitude;
+ final  String? city;
+ final  String? country;
 // Verification & status
 @override@JsonKey() final  bool isEmailVerified;
-@override@JsonKey() final  bool isPhoneVerified;
-@override@JsonKey() final  bool isIdVerified;
-@override@JsonKey() final  bool isActive;
-@override@JsonKey() final  bool isPremium;
+@override@JsonKey() final  bool isBanned;
+@JsonKey() final  bool isPremium;
 // Social
  final  List<String> _blockedUsers;
 // Social
-@override@JsonKey() List<String> get blockedUsers {
+@JsonKey() List<String> get blockedUsers {
   if (_blockedUsers is EqualUnmodifiableListView) return _blockedUsers;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableListView(_blockedUsers);
 }
 
-// Rider-specific: Favorite routes
- final  List<String> _favoriteRoutes;
-// Rider-specific: Favorite routes
-@JsonKey() List<String> get favoriteRoutes {
-  if (_favoriteRoutes is EqualUnmodifiableListView) return _favoriteRoutes;
-  // ignore: implicit_dynamic_type
-  return EqualUnmodifiableListView(_favoriteRoutes);
-}
-
 // Rider-specific: Passenger rating
-@override@JsonKey() final  RatingBreakdown rating;
+@JsonKey() final  RatingBreakdown rating;
 // Rider-specific: Gamification
-// CHANGED: Use the factory constructor .rider()
-@override@JsonKey() final  GamificationStats gamification;
-// Onboarding
-@override@JsonKey() final  bool needsRoleSelection;
+@JsonKey() final  GamificationStats gamification;
 // Preferences
-@override@JsonKey() final  UserPreferences preferences;
+@JsonKey() final  UserPreferences preferences;
 // Expertise
 @override@JsonKey() final  Expertise expertise;
+ final  String? stripeCustomerId;
+@JsonKey() final  bool isStripeCustomerCreated;
 // Timestamps
 @override@TimestampConverter() final  DateTime? createdAt;
 @override@TimestampConverter() final  DateTime? updatedAt;
-@override@TimestampConverter() final  DateTime? lastSeenAt;
 
 @JsonKey(name: 'role')
 final String $type;
@@ -369,16 +315,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is RiderModel&&(identical(other.uid, uid) || other.uid == uid)&&(identical(other.email, email) || other.email == email)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.photoUrl, photoUrl) || other.photoUrl == photoUrl)&&(identical(other.phoneNumber, phoneNumber) || other.phoneNumber == phoneNumber)&&(identical(other.dateOfBirth, dateOfBirth) || other.dateOfBirth == dateOfBirth)&&(identical(other.gender, gender) || other.gender == gender)&&(identical(other.fcmToken, fcmToken) || other.fcmToken == fcmToken)&&(identical(other.address, address) || other.address == address)&&(identical(other.latitude, latitude) || other.latitude == latitude)&&(identical(other.longitude, longitude) || other.longitude == longitude)&&(identical(other.city, city) || other.city == city)&&(identical(other.country, country) || other.country == country)&&(identical(other.isEmailVerified, isEmailVerified) || other.isEmailVerified == isEmailVerified)&&(identical(other.isPhoneVerified, isPhoneVerified) || other.isPhoneVerified == isPhoneVerified)&&(identical(other.isIdVerified, isIdVerified) || other.isIdVerified == isIdVerified)&&(identical(other.isActive, isActive) || other.isActive == isActive)&&(identical(other.isPremium, isPremium) || other.isPremium == isPremium)&&const DeepCollectionEquality().equals(other._blockedUsers, _blockedUsers)&&const DeepCollectionEquality().equals(other._favoriteRoutes, _favoriteRoutes)&&(identical(other.rating, rating) || other.rating == rating)&&(identical(other.gamification, gamification) || other.gamification == gamification)&&(identical(other.needsRoleSelection, needsRoleSelection) || other.needsRoleSelection == needsRoleSelection)&&(identical(other.preferences, preferences) || other.preferences == preferences)&&(identical(other.expertise, expertise) || other.expertise == expertise)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.lastSeenAt, lastSeenAt) || other.lastSeenAt == lastSeenAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is RiderModel&&(identical(other.uid, uid) || other.uid == uid)&&(identical(other.email, email) || other.email == email)&&(identical(other.username, username) || other.username == username)&&(identical(other.photoUrl, photoUrl) || other.photoUrl == photoUrl)&&(identical(other.phoneNumber, phoneNumber) || other.phoneNumber == phoneNumber)&&(identical(other.dateOfBirth, dateOfBirth) || other.dateOfBirth == dateOfBirth)&&(identical(other.gender, gender) || other.gender == gender)&&(identical(other.fcmToken, fcmToken) || other.fcmToken == fcmToken)&&(identical(other.address, address) || other.address == address)&&(identical(other.latitude, latitude) || other.latitude == latitude)&&(identical(other.longitude, longitude) || other.longitude == longitude)&&(identical(other.city, city) || other.city == city)&&(identical(other.country, country) || other.country == country)&&(identical(other.isEmailVerified, isEmailVerified) || other.isEmailVerified == isEmailVerified)&&(identical(other.isBanned, isBanned) || other.isBanned == isBanned)&&(identical(other.isPremium, isPremium) || other.isPremium == isPremium)&&const DeepCollectionEquality().equals(other._blockedUsers, _blockedUsers)&&(identical(other.rating, rating) || other.rating == rating)&&(identical(other.gamification, gamification) || other.gamification == gamification)&&(identical(other.preferences, preferences) || other.preferences == preferences)&&(identical(other.expertise, expertise) || other.expertise == expertise)&&(identical(other.stripeCustomerId, stripeCustomerId) || other.stripeCustomerId == stripeCustomerId)&&(identical(other.isStripeCustomerCreated, isStripeCustomerCreated) || other.isStripeCustomerCreated == isStripeCustomerCreated)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hashAll([runtimeType,uid,email,displayName,photoUrl,phoneNumber,dateOfBirth,gender,fcmToken,address,latitude,longitude,city,country,isEmailVerified,isPhoneVerified,isIdVerified,isActive,isPremium,const DeepCollectionEquality().hash(_blockedUsers),const DeepCollectionEquality().hash(_favoriteRoutes),rating,gamification,needsRoleSelection,preferences,expertise,createdAt,updatedAt,lastSeenAt]);
+int get hashCode => Object.hashAll([runtimeType,uid,email,username,photoUrl,phoneNumber,dateOfBirth,gender,fcmToken,address,latitude,longitude,city,country,isEmailVerified,isBanned,isPremium,const DeepCollectionEquality().hash(_blockedUsers),rating,gamification,preferences,expertise,stripeCustomerId,isStripeCustomerCreated,createdAt,updatedAt]);
 
 @override
 String toString() {
-  return 'UserModel.rider(uid: $uid, email: $email, displayName: $displayName, photoUrl: $photoUrl, phoneNumber: $phoneNumber, dateOfBirth: $dateOfBirth, gender: $gender, fcmToken: $fcmToken, address: $address, latitude: $latitude, longitude: $longitude, city: $city, country: $country, isEmailVerified: $isEmailVerified, isPhoneVerified: $isPhoneVerified, isIdVerified: $isIdVerified, isActive: $isActive, isPremium: $isPremium, blockedUsers: $blockedUsers, favoriteRoutes: $favoriteRoutes, rating: $rating, gamification: $gamification, needsRoleSelection: $needsRoleSelection, preferences: $preferences, expertise: $expertise, createdAt: $createdAt, updatedAt: $updatedAt, lastSeenAt: $lastSeenAt)';
+  return 'UserModel.rider(uid: $uid, email: $email, username: $username, photoUrl: $photoUrl, phoneNumber: $phoneNumber, dateOfBirth: $dateOfBirth, gender: $gender, fcmToken: $fcmToken, address: $address, latitude: $latitude, longitude: $longitude, city: $city, country: $country, isEmailVerified: $isEmailVerified, isBanned: $isBanned, isPremium: $isPremium, blockedUsers: $blockedUsers, rating: $rating, gamification: $gamification, preferences: $preferences, expertise: $expertise, stripeCustomerId: $stripeCustomerId, isStripeCustomerCreated: $isStripeCustomerCreated, createdAt: $createdAt, updatedAt: $updatedAt)';
 }
 
 
@@ -389,11 +335,11 @@ abstract mixin class $RiderModelCopyWith<$Res> implements $UserModelCopyWith<$Re
   factory $RiderModelCopyWith(RiderModel value, $Res Function(RiderModel) _then) = _$RiderModelCopyWithImpl;
 @override @useResult
 $Res call({
- String uid, String email, String displayName, String? photoUrl, String? phoneNumber,@TimestampConverter() DateTime? dateOfBirth, String? gender, String fcmToken, String? address, double? latitude, double? longitude, String? city, String? country, bool isEmailVerified, bool isPhoneVerified, bool isIdVerified, bool isActive, bool isPremium, List<String> blockedUsers, List<String> favoriteRoutes, RatingBreakdown rating, GamificationStats gamification, bool needsRoleSelection, UserPreferences preferences, Expertise expertise,@TimestampConverter() DateTime? createdAt,@TimestampConverter() DateTime? updatedAt,@TimestampConverter() DateTime? lastSeenAt
+ String uid, String email, String username, String? photoUrl, String? phoneNumber,@TimestampConverter() DateTime? dateOfBirth, String? gender, String fcmToken, String? address, double? latitude, double? longitude, String? city, String? country, bool isEmailVerified, bool isBanned, bool isPremium, List<String> blockedUsers, RatingBreakdown rating, GamificationStats gamification, UserPreferences preferences, Expertise expertise, String? stripeCustomerId, bool isStripeCustomerCreated,@TimestampConverter() DateTime? createdAt,@TimestampConverter() DateTime? updatedAt
 });
 
 
-@override $RatingBreakdownCopyWith<$Res> get rating;@override $GamificationStatsCopyWith<$Res> get gamification;@override $UserPreferencesCopyWith<$Res> get preferences;
+$RatingBreakdownCopyWith<$Res> get rating;$GamificationStatsCopyWith<$Res> get gamification;$UserPreferencesCopyWith<$Res> get preferences;
 
 }
 /// @nodoc
@@ -406,11 +352,11 @@ class _$RiderModelCopyWithImpl<$Res>
 
 /// Create a copy of UserModel
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? uid = null,Object? email = null,Object? displayName = null,Object? photoUrl = freezed,Object? phoneNumber = freezed,Object? dateOfBirth = freezed,Object? gender = freezed,Object? fcmToken = null,Object? address = freezed,Object? latitude = freezed,Object? longitude = freezed,Object? city = freezed,Object? country = freezed,Object? isEmailVerified = null,Object? isPhoneVerified = null,Object? isIdVerified = null,Object? isActive = null,Object? isPremium = null,Object? blockedUsers = null,Object? favoriteRoutes = null,Object? rating = null,Object? gamification = null,Object? needsRoleSelection = null,Object? preferences = null,Object? expertise = null,Object? createdAt = freezed,Object? updatedAt = freezed,Object? lastSeenAt = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? uid = null,Object? email = null,Object? username = null,Object? photoUrl = freezed,Object? phoneNumber = freezed,Object? dateOfBirth = freezed,Object? gender = freezed,Object? fcmToken = null,Object? address = freezed,Object? latitude = freezed,Object? longitude = freezed,Object? city = freezed,Object? country = freezed,Object? isEmailVerified = null,Object? isBanned = null,Object? isPremium = null,Object? blockedUsers = null,Object? rating = null,Object? gamification = null,Object? preferences = null,Object? expertise = null,Object? stripeCustomerId = freezed,Object? isStripeCustomerCreated = null,Object? createdAt = freezed,Object? updatedAt = freezed,}) {
   return _then(RiderModel(
 uid: null == uid ? _self.uid : uid // ignore: cast_nullable_to_non_nullable
 as String,email: null == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
-as String,displayName: null == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
+as String,username: null == username ? _self.username : username // ignore: cast_nullable_to_non_nullable
 as String,photoUrl: freezed == photoUrl ? _self.photoUrl : photoUrl // ignore: cast_nullable_to_non_nullable
 as String?,phoneNumber: freezed == phoneNumber ? _self.phoneNumber : phoneNumber // ignore: cast_nullable_to_non_nullable
 as String?,dateOfBirth: freezed == dateOfBirth ? _self.dateOfBirth : dateOfBirth // ignore: cast_nullable_to_non_nullable
@@ -422,20 +368,17 @@ as double?,longitude: freezed == longitude ? _self.longitude : longitude // igno
 as double?,city: freezed == city ? _self.city : city // ignore: cast_nullable_to_non_nullable
 as String?,country: freezed == country ? _self.country : country // ignore: cast_nullable_to_non_nullable
 as String?,isEmailVerified: null == isEmailVerified ? _self.isEmailVerified : isEmailVerified // ignore: cast_nullable_to_non_nullable
-as bool,isPhoneVerified: null == isPhoneVerified ? _self.isPhoneVerified : isPhoneVerified // ignore: cast_nullable_to_non_nullable
-as bool,isIdVerified: null == isIdVerified ? _self.isIdVerified : isIdVerified // ignore: cast_nullable_to_non_nullable
-as bool,isActive: null == isActive ? _self.isActive : isActive // ignore: cast_nullable_to_non_nullable
+as bool,isBanned: null == isBanned ? _self.isBanned : isBanned // ignore: cast_nullable_to_non_nullable
 as bool,isPremium: null == isPremium ? _self.isPremium : isPremium // ignore: cast_nullable_to_non_nullable
 as bool,blockedUsers: null == blockedUsers ? _self._blockedUsers : blockedUsers // ignore: cast_nullable_to_non_nullable
-as List<String>,favoriteRoutes: null == favoriteRoutes ? _self._favoriteRoutes : favoriteRoutes // ignore: cast_nullable_to_non_nullable
 as List<String>,rating: null == rating ? _self.rating : rating // ignore: cast_nullable_to_non_nullable
 as RatingBreakdown,gamification: null == gamification ? _self.gamification : gamification // ignore: cast_nullable_to_non_nullable
-as GamificationStats,needsRoleSelection: null == needsRoleSelection ? _self.needsRoleSelection : needsRoleSelection // ignore: cast_nullable_to_non_nullable
-as bool,preferences: null == preferences ? _self.preferences : preferences // ignore: cast_nullable_to_non_nullable
+as GamificationStats,preferences: null == preferences ? _self.preferences : preferences // ignore: cast_nullable_to_non_nullable
 as UserPreferences,expertise: null == expertise ? _self.expertise : expertise // ignore: cast_nullable_to_non_nullable
-as Expertise,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
+as Expertise,stripeCustomerId: freezed == stripeCustomerId ? _self.stripeCustomerId : stripeCustomerId // ignore: cast_nullable_to_non_nullable
+as String?,isStripeCustomerCreated: null == isStripeCustomerCreated ? _self.isStripeCustomerCreated : isStripeCustomerCreated // ignore: cast_nullable_to_non_nullable
+as bool,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,updatedAt: freezed == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
-as DateTime?,lastSeenAt: freezed == lastSeenAt ? _self.lastSeenAt : lastSeenAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,
   ));
 }
@@ -474,38 +417,44 @@ $UserPreferencesCopyWith<$Res> get preferences {
 @JsonSerializable()
 
 class DriverModel extends UserModel {
-  const DriverModel({required this.uid, required this.email, required this.displayName, this.photoUrl, this.phoneNumber, @TimestampConverter() this.dateOfBirth, this.gender, this.fcmToken = '', this.address, this.latitude, this.longitude, this.city, this.country, this.isEmailVerified = false, this.isPhoneVerified = false, this.isIdVerified = false, this.isActive = true, this.isPremium = false, final  List<String> blockedUsers = const [], final  List<String> vehicleIds = const [], this.rating = const RatingBreakdown(), this.gamification = const GamificationStats.driver(), this.stripeAccountId, this.stripeCustomerId, this.isStripeEnabled = false, this.isStripeOnboarded = false, this.stripeAccountStatus, this.chargesEnabled = false, this.payoutsEnabled = false, this.detailsSubmitted = false, final  List<String> stripeRequirements = const [], this.stripeDisabledReason, this.needsRoleSelection = false, this.preferences = const UserPreferences(), this.expertise = Expertise.rookie, @TimestampConverter() this.createdAt, @TimestampConverter() this.updatedAt, @TimestampConverter() this.lastSeenAt, final  String? $type}): _blockedUsers = blockedUsers,_vehicleIds = vehicleIds,_stripeRequirements = stripeRequirements,$type = $type ?? 'driver',super._();
+  const DriverModel({required this.uid, required this.email, required this.username, this.photoUrl, this.phoneNumber, @TimestampConverter() this.dateOfBirth, this.gender, this.fcmToken = '', this.address, this.latitude, this.longitude, this.city, this.country, this.isEmailVerified = false, this.isBanned = false, this.isPremium = false, final  List<String> blockedUsers = const [], this.rating = const RatingBreakdown(), this.gamification = const GamificationStats(), this.preferences = const UserPreferences(), this.expertise = Expertise.rookie, final  List<String> vehicleIds = const [], this.stripeAccountId, @TimestampConverter() this.createdAt, @TimestampConverter() this.updatedAt, final  String? $type}): _blockedUsers = blockedUsers,_vehicleIds = vehicleIds,$type = $type ?? 'driver',super._();
   factory DriverModel.fromJson(Map<String, dynamic> json) => _$DriverModelFromJson(json);
 
 @override final  String uid;
 @override final  String email;
-@override final  String displayName;
+@override final  String username;
 @override final  String? photoUrl;
-@override final  String? phoneNumber;
-@override@TimestampConverter() final  DateTime? dateOfBirth;
-@override final  String? gender;
+ final  String? phoneNumber;
+@TimestampConverter() final  DateTime? dateOfBirth;
+ final  String? gender;
 @override@JsonKey() final  String fcmToken;
 // Address & location
-@override final  String? address;
-@override final  double? latitude;
-@override final  double? longitude;
-@override final  String? city;
-@override final  String? country;
+ final  String? address;
+ final  double? latitude;
+ final  double? longitude;
+ final  String? city;
+ final  String? country;
 // Verification & status
 @override@JsonKey() final  bool isEmailVerified;
-@override@JsonKey() final  bool isPhoneVerified;
-@override@JsonKey() final  bool isIdVerified;
-@override@JsonKey() final  bool isActive;
-@override@JsonKey() final  bool isPremium;
+@override@JsonKey() final  bool isBanned;
+@JsonKey() final  bool isPremium;
 // Social
  final  List<String> _blockedUsers;
 // Social
-@override@JsonKey() List<String> get blockedUsers {
+@JsonKey() List<String> get blockedUsers {
   if (_blockedUsers is EqualUnmodifiableListView) return _blockedUsers;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableListView(_blockedUsers);
 }
 
+// Driver-specific: Driver rating
+@JsonKey() final  RatingBreakdown rating;
+// Driver-specific: Gamification
+@JsonKey() final  GamificationStats gamification;
+// Preferences
+@JsonKey() final  UserPreferences preferences;
+// Expertise
+@override@JsonKey() final  Expertise expertise;
 // Driver-specific: Vehicle IDs (resolved through VehicleRepository)
  final  List<String> _vehicleIds;
 // Driver-specific: Vehicle IDs (resolved through VehicleRepository)
@@ -515,44 +464,11 @@ class DriverModel extends UserModel {
   return EqualUnmodifiableListView(_vehicleIds);
 }
 
-// Driver-specific: Driver rating
-@override@JsonKey() final  RatingBreakdown rating;
-// Driver-specific: Gamification
-@override@JsonKey() final  GamificationStats gamification;
-// Driver-specific: Stripe Connect (fields mirror Cloud Function writes)
+// Driver-specific: Stripe Connect
  final  String? stripeAccountId;
- final  String? stripeCustomerId;
-@JsonKey() final  bool isStripeEnabled;
-@JsonKey() final  bool isStripeOnboarded;
-/// "pending" | "active" | "under_review" | "incomplete"
- final  String? stripeAccountStatus;
-/// Whether Stripe has enabled charges on this account
-@JsonKey() final  bool chargesEnabled;
-/// Whether Stripe has enabled payouts on this account
-@JsonKey() final  bool payoutsEnabled;
-/// Whether the driver has submitted all required Stripe details
-@JsonKey() final  bool detailsSubmitted;
-/// Outstanding Stripe requirements (e.g. ["individual.dob"])
- final  List<String> _stripeRequirements;
-/// Outstanding Stripe requirements (e.g. ["individual.dob"])
-@JsonKey() List<String> get stripeRequirements {
-  if (_stripeRequirements is EqualUnmodifiableListView) return _stripeRequirements;
-  // ignore: implicit_dynamic_type
-  return EqualUnmodifiableListView(_stripeRequirements);
-}
-
-/// Reason charges/payouts are disabled, if any
- final  String? stripeDisabledReason;
-// Onboarding
-@override@JsonKey() final  bool needsRoleSelection;
-// Preferences
-@override@JsonKey() final  UserPreferences preferences;
-// Expertise
-@override@JsonKey() final  Expertise expertise;
 // Timestamps
 @override@TimestampConverter() final  DateTime? createdAt;
 @override@TimestampConverter() final  DateTime? updatedAt;
-@override@TimestampConverter() final  DateTime? lastSeenAt;
 
 @JsonKey(name: 'role')
 final String $type;
@@ -571,16 +487,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is DriverModel&&(identical(other.uid, uid) || other.uid == uid)&&(identical(other.email, email) || other.email == email)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.photoUrl, photoUrl) || other.photoUrl == photoUrl)&&(identical(other.phoneNumber, phoneNumber) || other.phoneNumber == phoneNumber)&&(identical(other.dateOfBirth, dateOfBirth) || other.dateOfBirth == dateOfBirth)&&(identical(other.gender, gender) || other.gender == gender)&&(identical(other.fcmToken, fcmToken) || other.fcmToken == fcmToken)&&(identical(other.address, address) || other.address == address)&&(identical(other.latitude, latitude) || other.latitude == latitude)&&(identical(other.longitude, longitude) || other.longitude == longitude)&&(identical(other.city, city) || other.city == city)&&(identical(other.country, country) || other.country == country)&&(identical(other.isEmailVerified, isEmailVerified) || other.isEmailVerified == isEmailVerified)&&(identical(other.isPhoneVerified, isPhoneVerified) || other.isPhoneVerified == isPhoneVerified)&&(identical(other.isIdVerified, isIdVerified) || other.isIdVerified == isIdVerified)&&(identical(other.isActive, isActive) || other.isActive == isActive)&&(identical(other.isPremium, isPremium) || other.isPremium == isPremium)&&const DeepCollectionEquality().equals(other._blockedUsers, _blockedUsers)&&const DeepCollectionEquality().equals(other._vehicleIds, _vehicleIds)&&(identical(other.rating, rating) || other.rating == rating)&&(identical(other.gamification, gamification) || other.gamification == gamification)&&(identical(other.stripeAccountId, stripeAccountId) || other.stripeAccountId == stripeAccountId)&&(identical(other.stripeCustomerId, stripeCustomerId) || other.stripeCustomerId == stripeCustomerId)&&(identical(other.isStripeEnabled, isStripeEnabled) || other.isStripeEnabled == isStripeEnabled)&&(identical(other.isStripeOnboarded, isStripeOnboarded) || other.isStripeOnboarded == isStripeOnboarded)&&(identical(other.stripeAccountStatus, stripeAccountStatus) || other.stripeAccountStatus == stripeAccountStatus)&&(identical(other.chargesEnabled, chargesEnabled) || other.chargesEnabled == chargesEnabled)&&(identical(other.payoutsEnabled, payoutsEnabled) || other.payoutsEnabled == payoutsEnabled)&&(identical(other.detailsSubmitted, detailsSubmitted) || other.detailsSubmitted == detailsSubmitted)&&const DeepCollectionEquality().equals(other._stripeRequirements, _stripeRequirements)&&(identical(other.stripeDisabledReason, stripeDisabledReason) || other.stripeDisabledReason == stripeDisabledReason)&&(identical(other.needsRoleSelection, needsRoleSelection) || other.needsRoleSelection == needsRoleSelection)&&(identical(other.preferences, preferences) || other.preferences == preferences)&&(identical(other.expertise, expertise) || other.expertise == expertise)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.lastSeenAt, lastSeenAt) || other.lastSeenAt == lastSeenAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is DriverModel&&(identical(other.uid, uid) || other.uid == uid)&&(identical(other.email, email) || other.email == email)&&(identical(other.username, username) || other.username == username)&&(identical(other.photoUrl, photoUrl) || other.photoUrl == photoUrl)&&(identical(other.phoneNumber, phoneNumber) || other.phoneNumber == phoneNumber)&&(identical(other.dateOfBirth, dateOfBirth) || other.dateOfBirth == dateOfBirth)&&(identical(other.gender, gender) || other.gender == gender)&&(identical(other.fcmToken, fcmToken) || other.fcmToken == fcmToken)&&(identical(other.address, address) || other.address == address)&&(identical(other.latitude, latitude) || other.latitude == latitude)&&(identical(other.longitude, longitude) || other.longitude == longitude)&&(identical(other.city, city) || other.city == city)&&(identical(other.country, country) || other.country == country)&&(identical(other.isEmailVerified, isEmailVerified) || other.isEmailVerified == isEmailVerified)&&(identical(other.isBanned, isBanned) || other.isBanned == isBanned)&&(identical(other.isPremium, isPremium) || other.isPremium == isPremium)&&const DeepCollectionEquality().equals(other._blockedUsers, _blockedUsers)&&(identical(other.rating, rating) || other.rating == rating)&&(identical(other.gamification, gamification) || other.gamification == gamification)&&(identical(other.preferences, preferences) || other.preferences == preferences)&&(identical(other.expertise, expertise) || other.expertise == expertise)&&const DeepCollectionEquality().equals(other._vehicleIds, _vehicleIds)&&(identical(other.stripeAccountId, stripeAccountId) || other.stripeAccountId == stripeAccountId)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hashAll([runtimeType,uid,email,displayName,photoUrl,phoneNumber,dateOfBirth,gender,fcmToken,address,latitude,longitude,city,country,isEmailVerified,isPhoneVerified,isIdVerified,isActive,isPremium,const DeepCollectionEquality().hash(_blockedUsers),const DeepCollectionEquality().hash(_vehicleIds),rating,gamification,stripeAccountId,stripeCustomerId,isStripeEnabled,isStripeOnboarded,stripeAccountStatus,chargesEnabled,payoutsEnabled,detailsSubmitted,const DeepCollectionEquality().hash(_stripeRequirements),stripeDisabledReason,needsRoleSelection,preferences,expertise,createdAt,updatedAt,lastSeenAt]);
+int get hashCode => Object.hashAll([runtimeType,uid,email,username,photoUrl,phoneNumber,dateOfBirth,gender,fcmToken,address,latitude,longitude,city,country,isEmailVerified,isBanned,isPremium,const DeepCollectionEquality().hash(_blockedUsers),rating,gamification,preferences,expertise,const DeepCollectionEquality().hash(_vehicleIds),stripeAccountId,createdAt,updatedAt]);
 
 @override
 String toString() {
-  return 'UserModel.driver(uid: $uid, email: $email, displayName: $displayName, photoUrl: $photoUrl, phoneNumber: $phoneNumber, dateOfBirth: $dateOfBirth, gender: $gender, fcmToken: $fcmToken, address: $address, latitude: $latitude, longitude: $longitude, city: $city, country: $country, isEmailVerified: $isEmailVerified, isPhoneVerified: $isPhoneVerified, isIdVerified: $isIdVerified, isActive: $isActive, isPremium: $isPremium, blockedUsers: $blockedUsers, vehicleIds: $vehicleIds, rating: $rating, gamification: $gamification, stripeAccountId: $stripeAccountId, stripeCustomerId: $stripeCustomerId, isStripeEnabled: $isStripeEnabled, isStripeOnboarded: $isStripeOnboarded, stripeAccountStatus: $stripeAccountStatus, chargesEnabled: $chargesEnabled, payoutsEnabled: $payoutsEnabled, detailsSubmitted: $detailsSubmitted, stripeRequirements: $stripeRequirements, stripeDisabledReason: $stripeDisabledReason, needsRoleSelection: $needsRoleSelection, preferences: $preferences, expertise: $expertise, createdAt: $createdAt, updatedAt: $updatedAt, lastSeenAt: $lastSeenAt)';
+  return 'UserModel.driver(uid: $uid, email: $email, username: $username, photoUrl: $photoUrl, phoneNumber: $phoneNumber, dateOfBirth: $dateOfBirth, gender: $gender, fcmToken: $fcmToken, address: $address, latitude: $latitude, longitude: $longitude, city: $city, country: $country, isEmailVerified: $isEmailVerified, isBanned: $isBanned, isPremium: $isPremium, blockedUsers: $blockedUsers, rating: $rating, gamification: $gamification, preferences: $preferences, expertise: $expertise, vehicleIds: $vehicleIds, stripeAccountId: $stripeAccountId, createdAt: $createdAt, updatedAt: $updatedAt)';
 }
 
 
@@ -591,11 +507,11 @@ abstract mixin class $DriverModelCopyWith<$Res> implements $UserModelCopyWith<$R
   factory $DriverModelCopyWith(DriverModel value, $Res Function(DriverModel) _then) = _$DriverModelCopyWithImpl;
 @override @useResult
 $Res call({
- String uid, String email, String displayName, String? photoUrl, String? phoneNumber,@TimestampConverter() DateTime? dateOfBirth, String? gender, String fcmToken, String? address, double? latitude, double? longitude, String? city, String? country, bool isEmailVerified, bool isPhoneVerified, bool isIdVerified, bool isActive, bool isPremium, List<String> blockedUsers, List<String> vehicleIds, RatingBreakdown rating, GamificationStats gamification, String? stripeAccountId, String? stripeCustomerId, bool isStripeEnabled, bool isStripeOnboarded, String? stripeAccountStatus, bool chargesEnabled, bool payoutsEnabled, bool detailsSubmitted, List<String> stripeRequirements, String? stripeDisabledReason, bool needsRoleSelection, UserPreferences preferences, Expertise expertise,@TimestampConverter() DateTime? createdAt,@TimestampConverter() DateTime? updatedAt,@TimestampConverter() DateTime? lastSeenAt
+ String uid, String email, String username, String? photoUrl, String? phoneNumber,@TimestampConverter() DateTime? dateOfBirth, String? gender, String fcmToken, String? address, double? latitude, double? longitude, String? city, String? country, bool isEmailVerified, bool isBanned, bool isPremium, List<String> blockedUsers, RatingBreakdown rating, GamificationStats gamification, UserPreferences preferences, Expertise expertise, List<String> vehicleIds, String? stripeAccountId,@TimestampConverter() DateTime? createdAt,@TimestampConverter() DateTime? updatedAt
 });
 
 
-@override $RatingBreakdownCopyWith<$Res> get rating;@override $GamificationStatsCopyWith<$Res> get gamification;@override $UserPreferencesCopyWith<$Res> get preferences;
+$RatingBreakdownCopyWith<$Res> get rating;$GamificationStatsCopyWith<$Res> get gamification;$UserPreferencesCopyWith<$Res> get preferences;
 
 }
 /// @nodoc
@@ -608,11 +524,11 @@ class _$DriverModelCopyWithImpl<$Res>
 
 /// Create a copy of UserModel
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? uid = null,Object? email = null,Object? displayName = null,Object? photoUrl = freezed,Object? phoneNumber = freezed,Object? dateOfBirth = freezed,Object? gender = freezed,Object? fcmToken = null,Object? address = freezed,Object? latitude = freezed,Object? longitude = freezed,Object? city = freezed,Object? country = freezed,Object? isEmailVerified = null,Object? isPhoneVerified = null,Object? isIdVerified = null,Object? isActive = null,Object? isPremium = null,Object? blockedUsers = null,Object? vehicleIds = null,Object? rating = null,Object? gamification = null,Object? stripeAccountId = freezed,Object? stripeCustomerId = freezed,Object? isStripeEnabled = null,Object? isStripeOnboarded = null,Object? stripeAccountStatus = freezed,Object? chargesEnabled = null,Object? payoutsEnabled = null,Object? detailsSubmitted = null,Object? stripeRequirements = null,Object? stripeDisabledReason = freezed,Object? needsRoleSelection = null,Object? preferences = null,Object? expertise = null,Object? createdAt = freezed,Object? updatedAt = freezed,Object? lastSeenAt = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? uid = null,Object? email = null,Object? username = null,Object? photoUrl = freezed,Object? phoneNumber = freezed,Object? dateOfBirth = freezed,Object? gender = freezed,Object? fcmToken = null,Object? address = freezed,Object? latitude = freezed,Object? longitude = freezed,Object? city = freezed,Object? country = freezed,Object? isEmailVerified = null,Object? isBanned = null,Object? isPremium = null,Object? blockedUsers = null,Object? rating = null,Object? gamification = null,Object? preferences = null,Object? expertise = null,Object? vehicleIds = null,Object? stripeAccountId = freezed,Object? createdAt = freezed,Object? updatedAt = freezed,}) {
   return _then(DriverModel(
 uid: null == uid ? _self.uid : uid // ignore: cast_nullable_to_non_nullable
 as String,email: null == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
-as String,displayName: null == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
+as String,username: null == username ? _self.username : username // ignore: cast_nullable_to_non_nullable
 as String,photoUrl: freezed == photoUrl ? _self.photoUrl : photoUrl // ignore: cast_nullable_to_non_nullable
 as String?,phoneNumber: freezed == phoneNumber ? _self.phoneNumber : phoneNumber // ignore: cast_nullable_to_non_nullable
 as String?,dateOfBirth: freezed == dateOfBirth ? _self.dateOfBirth : dateOfBirth // ignore: cast_nullable_to_non_nullable
@@ -624,30 +540,17 @@ as double?,longitude: freezed == longitude ? _self.longitude : longitude // igno
 as double?,city: freezed == city ? _self.city : city // ignore: cast_nullable_to_non_nullable
 as String?,country: freezed == country ? _self.country : country // ignore: cast_nullable_to_non_nullable
 as String?,isEmailVerified: null == isEmailVerified ? _self.isEmailVerified : isEmailVerified // ignore: cast_nullable_to_non_nullable
-as bool,isPhoneVerified: null == isPhoneVerified ? _self.isPhoneVerified : isPhoneVerified // ignore: cast_nullable_to_non_nullable
-as bool,isIdVerified: null == isIdVerified ? _self.isIdVerified : isIdVerified // ignore: cast_nullable_to_non_nullable
-as bool,isActive: null == isActive ? _self.isActive : isActive // ignore: cast_nullable_to_non_nullable
+as bool,isBanned: null == isBanned ? _self.isBanned : isBanned // ignore: cast_nullable_to_non_nullable
 as bool,isPremium: null == isPremium ? _self.isPremium : isPremium // ignore: cast_nullable_to_non_nullable
 as bool,blockedUsers: null == blockedUsers ? _self._blockedUsers : blockedUsers // ignore: cast_nullable_to_non_nullable
-as List<String>,vehicleIds: null == vehicleIds ? _self._vehicleIds : vehicleIds // ignore: cast_nullable_to_non_nullable
 as List<String>,rating: null == rating ? _self.rating : rating // ignore: cast_nullable_to_non_nullable
 as RatingBreakdown,gamification: null == gamification ? _self.gamification : gamification // ignore: cast_nullable_to_non_nullable
-as GamificationStats,stripeAccountId: freezed == stripeAccountId ? _self.stripeAccountId : stripeAccountId // ignore: cast_nullable_to_non_nullable
-as String?,stripeCustomerId: freezed == stripeCustomerId ? _self.stripeCustomerId : stripeCustomerId // ignore: cast_nullable_to_non_nullable
-as String?,isStripeEnabled: null == isStripeEnabled ? _self.isStripeEnabled : isStripeEnabled // ignore: cast_nullable_to_non_nullable
-as bool,isStripeOnboarded: null == isStripeOnboarded ? _self.isStripeOnboarded : isStripeOnboarded // ignore: cast_nullable_to_non_nullable
-as bool,stripeAccountStatus: freezed == stripeAccountStatus ? _self.stripeAccountStatus : stripeAccountStatus // ignore: cast_nullable_to_non_nullable
-as String?,chargesEnabled: null == chargesEnabled ? _self.chargesEnabled : chargesEnabled // ignore: cast_nullable_to_non_nullable
-as bool,payoutsEnabled: null == payoutsEnabled ? _self.payoutsEnabled : payoutsEnabled // ignore: cast_nullable_to_non_nullable
-as bool,detailsSubmitted: null == detailsSubmitted ? _self.detailsSubmitted : detailsSubmitted // ignore: cast_nullable_to_non_nullable
-as bool,stripeRequirements: null == stripeRequirements ? _self._stripeRequirements : stripeRequirements // ignore: cast_nullable_to_non_nullable
-as List<String>,stripeDisabledReason: freezed == stripeDisabledReason ? _self.stripeDisabledReason : stripeDisabledReason // ignore: cast_nullable_to_non_nullable
-as String?,needsRoleSelection: null == needsRoleSelection ? _self.needsRoleSelection : needsRoleSelection // ignore: cast_nullable_to_non_nullable
-as bool,preferences: null == preferences ? _self.preferences : preferences // ignore: cast_nullable_to_non_nullable
+as GamificationStats,preferences: null == preferences ? _self.preferences : preferences // ignore: cast_nullable_to_non_nullable
 as UserPreferences,expertise: null == expertise ? _self.expertise : expertise // ignore: cast_nullable_to_non_nullable
-as Expertise,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
+as Expertise,vehicleIds: null == vehicleIds ? _self._vehicleIds : vehicleIds // ignore: cast_nullable_to_non_nullable
+as List<String>,stripeAccountId: freezed == stripeAccountId ? _self.stripeAccountId : stripeAccountId // ignore: cast_nullable_to_non_nullable
+as String?,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,updatedAt: freezed == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
-as DateTime?,lastSeenAt: freezed == lastSeenAt ? _self.lastSeenAt : lastSeenAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,
   ));
 }
@@ -680,6 +583,97 @@ $UserPreferencesCopyWith<$Res> get preferences {
     return _then(_self.copyWith(preferences: value));
   });
 }
+}
+
+/// @nodoc
+@JsonSerializable()
+
+class PendingUserModel extends UserModel {
+  const PendingUserModel({required this.uid, required this.email, required this.username, this.photoUrl, this.expertise = Expertise.rookie, this.isEmailVerified = false, this.isBanned = false, this.fcmToken = '', @TimestampConverter() this.createdAt, @TimestampConverter() this.updatedAt, final  String? $type}): $type = $type ?? 'pending',super._();
+  factory PendingUserModel.fromJson(Map<String, dynamic> json) => _$PendingUserModelFromJson(json);
+
+@override final  String uid;
+@override final  String email;
+@override final  String username;
+@override final  String? photoUrl;
+@override@JsonKey() final  Expertise expertise;
+@override@JsonKey() final  bool isEmailVerified;
+@override@JsonKey() final  bool isBanned;
+@override@JsonKey() final  String fcmToken;
+@override@TimestampConverter() final  DateTime? createdAt;
+@override@TimestampConverter() final  DateTime? updatedAt;
+
+@JsonKey(name: 'role')
+final String $type;
+
+
+/// Create a copy of UserModel
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$PendingUserModelCopyWith<PendingUserModel> get copyWith => _$PendingUserModelCopyWithImpl<PendingUserModel>(this, _$identity);
+
+@override
+Map<String, dynamic> toJson() {
+  return _$PendingUserModelToJson(this, );
+}
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PendingUserModel&&(identical(other.uid, uid) || other.uid == uid)&&(identical(other.email, email) || other.email == email)&&(identical(other.username, username) || other.username == username)&&(identical(other.photoUrl, photoUrl) || other.photoUrl == photoUrl)&&(identical(other.expertise, expertise) || other.expertise == expertise)&&(identical(other.isEmailVerified, isEmailVerified) || other.isEmailVerified == isEmailVerified)&&(identical(other.isBanned, isBanned) || other.isBanned == isBanned)&&(identical(other.fcmToken, fcmToken) || other.fcmToken == fcmToken)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => Object.hash(runtimeType,uid,email,username,photoUrl,expertise,isEmailVerified,isBanned,fcmToken,createdAt,updatedAt);
+
+@override
+String toString() {
+  return 'UserModel.pending(uid: $uid, email: $email, username: $username, photoUrl: $photoUrl, expertise: $expertise, isEmailVerified: $isEmailVerified, isBanned: $isBanned, fcmToken: $fcmToken, createdAt: $createdAt, updatedAt: $updatedAt)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $PendingUserModelCopyWith<$Res> implements $UserModelCopyWith<$Res> {
+  factory $PendingUserModelCopyWith(PendingUserModel value, $Res Function(PendingUserModel) _then) = _$PendingUserModelCopyWithImpl;
+@override @useResult
+$Res call({
+ String uid, String email, String username, String? photoUrl, Expertise expertise, bool isEmailVerified, bool isBanned, String fcmToken,@TimestampConverter() DateTime? createdAt,@TimestampConverter() DateTime? updatedAt
+});
+
+
+
+
+}
+/// @nodoc
+class _$PendingUserModelCopyWithImpl<$Res>
+    implements $PendingUserModelCopyWith<$Res> {
+  _$PendingUserModelCopyWithImpl(this._self, this._then);
+
+  final PendingUserModel _self;
+  final $Res Function(PendingUserModel) _then;
+
+/// Create a copy of UserModel
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? uid = null,Object? email = null,Object? username = null,Object? photoUrl = freezed,Object? expertise = null,Object? isEmailVerified = null,Object? isBanned = null,Object? fcmToken = null,Object? createdAt = freezed,Object? updatedAt = freezed,}) {
+  return _then(PendingUserModel(
+uid: null == uid ? _self.uid : uid // ignore: cast_nullable_to_non_nullable
+as String,email: null == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
+as String,username: null == username ? _self.username : username // ignore: cast_nullable_to_non_nullable
+as String,photoUrl: freezed == photoUrl ? _self.photoUrl : photoUrl // ignore: cast_nullable_to_non_nullable
+as String?,expertise: null == expertise ? _self.expertise : expertise // ignore: cast_nullable_to_non_nullable
+as Expertise,isEmailVerified: null == isEmailVerified ? _self.isEmailVerified : isEmailVerified // ignore: cast_nullable_to_non_nullable
+as bool,isBanned: null == isBanned ? _self.isBanned : isBanned // ignore: cast_nullable_to_non_nullable
+as bool,fcmToken: null == fcmToken ? _self.fcmToken : fcmToken // ignore: cast_nullable_to_non_nullable
+as String,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,updatedAt: freezed == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,
+  ));
+}
+
+
 }
 
 // dart format on

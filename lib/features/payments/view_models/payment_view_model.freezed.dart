@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$DriverStripeStatus implements DiagnosticableTreeMixin {
 
- bool get isConnected; bool get payoutsEnabled; bool get chargesEnabled; bool get detailsSubmitted; double get availableBalance; double get pendingBalance; String get currency; String? get stripeAccountId;
+ bool get isConnected; bool get payoutsEnabled; bool get chargesEnabled; bool get detailsSubmitted; int get availableBalanceInCents; int get pendingBalanceInCents; String get currency; String? get stripeAccountId;
 /// Create a copy of DriverStripeStatus
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -29,21 +29,21 @@ $DriverStripeStatusCopyWith<DriverStripeStatus> get copyWith => _$DriverStripeSt
 void debugFillProperties(DiagnosticPropertiesBuilder properties) {
   properties
     ..add(DiagnosticsProperty('type', 'DriverStripeStatus'))
-    ..add(DiagnosticsProperty('isConnected', isConnected))..add(DiagnosticsProperty('payoutsEnabled', payoutsEnabled))..add(DiagnosticsProperty('chargesEnabled', chargesEnabled))..add(DiagnosticsProperty('detailsSubmitted', detailsSubmitted))..add(DiagnosticsProperty('availableBalance', availableBalance))..add(DiagnosticsProperty('pendingBalance', pendingBalance))..add(DiagnosticsProperty('currency', currency))..add(DiagnosticsProperty('stripeAccountId', stripeAccountId));
+    ..add(DiagnosticsProperty('isConnected', isConnected))..add(DiagnosticsProperty('payoutsEnabled', payoutsEnabled))..add(DiagnosticsProperty('chargesEnabled', chargesEnabled))..add(DiagnosticsProperty('detailsSubmitted', detailsSubmitted))..add(DiagnosticsProperty('availableBalanceInCents', availableBalanceInCents))..add(DiagnosticsProperty('pendingBalanceInCents', pendingBalanceInCents))..add(DiagnosticsProperty('currency', currency))..add(DiagnosticsProperty('stripeAccountId', stripeAccountId));
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is DriverStripeStatus&&(identical(other.isConnected, isConnected) || other.isConnected == isConnected)&&(identical(other.payoutsEnabled, payoutsEnabled) || other.payoutsEnabled == payoutsEnabled)&&(identical(other.chargesEnabled, chargesEnabled) || other.chargesEnabled == chargesEnabled)&&(identical(other.detailsSubmitted, detailsSubmitted) || other.detailsSubmitted == detailsSubmitted)&&(identical(other.availableBalance, availableBalance) || other.availableBalance == availableBalance)&&(identical(other.pendingBalance, pendingBalance) || other.pendingBalance == pendingBalance)&&(identical(other.currency, currency) || other.currency == currency)&&(identical(other.stripeAccountId, stripeAccountId) || other.stripeAccountId == stripeAccountId));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is DriverStripeStatus&&(identical(other.isConnected, isConnected) || other.isConnected == isConnected)&&(identical(other.payoutsEnabled, payoutsEnabled) || other.payoutsEnabled == payoutsEnabled)&&(identical(other.chargesEnabled, chargesEnabled) || other.chargesEnabled == chargesEnabled)&&(identical(other.detailsSubmitted, detailsSubmitted) || other.detailsSubmitted == detailsSubmitted)&&(identical(other.availableBalanceInCents, availableBalanceInCents) || other.availableBalanceInCents == availableBalanceInCents)&&(identical(other.pendingBalanceInCents, pendingBalanceInCents) || other.pendingBalanceInCents == pendingBalanceInCents)&&(identical(other.currency, currency) || other.currency == currency)&&(identical(other.stripeAccountId, stripeAccountId) || other.stripeAccountId == stripeAccountId));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,isConnected,payoutsEnabled,chargesEnabled,detailsSubmitted,availableBalance,pendingBalance,currency,stripeAccountId);
+int get hashCode => Object.hash(runtimeType,isConnected,payoutsEnabled,chargesEnabled,detailsSubmitted,availableBalanceInCents,pendingBalanceInCents,currency,stripeAccountId);
 
 @override
 String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
-  return 'DriverStripeStatus(isConnected: $isConnected, payoutsEnabled: $payoutsEnabled, chargesEnabled: $chargesEnabled, detailsSubmitted: $detailsSubmitted, availableBalance: $availableBalance, pendingBalance: $pendingBalance, currency: $currency, stripeAccountId: $stripeAccountId)';
+  return 'DriverStripeStatus(isConnected: $isConnected, payoutsEnabled: $payoutsEnabled, chargesEnabled: $chargesEnabled, detailsSubmitted: $detailsSubmitted, availableBalanceInCents: $availableBalanceInCents, pendingBalanceInCents: $pendingBalanceInCents, currency: $currency, stripeAccountId: $stripeAccountId)';
 }
 
 
@@ -54,7 +54,7 @@ abstract mixin class $DriverStripeStatusCopyWith<$Res>  {
   factory $DriverStripeStatusCopyWith(DriverStripeStatus value, $Res Function(DriverStripeStatus) _then) = _$DriverStripeStatusCopyWithImpl;
 @useResult
 $Res call({
- bool isConnected, bool payoutsEnabled, bool chargesEnabled, bool detailsSubmitted, double availableBalance, double pendingBalance, String currency, String? stripeAccountId
+ bool isConnected, bool payoutsEnabled, bool chargesEnabled, bool detailsSubmitted, int availableBalanceInCents, int pendingBalanceInCents, String currency, String? stripeAccountId
 });
 
 
@@ -71,15 +71,15 @@ class _$DriverStripeStatusCopyWithImpl<$Res>
 
 /// Create a copy of DriverStripeStatus
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? isConnected = null,Object? payoutsEnabled = null,Object? chargesEnabled = null,Object? detailsSubmitted = null,Object? availableBalance = null,Object? pendingBalance = null,Object? currency = null,Object? stripeAccountId = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? isConnected = null,Object? payoutsEnabled = null,Object? chargesEnabled = null,Object? detailsSubmitted = null,Object? availableBalanceInCents = null,Object? pendingBalanceInCents = null,Object? currency = null,Object? stripeAccountId = freezed,}) {
   return _then(_self.copyWith(
 isConnected: null == isConnected ? _self.isConnected : isConnected // ignore: cast_nullable_to_non_nullable
 as bool,payoutsEnabled: null == payoutsEnabled ? _self.payoutsEnabled : payoutsEnabled // ignore: cast_nullable_to_non_nullable
 as bool,chargesEnabled: null == chargesEnabled ? _self.chargesEnabled : chargesEnabled // ignore: cast_nullable_to_non_nullable
 as bool,detailsSubmitted: null == detailsSubmitted ? _self.detailsSubmitted : detailsSubmitted // ignore: cast_nullable_to_non_nullable
-as bool,availableBalance: null == availableBalance ? _self.availableBalance : availableBalance // ignore: cast_nullable_to_non_nullable
-as double,pendingBalance: null == pendingBalance ? _self.pendingBalance : pendingBalance // ignore: cast_nullable_to_non_nullable
-as double,currency: null == currency ? _self.currency : currency // ignore: cast_nullable_to_non_nullable
+as bool,availableBalanceInCents: null == availableBalanceInCents ? _self.availableBalanceInCents : availableBalanceInCents // ignore: cast_nullable_to_non_nullable
+as int,pendingBalanceInCents: null == pendingBalanceInCents ? _self.pendingBalanceInCents : pendingBalanceInCents // ignore: cast_nullable_to_non_nullable
+as int,currency: null == currency ? _self.currency : currency // ignore: cast_nullable_to_non_nullable
 as String,stripeAccountId: freezed == stripeAccountId ? _self.stripeAccountId : stripeAccountId // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
@@ -166,10 +166,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( bool isConnected,  bool payoutsEnabled,  bool chargesEnabled,  bool detailsSubmitted,  double availableBalance,  double pendingBalance,  String currency,  String? stripeAccountId)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( bool isConnected,  bool payoutsEnabled,  bool chargesEnabled,  bool detailsSubmitted,  int availableBalanceInCents,  int pendingBalanceInCents,  String currency,  String? stripeAccountId)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _DriverStripeStatus() when $default != null:
-return $default(_that.isConnected,_that.payoutsEnabled,_that.chargesEnabled,_that.detailsSubmitted,_that.availableBalance,_that.pendingBalance,_that.currency,_that.stripeAccountId);case _:
+return $default(_that.isConnected,_that.payoutsEnabled,_that.chargesEnabled,_that.detailsSubmitted,_that.availableBalanceInCents,_that.pendingBalanceInCents,_that.currency,_that.stripeAccountId);case _:
   return orElse();
 
 }
@@ -187,10 +187,10 @@ return $default(_that.isConnected,_that.payoutsEnabled,_that.chargesEnabled,_tha
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool isConnected,  bool payoutsEnabled,  bool chargesEnabled,  bool detailsSubmitted,  double availableBalance,  double pendingBalance,  String currency,  String? stripeAccountId)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool isConnected,  bool payoutsEnabled,  bool chargesEnabled,  bool detailsSubmitted,  int availableBalanceInCents,  int pendingBalanceInCents,  String currency,  String? stripeAccountId)  $default,) {final _that = this;
 switch (_that) {
 case _DriverStripeStatus():
-return $default(_that.isConnected,_that.payoutsEnabled,_that.chargesEnabled,_that.detailsSubmitted,_that.availableBalance,_that.pendingBalance,_that.currency,_that.stripeAccountId);case _:
+return $default(_that.isConnected,_that.payoutsEnabled,_that.chargesEnabled,_that.detailsSubmitted,_that.availableBalanceInCents,_that.pendingBalanceInCents,_that.currency,_that.stripeAccountId);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -207,10 +207,10 @@ return $default(_that.isConnected,_that.payoutsEnabled,_that.chargesEnabled,_tha
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( bool isConnected,  bool payoutsEnabled,  bool chargesEnabled,  bool detailsSubmitted,  double availableBalance,  double pendingBalance,  String currency,  String? stripeAccountId)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( bool isConnected,  bool payoutsEnabled,  bool chargesEnabled,  bool detailsSubmitted,  int availableBalanceInCents,  int pendingBalanceInCents,  String currency,  String? stripeAccountId)?  $default,) {final _that = this;
 switch (_that) {
 case _DriverStripeStatus() when $default != null:
-return $default(_that.isConnected,_that.payoutsEnabled,_that.chargesEnabled,_that.detailsSubmitted,_that.availableBalance,_that.pendingBalance,_that.currency,_that.stripeAccountId);case _:
+return $default(_that.isConnected,_that.payoutsEnabled,_that.chargesEnabled,_that.detailsSubmitted,_that.availableBalanceInCents,_that.pendingBalanceInCents,_that.currency,_that.stripeAccountId);case _:
   return null;
 
 }
@@ -222,15 +222,15 @@ return $default(_that.isConnected,_that.payoutsEnabled,_that.chargesEnabled,_tha
 @JsonSerializable()
 
 class _DriverStripeStatus with DiagnosticableTreeMixin implements DriverStripeStatus {
-  const _DriverStripeStatus({this.isConnected = false, this.payoutsEnabled = false, this.chargesEnabled = false, this.detailsSubmitted = false, this.availableBalance = 0.0, this.pendingBalance = 0.0, this.currency = 'EUR', this.stripeAccountId});
+  const _DriverStripeStatus({this.isConnected = false, this.payoutsEnabled = false, this.chargesEnabled = false, this.detailsSubmitted = false, this.availableBalanceInCents = 0, this.pendingBalanceInCents = 0, this.currency = 'EUR', this.stripeAccountId});
   factory _DriverStripeStatus.fromJson(Map<String, dynamic> json) => _$DriverStripeStatusFromJson(json);
 
 @override@JsonKey() final  bool isConnected;
 @override@JsonKey() final  bool payoutsEnabled;
 @override@JsonKey() final  bool chargesEnabled;
 @override@JsonKey() final  bool detailsSubmitted;
-@override@JsonKey() final  double availableBalance;
-@override@JsonKey() final  double pendingBalance;
+@override@JsonKey() final  int availableBalanceInCents;
+@override@JsonKey() final  int pendingBalanceInCents;
 @override@JsonKey() final  String currency;
 @override final  String? stripeAccountId;
 
@@ -248,21 +248,21 @@ Map<String, dynamic> toJson() {
 void debugFillProperties(DiagnosticPropertiesBuilder properties) {
   properties
     ..add(DiagnosticsProperty('type', 'DriverStripeStatus'))
-    ..add(DiagnosticsProperty('isConnected', isConnected))..add(DiagnosticsProperty('payoutsEnabled', payoutsEnabled))..add(DiagnosticsProperty('chargesEnabled', chargesEnabled))..add(DiagnosticsProperty('detailsSubmitted', detailsSubmitted))..add(DiagnosticsProperty('availableBalance', availableBalance))..add(DiagnosticsProperty('pendingBalance', pendingBalance))..add(DiagnosticsProperty('currency', currency))..add(DiagnosticsProperty('stripeAccountId', stripeAccountId));
+    ..add(DiagnosticsProperty('isConnected', isConnected))..add(DiagnosticsProperty('payoutsEnabled', payoutsEnabled))..add(DiagnosticsProperty('chargesEnabled', chargesEnabled))..add(DiagnosticsProperty('detailsSubmitted', detailsSubmitted))..add(DiagnosticsProperty('availableBalanceInCents', availableBalanceInCents))..add(DiagnosticsProperty('pendingBalanceInCents', pendingBalanceInCents))..add(DiagnosticsProperty('currency', currency))..add(DiagnosticsProperty('stripeAccountId', stripeAccountId));
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _DriverStripeStatus&&(identical(other.isConnected, isConnected) || other.isConnected == isConnected)&&(identical(other.payoutsEnabled, payoutsEnabled) || other.payoutsEnabled == payoutsEnabled)&&(identical(other.chargesEnabled, chargesEnabled) || other.chargesEnabled == chargesEnabled)&&(identical(other.detailsSubmitted, detailsSubmitted) || other.detailsSubmitted == detailsSubmitted)&&(identical(other.availableBalance, availableBalance) || other.availableBalance == availableBalance)&&(identical(other.pendingBalance, pendingBalance) || other.pendingBalance == pendingBalance)&&(identical(other.currency, currency) || other.currency == currency)&&(identical(other.stripeAccountId, stripeAccountId) || other.stripeAccountId == stripeAccountId));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _DriverStripeStatus&&(identical(other.isConnected, isConnected) || other.isConnected == isConnected)&&(identical(other.payoutsEnabled, payoutsEnabled) || other.payoutsEnabled == payoutsEnabled)&&(identical(other.chargesEnabled, chargesEnabled) || other.chargesEnabled == chargesEnabled)&&(identical(other.detailsSubmitted, detailsSubmitted) || other.detailsSubmitted == detailsSubmitted)&&(identical(other.availableBalanceInCents, availableBalanceInCents) || other.availableBalanceInCents == availableBalanceInCents)&&(identical(other.pendingBalanceInCents, pendingBalanceInCents) || other.pendingBalanceInCents == pendingBalanceInCents)&&(identical(other.currency, currency) || other.currency == currency)&&(identical(other.stripeAccountId, stripeAccountId) || other.stripeAccountId == stripeAccountId));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,isConnected,payoutsEnabled,chargesEnabled,detailsSubmitted,availableBalance,pendingBalance,currency,stripeAccountId);
+int get hashCode => Object.hash(runtimeType,isConnected,payoutsEnabled,chargesEnabled,detailsSubmitted,availableBalanceInCents,pendingBalanceInCents,currency,stripeAccountId);
 
 @override
 String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
-  return 'DriverStripeStatus(isConnected: $isConnected, payoutsEnabled: $payoutsEnabled, chargesEnabled: $chargesEnabled, detailsSubmitted: $detailsSubmitted, availableBalance: $availableBalance, pendingBalance: $pendingBalance, currency: $currency, stripeAccountId: $stripeAccountId)';
+  return 'DriverStripeStatus(isConnected: $isConnected, payoutsEnabled: $payoutsEnabled, chargesEnabled: $chargesEnabled, detailsSubmitted: $detailsSubmitted, availableBalanceInCents: $availableBalanceInCents, pendingBalanceInCents: $pendingBalanceInCents, currency: $currency, stripeAccountId: $stripeAccountId)';
 }
 
 
@@ -273,7 +273,7 @@ abstract mixin class _$DriverStripeStatusCopyWith<$Res> implements $DriverStripe
   factory _$DriverStripeStatusCopyWith(_DriverStripeStatus value, $Res Function(_DriverStripeStatus) _then) = __$DriverStripeStatusCopyWithImpl;
 @override @useResult
 $Res call({
- bool isConnected, bool payoutsEnabled, bool chargesEnabled, bool detailsSubmitted, double availableBalance, double pendingBalance, String currency, String? stripeAccountId
+ bool isConnected, bool payoutsEnabled, bool chargesEnabled, bool detailsSubmitted, int availableBalanceInCents, int pendingBalanceInCents, String currency, String? stripeAccountId
 });
 
 
@@ -290,15 +290,15 @@ class __$DriverStripeStatusCopyWithImpl<$Res>
 
 /// Create a copy of DriverStripeStatus
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? isConnected = null,Object? payoutsEnabled = null,Object? chargesEnabled = null,Object? detailsSubmitted = null,Object? availableBalance = null,Object? pendingBalance = null,Object? currency = null,Object? stripeAccountId = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? isConnected = null,Object? payoutsEnabled = null,Object? chargesEnabled = null,Object? detailsSubmitted = null,Object? availableBalanceInCents = null,Object? pendingBalanceInCents = null,Object? currency = null,Object? stripeAccountId = freezed,}) {
   return _then(_DriverStripeStatus(
 isConnected: null == isConnected ? _self.isConnected : isConnected // ignore: cast_nullable_to_non_nullable
 as bool,payoutsEnabled: null == payoutsEnabled ? _self.payoutsEnabled : payoutsEnabled // ignore: cast_nullable_to_non_nullable
 as bool,chargesEnabled: null == chargesEnabled ? _self.chargesEnabled : chargesEnabled // ignore: cast_nullable_to_non_nullable
 as bool,detailsSubmitted: null == detailsSubmitted ? _self.detailsSubmitted : detailsSubmitted // ignore: cast_nullable_to_non_nullable
-as bool,availableBalance: null == availableBalance ? _self.availableBalance : availableBalance // ignore: cast_nullable_to_non_nullable
-as double,pendingBalance: null == pendingBalance ? _self.pendingBalance : pendingBalance // ignore: cast_nullable_to_non_nullable
-as double,currency: null == currency ? _self.currency : currency // ignore: cast_nullable_to_non_nullable
+as bool,availableBalanceInCents: null == availableBalanceInCents ? _self.availableBalanceInCents : availableBalanceInCents // ignore: cast_nullable_to_non_nullable
+as int,pendingBalanceInCents: null == pendingBalanceInCents ? _self.pendingBalanceInCents : pendingBalanceInCents // ignore: cast_nullable_to_non_nullable
+as int,currency: null == currency ? _self.currency : currency // ignore: cast_nullable_to_non_nullable
 as String,stripeAccountId: freezed == stripeAccountId ? _self.stripeAccountId : stripeAccountId // ignore: cast_nullable_to_non_nullable
 as String?,
   ));

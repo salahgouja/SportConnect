@@ -1,3 +1,4 @@
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -8,9 +9,11 @@ import 'package:intl/intl.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
+import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/core/widgets/rating_and_profile_widgets.dart';
 import 'package:sport_connect/features/reviews/models/review_model.dart';
 import 'package:sport_connect/features/reviews/view_models/review_view_model.dart';
+import 'package:sliver_tools/sliver_tools.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Screen to display a user's reviews and rating stats
@@ -29,15 +32,12 @@ class ReviewsListScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final asyncState = ref.watch(reviewsListViewModelProvider(userId));
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text(AppLocalizations.of(context).valueSReviews(userName)),
-        backgroundColor: AppColors.background,
-        elevation: 0,
+    return AdaptiveScaffold(
+      appBar: AdaptiveAppBar(
+        title: AppLocalizations.of(context).valueSReviews(userName),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
+          AdaptiveAppBarAction(
+            icon: Icons.refresh,
             onPressed: () {
               ref.read(reviewsListViewModelProvider(userId).notifier).refresh();
             },
@@ -50,8 +50,7 @@ class ReviewsListScreen extends ConsumerWidget {
           ref.read(reviewsListViewModelProvider(userId).notifier).refresh();
         },
         child: asyncState.when(
-          loading: () =>
-              const Center(child: CircularProgressIndicator.adaptive()),
+          loading: () => const SkeletonLoader(type: SkeletonType.compactTile, itemCount: 5),
           error: (error, _) => _buildErrorState(context, error.toString(), ref),
           data: (state) => state.error != null
               ? _buildErrorState(context, state.error!, ref)
@@ -92,25 +91,29 @@ class ReviewsListScreen extends ConsumerWidget {
   ) {
     return CustomScrollView(
       slivers: [
-        // Stats header
-        SliverToBoxAdapter(child: _buildStatsCard(context, state)),
-        // Rating breakdown by tag
-        if (state.stats?.distribution != null)
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.r),
-              child: RatingBreakdownWidget(
-                averageRating: state.averageRating,
-                totalReviews: state.totalReviews,
-                distribution: {
-                  for (final entry in state.stats!.distribution.entries)
-                    entry.key: entry.value.toInt(),
-                },
+        MultiSliver(
+          children: [
+            // Stats header
+            SliverToBoxAdapter(child: _buildStatsCard(context, state)),
+            // Rating breakdown by tag
+            if (state.stats?.distribution != null)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16.r),
+                  child: RatingBreakdownWidget(
+                    averageRating: state.averageRating,
+                    totalReviews: state.totalReviews,
+                    distribution: {
+                      for (final entry in state.stats!.distribution.entries)
+                        entry.key: entry.value.toInt(),
+                    },
+                  ),
+                ).animate().fadeIn(duration: 400.ms, delay: 100.ms),
               ),
-            ).animate().fadeIn(duration: 400.ms, delay: 100.ms),
-          ),
-        // Filter chips
-        SliverToBoxAdapter(child: _buildFilterChips(context, state, ref)),
+            // Filter chips
+            SliverToBoxAdapter(child: _buildFilterChips(context, state, ref)),
+          ],
+        ),
         // Reviews list
         if (state.filteredReviews.isEmpty)
           SliverFillRemaining(
@@ -456,19 +459,17 @@ class _ReviewCard extends StatelessWidget {
               ),
               SizedBox(width: 4.w),
               // Report menu
-              PopupMenuButton<String>(
-                icon: Icon(
-                  Icons.adaptive.more,
-                  size: 20.sp,
-                  color: AppColors.textTertiary,
-                ),
-                padding: EdgeInsets.zero,
-                constraints: BoxConstraints(minWidth: 150.w),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12.r),
-                ),
-                onSelected: (value) {
-                  if (value == 'report') {
+              AdaptivePopupMenuButton.icon<String>(
+                icon: Icons.adaptive.more,
+                items: [
+                  AdaptivePopupMenuItem<String>(
+                    label: 'Report Review',
+                    icon: Icons.flag_outlined,
+                    value: 'report',
+                  ),
+                ],
+                onSelected: (index, entry) {
+                  if (entry.value == 'report') {
                     context.push(
                       AppRoutes.reportIssue.path,
                       extra: {
@@ -479,28 +480,6 @@ class _ReviewCard extends StatelessWidget {
                     );
                   }
                 },
-                itemBuilder: (context) => [
-                  PopupMenuItem(
-                    value: 'report',
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.flag_outlined,
-                          size: 18.sp,
-                          color: AppColors.error,
-                        ),
-                        SizedBox(width: 8.w),
-                        Text(
-                          'Report Review',
-                          style: TextStyle(
-                            fontSize: 14.sp,
-                            color: AppColors.error,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
               ),
             ],
           ),

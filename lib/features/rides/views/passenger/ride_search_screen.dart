@@ -1,3 +1,4 @@
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -8,8 +9,10 @@ import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/models/location/location_point.dart';
+import 'package:sliver_tools/sliver_tools.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
+import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/core/widgets/custom_button.dart';
 import 'package:sport_connect/core/widgets/driver_info_widget.dart';
 import 'package:sport_connect/core/widgets/map_location_picker.dart';
@@ -32,9 +35,9 @@ class RideSearchScreen extends ConsumerStatefulWidget {
 }
 
 class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
-  RideSearchState get _searchState => ref.watch(rideSearchViewModelProvider);
+  RideSearchState get _searchState => ref.read(rideSearchViewModelProvider);
   RideSearchResultsData get _resultsState =>
-      ref.watch(rideSearchResultsProvider);
+      ref.read(rideSearchResultsProvider);
 
   final _scrollController = ScrollController();
 
@@ -67,22 +70,23 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref
+      ..watch(rideSearchViewModelProvider)
+      ..watch(rideSearchResultsProvider);
+
     ref.listen(rideSearchViewModelProvider, (previous, next) {
       if (next.error != null &&
           next.error != previous?.error &&
           context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              AppLocalizations.of(context).searchFailedPleaseTryAgain,
-            ),
-          ),
+        AdaptiveSnackBar.show(
+          context,
+          message: AppLocalizations.of(context).searchFailedPleaseTryAgain,
+          type: AdaptiveSnackBarType.error,
         );
       }
     });
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return AdaptiveScaffold(
       body: RefreshIndicator.adaptive(
         onRefresh: _handlePullToRefresh,
         child: CustomScrollView(
@@ -94,28 +98,28 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
             // Compact App Bar
             _buildSliverAppBar(),
 
-            // Search Card
-            SliverToBoxAdapter(child: _buildSearchCard()),
+            // ── Search controls group ─────────────────────────
+            MultiSliver(
+              children: [
+                SliverToBoxAdapter(child: _buildSearchCard()),
+                SliverToBoxAdapter(child: _buildQuickDateSelection()),
+                if (_hasActiveFilters)
+                  SliverToBoxAdapter(child: _buildActiveFilters()),
+              ],
+            ),
 
-            // Quick Date Selection
-            SliverToBoxAdapter(child: _buildQuickDateSelection()),
-
-            // Active Filters
-            if (_hasActiveFilters)
-              SliverToBoxAdapter(child: _buildActiveFilters()),
-
-            // Pre-search discovery or search results
+            // ── Results group ─────────────────────────────────
             if (!_resultsState.hasSearched &&
                 !_resultsState.isLoading &&
                 _resultsState.visibleResults.isEmpty)
               ..._buildDiscoverySection()
-            else ...[
-              // Results Header
-              SliverToBoxAdapter(child: _buildResultsHeader()),
-
-              // Ride Results
-              _buildResultsList(),
-            ],
+            else
+              MultiSliver(
+                children: [
+                  SliverToBoxAdapter(child: _buildResultsHeader()),
+                  _buildResultsList(),
+                ],
+              ),
 
             // Bottom Padding
             SliverToBoxAdapter(child: SizedBox(height: 100.h)),
@@ -379,6 +383,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
             );
           },
         );
+        if (!mounted) return;
         if (date != null) {
           ref.read(rideSearchViewModelProvider.notifier).setDraftDate(date);
           ref.read(rideSearchViewModelProvider.notifier).setSelectedDateChip(2);
@@ -533,15 +538,10 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
         .searchRides();
 
     if (error != null && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(error),
-          backgroundColor: AppColors.error,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10.r),
-          ),
-        ),
+      AdaptiveSnackBar.show(
+        context,
+        message: error,
+        type: AdaptiveSnackBarType.error,
       );
     }
   }
@@ -1099,11 +1099,13 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
     if (_searchState.isFilterPanelOpen) return;
     HapticFeedback.mediumImpact();
     ref.read(rideSearchViewModelProvider.notifier).setFilterPanelOpen(true);
-    showModalBottomSheet<void>(
+    AppModalSheet.show<void>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Consumer(
+      forceMaxHeight: true,
+      maxHeightFactor: 0.8,
+      showDragHandle: false,
+      showCloseButton: false,
+      child: Consumer(
         builder: (context, ref, child) {
           final searchState = ref.watch(rideSearchViewModelProvider);
           return Container(
@@ -1228,15 +1230,15 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
                             ),
                             trackHeight: 4.h,
                           ),
-                          child: Slider.adaptive(
-                            value: searchState.draftMaxPrice,
+                          child: AdaptiveSlider(
+                            value: searchState.draftMaxPrice.toDouble(),
                             min: 5,
                             max: 100,
-                            divisions: 19,
+                            divisions: 20,
                             onChanged: (value) {
                               ref
                                   .read(rideSearchViewModelProvider.notifier)
-                                  .setDraftMaxPrice(value);
+                                  .setDraftMaxPrice(value.toInt());
                             },
                           ),
                         ),
@@ -1792,7 +1794,11 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
                           child: Text(
                             AppLocalizations.of(
                               context,
-                            ).value5(ride.pricePerSeat.toStringAsFixed(0)),
+                            ).value5(
+                              (ride.pricePerSeatInCents / 100).toStringAsFixed(
+                                2,
+                              ),
+                            ),
                             style: TextStyle(
                               fontSize: 14.sp,
                               fontWeight: FontWeight.w700,
@@ -2031,10 +2037,12 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
   }
 
   void _showSortOptions() {
-    showModalBottomSheet<void>(
+    AppModalSheet.show<void>(
       context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
+      maxHeightFactor: 0.55,
+      showDragHandle: false,
+      showCloseButton: false,
+      child: Container(
         decoration: BoxDecoration(
           color: AppColors.cardBg,
           borderRadius: BorderRadius.only(
@@ -2126,13 +2134,12 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
     required String value,
   }) {
     final isSelected = _searchState.draftSortBy == value;
-    return ListTile(
+    return AdaptiveListTile(
       onTap: () {
         context.pop();
         HapticFeedback.selectionClick();
         ref.read(rideSearchViewModelProvider.notifier).setDraftSortBy(value);
       },
-      contentPadding: EdgeInsets.zero,
       leading: Container(
         padding: EdgeInsets.all(10.w),
         decoration: BoxDecoration(

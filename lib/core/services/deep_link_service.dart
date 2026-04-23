@@ -87,7 +87,7 @@ class DeepLinkService {
     required String rideId,
     required String fromCity,
     required String toCity,
-    required double price,
+    required int priceInCents,
     required int seats,
     required DateTime departureTime,
   }) async {
@@ -98,7 +98,7 @@ class DeepLinkService {
       queryParameters: {
         'from': fromCity,
         'to': toCity,
-        'price': price.toStringAsFixed(0),
+        'price': (priceInCents / 100).toStringAsFixed(2),
         'seats': seats.toString(),
         'date': departureTime.toIso8601String(),
       },
@@ -117,8 +117,8 @@ class DeepLinkService {
       await _initializeAppLinks(router);
 
       TalkerService.info('✅ Deep link service initialized');
-    } on Exception catch (e, stackTrace) {
-      TalkerService.error('❌ Failed to initialize deep links', e, stackTrace);
+    } catch (e, st) {
+      TalkerService.error('❌ Failed to initialize deep links', e, st);
     }
   }
 
@@ -275,7 +275,7 @@ class DeepLinkService {
       }
       // For any other resource type, default to allowing navigation.
       return true;
-    } on Exception catch (e) {
+    } catch (e, st) {
       TalkerService.error('_resourceExists check failed', e);
       return true; // fail-open — let destination screen handle the error
     }
@@ -300,7 +300,7 @@ class DeepLinkService {
           receiver: UserModel.rider(
             uid: chatId,
             email: '',
-            displayName: title.isEmpty ? 'Group Chat' : title,
+            username: title.isEmpty ? 'Group Chat' : title,
             photoUrl: chat.groupPhotoUrl,
           ),
           chatType: chat.type,
@@ -329,12 +329,12 @@ class DeepLinkService {
         receiver: UserModel.rider(
           uid: participantId ?? chatId,
           email: '',
-          displayName: otherParticipant.displayName,
+          username: otherParticipant.username,
           photoUrl: otherParticipant.photoUrl,
         ),
         chatType: ChatType.private,
       );
-    } on Exception catch (e) {
+    } catch (e, st) {
       TalkerService.error('Failed to resolve chat receiver from deep link', e);
       return (receiver: null, chatType: ChatType.private);
     }

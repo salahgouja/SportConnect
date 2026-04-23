@@ -95,13 +95,13 @@ class ChatRepository implements IChatRepository {
       participants: [
         ChatParticipant(
           userId: userId1,
-          displayName: userName1,
+          username: userName1,
           photoUrl: userPhoto1,
           joinedAt: DateTime.now(),
         ),
         ChatParticipant(
           userId: userId2,
-          displayName: userName2,
+          username: userName2,
           photoUrl: userPhoto2,
           joinedAt: DateTime.now(),
         ),
@@ -128,7 +128,7 @@ class ChatRepository implements IChatRepository {
       participants: [
         ChatParticipant(
           userId: driverId,
-          displayName: driverName,
+          username: driverName,
           photoUrl: driverPhoto,
           isAdmin: true,
           joinedAt: DateTime.now(),
@@ -155,7 +155,7 @@ class ChatRepository implements IChatRepository {
       participants: [
         ChatParticipant(
           userId: creatorId,
-          displayName: creatorName,
+          username: creatorName,
           photoUrl: creatorPhoto,
           isAdmin: true,
           joinedAt: DateTime.now(),
@@ -248,7 +248,7 @@ class ChatRepository implements IChatRepository {
       updates['participants'] = FieldValue.arrayUnion([
         ChatParticipant(
           userId: userId,
-          displayName: displayName,
+          username: displayName,
           photoUrl: photoUrl,
           joinedAt: DateTime.now(),
         ).toJson(),
@@ -516,7 +516,7 @@ class ChatRepository implements IChatRepository {
   Future<void> setTyping({
     required String chatId,
     required String userId,
-    required String displayName,
+    required String username,
     required bool isTyping,
   }) async {
     final ref = _firestore
@@ -528,7 +528,7 @@ class ChatRepository implements IChatRepository {
     if (isTyping) {
       await ref.set({
         'userId': userId,
-        'displayName': displayName,
+        'username': username,
         'chatId': chatId,
         'startedAt': FieldValue.serverTimestamp(),
         // FIX M-3: expiresAt lets the server-side query filter out stale

@@ -51,7 +51,7 @@ abstract class IUserRepository {
     required String uid,
     required bool asDriver,
     required double distance,
-    double fareAmountPaid = 0.0,
+    int fareAmountPaidInCents = 0,
   });
   Future<void> unlockAchievement(String uid, String achievementId);
 

@@ -1,3 +1,4 @@
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -17,15 +18,9 @@ class _TwoFactorAuthScreenState extends State<TwoFactorAuthScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text(
-          l10n.twoFactorAuthentication,
-          style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.w600),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
+    return AdaptiveScaffold(
+      appBar: AdaptiveAppBar(
+        title: l10n.twoFactorAuthentication,
         leading: IconButton(
           icon: Icon(Icons.adaptive.arrow_back),
           onPressed: () => context.pop(),
@@ -98,20 +93,19 @@ class _TwoFactorAuthScreenState extends State<TwoFactorAuthScreen> {
                         ],
                       ),
                     ),
-                    Switch.adaptive(
+                    AdaptiveSwitch(
                       value: _isTfaEnabled,
-                      activeThumbColor: AppColors.primary,
+                      thumbColor: AppColors.primary,
                       onChanged: (value) {
                         setState(() {
                           _isTfaEnabled = value;
                         });
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              value ? '2FA Enabled via SMS' : '2FA Disabled',
-                            ),
-                            backgroundColor: AppColors.primary,
-                          ),
+                        AdaptiveSnackBar.show(
+                          context,
+                          message: value
+                              ? '2FA Enabled via SMS'
+                              : '2FA Disabled',
+                          type: AdaptiveSnackBarType.info,
                         );
                       },
                     ),

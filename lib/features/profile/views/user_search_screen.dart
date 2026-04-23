@@ -1,3 +1,4 @@
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -20,8 +21,7 @@ class UserSearchScreen extends ConsumerWidget {
     final uiState = ref.watch(userSearchUiViewModelProvider);
     final searchResults = ref.watch(searchResultsProvider(uiState.query));
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return AdaptiveScaffold(
       body: SafeArea(
         child: Column(
           children: [
@@ -471,8 +471,8 @@ class _UserCard extends StatelessWidget {
                   child: user.photoUrl == null
                       ? Center(
                           child: Text(
-                            user.displayName.isNotEmpty
-                                ? user.displayName[0].toUpperCase()
+                            user.username.isNotEmpty
+                                ? user.username[0].toUpperCase()
                                 : '?',
                             style: TextStyle(
                               fontSize: 22.sp,
@@ -494,7 +494,7 @@ class _UserCard extends StatelessWidget {
                         children: [
                           Expanded(
                             child: Text(
-                              user.displayName,
+                              user.username,
                               style: TextStyle(
                                 fontSize: 16.sp,
                                 fontWeight: FontWeight.w600,
@@ -503,7 +503,7 @@ class _UserCard extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          if (user.isIdVerified)
+                          if (user.isEmailVerified)
                             Container(
                               padding: EdgeInsets.all(4.w),
                               decoration: BoxDecoration(
@@ -523,7 +523,14 @@ class _UserCard extends StatelessWidget {
                         children: [
                           _buildRoleBadge(user.role),
                           SizedBox(width: 8.w),
-                          if (user.rating.average > 0)
+                          if (switch (user) {
+                                final RiderModel rider =>
+                                  rider.asRider?.rating.average ?? 0,
+                                final DriverModel driver =>
+                                  driver.asDriver?.rating.average ?? 0,
+                                _ => 0,
+                              } >
+                              0)
                             Row(
                               children: [
                                 Icon(
@@ -533,7 +540,17 @@ class _UserCard extends StatelessWidget {
                                 ),
                                 SizedBox(width: 2.w),
                                 Text(
-                                  user.rating.average.toStringAsFixed(1),
+                                  switch (user) {
+                                    final RiderModel rider =>
+                                      rider.asRider?.rating.average
+                                              .toStringAsFixed(1) ??
+                                          '0.0',
+                                    final DriverModel driver =>
+                                      driver.asDriver?.rating.average
+                                              .toStringAsFixed(1) ??
+                                          '0.0',
+                                    _ => '0.0',
+                                  },
                                   style: TextStyle(
                                     fontSize: 12.sp,
                                     fontWeight: FontWeight.w600,
@@ -573,6 +590,9 @@ class _UserCard extends StatelessWidget {
       case UserRole.rider:
         badgeColor = const Color(0xFF667eea);
         icon = Icons.person_pin_circle_rounded;
+      case UserRole.pending:
+        badgeColor = const Color(0xFFe2e2e2);
+        icon = Icons.hourglass_top_rounded;
     }
 
     return Container(

@@ -1,6 +1,8 @@
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
-import 'package:sport_connect/core/config/page_transitions.dart';
 import 'package:sport_connect/core/config/routes/route_config.dart';
 import 'package:sport_connect/core/config/routes/route_params.dart';
 import 'package:sport_connect/features/notifications/views/notifications_screen.dart';
@@ -41,10 +43,15 @@ class ProfileRoutes implements RouteConfig {
       GoRoute(
         path: AppRoutes.profileSearch.path,
         name: AppRoutes.profileSearch.name,
-        pageBuilder: (context, state) => SlideUpTransitionPage(
-          key: state.pageKey,
-          child: const UserSearchScreen(),
-        ),
+        pageBuilder: (context, state) => PlatformInfo.isIOS
+            ? CupertinoPage(
+                key: state.pageKey,
+                child: const UserSearchScreen(),
+              )
+            : MaterialPage(
+                key: state.pageKey,
+                child: const UserSearchScreen(),
+              ),
       ),
 
       // View any user's public profile by ID
@@ -53,10 +60,15 @@ class ProfileRoutes implements RouteConfig {
         name: AppRoutes.userProfile.name,
         pageBuilder: (context, state) {
           final userId = state.pathParameters['id']!;
-          return SlideRightTransitionPage(
-            key: state.pageKey,
-            child: ProfileScreen(userId: userId),
-          );
+          return PlatformInfo.isIOS
+              ? CupertinoPage(
+                  key: state.pageKey,
+                  child: ProfileScreen(userId: userId),
+                )
+              : MaterialPage(
+                  key: state.pageKey,
+                  child: ProfileScreen(userId: userId),
+                );
         },
       ),
 
@@ -64,70 +76,105 @@ class ProfileRoutes implements RouteConfig {
       GoRoute(
         path: AppRoutes.editProfile.path,
         name: AppRoutes.editProfile.name,
-        pageBuilder: (context, state) => SlideUpTransitionPage(
-          key: state.pageKey,
-          child: const EditProfileScreen(),
-        ),
+        pageBuilder: (context, state) => PlatformInfo.isIOS
+            ? CupertinoPage(
+                key: state.pageKey,
+                child: const EditProfileScreen(),
+              )
+            : MaterialPage(
+                key: state.pageKey,
+                child: const EditProfileScreen(),
+              ),
       ),
 
       // Settings
       GoRoute(
         path: AppRoutes.settings.path,
         name: AppRoutes.settings.name,
-        pageBuilder: (context, state) => SlideRightTransitionPage(
-          key: state.pageKey,
-          child: const SettingsScreen(),
-        ),
+        pageBuilder: (context, state) => PlatformInfo.isIOS
+            ? CupertinoPage(
+                key: state.pageKey,
+                child: const SettingsScreen(),
+              )
+            : MaterialPage(
+                key: state.pageKey,
+                child: const SettingsScreen(),
+              ),
       ),
 
       // Achievements
       GoRoute(
         path: AppRoutes.achievements.path,
         name: AppRoutes.achievements.name,
-        pageBuilder: (context, state) => SlideRightTransitionPage(
-          key: state.pageKey,
-          child: const AchievementsScreen(),
-        ),
+        pageBuilder: (context, state) => PlatformInfo.isIOS
+            ? CupertinoPage(
+                key: state.pageKey,
+                child: const AchievementsScreen(),
+              )
+            : MaterialPage(
+                key: state.pageKey,
+                child: const AchievementsScreen(),
+              ),
       ),
 
       // Notifications
       GoRoute(
         path: AppRoutes.notifications.path,
         name: AppRoutes.notifications.name,
-        pageBuilder: (context, state) => SlideRightTransitionPage(
-          key: state.pageKey,
-          child: const NotificationsScreen(),
-        ),
+        pageBuilder: (context, state) => PlatformInfo.isIOS
+            ? CupertinoPage(
+                key: state.pageKey,
+                child: const NotificationsScreen(),
+              )
+            : MaterialPage(
+                key: state.pageKey,
+                child: const NotificationsScreen(),
+              ),
       ),
 
       // Payment History
       GoRoute(
         path: AppRoutes.paymentHistory.path,
         name: AppRoutes.paymentHistory.name,
-        pageBuilder: (context, state) => SlideRightTransitionPage(
-          key: state.pageKey,
-          child: const PaymentHistoryScreen(),
-        ),
+        pageBuilder: (context, state) => PlatformInfo.isIOS
+            ? CupertinoPage(
+                key: state.pageKey,
+                child: const PaymentHistoryScreen(),
+              )
+            : MaterialPage(
+                key: state.pageKey,
+                child: const PaymentHistoryScreen(),
+              ),
       ),
 
       // Manage Payment Methods (Customer Sheet)
       GoRoute(
         path: AppRoutes.managePaymentMethods.path,
         name: AppRoutes.managePaymentMethods.name,
-        pageBuilder: (context, state) => SlideRightTransitionPage(
-          key: state.pageKey,
-          child: const ManagePaymentMethodsScreen(),
-        ),
+        pageBuilder: (context, state) => PlatformInfo.isIOS
+            ? CupertinoPage(
+                key: state.pageKey,
+                child: const ManagePaymentMethodsScreen(),
+              )
+            : MaterialPage(
+                key: state.pageKey,
+                child: const ManagePaymentMethodsScreen(),
+              ),
       ),
 
       // Driver Specific Routes
       GoRoute(
         path: AppRoutes.driverVehicles.path,
         name: AppRoutes.driverVehicles.name,
-        pageBuilder: (context, state) => SlideRightTransitionPage(
-          key: state.pageKey,
-          child: const VehicleManagementScreen(),
-        ),
+        pageBuilder: (context, state) => PlatformInfo.isIOS
+            ? CupertinoPage(
+                key: state.pageKey,
+                child: const VehicleManagementScreen(),
+              )
+            : MaterialPage(
+                key: state.pageKey,
+                child: const VehicleManagementScreen(),
+              ),
       ),
 
       // Deep-link to another driver's public profile (uses ProfileScreen with userId)
@@ -136,10 +183,15 @@ class ProfileRoutes implements RouteConfig {
         name: AppRoutes.driverProfile.name,
         pageBuilder: (context, state) {
           final userId = state.pathParameters['id']!;
-          return SlideRightTransitionPage(
-            key: state.pageKey,
-            child: ProfileScreen(userId: userId),
-          );
+          return PlatformInfo.isIOS
+              ? CupertinoPage(
+                  key: state.pageKey,
+                  child: ProfileScreen(userId: userId),
+                )
+              : MaterialPage(
+                  key: state.pageKey,
+                  child: ProfileScreen(userId: userId),
+                );
         },
       ),
 
@@ -147,40 +199,60 @@ class ProfileRoutes implements RouteConfig {
       GoRoute(
         path: AppRoutes.driverDocuments.path,
         name: AppRoutes.driverDocuments.name,
-        pageBuilder: (context, state) => SlideRightTransitionPage(
-          key: state.pageKey,
-          child: const DriverDocumentsScreen(),
-        ),
+        pageBuilder: (context, state) => PlatformInfo.isIOS
+            ? CupertinoPage(
+                key: state.pageKey,
+                child: const DriverDocumentsScreen(),
+              )
+            : MaterialPage(
+                key: state.pageKey,
+                child: const DriverDocumentsScreen(),
+              ),
       ),
 
       // Tax Documents
       GoRoute(
         path: AppRoutes.taxDocuments.path,
         name: AppRoutes.taxDocuments.name,
-        pageBuilder: (context, state) => SlideRightTransitionPage(
-          key: state.pageKey,
-          child: const TaxDocumentsScreen(),
-        ),
+        pageBuilder: (context, state) => PlatformInfo.isIOS
+            ? CupertinoPage(
+                key: state.pageKey,
+                child: const TaxDocumentsScreen(),
+              )
+            : MaterialPage(
+                key: state.pageKey,
+                child: const TaxDocumentsScreen(),
+              ),
       ),
 
       // Background Check
       GoRoute(
         path: AppRoutes.backgroundCheck.path,
         name: AppRoutes.backgroundCheck.name,
-        pageBuilder: (context, state) => SlideRightTransitionPage(
-          key: state.pageKey,
-          child: const BackgroundCheckScreen(),
-        ),
+        pageBuilder: (context, state) => PlatformInfo.isIOS
+            ? CupertinoPage(
+                key: state.pageKey,
+                child: const BackgroundCheckScreen(),
+              )
+            : MaterialPage(
+                key: state.pageKey,
+                child: const BackgroundCheckScreen(),
+              ),
       ),
 
       // Two-Factor Authentication
       GoRoute(
         path: AppRoutes.twoFactorAuth.path,
         name: AppRoutes.twoFactorAuth.name,
-        pageBuilder: (context, state) => SlideRightTransitionPage(
-          key: state.pageKey,
-          child: const TwoFactorAuthScreen(),
-        ),
+        pageBuilder: (context, state) => PlatformInfo.isIOS
+            ? CupertinoPage(
+                key: state.pageKey,
+                child: const TwoFactorAuthScreen(),
+              )
+            : MaterialPage(
+                key: state.pageKey,
+                child: const TwoFactorAuthScreen(),
+              ),
       ),
 
       // NOTE: driverEarnings is defined as a StatefulShellBranch in app_router.dart
@@ -188,50 +260,75 @@ class ProfileRoutes implements RouteConfig {
       GoRoute(
         path: AppRoutes.driverStripeOnboarding.path,
         name: AppRoutes.driverStripeOnboarding.name,
-        pageBuilder: (context, state) => SlideUpTransitionPage(
-          key: state.pageKey,
-          child: const DriverStripeOnboardingScreen(),
-        ),
+        pageBuilder: (context, state) => PlatformInfo.isIOS
+            ? CupertinoPage(
+                key: state.pageKey,
+                child: const DriverStripeOnboardingScreen(),
+              )
+            : MaterialPage(
+                key: state.pageKey,
+                child: const DriverStripeOnboardingScreen(),
+              ),
       ),
 
       // Help Center
       GoRoute(
         path: AppRoutes.helpCenter.path,
         name: AppRoutes.helpCenter.name,
-        pageBuilder: (context, state) => SlideRightTransitionPage(
-          key: state.pageKey,
-          child: const HelpCenterScreen(),
-        ),
+        pageBuilder: (context, state) => PlatformInfo.isIOS
+            ? CupertinoPage(
+                key: state.pageKey,
+                child: const HelpCenterScreen(),
+              )
+            : MaterialPage(
+                key: state.pageKey,
+                child: const HelpCenterScreen(),
+              ),
       ),
 
       // Contact Support
       GoRoute(
         path: AppRoutes.contactSupport.path,
         name: AppRoutes.contactSupport.name,
-        pageBuilder: (context, state) => SlideUpTransitionPage(
-          key: state.pageKey,
-          child: const ContactSupportScreen(),
-        ),
+        pageBuilder: (context, state) => PlatformInfo.isIOS
+            ? CupertinoPage(
+                key: state.pageKey,
+                child: const ContactSupportScreen(),
+              )
+            : MaterialPage(
+                key: state.pageKey,
+                child: const ContactSupportScreen(),
+              ),
       ),
 
       // Report Issue
       GoRoute(
         path: AppRoutes.reportIssue.path,
         name: AppRoutes.reportIssue.name,
-        pageBuilder: (context, state) => SlideUpTransitionPage(
-          key: state.pageKey,
-          child: const ReportIssueScreen(),
-        ),
+        pageBuilder: (context, state) => PlatformInfo.isIOS
+            ? CupertinoPage(
+                key: state.pageKey,
+                child: const ReportIssueScreen(),
+              )
+            : MaterialPage(
+                key: state.pageKey,
+                child: const ReportIssueScreen(),
+              ),
       ),
 
       // About
       GoRoute(
         path: AppRoutes.about.path,
         name: AppRoutes.about.name,
-        pageBuilder: (context, state) => SlideRightTransitionPage(
-          key: state.pageKey,
-          child: const AboutScreen(),
-        ),
+        pageBuilder: (context, state) => PlatformInfo.isIOS
+            ? CupertinoPage(
+                key: state.pageKey,
+                child: const AboutScreen(),
+              )
+            : MaterialPage(
+                key: state.pageKey,
+                child: const AboutScreen(),
+              ),
       ),
 
       // Payout Detail
@@ -241,10 +338,15 @@ class ProfileRoutes implements RouteConfig {
         pageBuilder: (context, state) {
           final params = state.params;
           final payoutId = params.getStringOrThrow('id');
-          return SlideRightTransitionPage(
-            key: state.pageKey,
-            child: PayoutDetailScreen(payoutId: payoutId),
-          );
+          return PlatformInfo.isIOS
+              ? CupertinoPage(
+                  key: state.pageKey,
+                  child: PayoutDetailScreen(payoutId: payoutId),
+                )
+              : MaterialPage(
+                  key: state.pageKey,
+                  child: PayoutDetailScreen(payoutId: payoutId),
+                );
         },
       ),
     ];

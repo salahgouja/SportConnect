@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -109,8 +110,7 @@ class _PremiumSubscribeScreenState extends State<PremiumSubscribeScreen> {
         systemNavigationBarColor: AppColors.surface,
         systemNavigationBarIconBrightness: Brightness.dark,
       ),
-      child: Scaffold(
-        backgroundColor: AppColors.background,
+      child: AdaptiveScaffold(
         body: Stack(
           children: [
             // Scrollable content.
@@ -348,9 +348,9 @@ class _PremiumSubscribeScreenState extends State<PremiumSubscribeScreen> {
           // Yearly plan.
           _PlanCard(
             label: 'Annual',
-            price: '\$${_kYearlyPrice.toStringAsFixed(2)}',
+            price: '€${_kYearlyPrice.toStringAsFixed(2)}',
             period: '/month',
-            detail: 'Billed \$${_kYearlyTotal.toStringAsFixed(2)}/year',
+            detail: 'Billed €${_kYearlyTotal.toStringAsFixed(2)}/year',
             badge: 'BEST VALUE',
             isSelected: _cycle == _Cycle.yearly,
             onTap: () {
@@ -363,7 +363,7 @@ class _PremiumSubscribeScreenState extends State<PremiumSubscribeScreen> {
           // Monthly plan.
           _PlanCard(
             label: 'Monthly',
-            price: '\$${_kMonthlyPrice.toStringAsFixed(2)}',
+            price: '€${_kMonthlyPrice.toStringAsFixed(2)}',
             period: '/month',
             detail: 'Billed monthly',
             isSelected: _cycle == _Cycle.monthly,
@@ -554,7 +554,7 @@ class _PremiumSubscribeScreenState extends State<PremiumSubscribeScreen> {
             _GreenCTA(onPressed: _checkout),
             SizedBox(height: 6.h),
             Text(
-              '\$${_price.toStringAsFixed(2)}/mo · Cancel anytime',
+              '€${_price.toStringAsFixed(2)}/mo · Cancel anytime',
               style: TextStyle(
                 fontSize: 12.sp,
                 color: AppColors.textTertiary,

@@ -1,4 +1,6 @@
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -46,24 +48,16 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     ref.listen(forgotPasswordViewModelProvider, (previous, next) {
       if (next.errorMessage != null &&
           next.errorMessage != previous?.errorMessage) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.forgotPasswordSendError),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12.r),
-            ),
-          ),
+        AdaptiveSnackBar.show(
+          context,
+          message: l10n.forgotPasswordSendError,
+          type: AdaptiveSnackBarType.error,
         );
       }
     });
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
+    return AdaptiveScaffold(
+      appBar: AdaptiveAppBar(
         leading: IconButton(
           tooltip: l10n.goBackTooltip,
           icon: Icon(Icons.adaptive.arrow_back_rounded),

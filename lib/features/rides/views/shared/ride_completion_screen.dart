@@ -1,3 +1,4 @@
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -10,6 +11,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/core/widgets/driver_info_widget.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
@@ -57,22 +59,19 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
         if (next.errorMessage != null &&
             next.errorMessage != previous?.errorMessage &&
             context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(next.errorMessage!),
-              backgroundColor: AppColors.error,
-              behavior: SnackBarBehavior.floating,
-            ),
+          AdaptiveSnackBar.show(
+            context,
+            message: next.errorMessage!,
+            type: AdaptiveSnackBarType.error,
           );
         }
       },
     );
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return AdaptiveScaffold(
       body: rideAsync.when(
         loading: () =>
-            const Center(child: CircularProgressIndicator.adaptive()),
+            const SkeletonLoader(type: SkeletonType.rideCard, itemCount: 4),
         error: (e, _) => Center(
           child: Padding(
             padding: EdgeInsets.all(24.w),
@@ -253,7 +252,7 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
                                     '${AppRoutes.submitReview.path}'
                                     '?rideId=${widget.rideId}'
                                     '&revieweeId=${ride.driverId}'
-                                    '&revieweeName=${Uri.encodeComponent(driverProfile?.displayName ?? 'Driver')}'
+                                    '&revieweeName=${Uri.encodeComponent(driverProfile?.username ?? 'Driver')}'
                                     '&reviewType=driverReview',
                                   );
                                 },
@@ -353,7 +352,7 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
                               HapticFeedback.lightImpact();
                               context.push(AppRoutes.driverEarnings.path);
                             },
-                            icon: Icons.attach_money_rounded,
+                            icon: Icons.euro_rounded,
                           ),
                         ).animate().fadeIn(delay: 720.ms);
                       }
@@ -856,12 +855,13 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
         .firstOrNull;
     final seatsBooked = myBooking?.seatsBooked ?? 1;
 
-    final pricePerSeat = ride.pricePerSeat;
+    final pricePerSeatInCents = ride.pricePerSeatInCents;
     final baseFare = isDriver
-        ? pricePerSeat * (ride.bookedSeats > 0 ? ride.bookedSeats : 1)
-        : pricePerSeat * seatsBooked;
+        ? pricePerSeatInCents * (ride.bookedSeats > 0 ? ride.bookedSeats : 1)
+        : pricePerSeatInCents * seatsBooked;
     final serviceFee = (baseFare * 0.10).roundToDouble();
     final total = baseFare + serviceFee;
+    final pricePerSeat = pricePerSeatInCents / 100;
 
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 24.w),
@@ -914,19 +914,19 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
             isDriver
                 ? 'Base Fare (${ride.bookedSeats > 0 ? ride.bookedSeats : 1} seat${(ride.bookedSeats > 1) ? 's' : ''})'
                 : seatsBooked > 1
-                ? 'Base Fare ($seatsBooked seats × ${pricePerSeat.toStringAsFixed(2)})'
+                ? 'Base Fare ($seatsBooked seats × €${pricePerSeat.toStringAsFixed(2)})'
                 : 'Base Fare',
-            '${baseFare.toStringAsFixed(2)} ${ride.currency ?? 'EUR'}',
+            '€${(baseFare / 100).toStringAsFixed(2)}',
           ),
           SizedBox(height: 8.h),
           _buildFareRow(
             'Service Fee (10%)',
-            '${serviceFee.toStringAsFixed(2)} ${ride.currency ?? 'EUR'}',
+            '€${(serviceFee / 100).toStringAsFixed(2)}',
           ),
           Divider(height: 24.h),
           _buildFareRow(
             'Total',
-            '${total.toStringAsFixed(2)} ${ride.currency ?? 'EUR'}',
+            '€${(total / 100).toStringAsFixed(2)}',
             isBold: true,
           ),
         ],
@@ -1030,7 +1030,7 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
                       getOrCreateChatProvider(
                         userId1: currentUser.uid,
                         userId2: ride.driverId,
-                        userName1: currentUser.displayName,
+                        userName1: currentUser.username,
                         userName2: displayName,
                         userPhoto1: currentUser.photoUrl,
                         userPhoto2: photoUrl,
@@ -1042,7 +1042,7 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
                     final driverUser = UserModel.driver(
                       uid: ride.driverId,
                       email: '',
-                      displayName: displayName,
+                      username: displayName,
                       photoUrl: photoUrl,
                     );
 
@@ -1053,13 +1053,10 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
                     );
                   } on Exception {
                     if (!context.mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Failed to open chat. Please try again.',
-                        ),
-                        backgroundColor: AppColors.error,
-                      ),
+                    AdaptiveSnackBar.show(
+                      context,
+                      message: 'Failed to open chat. Please try again.',
+                      type: AdaptiveSnackBarType.error,
                     );
                   }
                 },

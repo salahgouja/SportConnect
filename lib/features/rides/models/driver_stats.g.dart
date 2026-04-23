@@ -14,11 +14,13 @@ _DriverStats _$DriverStatsFromJson(Map json) => _DriverStats(
   ridesThisWeek: (json['ridesThisWeek'] as num?)?.toInt() ?? 0,
   ridesThisMonth: (json['ridesThisMonth'] as num?)?.toInt() ?? 0,
   pendingRequests: (json['pendingRequests'] as num?)?.toInt() ?? 0,
-  totalEarnings: (json['totalEarnings'] as num?)?.toDouble() ?? 0.0,
-  earningsToday: (json['earningsToday'] as num?)?.toDouble() ?? 0.0,
-  earningsThisWeek: (json['earningsThisWeek'] as num?)?.toDouble() ?? 0.0,
-  earningsThisMonth: (json['earningsThisMonth'] as num?)?.toDouble() ?? 0.0,
-  totalSpent: (json['totalSpent'] as num?)?.toDouble() ?? 0.0,
+  totalEarningsInCents: (json['totalEarningsInCents'] as num?)?.toInt() ?? 0,
+  earningsTodayInCents: (json['earningsTodayInCents'] as num?)?.toInt() ?? 0,
+  earningsThisWeekInCents:
+      (json['earningsThisWeekInCents'] as num?)?.toInt() ?? 0,
+  earningsThisMonthInCents:
+      (json['earningsThisMonthInCents'] as num?)?.toInt() ?? 0,
+  totalSpentInCents: (json['totalSpentInCents'] as num?)?.toInt() ?? 0,
   totalDistance: (json['totalDistance'] as num?)?.toDouble() ?? 0.0,
   lastRideAt: json['lastRideAt'] == null
       ? null
@@ -34,11 +36,11 @@ Map<String, dynamic> _$DriverStatsToJson(_DriverStats instance) =>
       'ridesThisWeek': instance.ridesThisWeek,
       'ridesThisMonth': instance.ridesThisMonth,
       'pendingRequests': instance.pendingRequests,
-      'totalEarnings': instance.totalEarnings,
-      'earningsToday': instance.earningsToday,
-      'earningsThisWeek': instance.earningsThisWeek,
-      'earningsThisMonth': instance.earningsThisMonth,
-      'totalSpent': instance.totalSpent,
+      'totalEarningsInCents': instance.totalEarningsInCents,
+      'earningsTodayInCents': instance.earningsTodayInCents,
+      'earningsThisWeekInCents': instance.earningsThisWeekInCents,
+      'earningsThisMonthInCents': instance.earningsThisMonthInCents,
+      'totalSpentInCents': instance.totalSpentInCents,
       'totalDistance': instance.totalDistance,
       'lastRideAt': const TimestampConverter().toJson(instance.lastRideAt),
     };
@@ -47,12 +49,12 @@ _EarningsTransaction _$EarningsTransactionFromJson(Map json) =>
     _EarningsTransaction(
       id: json['id'] as String,
       rideId: json['rideId'] as String,
-      amount: (json['amount'] as num).toDouble(),
+      amountInCents: (json['amountInCents'] as num).toInt(),
       description: json['description'] as String,
       createdAt: const RequiredTimestampConverter().fromJson(json['createdAt']),
       type:
-          $enumDecodeNullable(_$TransactionTypeEnumMap, json['type']) ??
-          TransactionType.ride,
+          $enumDecodeNullable(_$EarningsTransactionTypeEnumMap, json['type']) ??
+          EarningsTransactionType.ride,
     );
 
 Map<String, dynamic> _$EarningsTransactionToJson(
@@ -60,15 +62,15 @@ Map<String, dynamic> _$EarningsTransactionToJson(
 ) => <String, dynamic>{
   'id': instance.id,
   'rideId': instance.rideId,
-  'amount': instance.amount,
+  'amountInCents': instance.amountInCents,
   'description': instance.description,
   'createdAt': const RequiredTimestampConverter().toJson(instance.createdAt),
-  'type': _$TransactionTypeEnumMap[instance.type]!,
+  'type': _$EarningsTransactionTypeEnumMap[instance.type]!,
 };
 
-const _$TransactionTypeEnumMap = {
-  TransactionType.ride: 'ride',
-  TransactionType.bonus: 'bonus',
-  TransactionType.refund: 'refund',
-  TransactionType.payout: 'payout',
+const _$EarningsTransactionTypeEnumMap = {
+  EarningsTransactionType.ride: 'ride',
+  EarningsTransactionType.bonus: 'bonus',
+  EarningsTransactionType.refund: 'refund',
+  EarningsTransactionType.payout: 'payout',
 };

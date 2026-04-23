@@ -67,7 +67,7 @@ class RiderViewRideUiViewModel extends _$RiderViewRideUiViewModel {
           );
       if (!ref.mounted) return;
       state = state.copyWith(routeInfo: info, isLoadingRoute: false);
-    } on Exception catch (_) {
+    } catch (e, st) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoadingRoute: false);
     }
@@ -90,7 +90,7 @@ class RiderViewRideUiViewModel extends _$RiderViewRideUiViewModel {
             rideId: ride.id,
             fromCity: ride.origin.city ?? ride.origin.address,
             toCity: ride.destination.city ?? ride.destination.address,
-            price: ride.pricePerSeat,
+            priceInCents: ride.pricePerSeatInCents,
             seats: ride.remainingSeats,
             departureTime: ride.departureTime,
           );

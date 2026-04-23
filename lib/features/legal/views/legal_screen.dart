@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
@@ -29,11 +30,8 @@ class LegalScreen extends ConsumerWidget {
         statusBarColor: Colors.transparent,
         statusBarIconBrightness: Brightness.dark,
       ),
-      child: Scaffold(
-        backgroundColor: AppColors.background,
-        appBar: AppBar(
-          elevation: 0,
-          backgroundColor: AppColors.background,
+      child: AdaptiveScaffold(
+        appBar: AdaptiveAppBar(
           leading: IconButton(
             tooltip: l10n.goBackTooltip,
             icon: Container(
@@ -51,37 +49,7 @@ class LegalScreen extends ConsumerWidget {
             ),
             onPressed: () => context.pop(),
           ),
-          centerTitle: true,
-          title: Text(
-            title,
-            style: TextStyle(
-              fontSize: 18.sp,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          actions: [
-            Padding(
-              padding: EdgeInsets.only(right: 16.w),
-              child: Center(
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
-                  decoration: BoxDecoration(
-                    color: AppColors.primarySurface,
-                    borderRadius: BorderRadius.circular(20.r),
-                  ),
-                  child: Text(
-                    l10n.legalVersionBadge,
-                    style: TextStyle(
-                      fontSize: 10.sp,
-                      color: AppColors.primaryDark,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
+          title: title,
         ),
         body: Stack(
           children: [

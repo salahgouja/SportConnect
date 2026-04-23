@@ -1,10 +1,13 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:sport_connect/core/converters/timestamp_converter.dart';
-
 part 'driver_stats.freezed.dart';
 part 'driver_stats.g.dart';
 
-enum TransactionType { ride, bonus, refund, payout }
+/// Transaction types exposed by the driver earnings feed.
+///
+/// Keep this narrower than payment/payout enums so earnings UI only models the
+/// categories it actually renders from the `transactions` collection.
+enum EarningsTransactionType { ride, bonus, refund, payout }
 
 /// Driver statistics - converted to Freezed for consistency
 @freezed
@@ -21,11 +24,11 @@ abstract class DriverStats with _$DriverStats {
     @Default(0) int pendingRequests,
 
     // Earnings
-    @Default(0.0) double totalEarnings,
-    @Default(0.0) double earningsToday,
-    @Default(0.0) double earningsThisWeek,
-    @Default(0.0) double earningsThisMonth,
-    @Default(0.0) double totalSpent,
+    @Default(0) int totalEarningsInCents,
+    @Default(0) int earningsTodayInCents,
+    @Default(0) int earningsThisWeekInCents,
+    @Default(0) int earningsThisMonthInCents,
+    @Default(0) int totalSpentInCents,
 
     // Distance & status
     @Default(0.0) double totalDistance,
@@ -42,11 +45,11 @@ abstract class EarningsTransaction with _$EarningsTransaction {
   const factory EarningsTransaction({
     required String id,
     required String rideId,
-    required double amount,
+    required int amountInCents,
     required String description,
     @RequiredTimestampConverter() required DateTime createdAt,
-    @Default(TransactionType.ride)
-    TransactionType type, // ride, bonus, refund, payout
+    @Default(EarningsTransactionType.ride)
+    EarningsTransactionType type, // ride, bonus, refund, payout
   }) = _EarningsTransaction;
 
   factory EarningsTransaction.fromJson(Map<String, dynamic> json) =>

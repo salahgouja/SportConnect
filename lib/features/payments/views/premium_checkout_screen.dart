@@ -1,3 +1,4 @@
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -42,12 +43,9 @@ class _PremiumCheckoutScreenState extends ConsumerState<PremiumCheckoutScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(premiumCheckoutViewModelProvider);
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Premium Checkout'),
-        backgroundColor: AppColors.background,
-        elevation: 0,
+    return AdaptiveScaffold(
+      appBar: AdaptiveAppBar(
+        title: 'Premium Checkout',
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -154,11 +152,10 @@ class _PremiumCheckoutScreenState extends ConsumerState<PremiumCheckoutScreen> {
 
     if (!success) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Premium activated successfully.'),
-        backgroundColor: AppColors.success,
-      ),
+    AdaptiveSnackBar.show(
+      context,
+      message: 'Premium activated successfully.',
+      type: AdaptiveSnackBarType.success,
     );
 
     if (!mounted) return;

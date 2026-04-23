@@ -1,7 +1,9 @@
 import 'dart:io';
 
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -39,6 +41,11 @@ const _kBg = Color(0xFFF8FAF9);
 const _kAccent = Color(0xFF40916C);
 const _kCard = Color(0xFFFFFFFF);
 const _kText = Color(0xFF1A1A1A);
+
+DateTime _adultCutoffDate({int years = 18}) {
+  final today = DateTime.now();
+  return DateTime(today.year - years, today.month, today.day);
+}
 
 // UX: 3 steps
 const _stepThemes = [
@@ -215,15 +222,10 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
   }
 
   void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(msg),
-        backgroundColor: Colors.red.shade700,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12.r),
-        ),
-      ),
+    AdaptiveSnackBar.show(
+      context,
+      message: msg,
+      type: AdaptiveSnackBarType.error,
     );
   }
 
@@ -236,7 +238,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
         .register(
           email: (step0Values['email'] as String? ?? '').trim(),
           password: step0Values['password'] as String? ?? '',
-          displayName: (step0Values['name'] as String? ?? '').trim(),
+          username: (step0Values['name'] as String? ?? '').trim(),
           role: uiState.selectedRole,
           phone: uiState.phoneNumber,
           profileImage: uiState.profileImage,
@@ -260,6 +262,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
       imageQuality: 85,
     );
     if (xf != null) {
+      if (!mounted) return;
       ref
           .read(signupWizardUiViewModelProvider.notifier)
           .setProfileImage(File(xf.path));
@@ -316,8 +319,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) _prevStep();
       },
-      child: Scaffold(
-        backgroundColor: _kBg,
+      child: AdaptiveScaffold(
         body: SafeArea(
           child: Column(
             children: [
@@ -1151,7 +1153,10 @@ class _DobPickerState extends State<_DobPicker>
   @override
   void initState() {
     super.initState();
-    final init = widget.selected ?? DateTime(DateTime.now().year - 25, 6, 15);
+    final adultCutoff = _adultCutoffDate();
+    final rawInit =
+        widget.selected ?? DateTime(DateTime.now().year - 25, 6, 15);
+    final init = rawInit.isAfter(adultCutoff) ? adultCutoff : rawInit;
     _day = init.day;
     _month = init.month - 1;
     _year = init.year;
@@ -1186,8 +1191,10 @@ class _DobPickerState extends State<_DobPicker>
   }
 
   void _emit() {
+    final adultCutoff = _adultCutoffDate();
     final clampedDay = _day.clamp(1, _daysInMonth);
-    widget.onPicked(DateTime(_year, _month + 1, clampedDay));
+    final picked = DateTime(_year, _month + 1, clampedDay);
+    widget.onPicked(picked.isAfter(adultCutoff) ? adultCutoff : picked);
   }
 
   @override
@@ -1367,7 +1374,7 @@ class _DobPickerState extends State<_DobPicker>
                                 _emit();
                               },
                               childDelegate: ListWheelChildBuilderDelegate(
-                                childCount: DateTime.now().year - 1920 + 1,
+                                childCount: _adultCutoffDate().year - 1920 + 1,
                                 builder: (_, i) => _wheelCell(
                                   '${1920 + i}',
                                   (1920 + i) == _year,

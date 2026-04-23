@@ -1,3 +1,4 @@
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -21,43 +22,36 @@ class AchievementsScreen extends ConsumerStatefulWidget {
   ConsumerState<AchievementsScreen> createState() => _AchievementsScreenState();
 }
 
-class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 3, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
+class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final userAsync = ref.watch(currentUserProvider);
+    final statsAsync = ref.watch(
+      currentUserProvider.select(
+        (value) => value.whenData((user) {
+          if (user == null) return null;
+          return switch (user) {
+            RiderModel(:final gamification) => gamification,
+            DriverModel(:final gamification) => gamification,
+            _ => null,
+          };
+        }),
+      ),
+    );
 
-    return userAsync.when(
+    return statsAsync.when(
       loading: () => _AchievementsLoadingShell(l10n: l10n),
       error: (e, _) =>
           _AchievementsErrorShell(l10n: l10n, message: e.toString()),
-      data: (user) {
-        if (user == null) {
+      data: (stats) {
+        if (stats == null) {
           return _AchievementsErrorShell(
             l10n: l10n,
             message: l10n.signInToSeeYourRides,
           );
         }
-        final stats = user.gamification;
         return _AchievementsContent(
-          user: user,
           stats: stats,
-          tabController: _tabController,
           l10n: l10n,
         );
       },
@@ -71,34 +65,30 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
 
 class _AchievementsContent extends StatelessWidget {
   const _AchievementsContent({
-    required this.user,
     required this.stats,
-    required this.tabController,
     required this.l10n,
   });
 
-  final dynamic user;
   final GamificationStats stats;
-  final TabController tabController;
   final AppLocalizations l10n;
 
   @override
   Widget build(BuildContext context) {
     final levelName = _levelName(stats.level);
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return AdaptiveScaffold(
       body: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) => [
           _AchievementsSliverHeader(
             stats: stats,
             levelName: levelName,
-            tabController: tabController,
             l10n: l10n,
           ),
         ],
-        body: TabBarView(
-          controller: tabController,
+        body: AdaptiveTabBarView(
+          tabs: [l10n.badges, l10n.challenges, l10n.leaderboard],
+          selectedColor: Colors.white,
+          backgroundColor: AppColors.primary,
           children: [
             _BadgesTab(stats: stats, l10n: l10n),
             _ChallengesTab(stats: stats, l10n: l10n),
@@ -126,13 +116,11 @@ class _AchievementsSliverHeader extends StatelessWidget {
   const _AchievementsSliverHeader({
     required this.stats,
     required this.levelName,
-    required this.tabController,
     required this.l10n,
   });
 
   final GamificationStats stats;
   final String levelName;
-  final TabController tabController;
   final AppLocalizations l10n;
 
   @override
@@ -256,25 +244,6 @@ class _AchievementsSliverHeader extends StatelessWidget {
                 ],
               ),
             ),
-          ),
-        ),
-      ),
-      bottom: PreferredSize(
-        preferredSize: Size.fromHeight(48.h),
-        child: ColoredBox(
-          color: AppColors.primary,
-          child: TabBar(
-            controller: tabController,
-            indicatorColor: Colors.white,
-            indicatorWeight: 3,
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white.withValues(alpha: 0.6),
-            labelStyle: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600),
-            tabs: [
-              Tab(text: l10n.badges),
-              Tab(text: l10n.challenges),
-              Tab(text: l10n.leaderboard),
-            ],
           ),
         ),
       ),
@@ -1035,8 +1004,8 @@ class _PodiumSpot extends StatelessWidget {
           backgroundColor: medal.withValues(alpha: 0.2),
           child: entry.photoUrl == null
               ? Text(
-                  entry.displayName.isNotEmpty
-                      ? entry.displayName[0].toUpperCase()
+                  entry.username.isNotEmpty
+                      ? entry.username[0].toUpperCase()
                       : '?',
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
@@ -1050,7 +1019,7 @@ class _PodiumSpot extends StatelessWidget {
         SizedBox(
           width: 70.w,
           child: Text(
-            entry.displayName,
+            entry.username,
             style: TextStyle(
               fontSize: 10.sp,
               fontWeight: FontWeight.w600,
@@ -1167,8 +1136,8 @@ class _LeaderboardRow extends StatelessWidget {
             backgroundColor: AppColors.primarySurface,
             child: entry.photoUrl == null
                 ? Text(
-                    entry.displayName.isNotEmpty
-                        ? entry.displayName[0].toUpperCase()
+                    entry.username.isNotEmpty
+                        ? entry.username[0].toUpperCase()
                         : '?',
                     style: TextStyle(
                       fontSize: 12.sp,
@@ -1185,7 +1154,7 @@ class _LeaderboardRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  entry.displayName,
+                  entry.username,
                   style: TextStyle(
                     fontSize: 13.sp,
                     fontWeight: FontWeight.w600,
@@ -1303,12 +1272,9 @@ class _AchievementsLoadingShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text(l10n.badges),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
+    return AdaptiveScaffold(
+      appBar: AdaptiveAppBar(
+        title: l10n.badges,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_rounded),
           onPressed: () => context.pop(),
@@ -1335,12 +1301,9 @@ class _AchievementsErrorShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text(l10n.badges),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
+    return AdaptiveScaffold(
+      appBar: AdaptiveAppBar(
+        title: l10n.badges,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_rounded),
           onPressed: () => context.pop(),

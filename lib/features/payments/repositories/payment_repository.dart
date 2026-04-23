@@ -14,16 +14,20 @@ class PaymentRepository implements IPaymentRepository {
   CollectionReference<PaymentTransaction> get _paymentsCollection => _firestore
       .collection(AppConstants.paymentsCollection)
       .withConverter<PaymentTransaction>(
-        fromFirestore: (snap, _) =>
-            PaymentTransaction.fromJson({...snap.data()!, 'id': snap.id}),
+        fromFirestore: (snap, _) => PaymentTransaction.fromJson({
+          ..._normalizePaymentData(snap.data()!),
+          'id': snap.id,
+        }),
         toFirestore: (payment, _) => payment.toJson(),
       );
 
   CollectionReference<DriverPayout> get _payoutsCollection => _firestore
       .collection(AppConstants.payoutsCollection)
       .withConverter<DriverPayout>(
-        fromFirestore: (snap, _) =>
-            DriverPayout.fromJson({...snap.data()!, 'id': snap.id}),
+        fromFirestore: (snap, _) => DriverPayout.fromJson({
+          ..._normalizePayoutData(snap.data()!),
+          'id': snap.id,
+        }),
         toFirestore: (payout, _) => payout.toJson(),
       );
 
@@ -31,12 +35,211 @@ class PaymentRepository implements IPaymentRepository {
   get _connectedAccountsCollection => _firestore
       .collection(AppConstants.connectedAccountsCollection)
       .withConverter<DriverConnectedAccount>(
-        fromFirestore: (snap, _) => DriverConnectedAccount.fromJson({
-          ...snap.data()!,
-          'driverId': snap.id,
-        }),
+        fromFirestore: (snap, _) => DriverConnectedAccount.fromJson(
+          _normalizeConnectedAccountData(
+            snap.data()!,
+            snap.id,
+          ),
+        ),
         toFirestore: (account, _) => account.toJson(),
       );
+
+  static Map<String, dynamic> _normalizePaymentData(
+    Map<String, dynamic> data,
+  ) {
+    final normalized = Map<String, dynamic>.from(data);
+
+    normalized['stripePaymentIntentId'] ??= normalized['paymentIntentId'];
+    normalized['amountInCents'] ??= _legacyAmountToCents(normalized['amount']);
+    normalized['platformFeeInCents'] ??= _majorUnitsToCents(
+      normalized['platformFee'],
+    );
+    normalized['driverEarningsInCents'] ??= _majorUnitsToCents(
+      normalized['driverEarnings'],
+    );
+    normalized['stripeFeeInCents'] ??=
+        _majorUnitsToCents(normalized['stripeFee']) ?? 0;
+    normalized['riderName'] ??= '';
+    normalized['driverName'] ??= '';
+
+    return normalized;
+  }
+
+  static Map<String, dynamic> _normalizePayoutData(
+    Map<String, dynamic> data,
+  ) {
+    final normalized = Map<String, dynamic>.from(data);
+
+    normalized['driverId'] ??= '';
+    normalized['driverName'] ??= '';
+    normalized['connectedAccountId'] ??= normalized['stripeAccountId'] ?? '';
+    normalized['amountInCents'] ??= _legacyAmountToCents(normalized['amount']);
+    normalized['amountInCents'] ??= 0;
+    normalized['currency'] ??= 'EUR';
+    normalized['status'] ??= 'pending';
+    if (normalized['status'] == 'canceled') {
+      normalized['status'] = 'cancelled';
+    }
+    normalized['method'] ??= normalized['isInstantPayout'] == true
+        ? 'instant'
+        : 'standard';
+    if (normalized['type'] == null) {
+      normalized['type'] = 'bankAccount';
+    } else if (normalized['type'] == 'bank_account') {
+      normalized['type'] = 'bankAccount';
+    }
+    normalized['stripeBalanceTransactionId'] ??=
+        normalized['balanceTransactionId'];
+    if (normalized['transactionIds'] is! List) {
+      normalized['transactionIds'] = const <String>[];
+    }
+    if (normalized['metadata'] is! Map) {
+      normalized['metadata'] = const <String, dynamic>{};
+    }
+
+    return normalized;
+  }
+
+  static String? _normalizeStripeDisabledReason(Object? value) {
+    switch (value) {
+      case 'action_required.requested_capabilities':
+        return 'actionRequiredRequestedCapabilities';
+      case 'listed':
+        return 'listed';
+      case 'other':
+        return 'other';
+      case 'platform_paused':
+        return 'platformPaused';
+      case 'rejected.fraud':
+        return 'rejectedFraud';
+      case 'rejected.incomplete_verification':
+        return 'rejectedIncompleteVerification';
+      case 'rejected.listed':
+        return 'rejectedListed';
+      case 'rejected.other':
+        return 'rejectedOther';
+      case 'rejected.platform_fraud':
+        return 'rejectedPlatformFraud';
+      case 'rejected.platform_other':
+        return 'rejectedPlatformOther';
+      case 'rejected.platform_terms_of_service':
+        return 'rejectedPlatformTermsOfService';
+      case 'rejected.terms_of_service':
+        return 'rejectedTermsOfService';
+      case 'requirements.past_due':
+        return 'requirementsPastDue';
+      case 'requirements.pending_verification':
+        return 'requirementsPendingVerification';
+      case 'under_review':
+        return 'underReview';
+      default:
+        return value is String ? value : null;
+    }
+  }
+
+  static Map<String, dynamic> _normalizeRequirements(Object? raw) {
+    final data = raw is Map<String, dynamic>
+        ? Map<String, dynamic>.from(raw)
+        : <String, dynamic>{};
+
+    if (data['currentlyDue'] is! List) data['currentlyDue'] = const <String>[];
+    if (data['eventuallyDue'] is! List)
+      data['eventuallyDue'] = const <String>[];
+    if (data['pastDue'] is! List) data['pastDue'] = const <String>[];
+    if (data['pendingVerification'] is! List) {
+      data['pendingVerification'] = const <String>[];
+    }
+
+    data['disabledReason'] = _normalizeStripeDisabledReason(
+      data['disabledReason'],
+    );
+
+    return data;
+  }
+
+  static Map<String, dynamic> _normalizeConnectedAccountData(
+    Map<String, dynamic> data,
+    String documentId,
+  ) {
+    final normalized = Map<String, dynamic>.from(data);
+
+    normalized['driverId'] ??= documentId;
+    normalized['id'] ??= normalized['stripeAccountId'] ?? documentId;
+    normalized['stripeAccountId'] ??= '';
+    normalized['email'] ??= '';
+    normalized['country'] ??= 'FR';
+    normalized['defaultCurrency'] ??= 'EUR';
+    normalized['chargesEnabled'] ??= false;
+    normalized['payoutsEnabled'] ??= false;
+    normalized['detailsSubmitted'] ??= false;
+    normalized['availableBalanceInCents'] ??=
+        _majorUnitsToCents(normalized['availableBalance']) ?? 0;
+    normalized['pendingBalanceInCents'] ??=
+        _majorUnitsToCents(normalized['pendingBalance']) ?? 0;
+    normalized['totalEarningsInCents'] ??=
+        _majorUnitsToCents(normalized['totalEarnings']) ?? 0;
+
+    normalized['capabilities'] ??= const {
+      'transfers': 'inactive',
+      'cardPayments': 'inactive',
+    };
+
+    normalized['requirements'] = _normalizeRequirements(
+      normalized['requirements'],
+    );
+    normalized['futureRequirements'] = _normalizeRequirements(
+      normalized['futureRequirements'],
+    );
+
+    if (normalized['metadata'] is! Map) {
+      normalized['metadata'] = const <String, dynamic>{};
+    }
+
+    return normalized;
+  }
+
+  static int? _legacyAmountToCents(Object? value) {
+    if (value is int) return value;
+    if (value is num) return (value * 100).round();
+    return null;
+  }
+
+  static int? _majorUnitsToCents(Object? value) {
+    if (value is num) return (value * 100).round();
+    return null;
+  }
+
+  static int _statsAmountToCents(
+    Map<String, dynamic> data,
+    String centsKey,
+    String legacyMajorUnitsKey,
+  ) {
+    final cents = data[centsKey];
+    if (cents is num) return cents.toInt();
+
+    final majorUnits = data[legacyMajorUnitsKey];
+    if (majorUnits is num) return (majorUnits * 100).round();
+
+    return 0;
+  }
+
+  @override
+  Future<DriverConnectedAccount?> refreshConnectedAccountFromServer({
+    required String driverId,
+    required String accountId,
+  }) async {
+    try {
+      await _stripeService.getAccountStatus(accountId: accountId);
+
+      final doc = await _connectedAccountsCollection.doc(driverId).get();
+      if (!doc.exists) return null;
+
+      return doc.data();
+    } catch (e, st) {
+      TalkerService.error('Error refreshing connected account: $e');
+      rethrow;
+    }
+  }
 
   /// Create payment transaction record
   @override
@@ -52,7 +255,7 @@ class PaymentRepository implements IPaymentRepository {
       await docRef.set(paymentWithId);
       TalkerService.info('Payment transaction created: ${docRef.id}');
       return docRef.id;
-    } on Exception catch (e) {
+    } catch (e, st) {
       TalkerService.error('Error creating payment transaction: $e');
       rethrow;
     }
@@ -100,7 +303,7 @@ class PaymentRepository implements IPaymentRepository {
       TalkerService.info(
         'Payment status updated: $paymentId -> ${status.name}',
       );
-    } on Exception catch (e) {
+    } catch (e, st) {
       TalkerService.error('Error updating payment status: $e');
       rethrow;
     }
@@ -125,9 +328,16 @@ class PaymentRepository implements IPaymentRepository {
           .limit(1)
           .get();
 
-      if (snapshot.docs.isEmpty) return null;
+      if (snapshot.docs.isEmpty) {
+        final stripeSnapshot = await _paymentsCollection
+            .where('stripePaymentIntentId', isEqualTo: paymentId)
+            .limit(1)
+            .get();
+        if (stripeSnapshot.docs.isEmpty) return null;
+        return stripeSnapshot.docs.first.data();
+      }
       return snapshot.docs.first.data();
-    } on Exception catch (e) {
+    } catch (e, st) {
       TalkerService.error('Error getting payment: $e');
       rethrow;
     }
@@ -143,7 +353,7 @@ class PaymentRepository implements IPaymentRepository {
           .get();
 
       return snapshot.docs.map((doc) => doc.data()).toList();
-    } on Exception catch (e) {
+    } catch (e, st) {
       TalkerService.error('Error getting payments by ride: $e');
       rethrow;
     }
@@ -163,7 +373,7 @@ class PaymentRepository implements IPaymentRepository {
           .get();
 
       return snapshot.docs.map((doc) => doc.data()).toList();
-    } on Exception catch (e) {
+    } catch (e, st) {
       TalkerService.error('Error getting rider payment history: $e');
       rethrow;
     }
@@ -215,7 +425,7 @@ class PaymentRepository implements IPaymentRepository {
           .get();
 
       return snapshot.docs.map((doc) => doc.data()).toList();
-    } on Exception catch (e) {
+    } catch (e, st) {
       TalkerService.error('Error getting driver earnings: $e');
       rethrow;
     }
@@ -255,17 +465,41 @@ class PaymentRepository implements IPaymentRepository {
         );
         return EarningsSummary(
           driverId: driverId,
-          totalEarnings: (data['totalEarnings'] as num?)?.toDouble() ?? 0.0,
-          totalPlatformFees:
-              (data['totalPlatformFees'] as num?)?.toDouble() ?? 0.0,
-          totalStripeFees: (data['totalStripeFees'] as num?)?.toDouble() ?? 0.0,
-          earningsToday: (data['earningsToday'] as num?)?.toDouble() ?? 0.0,
-          earningsThisWeek:
-              (data['earningsThisWeek'] as num?)?.toDouble() ?? 0.0,
-          earningsThisMonth:
-              (data['earningsThisMonth'] as num?)?.toDouble() ?? 0.0,
-          earningsThisYear:
-              (data['earningsThisYear'] as num?)?.toDouble() ?? 0.0,
+          totalEarningsInCents: _statsAmountToCents(
+            data,
+            'totalEarningsInCents',
+            'totalEarnings',
+          ),
+          totalPlatformFeesInCents: _statsAmountToCents(
+            data,
+            'totalPlatformFeesInCents',
+            'totalPlatformFees',
+          ),
+          totalStripeFeesInCents: _statsAmountToCents(
+            data,
+            'totalStripeFeesInCents',
+            'totalStripeFees',
+          ),
+          earningsTodayInCents: _statsAmountToCents(
+            data,
+            'earningsTodayInCents',
+            'earningsToday',
+          ),
+          earningsThisWeekInCents: _statsAmountToCents(
+            data,
+            'earningsThisWeekInCents',
+            'earningsThisWeek',
+          ),
+          earningsThisMonthInCents: _statsAmountToCents(
+            data,
+            'earningsThisMonthInCents',
+            'earningsThisMonth',
+          ),
+          earningsThisYearInCents: _statsAmountToCents(
+            data,
+            'earningsThisYearInCents',
+            'earningsThisYear',
+          ),
           totalRidesCompleted: (data['totalRides'] as num?)?.toInt() ?? 0,
           ridesCompletedToday: (data['ridesToday'] as num?)?.toInt() ?? 0,
           ridesCompletedThisWeek: (data['ridesThisWeek'] as num?)?.toInt() ?? 0,
@@ -297,53 +531,53 @@ class PaymentRepository implements IPaymentRepository {
 
       final payments = allPayments.docs.map((doc) => doc.data()).toList();
 
-      double totalEarnings = 0;
-      double totalPlatformFees = 0;
-      double totalStripeFees = 0;
+      int totalEarningsInCents = 0;
+      int totalPlatformFeesInCents = 0;
+      int totalStripeFeesInCents = 0;
       final totalRides = payments.length;
 
-      double earningsToday = 0;
-      double earningsThisWeek = 0;
-      double earningsThisMonth = 0;
-      double earningsThisYear = 0;
+      int earningsTodayInCents = 0;
+      int earningsThisWeekInCents = 0;
+      int earningsThisMonthInCents = 0;
+      int earningsThisYearInCents = 0;
 
       var ridesToday = 0;
       var ridesThisWeek = 0;
       var ridesThisMonth = 0;
 
       for (final payment in payments) {
-        totalEarnings += payment.driverEarnings;
-        totalPlatformFees += payment.platformFee;
-        totalStripeFees += payment.stripeFee;
+        totalEarningsInCents += payment.driverEarningsInCents;
+        totalPlatformFeesInCents += payment.platformFeeInCents;
+        totalStripeFeesInCents += payment.stripeFeeInCents;
 
         if (payment.completedAt != null) {
           if (payment.completedAt!.isAfter(todayStart)) {
-            earningsToday += payment.driverEarnings;
+            earningsTodayInCents += payment.driverEarningsInCents;
             ridesToday++;
           }
           if (payment.completedAt!.isAfter(weekStart)) {
-            earningsThisWeek += payment.driverEarnings;
+            earningsThisWeekInCents += payment.driverEarningsInCents;
             ridesThisWeek++;
           }
           if (payment.completedAt!.isAfter(monthStart)) {
-            earningsThisMonth += payment.driverEarnings;
+            earningsThisMonthInCents += payment.driverEarningsInCents;
             ridesThisMonth++;
           }
           if (payment.completedAt!.isAfter(yearStart)) {
-            earningsThisYear += payment.driverEarnings;
+            earningsThisYearInCents += payment.driverEarningsInCents;
           }
         }
       }
 
       return EarningsSummary(
         driverId: driverId,
-        totalEarnings: totalEarnings,
-        totalPlatformFees: totalPlatformFees,
-        totalStripeFees: totalStripeFees,
-        earningsToday: earningsToday,
-        earningsThisWeek: earningsThisWeek,
-        earningsThisMonth: earningsThisMonth,
-        earningsThisYear: earningsThisYear,
+        totalEarningsInCents: totalEarningsInCents,
+        totalPlatformFeesInCents: totalPlatformFeesInCents,
+        totalStripeFeesInCents: totalStripeFeesInCents,
+        earningsTodayInCents: earningsTodayInCents,
+        earningsThisWeekInCents: earningsThisWeekInCents,
+        earningsThisMonthInCents: earningsThisMonthInCents,
+        earningsThisYearInCents: earningsThisYearInCents,
         totalRidesCompleted: totalRides,
         ridesCompletedToday: ridesToday,
         ridesCompletedThisWeek: ridesThisWeek,
@@ -351,7 +585,7 @@ class PaymentRepository implements IPaymentRepository {
         lastUpdated: DateTime.now(),
         lastPayoutDate: lastPayoutDate,
       );
-    } on Exception catch (e) {
+    } catch (e, st) {
       TalkerService.error('Error calculating earnings summary: $e');
       rethrow;
     }
@@ -370,7 +604,7 @@ class PaymentRepository implements IPaymentRepository {
       await docRef.set(payoutWithId);
       TalkerService.info('Payout created: ${docRef.id}');
       return docRef.id;
-    } on Exception catch (e) {
+    } catch (e, st) {
       TalkerService.error('Error creating payout: $e');
       rethrow;
     }
@@ -388,12 +622,12 @@ class PaymentRepository implements IPaymentRepository {
       await _payoutsCollection.doc(payoutId).update({
         'status': status.name,
         'updatedAt': DateTime.now(),
-        'failureReason': ?failureReason,
+        'failureReason': failureReason,
         if (arrivedAt != null) 'arrivedAt': Timestamp.fromDate(arrivedAt),
       });
 
       TalkerService.info('Payout status updated: $payoutId -> ${status.name}');
-    } on Exception catch (e) {
+    } catch (e, st) {
       TalkerService.error('Error updating payout status: $e');
       rethrow;
     }
@@ -413,7 +647,7 @@ class PaymentRepository implements IPaymentRepository {
           .get();
 
       return snapshot.docs.map((doc) => doc.data()).toList();
-    } on Exception catch (e) {
+    } catch (e, st) {
       TalkerService.error('Error getting driver payouts: $e');
       rethrow;
     }
@@ -423,19 +657,15 @@ class PaymentRepository implements IPaymentRepository {
   @override
   Future<void> saveConnectedAccount(DriverConnectedAccount account) async {
     try {
-      await _connectedAccountsCollection
-          .doc(account.driverId)
-          .set(
-            account.copyWith(
-              createdAt: account.createdAt ?? DateTime.now(),
-              updatedAt: DateTime.now(),
-            ),
-            SetOptions(merge: true),
-          );
-
-      TalkerService.info('Connected account saved: ${account.driverId}');
-    } on Exception catch (e) {
-      TalkerService.error('Error saving connected account: $e');
+      await refreshConnectedAccountFromServer(
+        driverId: account.driverId,
+        accountId: account.stripeAccountId,
+      );
+      TalkerService.info(
+        'Connected account refresh requested: ${account.driverId}',
+      );
+    } catch (e, st) {
+      TalkerService.error('Error refreshing connected account: $e');
       rethrow;
     }
   }
@@ -448,7 +678,7 @@ class PaymentRepository implements IPaymentRepository {
       if (!doc.exists) return null;
 
       return doc.data();
-    } on Exception catch (e) {
+    } catch (e, st) {
       TalkerService.error('Error getting connected account: $e');
       rethrow;
     }
@@ -461,26 +691,25 @@ class PaymentRepository implements IPaymentRepository {
     required bool chargesEnabled,
     required bool payoutsEnabled,
     required bool detailsSubmitted,
-    double? availableBalance,
-    double? pendingBalance,
+    int? availableBalanceInCents,
+    int? pendingBalanceInCents,
   }) async {
     try {
-      await _connectedAccountsCollection.doc(driverId).update({
-        'chargesEnabled': chargesEnabled,
-        'payoutsEnabled': payoutsEnabled,
-        'detailsSubmitted': detailsSubmitted,
-        'availableBalance': ?availableBalance,
-        'pendingBalance': ?pendingBalance,
-        'onboardingCompleted':
-            chargesEnabled && payoutsEnabled && detailsSubmitted,
-        'updatedAt': DateTime.now(),
-        if (chargesEnabled && payoutsEnabled && detailsSubmitted)
-          'onboardingCompletedAt': DateTime.now(),
-      });
+      final current = await getConnectedAccount(driverId);
+      if (current == null || current.stripeAccountId.isEmpty) {
+        throw StateError('Connected account not found for driver $driverId');
+      }
 
-      TalkerService.info('Connected account status updated: $driverId');
-    } on Exception catch (e) {
-      TalkerService.error('Error updating connected account status: $e');
+      await refreshConnectedAccountFromServer(
+        driverId: driverId,
+        accountId: current.stripeAccountId,
+      );
+
+      TalkerService.info(
+        'Connected account server refresh requested: $driverId',
+      );
+    } catch (e, st) {
+      TalkerService.error('Error refreshing connected account status: $e');
       rethrow;
     }
   }
@@ -489,7 +718,7 @@ class PaymentRepository implements IPaymentRepository {
   @override
   Future<void> processRefund({
     required String paymentId,
-    double? amount,
+    int? amountInCents,
     String? reason,
   }) async {
     try {
@@ -501,12 +730,12 @@ class PaymentRepository implements IPaymentRepository {
       // (status, refundedAt, refundReason) — no client-side update needed
       await _stripeService.refundPayment(
         paymentIntentId: payment.stripePaymentIntentId!,
-        amount: amount,
+        amountInCents: amountInCents,
         reason: reason,
       );
 
       TalkerService.info('Refund processed: $paymentId');
-    } on Exception catch (e) {
+    } catch (e, st) {
       TalkerService.error('Error processing refund: $e');
       rethrow;
     }
@@ -519,7 +748,7 @@ class PaymentRepository implements IPaymentRepository {
       final doc = await _payoutsCollection.doc(payoutId).get();
       if (!doc.exists) return null;
       return doc.data();
-    } on Exception catch (e) {
+    } catch (e, st) {
       TalkerService.error('Error getting payout: $e');
       rethrow;
     }
@@ -527,7 +756,7 @@ class PaymentRepository implements IPaymentRepository {
 
   /// Create driver connected account via Stripe and persist it to Firestore.
   @override
-  Future<DriverConnectedAccount?> createConnectedAccount({
+  Future<ConnectedAccountCreationResult?> createConnectedAccount({
     required String userId,
     required String email,
     required String country,
@@ -551,27 +780,41 @@ class PaymentRepository implements IPaymentRepository {
         city: city,
       );
 
-      if (result['accountId'] == null) return null;
+      final accountId = result['accountId'] as String?;
+      if (accountId == null || accountId.isEmpty) return null;
 
       final account = DriverConnectedAccount(
-        id: result['accountId'] as String,
+        id: accountId,
         driverId: userId,
-        stripeAccountId: result['accountId'] as String,
+        stripeAccountId: accountId,
         email: email,
         country: country,
         chargesEnabled: false,
         payoutsEnabled: false,
         detailsSubmitted: false,
         onboardingCompleted: false,
-        onboardingUrl: result['onboardingUrl'] as String?,
+        defaultCurrency: 'EUR',
       );
 
-      await saveConnectedAccount(account);
-      TalkerService.info('Connected account created: $userId');
-      return account;
-    } on Exception catch (e) {
+      // Do NOT write driver_connected_accounts from the client.
+      // The server webhook / sync callable owns that document.
+      TalkerService.info('Connected account created via CF: $userId');
+
+      return ConnectedAccountCreationResult(
+        account: account,
+        onboardingUrl: result['onboardingUrl'] as String?,
+      );
+    } catch (e, st) {
       TalkerService.error('Error creating connected account: $e');
       rethrow;
     }
+  }
+
+  @override
+  Stream<DriverConnectedAccount?> streamConnectedAccount(String driverId) {
+    return _connectedAccountsCollection.doc(driverId).snapshots().map((doc) {
+      if (!doc.exists) return null;
+      return doc.data();
+    });
   }
 }

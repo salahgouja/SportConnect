@@ -1,7 +1,11 @@
+import 'dart:async';
+
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -10,6 +14,7 @@ import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/core/widgets/driver_info_widget.dart';
 import 'package:sport_connect/core/widgets/misc_feature_widgets.dart';
 import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
@@ -30,11 +35,7 @@ class RiderHomeScreen extends ConsumerStatefulWidget {
   ConsumerState<RiderHomeScreen> createState() => _RiderHomeScreenState();
 }
 
-class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
-    with TickerProviderStateMixin {
-  // ── Animation ──────────────────────────────────────────────
-  late final AnimationController _pulseAnimationController;
-
+class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
   // ── Map controller (widget-owned) ──────────────────────────
   final MapController _mapController = MapController();
 
@@ -43,6 +44,8 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
 
   /// Whether the active-ride guard has already navigated (prevent re-entry).
   bool _hasAutoNavigatedToActiveRide = false;
+  bool _isCheckingActiveRide = false;
+  String? _activeRideCheckedForUserId;
 
   // ── Map tile sources ───────────────────────────────────────
   final Map<String, String> _mapStyles = {
@@ -59,20 +62,18 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
   @override
   void initState() {
     super.initState();
-    _pulseAnimationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    )..repeat();
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(riderHomeViewModelProvider.notifier).checkInitialLocationState();
-      _requestNotificationPermission();
+      unawaited(
+        ref
+            .read(riderHomeViewModelProvider.notifier)
+            .checkInitialLocationState(),
+      );
+      unawaited(_requestNotificationPermission());
     });
   }
 
   @override
   void dispose() {
-    _pulseAnimationController.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -90,6 +91,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
     final accepted = await PermissionDialogHelper.showLocationRationale(
       context,
     );
+    if (!mounted) return;
     if (!accepted) {
       vm.setLocationDeniedSoft();
       return;
@@ -117,7 +119,9 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
       if (!accepted) return;
 
       await vm.requestNotificationPermission();
-    } on Exception catch (_) {}
+    } on Exception {
+      // Notification prompts should never block the home screen.
+    }
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -129,33 +133,10 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
     final vmState = ref.watch(riderHomeViewModelProvider);
     final locationState = vmState.locationState;
 
-    // ── Global Active Ride Guard ─────────────────────────────
-    // On app launch / foreground, check if the user has an in-progress ride
-    // and auto-navigate to the active ride screen.
-    if (!_hasAutoNavigatedToActiveRide) {
-      final user = ref.watch(currentUserProvider).value;
-      if (user != null) {
-        final bookings =
-            ref.watch(bookingsByPassengerProvider(user.uid)).value ?? [];
-        final acceptedBooking = bookings
-            .where((b) => b.status == BookingStatus.accepted)
-            .toList();
-        for (final booking in acceptedBooking) {
-          final ride = ref.watch(rideStreamProvider(booking.rideId)).value;
-          if (ride != null && ride.status == RideStatus.inProgress) {
-            _hasAutoNavigatedToActiveRide = true;
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) {
-                context.push(
-                  '${AppRoutes.riderActiveRide.path}?rideId=${ride.id}',
-                );
-              }
-            });
-            break;
-          }
-        }
-      }
-    }
+    final userId = ref.watch(
+      currentUserProvider.select((value) => value.value?.uid),
+    );
+    if (userId != null) unawaited(_checkForActiveRide(userId));
 
     // Auto-follow map when location changes (only when map is visible)
     ref.listen<RiderHomeState>(riderHomeViewModelProvider, (previous, next) {
@@ -177,7 +158,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
       }
     });
 
-    return Scaffold(
+    return AdaptiveScaffold(
       body: switch (locationState) {
         LocationPermissionState.unknown => _buildLocationGate(),
         LocationPermissionState.acquiring => _buildAcquiringState(),
@@ -190,6 +171,46 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
         LocationPermissionState.serviceDisabled => _buildServiceDisabledState(),
       },
     );
+  }
+
+  Future<void> _checkForActiveRide(String userId) async {
+    if (_hasAutoNavigatedToActiveRide ||
+        _isCheckingActiveRide ||
+        _activeRideCheckedForUserId == userId) {
+      return;
+    }
+
+    _isCheckingActiveRide = true;
+    _activeRideCheckedForUserId = userId;
+
+    try {
+      if (!mounted || !context.mounted) return;
+      final bookings = await ref.read(
+        bookingsByPassengerProvider(userId).future,
+      );
+      final acceptedBookings = bookings.where(
+        (booking) => booking.status == BookingStatus.accepted,
+      );
+
+      for (final booking in acceptedBookings) {
+        final ride = await ref.read(rideStreamProvider(booking.rideId).future);
+        if (!mounted || _hasAutoNavigatedToActiveRide) return;
+
+        if (ride != null && ride.status == RideStatus.inProgress) {
+          _hasAutoNavigatedToActiveRide = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              context.push(
+                '${AppRoutes.riderActiveRide.path}?rideId=${ride.id}',
+              );
+            }
+          });
+          return;
+        }
+      }
+    } finally {
+      _isCheckingActiveRide = false;
+    }
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -719,6 +740,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
               urlTemplate: _mapStyles[selectedMapStyle],
               userAgentPackageName: 'com.sportconnect.app',
             ),
+            const CurrentLocationLayer(),
 
             if (activeRoute != null)
               PolylineLayer(
@@ -980,7 +1002,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
                   child: user.when(
                     data: (u) => PremiumAvatar(
                       imageUrl: u?.photoUrl,
-                      name: u?.displayName ?? 'User',
+                      name: u?.username ?? 'User',
                       size: 40.w,
                     ),
                     loading: () => CircleAvatar(
@@ -1193,8 +1215,6 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
     final l10n = AppLocalizations.of(context);
     final showDistanceRadius = vmState.showDistanceRadius;
     final showNearbyDrivers = vmState.showNearbyDrivers;
-    final currentLocation = vmState.currentLocation;
-    final currentZoom = vmState.currentZoom;
 
     return Positioned(
       right: 16.w,
@@ -1306,43 +1326,40 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
   Widget _buildCurrentLocationMarker(RiderHomeState vmState) {
     final userHeading = vmState.userHeading;
 
-    return AnimatedBuilder(
-      animation: _pulseAnimationController,
-      builder: (context, _) => Stack(
-        alignment: Alignment.center,
-        children: [
-          Container(
-            width: 45.w,
-            height: 45.w,
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        Container(
+          width: 45.w,
+          height: 45.w,
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(alpha: 0.15),
+            shape: BoxShape.circle,
+          ),
+        ),
+        Transform.rotate(
+          angle: userHeading * (3.14159 / 180),
+          child: Container(
+            width: 40.w,
+            height: 40.w,
             decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.15),
+              color: AppColors.primary,
               shape: BoxShape.circle,
+              border: Border.all(color: Colors.white, width: 3),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withValues(alpha: 0.4),
+                  blurRadius: 10,
+                  spreadRadius: 2,
+                ),
+              ],
+            ),
+            child: Center(
+              child: Icon(Icons.navigation, color: Colors.white, size: 20.sp),
             ),
           ),
-          Transform.rotate(
-            angle: userHeading * (3.14159 / 180),
-            child: Container(
-              width: 40.w,
-              height: 40.w,
-              decoration: BoxDecoration(
-                color: AppColors.primary,
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 3),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.4),
-                    blurRadius: 10,
-                    spreadRadius: 2,
-                  ),
-                ],
-              ),
-              child: Center(
-                child: Icon(Icons.navigation, color: Colors.white, size: 20.sp),
-              ),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -1379,7 +1396,9 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
                     child: Text(
                       AppLocalizations.of(
                         context,
-                      ).value5(ride.pricePerSeat.toStringAsFixed(0)),
+                      ).value5(
+                        (ride.pricePerSeatInCents / 100).toStringAsFixed(2),
+                      ),
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w700,
@@ -1476,7 +1495,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
                 overlayColor: AppColors.primary.withValues(alpha: 0.2),
                 trackHeight: 4.h,
               ),
-              child: Slider.adaptive(
+              child: AdaptiveSlider(
                 value: searchRadius,
                 min: 1,
                 max: 25,
@@ -1644,26 +1663,16 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
 
   void _showMapStylePicker() {
     final l10n = AppLocalizations.of(context);
-    showModalBottomSheet<void>(
+    AppModalSheet.show<void>(
       context: context,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
-      ),
-      builder: (ctx) => Container(
+      title: l10n.mapStyle,
+      maxHeightFactor: 0.45,
+      child: Padding(
         padding: EdgeInsets.all(20.w),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              l10n.mapStyle,
-              style: TextStyle(
-                fontSize: 18.sp,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            SizedBox(height: 16.h),
             Row(
               children: [
                 _buildStyleOption(l10n.standard, l10n.standard2, Icons.map),
@@ -1739,16 +1748,26 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
   void _showInlineSearchSheet() {
     HapticFeedback.selectionClick();
     final outerContext = context;
+    final l10n = AppLocalizations.of(context);
     final fromCtrl = TextEditingController();
     final toCtrl = TextEditingController();
     var selectedDate = DateTime.now();
     var selectedSeats = 1;
 
-    showModalBottomSheet<void>(
+    AppModalSheet.show<void>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (sheetCtx) => StatefulBuilder(
+      title: l10n.findARide,
+      forceMaxHeight: true,
+      maxHeightFactor: 0.9,
+      trailingNavBarWidget: IconButton(
+        tooltip: l10n.filters,
+        onPressed: () {
+          Navigator.of(context).pop();
+          outerContext.push(AppRoutes.searchRides.path);
+        },
+        icon: const Icon(Icons.tune_rounded),
+      ),
+      child: StatefulBuilder(
         builder: (ctx, setModal) {
           final vmState = ref.read(riderHomeViewModelProvider);
           final anchor =
@@ -1765,59 +1784,10 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
 
               return Container(
                 height: MediaQuery.of(ctx).size.height * 0.85,
-                decoration: BoxDecoration(
-                  color: AppColors.background,
-                  borderRadius: BorderRadius.vertical(
-                    top: Radius.circular(24.r),
-                  ),
-                ),
+                color: AppColors.background,
                 child: Column(
                   children: [
-                    // Handle
-                    Container(
-                      margin: EdgeInsets.only(top: 12.h),
-                      width: 40.w,
-                      height: 4.h,
-                      decoration: BoxDecoration(
-                        color: AppColors.border,
-                        borderRadius: BorderRadius.circular(2.r),
-                      ),
-                    ),
-
-                    // Header
-                    Padding(
-                      padding: EdgeInsets.all(16.w),
-                      child: Row(
-                        children: [
-                          GestureDetector(
-                            onTap: () => ctx.pop(),
-                            child: Icon(
-                              Icons.close_rounded,
-                              color: AppColors.textPrimary,
-                              size: 24.sp,
-                            ),
-                          ),
-                          SizedBox(width: 16.w),
-                          Text(
-                            l10n.findARide,
-                            style: TextStyle(
-                              fontSize: 20.sp,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                          const Spacer(),
-                          TextButton.icon(
-                            onPressed: () {
-                              Navigator.of(ctx).pop();
-                              outerContext.push(AppRoutes.searchRides.path);
-                            },
-                            icon: Icon(Icons.tune_rounded, size: 18.sp),
-                            label: Text(l10n.filters),
-                          ),
-                        ],
-                      ),
-                    ),
+                    SizedBox(height: 12.h),
 
                     // From / To inputs
                     Container(
@@ -1988,16 +1958,13 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
                                     if (selectedSeats < 4) {
                                       setModal(() => selectedSeats++);
                                     } else {
-                                      ScaffoldMessenger.of(ctx).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            AppLocalizations.of(
-                                              context,
-                                            ).maxSeatsReached,
-                                          ),
-                                          behavior: SnackBarBehavior.floating,
-                                          duration: const Duration(seconds: 2),
-                                        ),
+                                      AdaptiveSnackBar.show(
+                                        ctx,
+                                        message: AppLocalizations.of(
+                                          context,
+                                        ).maxSeatsReached,
+                                        type: AdaptiveSnackBarType.error,
+                                        duration: const Duration(seconds: 2),
                                       );
                                     }
                                   },
@@ -2289,7 +2256,9 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
                     child: Text(
                       AppLocalizations.of(
                         context,
-                      ).value5(ride.pricePerSeat.toStringAsFixed(0)),
+                      ).value5(
+                        (ride.pricePerSeatInCents / 100).toStringAsFixed(2),
+                      ),
                       style: TextStyle(
                         fontSize: 15.sp,
                         fontWeight: FontWeight.w700,
@@ -2422,13 +2391,11 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
 
   void _showRideDetails(RideModel ride) {
     HapticFeedback.mediumImpact();
-    showModalBottomSheet<void>(
+    AppModalSheet.show<void>(
       context: context,
-      isScrollControlled: true,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
-      ),
-      builder: (ctx) => SingleChildScrollView(
+      title: AppLocalizations.of(context).rideDetails,
+      maxHeightFactor: 0.82,
+      child: SingleChildScrollView(
         child: Container(
           padding: EdgeInsets.all(20.w),
           child: Column(
@@ -2559,7 +2526,11 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
                           child: Text(
                             AppLocalizations.of(
                               context,
-                            ).value5(ride.pricePerSeat.toStringAsFixed(0)),
+                            ).value5(
+                              (ride.pricePerSeatInCents / 100).toStringAsFixed(
+                                2,
+                              ),
+                            ),
                             style: TextStyle(
                               fontSize: 16.sp,
                               fontWeight: FontWeight.w700,
@@ -2613,7 +2584,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen>
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    ctx.pop();
+                    context.pop();
                     context.pushNamed(
                       AppRoutes.rideDetail.name,
                       pathParameters: {'id': ride.id},
@@ -2775,11 +2746,12 @@ class _ActiveTripBanner extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(currentUserProvider).value;
-    if (user == null) return const SizedBox.shrink();
+    final userId = ref.watch(
+      currentUserProvider.select((value) => value.value?.uid),
+    );
+    if (userId == null) return const SizedBox.shrink();
 
-    final bookings =
-        ref.watch(bookingsByPassengerProvider(user.uid)).value ?? [];
+    final bookings = ref.watch(bookingsByPassengerProvider(userId)).value ?? [];
 
     final accepted =
         bookings.where((b) => b.status == BookingStatus.accepted).toList()

@@ -220,8 +220,8 @@ class RoutingService {
         'OSRM request failed with status: ${response.statusCode}',
       );
       return null;
-    } on Exception catch (e, stackTrace) {
-      TalkerService.error('Failed to get route from OSRM', e, stackTrace);
+    } catch (e, st) {
+      TalkerService.error('Failed to get route from OSRM', e, st);
       return null;
     }
   }
@@ -255,8 +255,8 @@ class RoutingService {
             .toList();
       }
       return [];
-    } on Exception catch (e, stackTrace) {
-      TalkerService.error('Failed to get alternative routes', e, stackTrace);
+    } catch (e, st) {
+      TalkerService.error('Failed to get alternative routes', e, st);
       return [];
     }
   }
@@ -279,8 +279,8 @@ class RoutingService {
         return LatLng(location[1] as double, location[0] as double);
       }
       return null;
-    } on Exception catch (e, stackTrace) {
-      TalkerService.error('Failed to get nearest road', e, stackTrace);
+    } catch (e, st) {
+      TalkerService.error('Failed to get nearest road', e, st);
       return null;
     }
   }
@@ -320,8 +320,8 @@ class RoutingService {
         };
       }
       return null;
-    } on Exception catch (e, stackTrace) {
-      TalkerService.error('Failed to get distance matrix', e, stackTrace);
+    } catch (e, st) {
+      TalkerService.error('Failed to get distance matrix', e, st);
       return null;
     }
   }
@@ -357,8 +357,8 @@ class RoutingService {
         return _parseRoute(matchings[0] as Map<String, dynamic>, 'geojson');
       }
       return null;
-    } on Exception catch (e, stackTrace) {
-      TalkerService.error('Failed to match points to roads', e, stackTrace);
+    } catch (e, st) {
+      TalkerService.error('Failed to match points to roads', e, st);
       return null;
     }
   }
@@ -393,8 +393,8 @@ class RoutingService {
         return _parseRoute(trips[0] as Map<String, dynamic>, 'geojson');
       }
       return null;
-    } on Exception catch (e, stackTrace) {
-      TalkerService.error('Failed to calculate optimal trip', e, stackTrace);
+    } catch (e, st) {
+      TalkerService.error('Failed to calculate optimal trip', e, st);
       return null;
     }
   }

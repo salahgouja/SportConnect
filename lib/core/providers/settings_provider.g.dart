@@ -11,7 +11,7 @@ part of 'settings_provider.dart';
 /// Provider for map style preference
 
 @ProviderFor(MapStyleProvider)
-final mapStyleProviderProvider = MapStyleProviderProvider._();
+final mapStyleProvider = MapStyleProviderProvider._();
 
 /// Provider for map style preference
 final class MapStyleProviderProvider
@@ -22,7 +22,7 @@ final class MapStyleProviderProvider
         from: null,
         argument: null,
         retry: null,
-        name: r'mapStyleProviderProvider',
+        name: r'mapStyleProvider',
         isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
@@ -36,7 +36,7 @@ final class MapStyleProviderProvider
   MapStyleProvider create() => MapStyleProvider();
 }
 
-String _$mapStyleProviderHash() => r'ead5635ac5018d0d7060a602c8aa7ab73401acc4';
+String _$mapStyleProviderHash() => r'44abf4c731903bb9c4811c98331e75252df2f287';
 
 /// Provider for map style preference
 
@@ -64,7 +64,7 @@ abstract class _$MapStyleProvider extends $AsyncNotifier<String> {
 /// Returns null if user hasn't set a preference (app will use system locale).
 
 @ProviderFor(LocaleProvider)
-final localeProviderProvider = LocaleProviderProvider._();
+final localeProvider = LocaleProviderProvider._();
 
 /// Provider for current app locale
 ///
@@ -81,7 +81,7 @@ final class LocaleProviderProvider
         from: null,
         argument: null,
         retry: null,
-        name: r'localeProviderProvider',
+        name: r'localeProvider',
         isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
@@ -95,7 +95,7 @@ final class LocaleProviderProvider
   LocaleProvider create() => LocaleProvider();
 }
 
-String _$localeProviderHash() => r'2c7b18254967a245c9d0583e15d80d7e59e61400';
+String _$localeProviderHash() => r'3f82e0260a23b685391c4b502068892a4a6d6532';
 
 /// Provider for current app locale
 ///
@@ -123,8 +123,7 @@ abstract class _$LocaleProvider extends $AsyncNotifier<Locale?> {
 /// Provider for push notifications setting
 
 @ProviderFor(NotificationsEnabledProvider)
-final notificationsEnabledProviderProvider =
-    NotificationsEnabledProviderProvider._();
+final notificationsEnabledProvider = NotificationsEnabledProviderProvider._();
 
 /// Provider for push notifications setting
 final class NotificationsEnabledProviderProvider
@@ -135,7 +134,7 @@ final class NotificationsEnabledProviderProvider
         from: null,
         argument: null,
         retry: null,
-        name: r'notificationsEnabledProviderProvider',
+        name: r'notificationsEnabledProvider',
         isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
@@ -150,7 +149,7 @@ final class NotificationsEnabledProviderProvider
 }
 
 String _$notificationsEnabledProviderHash() =>
-    r'fce9fd842ab7eec7ac5edd04b4e9b02267ac24a8';
+    r'08f0cd8bde7e49b4cd9cd7ae9ea6e349ee5ecd83';
 
 /// Provider for push notifications setting
 
@@ -175,7 +174,7 @@ abstract class _$NotificationsEnabledProvider extends $AsyncNotifier<bool> {
 /// Provider for ride reminders setting
 
 @ProviderFor(RideRemindersProvider)
-final rideRemindersProviderProvider = RideRemindersProviderProvider._();
+final rideRemindersProvider = RideRemindersProviderProvider._();
 
 /// Provider for ride reminders setting
 final class RideRemindersProviderProvider
@@ -186,7 +185,7 @@ final class RideRemindersProviderProvider
         from: null,
         argument: null,
         retry: null,
-        name: r'rideRemindersProviderProvider',
+        name: r'rideRemindersProvider',
         isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
@@ -201,7 +200,7 @@ final class RideRemindersProviderProvider
 }
 
 String _$rideRemindersProviderHash() =>
-    r'106049e6daa4d920cc125a6f5a6b9ec8124aa6d3';
+    r'62d2dd1c2ada09172190a99396af350dcc61baa4';
 
 /// Provider for ride reminders setting
 
@@ -226,7 +225,7 @@ abstract class _$RideRemindersProvider extends $AsyncNotifier<bool> {
 /// Provider for chat notifications setting
 
 @ProviderFor(ChatNotificationsProvider)
-final chatNotificationsProviderProvider = ChatNotificationsProviderProvider._();
+final chatNotificationsProvider = ChatNotificationsProviderProvider._();
 
 /// Provider for chat notifications setting
 final class ChatNotificationsProviderProvider
@@ -237,7 +236,7 @@ final class ChatNotificationsProviderProvider
         from: null,
         argument: null,
         retry: null,
-        name: r'chatNotificationsProviderProvider',
+        name: r'chatNotificationsProvider',
         isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
@@ -252,7 +251,7 @@ final class ChatNotificationsProviderProvider
 }
 
 String _$chatNotificationsProviderHash() =>
-    r'b0a6cfa2fa28a101f7265aed2bfaab05caf0d6ee';
+    r'659e4df33c1d8986c09d8b3ee0ddf697c3ae4ac7';
 
 /// Provider for chat notifications setting
 
@@ -277,7 +276,7 @@ abstract class _$ChatNotificationsProvider extends $AsyncNotifier<bool> {
 /// Provider for show location setting
 
 @ProviderFor(ShowLocationProvider)
-final showLocationProviderProvider = ShowLocationProviderProvider._();
+final showLocationProvider = ShowLocationProviderProvider._();
 
 /// Provider for show location setting
 final class ShowLocationProviderProvider
@@ -288,7 +287,7 @@ final class ShowLocationProviderProvider
         from: null,
         argument: null,
         retry: null,
-        name: r'showLocationProviderProvider',
+        name: r'showLocationProvider',
         isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
@@ -303,7 +302,7 @@ final class ShowLocationProviderProvider
 }
 
 String _$showLocationProviderHash() =>
-    r'1f3b8b63f3992561d75e88c5669637d8c1453073';
+    r'6a3e376ab1224107d023d4aa57611f1c3c5e87c9';
 
 /// Provider for show location setting
 
@@ -328,7 +327,7 @@ abstract class _$ShowLocationProvider extends $AsyncNotifier<bool> {
 /// Provider for public profile setting
 
 @ProviderFor(PublicProfileProvider)
-final publicProfileProviderProvider = PublicProfileProviderProvider._();
+final publicProfileProvider = PublicProfileProviderProvider._();
 
 /// Provider for public profile setting
 final class PublicProfileProviderProvider
@@ -339,7 +338,7 @@ final class PublicProfileProviderProvider
         from: null,
         argument: null,
         retry: null,
-        name: r'publicProfileProviderProvider',
+        name: r'publicProfileProvider',
         isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
@@ -354,7 +353,7 @@ final class PublicProfileProviderProvider
 }
 
 String _$publicProfileProviderHash() =>
-    r'93cdeac3d7b31d0b046de23cfccdb15ee090cdc7';
+    r'7453b0a49a462c6b63e74ca7974d244732cb36a5';
 
 /// Provider for public profile setting
 
@@ -401,7 +400,7 @@ final class SavedCredentialsNotifierProvider
 }
 
 String _$savedCredentialsNotifierHash() =>
-    r'58099867c8ec174117079b3d05c5039687aadfa6';
+    r'6f57c0077f6d0f9fff1cc83ce8e0a0464adc79a8';
 
 abstract class _$SavedCredentialsNotifier
     extends $AsyncNotifier<SavedCredentials> {

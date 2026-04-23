@@ -181,19 +181,23 @@ class RiderHomeViewModel extends _$RiderHomeViewModel {
   Future<void> checkInitialLocationState() async {
     final svc = ref.read(locationServiceProvider);
     if (!await svc.isServiceEnabled()) {
+      if (!ref.mounted) return;
       state = state.copyWith(
         locationState: LocationPermissionState.serviceDisabled,
       );
       return;
     }
     if (await svc.isPermissionPermanentlyDenied()) {
+      if (!ref.mounted) return;
       state = state.copyWith(locationState: LocationPermissionState.deniedHard);
       return;
     }
     if (await svc.checkPermission()) {
+      if (!ref.mounted) return;
       await acquireLocationAndShowMap();
       return;
     }
+    if (!ref.mounted) return;
     state = state.copyWith(locationState: LocationPermissionState.unknown);
   }
 
@@ -201,17 +205,20 @@ class RiderHomeViewModel extends _$RiderHomeViewModel {
   Future<void> handleLocationPermissionRequest() async {
     final svc = ref.read(locationServiceProvider);
     if (!await svc.isServiceEnabled()) {
+      if (!ref.mounted) return;
       state = state.copyWith(
         locationState: LocationPermissionState.serviceDisabled,
       );
       return;
     }
     final granted = await svc.requestPermission();
+    if (!ref.mounted) return;
     if (granted) {
       await acquireLocationAndShowMap();
       return;
     }
     final hardDenied = await svc.isPermissionPermanentlyDenied();
+    if (!ref.mounted) return;
     state = state.copyWith(
       locationState: hardDenied
           ? LocationPermissionState.deniedHard
@@ -248,6 +255,7 @@ class RiderHomeViewModel extends _$RiderHomeViewModel {
     if (await ref.read(pushNotificationServiceProvider).hasPermission()) {
       return false;
     }
+    if (!ref.mounted) return false;
     final settings = await ref.read(settingsRepositoryProvider.future);
     return !settings.notificationDialogShown;
   }
@@ -276,6 +284,7 @@ class RiderHomeViewModel extends _$RiderHomeViewModel {
     try {
       final locationService = ref.read(locationServiceProvider);
       final position = await locationService.getCurrentLocation();
+      if (!ref.mounted) return;
 
       if (position != null) {
         final loc = LatLng(position.latitude, position.longitude);
@@ -290,8 +299,9 @@ class RiderHomeViewModel extends _$RiderHomeViewModel {
       }
 
       _startLocationStream();
-    } on Exception catch (e) {
+    } catch (e, st) {
       TalkerService.error('Failed to get initial position: $e');
+      if (!ref.mounted) return;
       state = state.copyWith(locationState: LocationPermissionState.ready);
       _startLocationStream();
     }
@@ -305,12 +315,13 @@ class RiderHomeViewModel extends _$RiderHomeViewModel {
       final position = await ref
           .read(locationServiceProvider)
           .getCurrentLocation();
+      if (!ref.mounted) return;
       if (position == null) return;
       state = state.copyWith(
         currentLocation: LatLng(position.latitude, position.longitude),
         userHeading: position.heading,
       );
-    } on Exception catch (e) {
+    } catch (e, st) {
       TalkerService.error('Failed to refetch location: $e');
     }
   }

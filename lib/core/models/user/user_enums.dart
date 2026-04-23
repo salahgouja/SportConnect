@@ -1,7 +1,8 @@
 /// User roles in the app
 enum UserRole {
   rider,
-  driver
+  driver,
+  pending
   ;
 
   String get displayName {
@@ -10,6 +11,8 @@ enum UserRole {
         return 'Rider';
       case UserRole.driver:
         return 'Driver';
+      case UserRole.pending:
+        return 'Pending';
     }
   }
 
@@ -19,6 +22,8 @@ enum UserRole {
         return 'Find and book rides to sporting events';
       case UserRole.driver:
         return 'Offer rides and earn money';
+      case UserRole.pending:
+        return 'Your application is under review';
     }
   }
 }
@@ -58,4 +63,13 @@ enum Expertise {
   final String displayName;
 
   const Expertise(this.displayName);
+}
+
+enum AppLocale {
+  english('en'),
+  french('fr')
+  ;
+
+  final String code;
+  const AppLocale(this.code);
 }

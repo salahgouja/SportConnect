@@ -1,9 +1,18 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
 
 part 'onboarding_view_model.g.dart';
+
+enum OnboardingAction {
+  riderDone,
+  profileSaved,
+  vehicleSaved,
+  finalized,
+  finalizedStripe,
+}
 
 /// Shared state for both rider and driver onboarding flows.
 ///
@@ -30,7 +39,7 @@ class OnboardingState {
     this.riderCountry,
   });
   final bool isLoading;
-  final String? completedAction;
+  final OnboardingAction? completedAction;
   final String? errorMessage;
   final int driverCurrentStep;
   final bool driverProfilePopulated;
@@ -45,7 +54,7 @@ class OnboardingState {
 
   OnboardingState copyWith({
     bool? isLoading,
-    String? completedAction,
+    OnboardingAction? completedAction,
     String? errorMessage,
     int? driverCurrentStep,
     bool? driverProfilePopulated,
@@ -140,16 +149,23 @@ class OnboardingViewModel extends _$OnboardingViewModel {
       clearError: true,
     );
     try {
+      // Finalize role first, then persist onboarding profile fields so we don't
+      // lose data from pending -> rider conversion.
       await ref
-          .read(profileActionsViewModelProvider)
+          .read(authActionsViewModelProvider.notifier)
+          .finalizeRoleAs(uid, UserRole.rider);
+      if (!ref.mounted) return;
+
+      await ref
+          .read(profileActionsViewModelProvider.notifier)
           .updateProfile(uid, profileJson);
       if (!ref.mounted) return;
 
-      await ref.read(authActionsViewModelProvider).clearNeedsRoleSelection(uid);
-      if (!ref.mounted) return;
-
-      state = state.copyWith(isLoading: false, completedAction: 'riderDone');
-    } on Exception catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        completedAction: OnboardingAction.riderDone,
+      );
+    } catch (e, st) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
@@ -167,11 +183,14 @@ class OnboardingViewModel extends _$OnboardingViewModel {
     );
     try {
       await ref
-          .read(profileActionsViewModelProvider)
+          .read(profileActionsViewModelProvider.notifier)
           .updateProfile(uid, profileJson);
       if (!ref.mounted) return;
-      state = state.copyWith(isLoading: false, completedAction: 'profileSaved');
-    } on Exception catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        completedAction: OnboardingAction.profileSaved,
+      );
+    } catch (e, st) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
@@ -185,10 +204,15 @@ class OnboardingViewModel extends _$OnboardingViewModel {
       clearError: true,
     );
     try {
-      await ref.read(profileActionsViewModelProvider).addVehicle(uid, vehicle);
+      await ref
+          .read(profileActionsViewModelProvider.notifier)
+          .addVehicle(uid, vehicle);
       if (!ref.mounted) return;
-      state = state.copyWith(isLoading: false, completedAction: 'vehicleSaved');
-    } on Exception catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        completedAction: OnboardingAction.vehicleSaved,
+      );
+    } catch (e, st) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
@@ -196,21 +220,21 @@ class OnboardingViewModel extends _$OnboardingViewModel {
 
   /// Clears the role-selection flag and signals navigation to Stripe setup.
   Future<void> finalizeDriverSetupForStripe() async {
-    final authActions = ref.read(authActionsViewModelProvider);
+    final authActions = ref.read(authActionsViewModelProvider.notifier);
     final uid = authActions.currentUser?.uid;
     if (uid == null) return;
-    await authActions.clearNeedsRoleSelection(uid);
+    await authActions.finalizeRoleAs(uid, UserRole.driver);
     if (!ref.mounted) return;
-    state = state.copyWith(completedAction: 'finalizedStripe');
+    state = state.copyWith(completedAction: OnboardingAction.finalizedStripe);
   }
 
   /// Clears the role-selection flag and signals navigation to driver home.
   Future<void> finalizeDriverSetup() async {
-    final authActions = ref.read(authActionsViewModelProvider);
+    final authActions = ref.read(authActionsViewModelProvider.notifier);
     final uid = authActions.currentUser?.uid;
     if (uid == null) return;
-    await authActions.clearNeedsRoleSelection(uid);
+    await authActions.finalizeRoleAs(uid, UserRole.driver);
     if (!ref.mounted) return;
-    state = state.copyWith(completedAction: 'finalized');
+    state = state.copyWith(completedAction: OnboardingAction.finalized);
   }
 }

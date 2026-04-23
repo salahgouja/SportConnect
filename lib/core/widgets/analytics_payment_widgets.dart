@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
@@ -8,6 +9,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Monthly ride summary card (#92)
@@ -77,13 +79,13 @@ class MonthlyRideSummary extends StatelessWidget {
             children: [
               _summaryTile(
                 'Spent',
-                '\$${totalSpent.toStringAsFixed(2)}',
+                '€${totalSpent.toStringAsFixed(2)}',
                 Icons.arrow_upward_rounded,
               ),
               SizedBox(width: 8.w),
               _summaryTile(
                 'Earned',
-                '\$${totalEarned.toStringAsFixed(2)}',
+                '€${totalEarned.toStringAsFixed(2)}',
                 Icons.arrow_downward_rounded,
               ),
             ],
@@ -162,7 +164,7 @@ class RideCostHistoryChart extends StatelessWidget {
     final theme = Theme.of(context);
     if (data.isEmpty) return const SizedBox.shrink();
 
-    final maxVal = data.map((e) => e.amount).reduce(math.max);
+    final maxVal = data.map((e) => e.amountInCents).reduce(math.max);
 
     return Container(
       padding: EdgeInsets.all(16.w),
@@ -187,7 +189,7 @@ class RideCostHistoryChart extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: data.map((item) {
-                final ratio = maxVal > 0 ? item.amount / maxVal : 0.0;
+                final ratio = maxVal > 0 ? item.amountInCents / maxVal : 0.0;
                 return Expanded(
                   child: Padding(
                     padding: EdgeInsets.symmetric(horizontal: 3.w),
@@ -195,7 +197,7 @@ class RideCostHistoryChart extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         Text(
-                          '\$${item.amount.toStringAsFixed(0)}',
+                          '€${(item.amountInCents / 100).toStringAsFixed(2)}',
                           style: TextStyle(
                             fontSize: 10.sp,
                             fontWeight: FontWeight.w600,
@@ -240,9 +242,9 @@ class RideCostHistoryChart extends StatelessWidget {
 }
 
 class MonthlyCost {
-  const MonthlyCost(this.label, this.amount);
+  const MonthlyCost(this.label, this.amountInCents);
   final String label;
-  final double amount;
+  final int amountInCents;
 }
 
 /// Payment receipt PDF generator (#99)
@@ -254,10 +256,9 @@ class PaymentReceiptGenerator {
     required String origin,
     required String destination,
     required DateTime rideDate,
-    required double baseFare,
-    required double serviceFee,
-    required double total,
-    String currency = 'USD',
+    required int baseFare,
+    required int serviceFeeInCents,
+    required int totalInCents,
   }) async {
     final pdf = pw.Document();
     final dateStr = DateFormat('MMM dd, yyyy – hh:mm a').format(rideDate);
@@ -309,11 +310,11 @@ class PaymentReceiptGenerator {
               pw.SizedBox(height: 8),
               _pdfRow(
                 'Base Fare',
-                '\$$currency ${baseFare.toStringAsFixed(2)}',
+                '€${(baseFare / 100).toStringAsFixed(2)}',
               ),
               _pdfRow(
                 'Service Fee',
-                '\$$currency ${serviceFee.toStringAsFixed(2)}',
+                '€${(serviceFeeInCents / 100).toStringAsFixed(2)}',
               ),
               pw.SizedBox(height: 8),
               pw.Divider(),
@@ -329,7 +330,7 @@ class PaymentReceiptGenerator {
                     ),
                   ),
                   pw.Text(
-                    '\$$currency ${total.toStringAsFixed(2)}',
+                    '€${(totalInCents / 100).toStringAsFixed(2)}',
                     style: pw.TextStyle(
                       fontSize: 16,
                       fontWeight: pw.FontWeight.bold,
@@ -386,9 +387,9 @@ class PaymentReceiptGenerator {
     required String origin,
     required String destination,
     required DateTime rideDate,
-    required double baseFare,
-    required double serviceFee,
-    required double total,
+    required int baseFare,
+    required int serviceFeeInCents,
+    required int totalInCents,
   }) async {
     final bytes = await generate(
       receiptId: receiptId,
@@ -398,8 +399,8 @@ class PaymentReceiptGenerator {
       destination: destination,
       rideDate: rideDate,
       baseFare: baseFare,
-      serviceFee: serviceFee,
-      total: total,
+      serviceFeeInCents: serviceFeeInCents,
+      totalInCents: totalInCents,
     );
 
     await Printing.layoutPdf(onLayout: (_) => bytes);
@@ -415,24 +416,20 @@ class RefundRequestSheet extends StatefulWidget {
     super.key,
   });
   final String rideId;
-  final double paidAmount;
+  final int paidAmount;
   final ValueChanged<RefundRequest> onSubmit;
 
   static Future<void> show(
     BuildContext context, {
     required String rideId,
-    required double paidAmount,
+    required int paidAmount,
     required ValueChanged<RefundRequest> onSubmit,
   }) {
-    return showModalBottomSheet<void>(
+    return AppModalSheet.show<void>(
       context: context,
-      isScrollControlled: true,
-
-      barrierLabel: AppLocalizations.of(context).requestRefund,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-      ),
-      builder: (_) => RefundRequestSheet(
+      title: AppLocalizations.of(context).requestRefund,
+      maxHeightFactor: 0.86,
+      child: RefundRequestSheet(
         rideId: rideId,
         paidAmount: paidAmount,
         onSubmit: onSubmit,
@@ -486,7 +483,7 @@ class _RefundRequestSheetState extends State<RefundRequestSheet> {
           Text(
             AppLocalizations.of(
               context,
-            ).amountPaid(widget.paidAmount.toStringAsFixed(2)),
+            ).amountPaid((widget.paidAmount / 100).toStringAsFixed(2)),
             style: TextStyle(
               fontSize: 14.sp,
               color: theme.textTheme.bodySmall?.color,
@@ -544,7 +541,7 @@ class _RefundRequestSheetState extends State<RefundRequestSheet> {
                           rideId: widget.rideId,
                           reason: _reason!,
                           details: _detailsController.text.trim(),
-                          amount: widget.paidAmount,
+                          amountInCents: widget.paidAmount,
                         ),
                       );
                       Navigator.of(context).pop();
@@ -592,10 +589,10 @@ class RefundRequest {
     required this.rideId,
     required this.reason,
     required this.details,
-    required this.amount,
+    required this.amountInCents,
   });
   final String rideId;
   final RefundReason reason;
   final String details;
-  final double amount;
+  final int amountInCents;
 }

@@ -10,14 +10,25 @@ flutter_launcher_icons:
   ios: true
     
   # Source image paths
-  image_path: "assets/icons/app_icon.png"           # Main icon (1024x1024, should be square)
-  image_path_ios: "assets/icons/app_icon_ios.png"   # iOS-specific icon (optional, 1024x1024)
+  image_path: "assets/icons/app_icon_light.png"      # Light-mode Android fallback icon
+  image_path_ios: "assets/icons/app_icon_light.png"  # iOS requires a non-transparent icon
   
   # iOS-specific options
   remove_alpha_ios: true                             # iOS doesn't support transparency in launcher icon
+  background_color_ios: "#FFFFFF"
   
   # Android-specific option
   min_sdk_android: 21                                # Android minimum SDK version
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/icons/app_icon_foreground.png"
+  adaptive_icon_foreground_inset: 16
+
+  # Web/PWA icon
+  web:
+    generate: true
+    image_path: "assets/icons/app_icon_light.png"
+    background_color: "#FFFFFF"
+    theme_color: "#FFFFFF"
   
   # Preserve old icons (set to false if you want to keep backups)
   preserve_old_icons: false

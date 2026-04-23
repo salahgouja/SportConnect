@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
@@ -20,9 +22,15 @@ import 'package:sport_connect/core/services/firebase_service.dart';
 import 'package:sport_connect/core/services/push_notification_service.dart';
 import 'package:sport_connect/core/services/stripe_service.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
-import 'package:sport_connect/core/theme/app_theme.dart';
+import 'package:sport_connect/core/theme/cupertino_app_theme.dart';
+import 'package:sport_connect/core/theme/material_app_theme.dart';
 // Localization
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
+import 'package:upgrader/upgrader.dart';
+
+const _enableDebugInstrumentation = bool.fromEnvironment(
+  'SPORT_CONNECT_DEBUG_INSTRUMENTATION',
+);
 
 void main() async {
   // 1. Ensure bindings are initialized first
@@ -47,8 +55,8 @@ void main() async {
   // 3. Initialize with safety catch to prevent Splash Screen freeze
   try {
     await _initializeApp();
-  } on Exception catch (e, stack) {
-    TalkerService.error('🚨 CRITICAL INITIALIZATION FAILURE', e, stack);
+  } catch (e, st) {
+    TalkerService.error('🚨 CRITICAL INITIALIZATION FAILURE', e, st);
   }
 
   _runApp();
@@ -81,8 +89,8 @@ Future<void> _initializeStripe() async {
       publishableKey: StripeConfig.publishableKey,
     );
     TalkerService.info('✅ Stripe initialized');
-  } on Exception catch (e, stackTrace) {
-    TalkerService.error('❌ Failed to initialize Stripe', e, stackTrace);
+  } catch (e, st) {
+    TalkerService.error('❌ Failed to initialize Stripe', e, st);
   }
 }
 
@@ -90,7 +98,7 @@ void _runApp() {
   runApp(
     ProviderScope(
       observers: [
-        if (kDebugMode) ...[
+        if (kDebugMode && _enableDebugInstrumentation) ...[
           TalkerService.riverpodObserver,
           RiverpodDevToolsObserver(
             config: TrackerConfig.forPackage('com.sportconnect.app'),
@@ -113,14 +121,16 @@ class _SportConnectAppState extends ConsumerState<SportConnectApp> {
   bool _deepLinksInitialized = false;
   bool _fcmTokenSaved = false;
 
+  bool get _isFirebaseInitialized => Firebase.apps.isNotEmpty;
+
   void _initializeDeepLinks(GoRouter router, BuildContext context) {
-    if (_deepLinksInitialized) return;
+    if (_deepLinksInitialized || !_isFirebaseInitialized) return;
     _deepLinksInitialized = true;
 
     PushNotificationService.navigatorKey = rootNavigatorKey;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
+      if (mounted && _isFirebaseInitialized) {
         ref.read(deepLinkServiceProvider).initialize(router);
         PushNotificationService.instance.handlePendingInitialMessage(context);
       }
@@ -128,7 +138,7 @@ class _SportConnectAppState extends ConsumerState<SportConnectApp> {
   }
 
   void _saveFcmTokenIfNeeded() {
-    if (_fcmTokenSaved) return;
+    if (_fcmTokenSaved || !_isFirebaseInitialized) return;
     final authUser = ref.read(authStateProvider).value;
     if (authUser != null) {
       _fcmTokenSaved = true;
@@ -139,15 +149,17 @@ class _SportConnectAppState extends ConsumerState<SportConnectApp> {
   @override
   Widget build(BuildContext context) {
     final router = ref.watch(appRouterProvider);
-    final localeAsync = ref.watch(localeProviderProvider);
+    final localeAsync = ref.watch(localeProvider);
 
-    ref.listen(authStateProvider, (prev, next) {
-      if (next.value != null) {
-        _saveFcmTokenIfNeeded();
-      } else {
-        _fcmTokenSaved = false;
-      }
-    });
+    if (_isFirebaseInitialized) {
+      ref.listen(authStateProvider, (prev, next) {
+        if (next.value != null) {
+          _saveFcmTokenIfNeeded();
+        } else {
+          _fcmTokenSaved = false;
+        }
+      });
+    }
 
     return ScreenUtilInit(
       designSize: const Size(375, 812),
@@ -156,9 +168,8 @@ class _SportConnectAppState extends ConsumerState<SportConnectApp> {
       builder: (context, child) {
         _initializeDeepLinks(router, context);
 
-        return MaterialApp.router(
+        return AdaptiveApp.router(
           title: 'SportConnect',
-          debugShowCheckedModeBanner: false,
           locale: localeAsync.value,
           localizationsDelegates: const [
             AppLocalizations.delegate,
@@ -168,10 +179,17 @@ class _SportConnectAppState extends ConsumerState<SportConnectApp> {
           ],
           supportedLocales: AppLocalizations.supportedLocales,
           themeMode: ThemeMode.light,
-          theme: AppTheme.lightTheme,
+          materialLightTheme: AppMaterialTheme.lightTheme,
+          materialDarkTheme: AppMaterialTheme.darkTheme,
+          cupertinoLightTheme: AppCupertinoTheme.lightTheme,
+          cupertinoDarkTheme: AppCupertinoTheme.darkTheme,
           routerConfig: router,
           builder: (context, child) {
-            return child!;
+            final appChild = child ?? const SizedBox.shrink();
+            if (!_isFirebaseInitialized) {
+              return appChild;
+            }
+            return UpgradeAlert(child: appChild);
           },
         );
       },

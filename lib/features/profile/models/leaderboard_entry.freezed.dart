@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$LeaderboardEntry {
 
- String get userId; String get displayName; int get totalXP; int get level; int get rank; String? get photoUrl; int get ridesThisMonth;
+ String get userId; String get username; int get totalXP; int get level; int get rank; String? get photoUrl; int get ridesThisMonth;
 /// Create a copy of LeaderboardEntry
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $LeaderboardEntryCopyWith<LeaderboardEntry> get copyWith => _$LeaderboardEntryCo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is LeaderboardEntry&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.totalXP, totalXP) || other.totalXP == totalXP)&&(identical(other.level, level) || other.level == level)&&(identical(other.rank, rank) || other.rank == rank)&&(identical(other.photoUrl, photoUrl) || other.photoUrl == photoUrl)&&(identical(other.ridesThisMonth, ridesThisMonth) || other.ridesThisMonth == ridesThisMonth));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is LeaderboardEntry&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.username, username) || other.username == username)&&(identical(other.totalXP, totalXP) || other.totalXP == totalXP)&&(identical(other.level, level) || other.level == level)&&(identical(other.rank, rank) || other.rank == rank)&&(identical(other.photoUrl, photoUrl) || other.photoUrl == photoUrl)&&(identical(other.ridesThisMonth, ridesThisMonth) || other.ridesThisMonth == ridesThisMonth));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,userId,displayName,totalXP,level,rank,photoUrl,ridesThisMonth);
+int get hashCode => Object.hash(runtimeType,userId,username,totalXP,level,rank,photoUrl,ridesThisMonth);
 
 @override
 String toString() {
-  return 'LeaderboardEntry(userId: $userId, displayName: $displayName, totalXP: $totalXP, level: $level, rank: $rank, photoUrl: $photoUrl, ridesThisMonth: $ridesThisMonth)';
+  return 'LeaderboardEntry(userId: $userId, username: $username, totalXP: $totalXP, level: $level, rank: $rank, photoUrl: $photoUrl, ridesThisMonth: $ridesThisMonth)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $LeaderboardEntryCopyWith<$Res>  {
   factory $LeaderboardEntryCopyWith(LeaderboardEntry value, $Res Function(LeaderboardEntry) _then) = _$LeaderboardEntryCopyWithImpl;
 @useResult
 $Res call({
- String userId, String displayName, int totalXP, int level, int rank, String? photoUrl, int ridesThisMonth
+ String userId, String username, int totalXP, int level, int rank, String? photoUrl, int ridesThisMonth
 });
 
 
@@ -65,10 +65,10 @@ class _$LeaderboardEntryCopyWithImpl<$Res>
 
 /// Create a copy of LeaderboardEntry
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? userId = null,Object? displayName = null,Object? totalXP = null,Object? level = null,Object? rank = null,Object? photoUrl = freezed,Object? ridesThisMonth = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? userId = null,Object? username = null,Object? totalXP = null,Object? level = null,Object? rank = null,Object? photoUrl = freezed,Object? ridesThisMonth = null,}) {
   return _then(_self.copyWith(
 userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
-as String,displayName: null == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
+as String,username: null == username ? _self.username : username // ignore: cast_nullable_to_non_nullable
 as String,totalXP: null == totalXP ? _self.totalXP : totalXP // ignore: cast_nullable_to_non_nullable
 as int,level: null == level ? _self.level : level // ignore: cast_nullable_to_non_nullable
 as int,rank: null == rank ? _self.rank : rank // ignore: cast_nullable_to_non_nullable
@@ -159,10 +159,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String userId,  String displayName,  int totalXP,  int level,  int rank,  String? photoUrl,  int ridesThisMonth)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String userId,  String username,  int totalXP,  int level,  int rank,  String? photoUrl,  int ridesThisMonth)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _LeaderboardEntry() when $default != null:
-return $default(_that.userId,_that.displayName,_that.totalXP,_that.level,_that.rank,_that.photoUrl,_that.ridesThisMonth);case _:
+return $default(_that.userId,_that.username,_that.totalXP,_that.level,_that.rank,_that.photoUrl,_that.ridesThisMonth);case _:
   return orElse();
 
 }
@@ -180,10 +180,10 @@ return $default(_that.userId,_that.displayName,_that.totalXP,_that.level,_that.r
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String userId,  String displayName,  int totalXP,  int level,  int rank,  String? photoUrl,  int ridesThisMonth)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String userId,  String username,  int totalXP,  int level,  int rank,  String? photoUrl,  int ridesThisMonth)  $default,) {final _that = this;
 switch (_that) {
 case _LeaderboardEntry():
-return $default(_that.userId,_that.displayName,_that.totalXP,_that.level,_that.rank,_that.photoUrl,_that.ridesThisMonth);case _:
+return $default(_that.userId,_that.username,_that.totalXP,_that.level,_that.rank,_that.photoUrl,_that.ridesThisMonth);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -200,10 +200,10 @@ return $default(_that.userId,_that.displayName,_that.totalXP,_that.level,_that.r
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String userId,  String displayName,  int totalXP,  int level,  int rank,  String? photoUrl,  int ridesThisMonth)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String userId,  String username,  int totalXP,  int level,  int rank,  String? photoUrl,  int ridesThisMonth)?  $default,) {final _that = this;
 switch (_that) {
 case _LeaderboardEntry() when $default != null:
-return $default(_that.userId,_that.displayName,_that.totalXP,_that.level,_that.rank,_that.photoUrl,_that.ridesThisMonth);case _:
+return $default(_that.userId,_that.username,_that.totalXP,_that.level,_that.rank,_that.photoUrl,_that.ridesThisMonth);case _:
   return null;
 
 }
@@ -215,11 +215,11 @@ return $default(_that.userId,_that.displayName,_that.totalXP,_that.level,_that.r
 @JsonSerializable()
 
 class _LeaderboardEntry implements LeaderboardEntry {
-  const _LeaderboardEntry({required this.userId, required this.displayName, required this.totalXP, required this.level, required this.rank, this.photoUrl, this.ridesThisMonth = 0});
+  const _LeaderboardEntry({required this.userId, required this.username, required this.totalXP, required this.level, required this.rank, this.photoUrl, this.ridesThisMonth = 0});
   factory _LeaderboardEntry.fromJson(Map<String, dynamic> json) => _$LeaderboardEntryFromJson(json);
 
 @override final  String userId;
-@override final  String displayName;
+@override final  String username;
 @override final  int totalXP;
 @override final  int level;
 @override final  int rank;
@@ -239,16 +239,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _LeaderboardEntry&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.totalXP, totalXP) || other.totalXP == totalXP)&&(identical(other.level, level) || other.level == level)&&(identical(other.rank, rank) || other.rank == rank)&&(identical(other.photoUrl, photoUrl) || other.photoUrl == photoUrl)&&(identical(other.ridesThisMonth, ridesThisMonth) || other.ridesThisMonth == ridesThisMonth));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _LeaderboardEntry&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.username, username) || other.username == username)&&(identical(other.totalXP, totalXP) || other.totalXP == totalXP)&&(identical(other.level, level) || other.level == level)&&(identical(other.rank, rank) || other.rank == rank)&&(identical(other.photoUrl, photoUrl) || other.photoUrl == photoUrl)&&(identical(other.ridesThisMonth, ridesThisMonth) || other.ridesThisMonth == ridesThisMonth));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,userId,displayName,totalXP,level,rank,photoUrl,ridesThisMonth);
+int get hashCode => Object.hash(runtimeType,userId,username,totalXP,level,rank,photoUrl,ridesThisMonth);
 
 @override
 String toString() {
-  return 'LeaderboardEntry(userId: $userId, displayName: $displayName, totalXP: $totalXP, level: $level, rank: $rank, photoUrl: $photoUrl, ridesThisMonth: $ridesThisMonth)';
+  return 'LeaderboardEntry(userId: $userId, username: $username, totalXP: $totalXP, level: $level, rank: $rank, photoUrl: $photoUrl, ridesThisMonth: $ridesThisMonth)';
 }
 
 
@@ -259,7 +259,7 @@ abstract mixin class _$LeaderboardEntryCopyWith<$Res> implements $LeaderboardEnt
   factory _$LeaderboardEntryCopyWith(_LeaderboardEntry value, $Res Function(_LeaderboardEntry) _then) = __$LeaderboardEntryCopyWithImpl;
 @override @useResult
 $Res call({
- String userId, String displayName, int totalXP, int level, int rank, String? photoUrl, int ridesThisMonth
+ String userId, String username, int totalXP, int level, int rank, String? photoUrl, int ridesThisMonth
 });
 
 
@@ -276,10 +276,10 @@ class __$LeaderboardEntryCopyWithImpl<$Res>
 
 /// Create a copy of LeaderboardEntry
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? userId = null,Object? displayName = null,Object? totalXP = null,Object? level = null,Object? rank = null,Object? photoUrl = freezed,Object? ridesThisMonth = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? userId = null,Object? username = null,Object? totalXP = null,Object? level = null,Object? rank = null,Object? photoUrl = freezed,Object? ridesThisMonth = null,}) {
   return _then(_LeaderboardEntry(
 userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
-as String,displayName: null == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
+as String,username: null == username ? _self.username : username // ignore: cast_nullable_to_non_nullable
 as String,totalXP: null == totalXP ? _self.totalXP : totalXP // ignore: cast_nullable_to_non_nullable
 as int,level: null == level ? _self.level : level // ignore: cast_nullable_to_non_nullable
 as int,rank: null == rank ? _self.rank : rank // ignore: cast_nullable_to_non_nullable

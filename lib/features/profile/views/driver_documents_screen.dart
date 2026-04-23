@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
@@ -10,15 +11,9 @@ class DriverDocumentsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text(
-          l10n.driverDocuments,
-          style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.w600),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
+    return AdaptiveScaffold(
+      appBar: AdaptiveAppBar(
+        title: l10n.driverDocuments,
         leading: IconButton(
           icon: Icon(Icons.adaptive.arrow_back),
           onPressed: () => context.pop(),
@@ -59,8 +54,10 @@ class DriverDocumentsScreen extends StatelessWidget {
                 actionText: 'Update',
                 context: context,
                 onAction: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Upload feature coming soon')),
+                  AdaptiveSnackBar.show(
+                    context,
+                    message: 'Upload feature coming soon',
+                    type: AdaptiveSnackBarType.info,
                   );
                 },
               ),

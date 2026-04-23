@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -180,7 +181,6 @@ class PriceInput extends StatefulWidget {
     this.initialValue,
     this.onChanged,
     this.label,
-    this.currency = '€',
     this.suggestedPrice,
     this.minPrice,
     this.maxPrice,
@@ -191,7 +191,6 @@ class PriceInput extends StatefulWidget {
   final double? initialValue;
   final ValueChanged<double?>? onChanged;
   final String? label;
-  final String currency;
   final double? suggestedPrice;
   final double? minPrice;
   final double? maxPrice;
@@ -301,7 +300,7 @@ class PriceInputState extends State<PriceInput> {
                   ),
                 ),
                 child: Text(
-                  widget.currency,
+                  '€',
                   style: TextStyle(
                     fontSize: 18.sp,
                     fontWeight: FontWeight.bold,
@@ -376,7 +375,7 @@ class PriceInputState extends State<PriceInput> {
                     Icon(Icons.auto_awesome, size: 14.sp, color: Colors.green),
                     SizedBox(width: 6.w),
                     Text(
-                      'Suggested: ${widget.currency}${widget.suggestedPrice!.toStringAsFixed(2)}',
+                      'Suggested: €${widget.suggestedPrice!.toStringAsFixed(2)}',
                       style: TextStyle(
                         fontSize: 12.sp,
                         fontWeight: FontWeight.w600,

@@ -34,7 +34,7 @@ abstract class IDriverStatsRepository {
   /// Update driver stats after ride completion
   Future<void> recordRideCompletion({
     required String driverId,
-    required double earnings,
+    required int earningsInCents,
     required double distanceKm,
   });
 }

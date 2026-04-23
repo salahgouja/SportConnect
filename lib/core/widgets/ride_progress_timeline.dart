@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
@@ -158,84 +159,82 @@ class _TimelineStep extends StatelessWidget {
       stepColor = AppColors.textTertiary.withValues(alpha: 0.4);
     }
 
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Timeline indicator column
-          SizedBox(
-            width: 32.w,
-            child: Column(
-              children: [
-                // Step circle
-                Container(
-                  width: 28.w,
-                  height: 28.w,
-                  decoration: BoxDecoration(
-                    color: isCompleted || isActive
-                        ? stepColor.withValues(alpha: 0.15)
-                        : Colors.transparent,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: stepColor,
-                      width: isActive ? 2 : 1.5,
-                    ),
-                  ),
-                  child: Icon(
-                    isCompleted ? Icons.check_rounded : icon,
-                    size: 14.sp,
+    final step = Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Timeline indicator column. A fixed connector avoids IntrinsicHeight,
+        // which forces an extra speculative layout pass for every step.
+        SizedBox(
+          width: 32.w,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 28.w,
+                height: 28.w,
+                decoration: BoxDecoration(
+                  color: isCompleted || isActive
+                      ? stepColor.withValues(alpha: 0.15)
+                      : Colors.transparent,
+                  shape: BoxShape.circle,
+                  border: Border.all(
                     color: stepColor,
+                    width: isActive ? 2 : 1.5,
                   ),
                 ),
-                // Connector line
-                if (!isLast)
-                  Expanded(
-                    child: Container(
-                      width: 2,
-                      margin: EdgeInsets.symmetric(vertical: 4.h),
-                      color: isCompleted
-                          ? AppColors.success.withValues(alpha: 0.4)
-                          : AppColors.border,
-                    ),
+                child: Icon(
+                  isCompleted ? Icons.check_rounded : icon,
+                  size: 14.sp,
+                  color: stepColor,
+                ),
+              ),
+              if (!isLast)
+                Container(
+                  width: 2,
+                  height: 28.h,
+                  margin: EdgeInsets.symmetric(vertical: 4.h),
+                  color: isCompleted
+                      ? AppColors.success.withValues(alpha: 0.4)
+                      : AppColors.border,
+                ),
+            ],
+          ),
+        ),
+        SizedBox(width: 12.w),
+        Expanded(
+          child: Padding(
+            padding: EdgeInsets.only(bottom: isLast ? 0 : 16.h),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: isActive ? FontWeight.w700 : FontWeight.w600,
+                    color: isActive || isCompleted
+                        ? AppColors.textPrimary
+                        : AppColors.textTertiary,
                   ),
+                ),
+                SizedBox(height: 2.h),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: isActive
+                        ? AppColors.textSecondary
+                        : AppColors.textTertiary,
+                  ),
+                ),
               ],
             ),
           ),
-          SizedBox(width: 12.w),
-          // Content
-          Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(bottom: isLast ? 0 : 16.h),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: isActive ? FontWeight.w700 : FontWeight.w600,
-                      color: isActive || isCompleted
-                          ? AppColors.textPrimary
-                          : AppColors.textTertiary,
-                    ),
-                  ),
-                  SizedBox(height: 2.h),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      color: isActive
-                          ? AppColors.textSecondary
-                          : AppColors.textTertiary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    ).animate().fadeIn(delay: animationDelay, duration: 250.ms);
+        ),
+      ],
+    );
+
+    return step.animate().fadeIn(delay: animationDelay, duration: 250.ms);
   }
 }
 
@@ -280,7 +279,7 @@ class _CompactTimeline extends StatelessWidget {
           dotColor = AppColors.textTertiary.withValues(alpha: 0.3);
         }
 
-        return Tooltip(
+        return AdaptiveTooltip(
           message: step.label,
           child: Container(
             width: 24.w,

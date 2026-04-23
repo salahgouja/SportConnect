@@ -99,7 +99,7 @@ class NotificationViewModel extends _$NotificationViewModel {
       await repository.markAsRead(notificationId);
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false);
-    } on Exception catch (e) {
+    } catch (e, st) {
       if (!ref.mounted) return;
       state = state.copyWith(
         isLoading: false,
@@ -120,7 +120,7 @@ class NotificationViewModel extends _$NotificationViewModel {
       await repository.markAllAsRead(userId);
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false);
-    } on Exception catch (e) {
+    } catch (e, st) {
       if (!ref.mounted) return;
       state = state.copyWith(
         isLoading: false,
@@ -141,7 +141,7 @@ class NotificationViewModel extends _$NotificationViewModel {
       await repository.archiveAll(userId);
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false);
-    } on Exception catch (e) {
+    } catch (e, st) {
       if (!ref.mounted) return;
       state = state.copyWith(
         isLoading: false,
@@ -159,7 +159,7 @@ class NotificationViewModel extends _$NotificationViewModel {
       await repository.archiveNotification(notificationId);
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false);
-    } on Exception catch (e) {
+    } catch (e, st) {
       if (!ref.mounted) return;
       state = state.copyWith(
         isLoading: false,
@@ -197,7 +197,7 @@ class NotificationViewModel extends _$NotificationViewModel {
       }
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, selectedNotificationIds: []);
-    } on Exception catch (e) {
+    } catch (e, st) {
       if (!ref.mounted) return;
       state = state.copyWith(
         isLoading: false,

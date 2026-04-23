@@ -96,7 +96,7 @@ class LocationServiceImpl implements ILocationService {
         'Current position: ${position.latitude}, ${position.longitude}',
       );
       return position;
-    } on Exception catch (e) {
+    } catch (e, st) {
       TalkerService.error('Failed to get current position', e);
       return null;
     }
@@ -126,7 +126,7 @@ class LocationServiceImpl implements ILocationService {
         final place = placemarks.first;
         return '${place.street}, ${place.locality}, ${place.country}';
       }
-    } on Exception catch (e) {
+    } catch (e, st) {
       TalkerService.error('Failed to get address from coordinates', e);
     }
     return null;
@@ -152,7 +152,7 @@ class LocationServiceImpl implements ILocationService {
           headingAccuracy: 0,
         );
       }
-    } on Exception catch (e) {
+    } catch (e, st) {
       TalkerService.error('Failed to get coordinates from address', e);
     }
     return null;

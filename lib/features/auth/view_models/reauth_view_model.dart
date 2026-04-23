@@ -47,11 +47,11 @@ class ReauthViewModel extends _$ReauthViewModel {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
       await ref
-          .read(authActionsViewModelProvider)
+          .read(authActionsViewModelProvider.notifier)
           .reauthenticateWithPassword(password);
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, isSuccess: true);
-    } on Exception catch (e) {
+    } catch (e, st) {
       if (!ref.mounted) return;
       state = state.copyWith(
         isLoading: false,
@@ -65,10 +65,10 @@ class ReauthViewModel extends _$ReauthViewModel {
   Future<void> reauthWithGoogle() async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      await ref.read(authActionsViewModelProvider).reauthenticateWithGoogle();
+      await ref.read(authActionsViewModelProvider.notifier).reauthenticateWithGoogle();
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, isSuccess: true);
-    } on Exception catch (_) {
+    } catch (e, st) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, errorCode: 'google');
     }

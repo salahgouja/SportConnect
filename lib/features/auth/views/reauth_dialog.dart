@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:reactive_forms/reactive_forms.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/features/auth/view_models/reauth_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
@@ -13,11 +15,11 @@ import 'package:sport_connect/l10n/generated/app_localizations.dart';
 /// Used before delete-account and change-password when Firebase
 /// throws `requires-recent-login`.
 Future<bool> showReauthDialog(BuildContext context, WidgetRef ref) async {
-  final result = await showModalBottomSheet<bool>(
+  final result = await AppModalSheet.show<bool>(
     context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (ctx) => const _ReauthBottomSheet(),
+    title: AppLocalizations.of(context).reauthTitle,
+    maxHeightFactor: 0.9,
+    child: const _ReauthBottomSheet(),
   );
   return result ?? false;
 }

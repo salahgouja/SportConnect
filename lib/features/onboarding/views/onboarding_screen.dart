@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -32,12 +33,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   @override
   void initState() {
     super.initState();
-    SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.dark,
-      ),
-    );
   }
 
   @override
@@ -166,33 +161,36 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     final vmState = ref.watch(onboardingViewModelProvider);
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _TopBar(
+    return AdaptiveScaffold(
+      body: Column(
+        children: [
+          SafeArea(
+            bottom: false,
+            child: _TopBar(
               currentPage: _currentPage,
               pages: onboardingPages,
               onSkip: _completeOnboarding,
             ),
-            Expanded(
-              child: PageView.builder(
-                controller: _pageController,
-                onPageChanged: _onPageChanged,
-                itemCount: onboardingPages.length,
-                itemBuilder: (_, i) => _PageContent(page: onboardingPages[i]),
-              ),
+          ),
+          Expanded(
+            child: PageView.builder(
+              controller: _pageController,
+              onPageChanged: _onPageChanged,
+              itemCount: onboardingPages.length,
+              itemBuilder: (_, i) => _PageContent(page: onboardingPages[i]),
             ),
-            _BottomControls(
+          ),
+          SafeArea(
+            top: false,
+            child: _BottomControls(
               currentPage: _currentPage,
               pages: onboardingPages,
               vmState: vmState,
               pageController: _pageController,
               onComplete: _completeOnboarding,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

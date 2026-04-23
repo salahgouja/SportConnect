@@ -1,7 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:riverpod/src/providers/provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
@@ -101,49 +99,45 @@ class PaymentHistoryFilterViewModel extends _$PaymentHistoryFilterViewModel {
   }
 }
 
-final ProviderFamily<List<PaymentTransaction>, List<PaymentTransaction>>
-filteredRiderPaymentsProvider =
-    Provider.family<List<PaymentTransaction>, List<PaymentTransaction>>((
-      ref,
-      payments,
-    ) {
-      final selectedFilter = ref
-          .watch(paymentHistoryFilterViewModelProvider)
-          .selectedFilter;
+@riverpod
+List<PaymentTransaction> filteredRiderPayments(
+  Ref ref,
+  List<PaymentTransaction> payments,
+) {
+  final selectedFilter = ref
+      .watch(paymentHistoryFilterViewModelProvider)
+      .selectedFilter;
 
-      switch (selectedFilter) {
-        case 'completed':
-          return payments
-              .where((payment) => payment.status == PaymentStatus.succeeded)
-              .toList();
-        case 'pending':
-          return payments
-              .where(
-                (payment) =>
-                    payment.status == PaymentStatus.pending ||
-                    payment.status == PaymentStatus.processing,
-              )
-              .toList();
-        case 'refunded':
-          return payments
-              .where(
-                (payment) =>
-                    payment.status == PaymentStatus.refunded ||
-                    payment.status == PaymentStatus.partiallyRefunded,
-              )
-              .toList();
-        case 'failed':
-          return payments
-              .where(
-                (payment) =>
-                    payment.status == PaymentStatus.failed ||
-                    payment.status == PaymentStatus.cancelled,
-              )
-              .toList();
-        default:
-          return payments;
-      }
-    });
+  return switch (selectedFilter) {
+    'completed' =>
+      payments.where((p) => p.status == PaymentStatus.succeeded).toList(),
+    'pending' =>
+      payments
+          .where(
+            (p) =>
+                p.status == PaymentStatus.pending ||
+                p.status == PaymentStatus.processing,
+          )
+          .toList(),
+    'refunded' =>
+      payments
+          .where(
+            (p) =>
+                p.status == PaymentStatus.refunded ||
+                p.status == PaymentStatus.partiallyRefunded,
+          )
+          .toList(),
+    'failed' =>
+      payments
+          .where(
+            (p) =>
+                p.status == PaymentStatus.failed ||
+                p.status == PaymentStatus.cancelled,
+          )
+          .toList(),
+    _ => payments,
+  };
+}
 
 class DriverEarningsPeriodState {
   const DriverEarningsPeriodState({this.selectedPeriod = 'thisWeek'});
@@ -198,9 +192,7 @@ class PaymentViewModel extends _$PaymentViewModel {
       final stripeService = ref.read(stripeServiceProvider);
       final paymentRepo = ref.read(paymentRepositoryProvider);
 
-      // Calculate total amount
-      final totalAmount = ride.pricing.pricePerSeat.amount * seatsBooked;
-      final currency = ride.pricing.pricePerSeat.currency;
+      const currency = 'EUR';
 
       // Create Stripe Payment Intent via Firebase Cloud Function
       // This automatically handles:
@@ -214,7 +206,8 @@ class PaymentViewModel extends _$PaymentViewModel {
         riderName: riderName,
         driverId: ride.driverId,
         driverName: '', // Resolved at view layer
-        amount: totalAmount, // Main currency unit — server converts to cents
+        amountInCents:
+            ride.pricing.pricePerSeatInCents.amountInCents * seatsBooked,
         currency: currency,
         customerId: customerId,
         description:
@@ -231,26 +224,32 @@ class PaymentViewModel extends _$PaymentViewModel {
       );
 
       if (success) {
+        final paymentIntentId = paymentIntentData['paymentIntentId'] as String?;
+        if (paymentIntentId == null || paymentIntentId.isEmpty) {
+          throw StateError('Payment intent response did not include an ID.');
+        }
+
         // Payment succeeded - get the updated payment record from Firestore
         // (Firebase webhook will update it automatically)
-        final payment = await paymentRepo.getPaymentById(
-          paymentIntentData['paymentIntentId'],
-        );
+        final payment = await paymentRepo.getPaymentById(paymentIntentId);
+        if (payment == null) {
+          throw StateError('Payment record not found for $paymentIntentId.');
+        }
 
         // Check if provider is still mounted after async operation
-        if (!ref.mounted) return payment!;
+        if (!ref.mounted) return payment;
 
         state = const AsyncValue.data(null);
-        return payment!;
+        return payment;
       } else {
         throw Exception('Payment cancelled by user');
       }
-    } on Exception catch (e, stack) {
+    } catch (e, st) {
       TalkerService.error('Error processing payment: $e');
 
       // Check if provider is still mounted before setting error state
       if (ref.mounted) {
-        state = AsyncValue.error(e, stack);
+        state = AsyncValue.error(e, st);
       }
       rethrow;
     }
@@ -274,7 +273,7 @@ class PaymentViewModel extends _$PaymentViewModel {
         existingCustomerId: existingCustomerId,
       );
       return result['customerId'] as String;
-    } on Exception catch (e) {
+    } catch (e, st) {
       TalkerService.error('Error getting/creating customer: $e');
       rethrow;
     }
@@ -283,7 +282,7 @@ class PaymentViewModel extends _$PaymentViewModel {
   /// Refund payment
   Future<void> refundBookingPayment({
     required String paymentId,
-    double? amount,
+    int? amountInCents,
     String? reason,
   }) async {
     state = const AsyncValue.loading();
@@ -292,7 +291,7 @@ class PaymentViewModel extends _$PaymentViewModel {
       final paymentRepo = ref.read(paymentRepositoryProvider);
       await paymentRepo.processRefund(
         paymentId: paymentId,
-        amount: amount,
+        amountInCents: amountInCents,
         reason: reason,
       );
 
@@ -300,12 +299,12 @@ class PaymentViewModel extends _$PaymentViewModel {
       if (!ref.mounted) return;
 
       state = const AsyncValue.data(null);
-    } on Exception catch (e, stack) {
+    } catch (e, st) {
       TalkerService.error('Error processing refund: $e');
 
       // Check if provider is still mounted before setting error state
       if (ref.mounted) {
-        state = AsyncValue.error(e, stack);
+        state = AsyncValue.error(e, st);
       }
       rethrow;
     }
@@ -323,8 +322,8 @@ class DriverOnboardingViewModel extends _$DriverOnboardingViewModel {
   /// Creates a connected account via Stripe and persists it via the repository.
   ///
   /// Prefills individual info to reduce onboarding friction.
-  /// Returns the saved [DriverConnectedAccount] on success, or null on failure.
-  Future<DriverConnectedAccount?> createConnectedAccount({
+  /// Returns the saved [ConnectedAccountCreationResult] on success, or null on failure.
+  Future<ConnectedAccountCreationResult?> createConnectedAccount({
     required String userId,
     required String email,
     required String country,
@@ -355,10 +354,10 @@ class DriverOnboardingViewModel extends _$DriverOnboardingViewModel {
 
       state = const AsyncValue.data(null);
       return account;
-    } on Exception catch (e, stack) {
+    } catch (e, st) {
       TalkerService.error('Error creating connected account: $e');
       if (ref.mounted) {
-        state = AsyncValue.error(e, stack);
+        state = AsyncValue.error(e, st);
       }
       return null;
     }
@@ -381,7 +380,7 @@ class DriverStripeOnboardingFlowViewModel
       if (status.isConnected) {
         state = state.copyWith(isConnected: true, clearError: true);
       }
-    } on Exception catch (e) {
+    } catch (e, st) {
       TalkerService.error('Error checking existing Stripe account: $e');
     }
   }
@@ -403,7 +402,7 @@ class DriverStripeOnboardingFlowViewModel
 
     try {
       final country = _detectUserCountry(user);
-      final nameParts = user.displayName.trim().split(RegExp(r'\s+'));
+      final nameParts = user.username.trim().split(RegExp(r'\s+'));
       final firstName = nameParts.first;
       final lastName = nameParts.length > 1
           ? nameParts.sublist(1).join(' ')
@@ -417,17 +416,33 @@ class DriverStripeOnboardingFlowViewModel
             country: country,
             firstName: firstName,
             lastName: lastName,
-            phone: user.phoneNumber,
-            dateOfBirth: user.dateOfBirth,
-            addressLine1: user.address,
-            city: user.city,
+            phone: switch (user) {
+              final RiderModel rider => rider.phoneNumber,
+              final DriverModel driver => driver.phoneNumber,
+              _ => null,
+            },
+            dateOfBirth: switch (user) {
+              final RiderModel rider => rider.dateOfBirth,
+              final DriverModel driver => driver.dateOfBirth,
+              _ => null,
+            },
+            addressLine1: switch (user) {
+              final RiderModel rider => rider.address,
+              final DriverModel driver => driver.address,
+              _ => null,
+            },
+            city: switch (user) {
+              final RiderModel rider => rider.city,
+              final DriverModel driver => driver.city,
+              _ => null,
+            },
           );
 
       if (!ref.mounted) return;
 
       if (result != null &&
           result.onboardingUrl != null &&
-          result.stripeAccountId.isNotEmpty) {
+          result.account.stripeAccountId.isNotEmpty) {
         state = state.copyWith(
           isLoading: false,
           onboardingUrl: result.onboardingUrl,
@@ -487,7 +502,6 @@ class DriverStripeOnboardingFlowViewModel
     );
 
     try {
-      await Future<void>.delayed(const Duration(seconds: 2));
       if (user == null) {
         state = state.copyWith(
           isVerifying: false,
@@ -497,47 +511,69 @@ class DriverStripeOnboardingFlowViewModel
         return;
       }
 
-      ref.invalidate(driverStripeStatusProvider);
-      final status = await ref.read(driverStripeStatusProvider.future);
-      if (!ref.mounted) return;
-
-      if (status.isConnected) {
-        // Write isStripeOnboarded to the user document so the route guard
-        // sees the flag immediately when the screen navigates to driverHome.
-        // This bridges the gap before the Cloud Function webhook fires.
-        try {
-          await ref.read(profileRepositoryProvider).updateProfile(user.uid, {
-            'isStripeOnboarded': true,
-          });
-        } on Exception catch (e) {
-          TalkerService.warning('Failed to persist isStripeOnboarded flag: $e');
-        }
-        if (!ref.mounted) return;
+      final driver = user is DriverModel ? user : null;
+      if (driver == null) {
         state = state.copyWith(
           isVerifying: false,
-          isConnected: true,
-          successMessage: successMessage,
-        );
-      } else {
-        state = state.copyWith(
-          isVerifying: false,
-          errorMessage: additionalInfoMessage,
+          errorMessage: verifyFailedMessage,
           completionHandled: false,
         );
+        return;
       }
-    } on Exception catch (e, stack) {
+
+      final paymentRepo = ref.read(paymentRepositoryProvider);
+      final connectedAccount = await paymentRepo.getConnectedAccount(
+        driver.uid,
+      );
+      final stripeAccountId =
+          connectedAccount?.stripeAccountId ?? driver.stripeAccountId;
+      if (stripeAccountId == null || stripeAccountId.isEmpty) {
+        state = state.copyWith(
+          isVerifying: false,
+          errorMessage: verifyFailedMessage,
+          completionHandled: false,
+        );
+        return;
+      }
+
+      final result = await paymentRepo.refreshConnectedAccountFromServer(
+        driverId: driver.uid,
+        accountId: stripeAccountId,
+      );
+
+      if (!ref.mounted) return;
+
+      final isReady =
+          result != null &&
+          result.chargesEnabled &&
+          result.payoutsEnabled &&
+          result.detailsSubmitted &&
+          result.capabilities.transfers.name == 'active';
+
+      state = state.copyWith(
+        isVerifying: false,
+        isConnected: isReady,
+        successMessage: isReady ? successMessage : additionalInfoMessage,
+        showWebView: false,
+        webViewProgress: 0,
+        clearOnboardingUrl: true,
+      );
+    } catch (e, st) {
       TalkerService.error(
         'Stripe onboarding verification failed: $e',
         e,
-        stack,
+        st,
       );
+
       if (!ref.mounted) return;
+
       state = state.copyWith(
         isVerifying: false,
         completionHandled: false,
         errorMessage: verifyFailedMessage,
         showWebView: false,
         webViewProgress: 0,
+        clearOnboardingUrl: true,
       );
     }
   }
@@ -556,10 +592,19 @@ class DriverStripeOnboardingFlowViewModel
   }
 
   String _detectUserCountry(UserModel user) {
-    if (user.country != null && user.country!.isNotEmpty) {
-      return user.country!.toUpperCase();
+    final country = switch (user) {
+      final RiderModel rider => rider.country,
+      final DriverModel driver => driver.country,
+      _ => null,
+    };
+    if (country != null && country.isNotEmpty) {
+      return country.toUpperCase();
     }
-    final phone = user.phoneNumber;
+    final phone = switch (user) {
+      final RiderModel rider => rider.phoneNumber,
+      final DriverModel driver => driver.phoneNumber,
+      _ => null,
+    };
     if (phone != null) {
       const phoneCountryMap = {
         '+216': 'TN',
@@ -627,7 +672,7 @@ class DriverConnectedAccountViewModel
     try {
       // Refresh from Firestore (webhooks keep it updated)
       ref.invalidateSelf();
-    } on Exception catch (e) {
+    } catch (e, st) {
       TalkerService.error('Error refreshing account status: $e');
       rethrow;
     }
@@ -682,7 +727,7 @@ class DriverPayoutViewModel extends _$DriverPayoutViewModel {
   /// [stripeAccountId] - driver's Stripe Connect account ID from Firestore.
   Future<bool> requestInstantPayout({
     required String stripeAccountId,
-    required double amount,
+    required int amountInCents,
     required String currency,
   }) async {
     state = const AsyncValue.loading();
@@ -692,7 +737,7 @@ class DriverPayoutViewModel extends _$DriverPayoutViewModel {
 
       await stripeService.createInstantPayout(
         stripeAccountId: stripeAccountId,
-        amount: amount, // Main currency unit — server converts to cents
+        amountInCents: amountInCents, // Amount in cents
         currency: currency,
       );
 
@@ -700,10 +745,10 @@ class DriverPayoutViewModel extends _$DriverPayoutViewModel {
 
       state = const AsyncValue.data(null);
       return true;
-    } on Exception catch (e, stack) {
+    } catch (e, st) {
       TalkerService.error('Error requesting payout: $e');
       if (ref.mounted) {
-        state = AsyncValue.error(e, stack);
+        state = AsyncValue.error(e, st);
       }
       return false;
     }
@@ -722,10 +767,10 @@ class DriverPayoutViewModel extends _$DriverPayoutViewModel {
       if (!ref.mounted) return true;
       state = const AsyncValue.data(null);
       return true;
-    } on Exception catch (e, stack) {
+    } catch (e, st) {
       TalkerService.error('Error cancelling payout: $e');
       if (ref.mounted) {
-        state = AsyncValue.error(e, stack);
+        state = AsyncValue.error(e, st);
       }
       return false;
     }
@@ -742,8 +787,8 @@ abstract class DriverStripeStatus with _$DriverStripeStatus {
     @Default(false) bool payoutsEnabled,
     @Default(false) bool chargesEnabled,
     @Default(false) bool detailsSubmitted,
-    @Default(0.0) double availableBalance,
-    @Default(0.0) double pendingBalance,
+    @Default(0) int availableBalanceInCents,
+    @Default(0) int pendingBalanceInCents,
     @Default('EUR') String currency,
     String? stripeAccountId,
   }) = _DriverStripeStatus;
@@ -759,6 +804,7 @@ Future<DriverStripeStatus> driverStripeStatus(Ref ref) async {
   final stripeService = ref.watch(stripeServiceProvider);
   final authUser = ref.watch(authStateProvider).value;
   final userModel = ref.watch(currentUserProvider).value;
+
   if (authUser == null) return const DriverStripeStatus();
 
   try {
@@ -769,80 +815,91 @@ Future<DriverStripeStatus> driverStripeStatus(Ref ref) async {
 
     final accountId =
         connectedAccount?.stripeAccountId ?? driver?.stripeAccountId;
-    final hasStripeAccountId = accountId != null && accountId.isNotEmpty;
-    if (!hasStripeAccountId) {
+
+    if (accountId == null || accountId.isEmpty) {
       return const DriverStripeStatus();
     }
 
     try {
-      // Stripe docs recommend checking connected-account balance live.
       final liveStatus = await stripeService.getAccountStatus(
         accountId: accountId,
       );
+
+      int balanceInCents(String centsKey, String legacyMajorKey) {
+        final cents = liveStatus[centsKey] as num?;
+        if (cents != null) return cents.round();
+
+        final legacyMajor = liveStatus[legacyMajorKey] as num?;
+        return legacyMajor == null ? 0 : (legacyMajor * 100).round();
+      }
+
       final liveChargesEnabled = liveStatus['chargesEnabled'] == true;
       final livePayoutsEnabled = liveStatus['payoutsEnabled'] == true;
       final liveDetailsSubmitted = liveStatus['detailsSubmitted'] == true;
-      final liveAvailableBalance =
-          (liveStatus['availableBalance'] as num?)?.toDouble() ?? 0.0;
-      final livePendingBalance =
-          (liveStatus['pendingBalance'] as num?)?.toDouble() ?? 0.0;
-      final liveCurrency =
-          ((liveStatus['currency'] as String?)
-                  ?.toUpperCase()
-                  .trim()
-                  .isNotEmpty ??
-              false)
-          ? (liveStatus['currency'] as String).toUpperCase().trim()
-          : (connectedAccount?.defaultCurrency ?? 'EUR');
-
-      if (connectedAccount != null) {
-        await paymentRepo.updateConnectedAccountStatus(
-          driverId: authUser.uid,
-          chargesEnabled: liveChargesEnabled,
-          payoutsEnabled: livePayoutsEnabled,
-          detailsSubmitted: liveDetailsSubmitted,
-          availableBalance: liveAvailableBalance,
-          pendingBalance: livePendingBalance,
-        );
-      }
+      final liveCapabilities = liveStatus['capabilities'];
+      final liveTransfersActive =
+          liveCapabilities is Map && liveCapabilities['transfers'] == 'active';
+      final liveAvailableBalance = balanceInCents(
+        'availableBalanceInCents',
+        'availableBalance',
+      );
+      final livePendingBalance = balanceInCents(
+        'pendingBalanceInCents',
+        'pendingBalance',
+      );
 
       return DriverStripeStatus(
-        isConnected: true,
+        isConnected:
+            liveChargesEnabled &&
+            livePayoutsEnabled &&
+            liveDetailsSubmitted &&
+            liveTransfersActive,
         payoutsEnabled: livePayoutsEnabled,
         chargesEnabled: liveChargesEnabled,
         detailsSubmitted: liveDetailsSubmitted,
-        availableBalance: liveAvailableBalance,
-        pendingBalance: livePendingBalance,
-        currency: liveCurrency,
+        availableBalanceInCents: liveAvailableBalance,
+        pendingBalanceInCents: livePendingBalance,
         stripeAccountId: accountId,
       );
-    } on Exception catch (e) {
+    } catch (e, st) {
       TalkerService.warning(
         'Live Stripe status fetch failed, falling back to cached status: $e',
       );
 
-      final mergedChargesEnabled =
-          (connectedAccount?.chargesEnabled ?? false) ||
-          (driver?.chargesEnabled ?? false);
-      final mergedPayoutsEnabled =
-          (connectedAccount?.payoutsEnabled ?? false) ||
-          (driver?.payoutsEnabled ?? false);
-      final mergedDetailsSubmitted =
-          (connectedAccount?.detailsSubmitted ?? false) ||
-          (driver?.detailsSubmitted ?? false);
+      final cachedChargesEnabled = connectedAccount?.chargesEnabled ?? false;
+      final cachedPayoutsEnabled = connectedAccount?.payoutsEnabled ?? false;
+      final cachedDetailsSubmitted =
+          connectedAccount?.detailsSubmitted ?? false;
 
       return DriverStripeStatus(
-        isConnected: true,
-        payoutsEnabled: mergedPayoutsEnabled,
-        chargesEnabled: mergedChargesEnabled,
-        detailsSubmitted: mergedDetailsSubmitted,
-        availableBalance: connectedAccount?.availableBalance ?? 0.0,
-        pendingBalance: connectedAccount?.pendingBalance ?? 0.0,
-        currency: connectedAccount?.defaultCurrency ?? 'EUR',
+        isConnected:
+            (connectedAccount?.isFullySetup ?? false) ||
+            (cachedChargesEnabled &&
+                cachedPayoutsEnabled &&
+                cachedDetailsSubmitted),
+        payoutsEnabled: cachedPayoutsEnabled,
+        chargesEnabled: cachedChargesEnabled,
+        detailsSubmitted: cachedDetailsSubmitted,
+        availableBalanceInCents: connectedAccount?.availableBalanceInCents ?? 0,
+        pendingBalanceInCents: connectedAccount?.pendingBalanceInCents ?? 0,
         stripeAccountId: accountId,
       );
     }
-  } on Exception {
+  } catch (e, st) {
+    TalkerService.error('Error loading driverStripeStatus: $e', e, st);
     return const DriverStripeStatus();
   }
+}
+
+@Riverpod(keepAlive: true)
+Stream<DriverConnectedAccount?> currentDriverConnectedAccount(Ref ref) {
+  final user = ref.watch(currentUserProvider).value;
+  final paymentRepo = ref.watch(paymentRepositoryProvider);
+
+  final driver = user is DriverModel ? user : null;
+  if (driver == null) {
+    return Stream<DriverConnectedAccount?>.value(null);
+  }
+
+  return paymentRepo.streamConnectedAccount(driver.uid);
 }

@@ -25,7 +25,7 @@ final class IsOnboardingCompleteProvider
         argument: null,
         retry: null,
         name: r'isOnboardingCompleteProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -45,4 +45,4 @@ final class IsOnboardingCompleteProvider
 }
 
 String _$isOnboardingCompleteHash() =>
-    r'de4c7cebd1097538a0c3c3a017fc5a7edc6fa944';
+    r'8656ef78ce3dcc631862818631e445d3132c7f31';

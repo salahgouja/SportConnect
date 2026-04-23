@@ -59,7 +59,7 @@ final class RideDetailUiViewModelProvider
 }
 
 String _$rideDetailUiViewModelHash() =>
-    r'7dbc8c0c0f7b71262b02d7bb3eb3a41b7c80e56c';
+    r'a8f1e68d9971bdeec1dd9782de65b2e08b64d3d2';
 
 final class RideDetailUiViewModelFamily extends $Family
     with
@@ -104,6 +104,73 @@ abstract class _$RideDetailUiViewModel extends $Notifier<RideDetailUiState> {
               Object?
             >;
     element.handleCreate(ref, () => build(_$args));
+  }
+}
+
+/// Delegates ride operations through the [RideService] for validated
+/// business logic. Falls back to the repository only for operations
+/// that don't require additional validation (start, complete, stream).
+
+@ProviderFor(RideActionsViewModel)
+final rideActionsViewModelProvider = RideActionsViewModelProvider._();
+
+/// Delegates ride operations through the [RideService] for validated
+/// business logic. Falls back to the repository only for operations
+/// that don't require additional validation (start, complete, stream).
+final class RideActionsViewModelProvider
+    extends $NotifierProvider<RideActionsViewModel, void> {
+  /// Delegates ride operations through the [RideService] for validated
+  /// business logic. Falls back to the repository only for operations
+  /// that don't require additional validation (start, complete, stream).
+  RideActionsViewModelProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'rideActionsViewModelProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$rideActionsViewModelHash();
+
+  @$internal
+  @override
+  RideActionsViewModel create() => RideActionsViewModel();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(void value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<void>(value),
+    );
+  }
+}
+
+String _$rideActionsViewModelHash() =>
+    r'928de38b15380cf43fab6eb80ac42d7fdee7d3ac';
+
+/// Delegates ride operations through the [RideService] for validated
+/// business logic. Falls back to the repository only for operations
+/// that don't require additional validation (start, complete, stream).
+
+abstract class _$RideActionsViewModel extends $Notifier<void> {
+  void build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<void, void>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<void, void>,
+              void,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
   }
 }
 
@@ -163,7 +230,7 @@ final class CancellationReasonViewModelProvider
 }
 
 String _$cancellationReasonViewModelHash() =>
-    r'8a3dc3d61642f537016bfa00293f406661b23207';
+    r'9d3fe8e2382033bc38e007fbd140ac6f20723397';
 
 final class CancellationReasonViewModelFamily extends $Family
     with
@@ -263,7 +330,7 @@ final class DisputeFormViewModelProvider
 }
 
 String _$disputeFormViewModelHash() =>
-    r'fe5d86fcb743916dc9351ec7b69ca07b96170456';
+    r'ae29a7f35611d3d71d03886b4b46998a40c30138';
 
 final class DisputeFormViewModelFamily extends $Family
     with
@@ -402,6 +469,75 @@ final class DriverLiveLocationFamily extends $Family
   String toString() => r'driverLiveLocationProvider';
 }
 
+@ProviderFor(ridePhaseStream)
+final ridePhaseStreamProvider = RidePhaseStreamFamily._();
+
+final class RidePhaseStreamProvider
+    extends $FunctionalProvider<AsyncValue<String?>, String?, Stream<String?>>
+    with $FutureModifier<String?>, $StreamProvider<String?> {
+  RidePhaseStreamProvider._({
+    required RidePhaseStreamFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'ridePhaseStreamProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$ridePhaseStreamHash();
+
+  @override
+  String toString() {
+    return r'ridePhaseStreamProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<String?> $createElement($ProviderPointer pointer) =>
+      $StreamProviderElement(pointer);
+
+  @override
+  Stream<String?> create(Ref ref) {
+    final argument = this.argument as String;
+    return ridePhaseStream(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is RidePhaseStreamProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$ridePhaseStreamHash() => r'520f49bf1df6ec93e9eb3a5bf61307fb9f9d9a10';
+
+final class RidePhaseStreamFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<String?>, String> {
+  RidePhaseStreamFamily._()
+    : super(
+        retry: null,
+        name: r'ridePhaseStreamProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  RidePhaseStreamProvider call(String rideId) =>
+      RidePhaseStreamProvider._(argument: rideId, from: this);
+
+  @override
+  String toString() => r'ridePhaseStreamProvider';
+}
+
 /// Ride Form View Model
 
 @ProviderFor(RideFormViewModel)
@@ -438,7 +574,7 @@ final class RideFormViewModelProvider
   }
 }
 
-String _$rideFormViewModelHash() => r'45010a44cb7dac09e0640fea87f532c88cfeaac9';
+String _$rideFormViewModelHash() => r'b98714836514274349a771b1101f55498c123c19';
 
 /// Ride Form View Model
 
@@ -459,6 +595,53 @@ abstract class _$RideFormViewModel extends $Notifier<RideFormState> {
     element.handleCreate(ref, build);
   }
 }
+
+@ProviderFor(rideSearchResults)
+final rideSearchResultsProvider = RideSearchResultsProvider._();
+
+final class RideSearchResultsProvider
+    extends
+        $FunctionalProvider<
+          RideSearchResultsData,
+          RideSearchResultsData,
+          RideSearchResultsData
+        >
+    with $Provider<RideSearchResultsData> {
+  RideSearchResultsProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'rideSearchResultsProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$rideSearchResultsHash();
+
+  @$internal
+  @override
+  $ProviderElement<RideSearchResultsData> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  RideSearchResultsData create(Ref ref) {
+    return rideSearchResults(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(RideSearchResultsData value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<RideSearchResultsData>(value),
+    );
+  }
+}
+
+String _$rideSearchResultsHash() => r'92f68964f2db20092586e14b65ba217b918bd322';
 
 /// Ride Search View Model
 ///
@@ -512,7 +695,7 @@ final class RideSearchViewModelProvider
 }
 
 String _$rideSearchViewModelHash() =>
-    r'ebfbd273de286b7b8851e1c3132ead8f46d0bdb2';
+    r'17ee663ad0c783f5f8c9c6317aa265dd7bfefa61';
 
 /// Ride Search View Model
 ///
@@ -596,7 +779,7 @@ final class RideDetailViewModelProvider
 }
 
 String _$rideDetailViewModelHash() =>
-    r'c9d1e28358a89be4d386de14448fb4b9fd17cea6';
+    r'8758443b9b233203b7ebb1eb175a84dcce2b4783';
 
 /// Single Ride Detail View Model — views watch only this, never separate
 /// stream/booking providers directly.
@@ -707,7 +890,7 @@ final class ActiveRideViewModelProvider
 }
 
 String _$activeRideViewModelHash() =>
-    r'41eb60196d8d6408959fbc2632a4a0cfe78bceb1';
+    r'1c2d27ef0ae2108fcb0068b5ea03274695a02a12';
 
 /// ViewModel for active-ride screens — views watch only this provider.
 
@@ -1234,6 +1417,83 @@ final class BookingsByRideFamily extends $Family
   String toString() => r'bookingsByRideProvider';
 }
 
+@ProviderFor(pickedUpPassengersStream)
+final pickedUpPassengersStreamProvider = PickedUpPassengersStreamFamily._();
+
+final class PickedUpPassengersStreamProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<String>>,
+          List<String>,
+          Stream<List<String>>
+        >
+    with $FutureModifier<List<String>>, $StreamProvider<List<String>> {
+  PickedUpPassengersStreamProvider._({
+    required PickedUpPassengersStreamFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'pickedUpPassengersStreamProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$pickedUpPassengersStreamHash();
+
+  @override
+  String toString() {
+    return r'pickedUpPassengersStreamProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<List<String>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<String>> create(Ref ref) {
+    final argument = this.argument as String;
+    return pickedUpPassengersStream(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is PickedUpPassengersStreamProvider &&
+        other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$pickedUpPassengersStreamHash() =>
+    r'17db255e96d736fb07421f70772cb18625b52b92';
+
+final class PickedUpPassengersStreamFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<List<String>>, String> {
+  PickedUpPassengersStreamFamily._()
+    : super(
+        retry: null,
+        name: r'pickedUpPassengersStreamProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  PickedUpPassengersStreamProvider call(String rideId) =>
+      PickedUpPassengersStreamProvider._(argument: rideId, from: this);
+
+  @override
+  String toString() => r'pickedUpPassengersStreamProvider';
+}
+
 /// Real-time stream of a single booking by ID.
 ///
 /// Wraps [BookingRepository.streamBookingById] so views never import the
@@ -1405,7 +1665,7 @@ final class BookingsByPassengerProvider
 }
 
 String _$bookingsByPassengerHash() =>
-    r'94b8132120cbca4ff2f4449e466d83b9893b2344';
+    r'afc623defdbefd8caf3040ab85d8a7ba136c1d83';
 
 /// Real-time stream of all bookings for a given passenger.
 ///
@@ -1477,7 +1737,7 @@ final class ActiveRidesProvider
   }
 }
 
-String _$activeRidesHash() => r'33d8e8142d6370fba56a524ba48ec7bf3df6ec2b';
+String _$activeRidesHash() => r'169a372aaad111eff5d3feed98ce7c4009398b96';
 
 /// Single Ride Stream Provider (for active ride screens)
 
@@ -1538,7 +1798,7 @@ final class RideStreamProvider
   }
 }
 
-String _$rideStreamHash() => r'683ccc87f0b20a3fa18f796774dc2cf3508a7759';
+String _$rideStreamHash() => r'3ba2abd8f2013a5f99cd1950185c4d2490889277';
 
 /// Single Ride Stream Provider (for active ride screens)
 
@@ -1634,7 +1894,7 @@ final class UserRideReliabilityProvider
 }
 
 String _$userRideReliabilityHash() =>
-    r'9de8f8cc8996ccbf815777b27d249879e7132ac4';
+    r'4d698fe2607d545d7b3af30cf0f5226ea20de942';
 
 /// Ride reliability stats for a user (cancel & no-show counts).
 ///
@@ -1666,4 +1926,62 @@ final class UserRideReliabilityFamily extends $Family
 
   @override
   String toString() => r'userRideReliabilityProvider';
+}
+
+/// Delegates dispute submission through [DisputeRepository].
+
+@ProviderFor(DisputeViewModel)
+final disputeViewModelProvider = DisputeViewModelProvider._();
+
+/// Delegates dispute submission through [DisputeRepository].
+final class DisputeViewModelProvider
+    extends $NotifierProvider<DisputeViewModel, void> {
+  /// Delegates dispute submission through [DisputeRepository].
+  DisputeViewModelProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'disputeViewModelProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$disputeViewModelHash();
+
+  @$internal
+  @override
+  DisputeViewModel create() => DisputeViewModel();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(void value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<void>(value),
+    );
+  }
+}
+
+String _$disputeViewModelHash() => r'44f5a40963eb7cf1814a489cb187a02983f80e5f';
+
+/// Delegates dispute submission through [DisputeRepository].
+
+abstract class _$DisputeViewModel extends $Notifier<void> {
+  void build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<void, void>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<void, void>,
+              void,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
 }

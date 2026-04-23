@@ -12,8 +12,10 @@ _DriverStripeStatus _$DriverStripeStatusFromJson(Map json) =>
       payoutsEnabled: json['payoutsEnabled'] as bool? ?? false,
       chargesEnabled: json['chargesEnabled'] as bool? ?? false,
       detailsSubmitted: json['detailsSubmitted'] as bool? ?? false,
-      availableBalance: (json['availableBalance'] as num?)?.toDouble() ?? 0.0,
-      pendingBalance: (json['pendingBalance'] as num?)?.toDouble() ?? 0.0,
+      availableBalanceInCents:
+          (json['availableBalanceInCents'] as num?)?.toInt() ?? 0,
+      pendingBalanceInCents:
+          (json['pendingBalanceInCents'] as num?)?.toInt() ?? 0,
       currency: json['currency'] as String? ?? 'EUR',
       stripeAccountId: json['stripeAccountId'] as String?,
     );
@@ -24,8 +26,8 @@ Map<String, dynamic> _$DriverStripeStatusToJson(_DriverStripeStatus instance) =>
       'payoutsEnabled': instance.payoutsEnabled,
       'chargesEnabled': instance.chargesEnabled,
       'detailsSubmitted': instance.detailsSubmitted,
-      'availableBalance': instance.availableBalance,
-      'pendingBalance': instance.pendingBalance,
+      'availableBalanceInCents': instance.availableBalanceInCents,
+      'pendingBalanceInCents': instance.pendingBalanceInCents,
       'currency': instance.currency,
       'stripeAccountId': instance.stripeAccountId,
     };
@@ -95,6 +97,94 @@ abstract class _$PaymentHistoryFilterViewModel
             >;
     element.handleCreate(ref, build);
   }
+}
+
+@ProviderFor(filteredRiderPayments)
+final filteredRiderPaymentsProvider = FilteredRiderPaymentsFamily._();
+
+final class FilteredRiderPaymentsProvider
+    extends
+        $FunctionalProvider<
+          List<PaymentTransaction>,
+          List<PaymentTransaction>,
+          List<PaymentTransaction>
+        >
+    with $Provider<List<PaymentTransaction>> {
+  FilteredRiderPaymentsProvider._({
+    required FilteredRiderPaymentsFamily super.from,
+    required List<PaymentTransaction> super.argument,
+  }) : super(
+         retry: null,
+         name: r'filteredRiderPaymentsProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$filteredRiderPaymentsHash();
+
+  @override
+  String toString() {
+    return r'filteredRiderPaymentsProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $ProviderElement<List<PaymentTransaction>> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  List<PaymentTransaction> create(Ref ref) {
+    final argument = this.argument as List<PaymentTransaction>;
+    return filteredRiderPayments(ref, argument);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(List<PaymentTransaction> value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<List<PaymentTransaction>>(value),
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is FilteredRiderPaymentsProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$filteredRiderPaymentsHash() =>
+    r'536db725e94761b205d050690c1470385603cd5e';
+
+final class FilteredRiderPaymentsFamily extends $Family
+    with
+        $FunctionalFamilyOverride<
+          List<PaymentTransaction>,
+          List<PaymentTransaction>
+        > {
+  FilteredRiderPaymentsFamily._()
+    : super(
+        retry: null,
+        name: r'filteredRiderPaymentsProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  FilteredRiderPaymentsProvider call(List<PaymentTransaction> payments) =>
+      FilteredRiderPaymentsProvider._(argument: payments, from: this);
+
+  @override
+  String toString() => r'filteredRiderPaymentsProvider';
 }
 
 @ProviderFor(DriverEarningsPeriodViewModel)
@@ -185,7 +275,7 @@ final class PaymentViewModelProvider
   PaymentViewModel create() => PaymentViewModel();
 }
 
-String _$paymentViewModelHash() => r'1b29b97d39f145ff5a6aa17cfcca5072709b95a2';
+String _$paymentViewModelHash() => r'680537a9d045dbf81ca381ce80073967123c9d7d';
 
 /// Payment Processing View Model
 
@@ -242,7 +332,7 @@ final class DriverOnboardingViewModelProvider
 }
 
 String _$driverOnboardingViewModelHash() =>
-    r'31b2d9bfa658499f0291b7ec74f0d6f6fbc5d9c5';
+    r'42abbfa3bca6c74b0567b8412e71a1ac07a5d190';
 
 /// Driver Onboarding View Model
 ///
@@ -308,7 +398,7 @@ final class DriverStripeOnboardingFlowViewModelProvider
 }
 
 String _$driverStripeOnboardingFlowViewModelHash() =>
-    r'9258733f3ce729e5ea83643103698e714cafb105';
+    r'26bd3b503749bda4ddcc85ba1ec3a6e95fd5e6e1';
 
 abstract class _$DriverStripeOnboardingFlowViewModel
     extends $Notifier<DriverStripeOnboardingFlowState> {
@@ -564,7 +654,7 @@ final class DriverConnectedAccountViewModelProvider
 }
 
 String _$driverConnectedAccountViewModelHash() =>
-    r'4fd66425a9eba429503c76ad3076c38725dead5e';
+    r'26cf4729391341224bdc88991285570976d19df1';
 
 /// Driver Connected Account View Model
 
@@ -1015,7 +1105,7 @@ final class DriverPayoutViewModelProvider
 }
 
 String _$driverPayoutViewModelHash() =>
-    r'e83332586eb506807dd4e81bf32251985a931387';
+    r'3f379e8399213ebdb304890446479f0fa0a77470';
 
 /// Driver Payout View Model
 
@@ -1082,4 +1172,47 @@ final class DriverStripeStatusProvider
 }
 
 String _$driverStripeStatusHash() =>
-    r'c3c7976d3dcb64ef2443e1cf35c58cc764546cdd';
+    r'3d3b06e77c769beb4851774b77f0e30ff5d2d0ee';
+
+@ProviderFor(currentDriverConnectedAccount)
+final currentDriverConnectedAccountProvider =
+    CurrentDriverConnectedAccountProvider._();
+
+final class CurrentDriverConnectedAccountProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<DriverConnectedAccount?>,
+          DriverConnectedAccount?,
+          Stream<DriverConnectedAccount?>
+        >
+    with
+        $FutureModifier<DriverConnectedAccount?>,
+        $StreamProvider<DriverConnectedAccount?> {
+  CurrentDriverConnectedAccountProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'currentDriverConnectedAccountProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$currentDriverConnectedAccountHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<DriverConnectedAccount?> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<DriverConnectedAccount?> create(Ref ref) {
+    return currentDriverConnectedAccount(ref);
+  }
+}
+
+String _$currentDriverConnectedAccountHash() =>
+    r'142946606290c6090e90614f99f605f405e13e1f';

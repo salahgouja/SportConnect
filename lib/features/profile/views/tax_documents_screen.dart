@@ -1,3 +1,4 @@
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -10,15 +11,9 @@ class TaxDocumentsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text(
-          l10n.taxDocuments,
-          style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.w600),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
+    return AdaptiveScaffold(
+      appBar: AdaptiveAppBar(
+        title: l10n.taxDocuments,
         leading: IconButton(
           icon: Icon(Icons.adaptive.arrow_back),
           onPressed: () => context.pop(),
@@ -124,8 +119,10 @@ class TaxDocumentsScreen extends StatelessWidget {
             IconButton(
               icon: const Icon(Icons.download, color: AppColors.primary),
               onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Downloading document...')),
+                AdaptiveSnackBar.show(
+                  context,
+                  message: 'Downloading document...',
+                  type: AdaptiveSnackBarType.info,
                 );
               },
             ),

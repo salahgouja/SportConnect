@@ -94,8 +94,8 @@ const _$MessageStatusEnumMap = {
 };
 
 _ChatParticipant _$ChatParticipantFromJson(Map json) => _ChatParticipant(
-  userId: json['odid'] as String,
-  displayName: json['displayName'] as String,
+  userId: json['uid'] as String,
+  username: json['username'] as String,
   photoUrl: json['photoUrl'] as String?,
   isAdmin: json['isAdmin'] as bool? ?? false,
   isMuted: json['isMuted'] as bool? ?? false,
@@ -105,8 +105,8 @@ _ChatParticipant _$ChatParticipantFromJson(Map json) => _ChatParticipant(
 
 Map<String, dynamic> _$ChatParticipantToJson(_ChatParticipant instance) =>
     <String, dynamic>{
-      'odid': instance.userId,
-      'displayName': instance.displayName,
+      'uid': instance.userId,
+      'username': instance.username,
       'photoUrl': instance.photoUrl,
       'isAdmin': instance.isAdmin,
       'isMuted': instance.isMuted,
@@ -203,7 +203,7 @@ const _$ChatTypeEnumMap = {
 
 _TypingIndicator _$TypingIndicatorFromJson(Map json) => _TypingIndicator(
   userId: json['userId'] as String,
-  displayName: json['displayName'] as String,
+  username: json['username'] as String,
   chatId: json['chatId'] as String,
   startedAt: const TimestampConverter().fromJson(json['startedAt']),
 );
@@ -211,7 +211,7 @@ _TypingIndicator _$TypingIndicatorFromJson(Map json) => _TypingIndicator(
 Map<String, dynamic> _$TypingIndicatorToJson(_TypingIndicator instance) =>
     <String, dynamic>{
       'userId': instance.userId,
-      'displayName': instance.displayName,
+      'username': instance.username,
       'chatId': instance.chatId,
       'startedAt': const TimestampConverter().toJson(instance.startedAt),
     };

@@ -1,6 +1,6 @@
+import 'dart:async';
 import 'dart:io';
 
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
@@ -13,7 +13,7 @@ part 'profile_view_model.g.dart';
 /// Profile Edit State
 class ProfileEditState {
   const ProfileEditState({
-    this.displayName = '',
+    this.username = '',
     this.phoneNumber,
     this.dateOfBirth,
     this.gender,
@@ -29,14 +29,26 @@ class ProfileEditState {
 
   factory ProfileEditState.fromUser(UserModel user) {
     return ProfileEditState(
-      displayName: user.displayName,
-      phoneNumber: user.phoneNumber,
-      dateOfBirth: user.dateOfBirth,
-      gender: user.gender,
+      username: user.username,
+      phoneNumber: switch (user) {
+        final RiderModel rider => rider.phoneNumber,
+        final DriverModel driver => driver.phoneNumber,
+        _ => null,
+      },
+      dateOfBirth: switch (user) {
+        final RiderModel rider => rider.dateOfBirth,
+        final DriverModel driver => driver.dateOfBirth,
+        _ => null,
+      },
+      gender: switch (user) {
+        final RiderModel rider => rider.gender,
+        final DriverModel driver => driver.gender,
+        _ => null,
+      },
       expertise: user.expertise,
     );
   }
-  final String displayName;
+  final String username;
   final String? phoneNumber;
   final DateTime? dateOfBirth;
   final String? gender;
@@ -50,7 +62,7 @@ class ProfileEditState {
   final String? error;
 
   ProfileEditState copyWith({
-    String? displayName,
+    String? username,
     String? phoneNumber,
     DateTime? dateOfBirth,
     String? gender,
@@ -66,7 +78,7 @@ class ProfileEditState {
     String? error,
   }) {
     return ProfileEditState(
-      displayName: displayName ?? this.displayName,
+      username: username ?? this.username,
       phoneNumber: phoneNumber ?? this.phoneNumber,
       dateOfBirth: dateOfBirth ?? this.dateOfBirth,
       gender: gender ?? this.gender,
@@ -213,24 +225,25 @@ class ReportIssueFormState {
   }
 }
 
-final profileActionsViewModelProvider = Provider<ProfileActionsViewModel>((
-  ref,
-) {
-  return ProfileActionsViewModel(ref);
-});
-
-class ProfileActionsViewModel {
-  ProfileActionsViewModel(this._ref);
-
-  final Ref _ref;
+@Riverpod(keepAlive: true)
+class ProfileActionsViewModel extends _$ProfileActionsViewModel {
+  @override
+  void build() {
+    return;
+  }
 
   Future<List<UserModel>> searchUsers({required String query}) {
-    final currentUser = _ref.read(currentUserProvider).value;
+    final currentUser = ref.read(currentUserProvider).value;
+    final blockedUsers = switch (currentUser) {
+      final RiderModel rider => rider.asRider?.blockedUsers ?? <String>[],
+      final DriverModel driver => driver.asDriver?.blockedUsers ?? <String>[],
+      _ => <String>[],
+    };
     final excludedIds = <String>{
       if (currentUser != null) currentUser.uid,
-      ...?currentUser?.blockedUsers,
+      ...blockedUsers,
     };
-    return _ref
+    return ref
         .read(profileRepositoryProvider)
         .searchUsers(
           query: query,
@@ -240,7 +253,7 @@ class ProfileActionsViewModel {
   }
 
   Future<UserModel?> getUserById(String userId) {
-    return _ref.read(profileRepositoryProvider).getUserById(userId);
+    return ref.read(profileRepositoryProvider).getUserById(userId);
   }
 
   Future<List<UserModel>> getUsersByIds(Iterable<String> userIds) async {
@@ -251,7 +264,7 @@ class ProfileActionsViewModel {
 
     if (ids.isEmpty) return const <UserModel>[];
 
-    final repository = _ref.read(profileRepositoryProvider);
+    final repository = ref.read(profileRepositoryProvider);
     final users = await Future.wait(ids.map(repository.getUserById));
 
     final usersById = <String, UserModel>{};
@@ -264,30 +277,38 @@ class ProfileActionsViewModel {
         .map(
           (id) =>
               usersById[id] ??
-              UserModel.rider(uid: id, email: '', displayName: id),
+              UserModel.rider(uid: id, email: '', username: id),
         )
         .toList(growable: false);
   }
 
   Future<List<UserModel>> getBlockedUsersForCurrentUser() async {
-    final currentUser = _ref.read(currentUserProvider).value;
-    if (currentUser == null || currentUser.blockedUsers.isEmpty) {
+    final currentUser = ref.read(currentUserProvider).value;
+    if (currentUser == null) {
       return const <UserModel>[];
     }
-    return getUsersByIds(currentUser.blockedUsers);
+    final blockedUsers = switch (currentUser) {
+      final RiderModel rider => rider.asRider?.blockedUsers ?? <String>[],
+      final DriverModel driver => driver.asDriver?.blockedUsers ?? <String>[],
+      _ => <String>[],
+    };
+    if (blockedUsers.isEmpty) {
+      return const <UserModel>[];
+    }
+    return getUsersByIds(blockedUsers);
   }
 
   Future<void> unblockUser({
     required String currentUserId,
     required String blockedUserId,
   }) {
-    return _ref
+    return ref
         .read(profileRepositoryProvider)
         .unblockUser(currentUserId, blockedUserId);
   }
 
   Future<void> unblockCurrentUser(String blockedUserId) async {
-    final currentUser = _ref.read(currentUserProvider).value;
+    final currentUser = ref.read(currentUserProvider).value;
     if (currentUser == null) {
       throw StateError('No current user found while trying to unblock user.');
     }
@@ -299,31 +320,31 @@ class ProfileActionsViewModel {
   }
 
   Future<void> updateProfile(String uid, Map<String, dynamic> updates) {
-    return _ref.read(profileRepositoryProvider).updateProfile(uid, updates);
+    return ref.read(profileRepositoryProvider).updateProfile(uid, updates);
   }
 
   Future<void> updateProfilePhoto(String uid, File imageFile) {
-    return _ref
+    return ref
         .read(profileRepositoryProvider)
         .updateProfilePhoto(uid, imageFile);
   }
 
   Future<void> setDefaultVehicle(String uid, String vehicleId) {
-    return _ref
+    return ref
         .read(profileRepositoryProvider)
         .setDefaultVehicle(uid, vehicleId);
   }
 
   Future<void> removeVehicle(String uid, String vehicleId) {
-    return _ref.read(profileRepositoryProvider).removeVehicle(uid, vehicleId);
+    return ref.read(profileRepositoryProvider).removeVehicle(uid, vehicleId);
   }
 
   Future<void> updateVehicle(String uid, VehicleModel vehicle) {
-    return _ref.read(profileRepositoryProvider).updateVehicle(uid, vehicle);
+    return ref.read(profileRepositoryProvider).updateVehicle(uid, vehicle);
   }
 
   Future<void> addVehicle(String uid, VehicleModel vehicle) {
-    return _ref.read(profileRepositoryProvider).addVehicle(uid, vehicle);
+    return ref.read(profileRepositoryProvider).addVehicle(uid, vehicle);
   }
 
   /// Submits a report about a user or ride.
@@ -337,7 +358,7 @@ class ProfileActionsViewModel {
     String? rideId,
     List<File> attachments = const [],
   }) {
-    return _ref
+    return ref
         .read(supportRepositoryProvider)
         .submitReport(
           reporterId: reporterId,
@@ -361,7 +382,7 @@ class ProfileActionsViewModel {
     required String message,
     List<File> attachments = const [],
   }) {
-    return _ref
+    return ref
         .read(supportRepositoryProvider)
         .submitSupportTicket(
           userId: userId,
@@ -375,15 +396,24 @@ class ProfileActionsViewModel {
   }
 }
 
-final blockedUsersProvider = FutureProvider<List<UserModel>>((ref) async {
-  final currentUser = ref.watch(currentUserProvider).value;
-  if (currentUser == null || currentUser.blockedUsers.isEmpty) {
+@riverpod
+Future<List<UserModel>> blockedUsers(Ref ref) async {
+  final userAsync = ref.watch(currentUserProvider);
+  final currentUser = userAsync.value;
+  if (currentUser == null) {
+    return const [];
+  }
+  final blockedUsers = switch (currentUser) {
+    final RiderModel rider => rider.asRider?.blockedUsers ?? <String>[],
+    final DriverModel driver => driver.asDriver?.blockedUsers ?? <String>[],
+    _ => <String>[],
+  };
+  if (blockedUsers.isEmpty) {
     return const <UserModel>[];
   }
-
-  final actions = ref.read(profileActionsViewModelProvider);
-  return actions.getUsersByIds(currentUser.blockedUsers);
-});
+  final actions = ref.watch(profileActionsViewModelProvider.notifier);
+  return actions.getUsersByIds(blockedUsers);
+}
 
 @riverpod
 class ReportIssueFormViewModel extends _$ReportIssueFormViewModel {
@@ -494,7 +524,7 @@ class ReportIssueFormViewModel extends _$ReportIssueFormViewModel {
 
     try {
       await ref
-          .read(profileActionsViewModelProvider)
+          .read(profileActionsViewModelProvider.notifier)
           .submitReport(
             reporterId: reporterId,
             reporterEmail: reporterEmail,
@@ -508,7 +538,7 @@ class ReportIssueFormViewModel extends _$ReportIssueFormViewModel {
 
       if (!ref.mounted) return;
       state = state.copyWith(isSubmitting: false, isSubmitted: true);
-    } on Exception catch (_) {
+    } catch (e, st) {
       if (!ref.mounted) return;
       state = state.copyWith(
         isSubmitting: false,
@@ -529,7 +559,11 @@ Stream<UserModel?> currentUserProfile(Ref ref, String uid) {
 @riverpod
 Future<UserModel?> userProfile(Ref ref, String uid) async {
   final repository = ref.read(profileRepositoryProvider);
-  return repository.getUserById(uid);
+  final profile = await repository.getUserById(uid);
+  final cacheLink = ref.keepAlive();
+  final cacheTimer = Timer(const Duration(minutes: 5), cacheLink.close);
+  ref.onDispose(cacheTimer.cancel);
+  return profile;
 }
 
 /// Profile Edit View Model
@@ -554,7 +588,7 @@ class ProfileEditViewModel extends _$ProfileEditViewModel {
   }
 
   void setDisplayName(String name) {
-    state = state.copyWith(displayName: name, hasChanges: true, isSaved: false);
+    state = state.copyWith(username: name, hasChanges: true, isSaved: false);
   }
 
   void setPhoneNumber(String phone) {
@@ -610,7 +644,7 @@ class ProfileEditViewModel extends _$ProfileEditViewModel {
   }
 
   Future<bool> saveProfile() async {
-    if (state.displayName.trim().isEmpty) {
+    if (state.username.trim().isEmpty) {
       state = state.copyWith(error: 'Display name is required');
       return false;
     }
@@ -628,7 +662,7 @@ class ProfileEditViewModel extends _$ProfileEditViewModel {
 
       // Update profile
       await repository.updateProfile(uid, {
-        'displayName': state.displayName,
+        'username': state.username,
         'phoneNumber': state.phoneNumber,
         'dateOfBirth': state.dateOfBirth,
         'gender': state.gender,
@@ -642,7 +676,7 @@ class ProfileEditViewModel extends _$ProfileEditViewModel {
         hasChanges: false,
       );
       return true;
-    } on Exception catch (e) {
+    } catch (e, st) {
       if (!ref.mounted) return false;
       state = state.copyWith(isLoading: false, error: e.toString());
       return false;
@@ -671,6 +705,7 @@ class ProfileEditViewModel extends _$ProfileEditViewModel {
       final finalUser = updatedUser.map(
         rider: (rider) => rider.copyWith(photoUrl: photoUrl),
         driver: (driver) => driver.copyWith(photoUrl: photoUrl),
+        pending: (value) => value, // No editing
       );
 
       await ref
@@ -684,7 +719,7 @@ class ProfileEditViewModel extends _$ProfileEditViewModel {
         hasChanges: false,
       );
       return true;
-    } on Exception catch (e) {
+    } catch (e, st) {
       if (!ref.mounted) return false;
       state = state.copyWith(
         isLoading: false,
@@ -825,7 +860,7 @@ class ContactSupportViewModel extends _$ContactSupportViewModel {
 }
 
 /// Social Actions View Model
-@riverpod
+@Riverpod(keepAlive: true)
 class SocialActionsViewModel extends _$SocialActionsViewModel {
   @override
   SocialState build(String currentUserId, String targetUserId) {
@@ -837,12 +872,16 @@ class SocialActionsViewModel extends _$SocialActionsViewModel {
     try {
       final repository = ref.read(profileRepositoryProvider);
       final currentUser = await repository.getUserById(currentUserId);
-
+      final blockedUsers = switch (currentUser) {
+        final RiderModel rider => rider.asRider?.blockedUsers ?? <String>[],
+        final DriverModel driver => driver.asDriver?.blockedUsers ?? <String>[],
+        _ => <String>[],
+      };
       if (!ref.mounted) return;
       if (currentUser != null) {
         state = state.copyWith(
           isFollowing: false,
-          isBlocked: currentUser.blockedUsers.contains(targetUserId),
+          isBlocked: blockedUsers.contains(targetUserId),
         );
       }
     } on Exception {
@@ -869,7 +908,7 @@ class SocialActionsViewModel extends _$SocialActionsViewModel {
         isFollowing: state.isBlocked && state.isFollowing,
         isLoading: false,
       );
-    } on Exception catch (e) {
+    } catch (e, st) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, error: e.toString());
     }
@@ -919,7 +958,7 @@ class VehicleViewModel extends _$VehicleViewModel {
       await repository.addVehicle(uid, vehicle);
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false);
-    } on Exception catch (e) {
+    } catch (e, st) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, error: e.toString());
     }
@@ -933,7 +972,7 @@ class VehicleViewModel extends _$VehicleViewModel {
       await repository.updateVehicle(uid, vehicle);
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false);
-    } on Exception catch (e) {
+    } catch (e, st) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, error: e.toString());
     }
@@ -947,7 +986,7 @@ class VehicleViewModel extends _$VehicleViewModel {
       await repository.removeVehicle(uid, vehicleId);
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false);
-    } on Exception catch (e) {
+    } catch (e, st) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, error: e.toString());
     }
@@ -961,7 +1000,7 @@ class VehicleViewModel extends _$VehicleViewModel {
       await repository.setDefaultVehicle(uid, vehicleId);
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false);
-    } on Exception catch (e) {
+    } catch (e, st) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, error: e.toString());
     }

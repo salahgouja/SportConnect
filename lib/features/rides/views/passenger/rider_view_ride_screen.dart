@@ -1,7 +1,9 @@
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -9,10 +11,12 @@ import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
-import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
+import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/core/widgets/driver_info_widget.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/features/messaging/view_models/chat_view_model.dart';
@@ -136,22 +140,18 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
   }
 
   Widget _buildLoadingState() {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.primary,
-        title: Text(AppLocalizations.of(context).rideDetails),
+    return AdaptiveScaffold(
+      appBar: AdaptiveAppBar(
+        title: AppLocalizations.of(context).rideDetails,
       ),
-      body: const Center(child: CircularProgressIndicator.adaptive()),
+      body: const SkeletonLoader(type: SkeletonType.rideCard, itemCount: 5),
     );
   }
 
   Widget _buildErrorState(String error) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.primary,
-        title: Text(AppLocalizations.of(context).rideDetails),
+    return AdaptiveScaffold(
+      appBar: AdaptiveAppBar(
+        title: AppLocalizations.of(context).rideDetails,
       ),
       body: Center(
         child: Padding(
@@ -213,21 +213,30 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
       );
     }
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: CustomScrollView(
-        slivers: [
-          _buildSliverAppBar(ride, uiState),
-          SliverToBoxAdapter(child: _buildDriverCard(ride, bookings)),
-          SliverToBoxAdapter(child: _buildRouteCard(ride)),
-          SliverToBoxAdapter(child: _buildDetailsCard(ride)),
-          SliverToBoxAdapter(child: _buildPreferencesCard(ride)),
-          if (ride.reviewCount > 0)
-            SliverToBoxAdapter(child: _buildReviewsSection(ride)),
-          SliverToBoxAdapter(child: SizedBox(height: 120.h)),
+    return AdaptiveScaffold(
+      body: Stack(
+        children: [
+          CustomScrollView(
+            slivers: [
+              _buildSliverAppBar(ride, uiState),
+              SliverToBoxAdapter(child: _buildDriverCard(ride, bookings)),
+              SliverToBoxAdapter(child: _buildRouteCard(ride)),
+              SliverToBoxAdapter(child: _buildDetailsCard(ride)),
+              SliverToBoxAdapter(child: _buildPreferencesCard(ride)),
+              if (ride.reviewCount > 0)
+                SliverToBoxAdapter(child: _buildReviewsSection(ride)),
+              // Bottom padding so content isn't hidden behind the booking bar
+              const SliverToBoxAdapter(child: SizedBox(height: 120)),
+            ],
+          ),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: _buildBookingBar(ride, uiState),
+          ),
         ],
       ),
-      bottomSheet: _buildBookingBar(ride, uiState),
     );
   }
 
@@ -292,6 +301,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
                   urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                   userAgentPackageName: 'com.sportconnect.app',
                 ),
+                const CurrentLocationLayer(),
                 if (uiState.routeInfo != null)
                   PolylineLayer(
                     polylines: [
@@ -394,7 +404,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
                     child: Column(
                       children: [
                         Text(
-                          '\$${ride.pricePerSeat.toStringAsFixed(0)}',
+                          '€${(ride.pricePerSeatInCents / 100).toStringAsFixed(2)}',
                           style: TextStyle(
                             fontSize: 20.sp,
                             fontWeight: FontWeight.bold,
@@ -1404,7 +1414,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
                     ),
                   ),
                   Text(
-                    '\$${(ride.pricePerSeat * uiState.seatsToBook).toStringAsFixed(0)}',
+                    '€${((ride.pricePerSeatInCents * uiState.seatsToBook) / 100).toStringAsFixed(2)}',
                     style: TextStyle(
                       fontSize: 20.sp,
                       fontWeight: FontWeight.bold,
@@ -1487,7 +1497,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
         ride.origin.city ?? ride.origin.address,
         ride.destination.city ?? ride.destination.address,
         DateFormat('MMM d, h:mm a').format(ride.departureTime),
-        ride.pricePerSeat.toStringAsFixed(0),
+        (ride.pricePerSeatInCents / 100).toStringAsFixed(2),
         ride.remainingSeats,
         dynamicLink,
       );
@@ -1507,7 +1517,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
             ride.origin.city ?? ride.origin.address,
             ride.destination.city ?? ride.destination.address,
             DateFormat('MMM d, h:mm a').format(ride.departureTime),
-            ride.pricePerSeat.toStringAsFixed(0),
+            (ride.pricePerSeatInCents / 100).toStringAsFixed(2),
             ride.remainingSeats,
             'https://${AppConstants.hostingDomain}/ride/${widget.rideId}',
           ),
@@ -1533,12 +1543,13 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
         throw Exception('Driver profile not found');
       }
 
+      if (!mounted) return;
       final chat = await ref.read(
         getOrCreateChatProvider(
           userId1: currentUser.uid,
           userId2: ride.driverId,
-          userName1: currentUser.displayName,
-          userName2: driverProfile.displayName,
+          userName1: currentUser.username,
+          userName2: driverProfile.username,
           userPhoto1: currentUser.photoUrl,
           userPhoto2: driverProfile.photoUrl,
         ).future,
@@ -1553,23 +1564,20 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
       );
     } on Exception {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context).failedToOpenChatTryAgain),
-          backgroundColor: AppColors.error,
-        ),
+      AdaptiveSnackBar.show(
+        context,
+        message: AppLocalizations.of(context).failedToOpenChatTryAgain,
+        type: AdaptiveSnackBarType.error,
       );
     }
   }
 
   void _showBookingConfirmation(RideModel ride) {
-    showModalBottomSheet<void>(
+    AppModalSheet.show<void>(
       context: context,
-      backgroundColor: AppColors.cardBg,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-      ),
-      builder: (context) => _BookingConfirmationSheet(
+      title: AppLocalizations.of(context).confirmBooking,
+      maxHeightFactor: 0.75,
+      child: _BookingConfirmationSheet(
         ride: ride,
         seatsToBook: ref
             .read(riderViewRideUiViewModelProvider(widget.rideId))
@@ -1623,14 +1631,12 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
           AppRoutes.rideBookingPending.path.replaceFirst(':rideId', ride.id),
         );
       }
-    } on Exception catch (_) {
+    } catch (e, st) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context).bookingFailedTryAgain),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-          ),
+        AdaptiveSnackBar.show(
+          context,
+          message: AppLocalizations.of(context).bookingFailedTryAgain,
+          type: AdaptiveSnackBarType.error,
         );
       }
     }
@@ -1718,14 +1724,14 @@ class _BookingConfirmationSheetState extends State<_BookingConfirmationSheet> {
                   SizedBox(height: 8.h),
                   _buildRow(
                     l10n.pricePerSeat2,
-                    '\$${widget.ride.pricePerSeat.toStringAsFixed(0)}',
+                    '€${(widget.ride.pricePerSeatInCents / 100).toStringAsFixed(2)}',
                   ),
                   SizedBox(height: 8.h),
                   const Divider(color: AppColors.divider),
                   SizedBox(height: 8.h),
                   _buildRow(
                     l10n.total,
-                    '\$${(widget.ride.pricePerSeat * widget.seatsToBook).toStringAsFixed(0)}',
+                    '€${((widget.ride.pricePerSeatInCents * widget.seatsToBook) / 100).toStringAsFixed(2)}',
                     isBold: true,
                   ),
                 ],

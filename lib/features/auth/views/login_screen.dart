@@ -1,3 +1,4 @@
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -47,13 +48,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       ),
     });
     _setupAnimations();
-
-    SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.dark,
-      ),
-    );
   }
 
   void _setupAnimations() {
@@ -167,7 +161,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       ),
     );
 
-    return Scaffold(backgroundColor: Colors.white, body: loginBody);
+    return AdaptiveScaffold(body: loginBody);
   }
 
   Widget _buildLogoHeader() {
@@ -330,7 +324,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             padding: EdgeInsets.symmetric(vertical: 12.h),
             child: Row(
               children: [
-                Checkbox.adaptive(
+                AdaptiveCheckbox(
                   value: loginUiState.rememberMe,
                   onChanged: (value) {
                     HapticFeedback.selectionClick();
@@ -338,7 +332,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                         .read(loginUiViewModelProvider.notifier)
                         .setRememberMe(enabled: value ?? false);
                   },
-                  visualDensity: VisualDensity.compact,
                 ),
                 SizedBox(width: 8.w),
                 Text(
@@ -636,16 +629,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     String message, {
     bool isError = false,
   }) async {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: isError ? Colors.red.shade600 : AppColors.success,
-        margin: EdgeInsets.all(16.w),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12.r),
-        ),
-      ),
+    AdaptiveSnackBar.show(
+      context,
+      message: message,
+      type: isError ? AdaptiveSnackBarType.error : AdaptiveSnackBarType.success,
     );
   }
 }

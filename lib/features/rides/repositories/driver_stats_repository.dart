@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
@@ -142,21 +144,58 @@ class DriverStatsRepository implements IDriverStatsRepository {
   /// increments the ride's booked capacity.
   @override
   Future<void> acceptRequest(String rideId, String bookingId) async {
-    final bookingDoc = await _rideBookingsCollection.doc(bookingId).get();
-    if (!bookingDoc.exists) return;
+    final pickupOtp = (1000 + math.Random.secure().nextInt(9000)).toString();
 
-    final seatsBooked = bookingDoc.data()?.seatsBooked ?? 1;
+    await _firestore.runTransaction((txn) async {
+      final bookingRef = _firestore
+          .collection(AppConstants.bookingsCollection)
+          .doc(bookingId);
+      final rideRef = _firestore
+          .collection(AppConstants.ridesCollection)
+          .doc(rideId);
 
-    // Update booking status
-    await _rideBookingsCollection.doc(bookingId).update({
-      'status': 'accepted',
-      'respondedAt': FieldValue.serverTimestamp(),
-    });
+      final bookingSnap = await txn.get(bookingRef);
+      if (!bookingSnap.exists) return;
+      final bookingData = bookingSnap.data()!;
+      if (bookingData['status'] == BookingStatus.accepted.name) return;
+      if (bookingData['status'] != BookingStatus.pending.name) {
+        throw StateError('Booking already processed');
+      }
 
-    // Update ride capacity
-    await _ridesCollection.doc(rideId).update({
-      'capacity.booked': FieldValue.increment(seatsBooked),
-      'updatedAt': FieldValue.serverTimestamp(),
+      final rideSnap = await txn.get(rideRef);
+      if (!rideSnap.exists) throw StateError('Ride not found');
+      final rideData = rideSnap.data()!;
+      final capacity = rideData['capacity'] as Map<String, dynamic>? ?? {};
+      final total =
+          (capacity['available'] as int?) ?? (capacity['total'] as int?) ?? 0;
+      final booked = (capacity['booked'] as int?) ?? 0;
+      final seatsBooked = (bookingData['seatsBooked'] as int?) ?? 1;
+      final remaining = total - booked;
+      if (remaining < seatsBooked) {
+        throw StateError(
+          'Not enough seats: $remaining available, $seatsBooked requested.',
+        );
+      }
+
+      final updates = <String, dynamic>{
+        'capacity.booked': FieldValue.increment(seatsBooked),
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+      final pickupLocationMap = bookingData['pickupLocation'];
+      if (pickupLocationMap is Map<String, dynamic>) {
+        final route = rideData['route'] as Map<String, dynamic>? ?? {};
+        final waypoints = route['waypoints'] as List? ?? [];
+        updates['route.waypoints'] = FieldValue.arrayUnion([
+          {'location': pickupLocationMap, 'order': waypoints.length},
+        ]);
+      }
+
+      txn.update(bookingRef, {
+        'status': BookingStatus.accepted.name,
+        'respondedAt': FieldValue.serverTimestamp(),
+        'pickupOtp': pickupOtp,
+      });
+      txn.update(rideRef, updates);
     });
   }
 
@@ -178,7 +217,7 @@ class DriverStatsRepository implements IDriverStatsRepository {
   @override
   Future<void> recordRideCompletion({
     required String driverId,
-    required double earnings,
+    required int earningsInCents,
     required double distanceKm,
   }) async {
     final currentStats = await getDriverStats(driverId);
@@ -187,10 +226,12 @@ class DriverStatsRepository implements IDriverStatsRepository {
       ridesToday: currentStats.ridesToday + 1, // new
       ridesThisWeek: currentStats.ridesThisWeek + 1,
       ridesThisMonth: currentStats.ridesThisMonth + 1,
-      totalEarnings: currentStats.totalEarnings + earnings,
-      earningsToday: currentStats.earningsToday + earnings,
-      earningsThisWeek: currentStats.earningsThisWeek + earnings,
-      earningsThisMonth: currentStats.earningsThisMonth + earnings,
+      totalEarningsInCents: currentStats.totalEarningsInCents + earningsInCents,
+      earningsTodayInCents: currentStats.earningsTodayInCents + earningsInCents,
+      earningsThisWeekInCents:
+          currentStats.earningsThisWeekInCents + earningsInCents,
+      earningsThisMonthInCents:
+          currentStats.earningsThisMonthInCents + earningsInCents,
       totalDistance: currentStats.totalDistance + distanceKm,
       lastRideAt: DateTime.now(),
     );

@@ -42,7 +42,7 @@ final class PremiumCheckoutViewModelProvider
 }
 
 String _$premiumCheckoutViewModelHash() =>
-    r'1ae4de3c95a83bd6673c190f5c9212ecf43c99b5';
+    r'aef798b42c5da1dc2fa540546c5b5abe3f7fc8a6';
 
 abstract class _$PremiumCheckoutViewModel
     extends $Notifier<PremiumCheckoutState> {

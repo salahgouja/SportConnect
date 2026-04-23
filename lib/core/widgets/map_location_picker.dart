@@ -1,16 +1,20 @@
 import 'dart:async';
 
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:map_launcher/map_launcher.dart';
 import 'package:sport_connect/core/services/location_service.dart';
 import 'package:sport_connect/core/services/map_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
@@ -43,12 +47,13 @@ class MapLocationPicker extends ConsumerStatefulWidget {
     String? countryCode,
     bool showQuickPicks = true,
   }) {
-    return showModalBottomSheet<LocationPickerResult>(
+    return AppModalSheet.show<LocationPickerResult>(
       context: context,
-      isScrollControlled: true,
       useRootNavigator: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => MapLocationPicker(
+      forceMaxHeight: true,
+      maxHeightFactor: 0.92,
+      title: title,
+      child: MapLocationPicker(
         title: title,
         initialLocation: initialLocation,
         countryCode: countryCode,
@@ -284,6 +289,40 @@ class _MapLocationPickerState extends ConsumerState<MapLocationPicker>
     }
   }
 
+  Future<void> _openSelectedLocationInMaps() async {
+    final location = _selectedLocation;
+    if (location == null) return;
+
+    try {
+      final maps = await MapLauncher.installedMaps;
+      if (!mounted) return;
+      if (maps.isEmpty) {
+        AdaptiveSnackBar.show(
+          context,
+          message: 'No map apps are available on this device.',
+          type: AdaptiveSnackBarType.warning,
+        );
+        return;
+      }
+
+      final map = maps.firstWhere(
+        (item) => item.mapType == MapType.google,
+        orElse: () => maps.first,
+      );
+      await map.showMarker(
+        coords: Coords(location.latitude, location.longitude),
+        title: _selectedAddress ?? 'Selected Location',
+      );
+    } on Exception {
+      if (!mounted) return;
+      AdaptiveSnackBar.show(
+        context,
+        message: 'Unable to open maps right now.',
+        type: AdaptiveSnackBarType.error,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -358,8 +397,39 @@ class _MapLocationPickerState extends ConsumerState<MapLocationPicker>
   }
 
   Widget _buildMapStyleButton() {
-    return PopupMenuButton<String>(
-      icon: Container(
+    return AdaptivePopupMenuButton.widget<String>(
+      items: [
+        _buildMapStyleItem(
+          'standard',
+          AppLocalizations.of(context).standard2,
+          Icons.map,
+        ),
+        _buildMapStyleItem(
+          'terrain',
+          AppLocalizations.of(context).terrain2,
+          Icons.terrain,
+        ),
+        _buildMapStyleItem(
+          'dark',
+          AppLocalizations.of(context).settingsDarkMode,
+          Icons.dark_mode,
+        ),
+        _buildMapStyleItem(
+          'light',
+          AppLocalizations.of(context).lightMode,
+          Icons.light_mode,
+        ),
+        _buildMapStyleItem(
+          'humanitarian',
+          AppLocalizations.of(context).humanitarian2,
+          Icons.favorite,
+        ),
+      ],
+      onSelected: (index, entry) {
+        HapticFeedback.selectionClick();
+        setState(() => _selectedMapStyle = entry.value as String);
+      },
+      child: Container(
         padding: EdgeInsets.all(8.w),
         decoration: BoxDecoration(
           color: AppColors.surfaceVariant,
@@ -371,72 +441,18 @@ class _MapLocationPickerState extends ConsumerState<MapLocationPicker>
           size: 22.sp,
         ),
       ),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
-      color: AppColors.surface,
-      onSelected: (style) {
-        HapticFeedback.selectionClick();
-        setState(() => _selectedMapStyle = style);
-      },
-      itemBuilder: (context) => [
-        _buildMapStyleItem(
-          AppLocalizations.of(context).standard,
-          AppLocalizations.of(context).standard2,
-          Icons.map,
-        ),
-        _buildMapStyleItem(
-          AppLocalizations.of(context).terrain,
-          AppLocalizations.of(context).terrain2,
-          Icons.terrain,
-        ),
-        _buildMapStyleItem(
-          AppLocalizations.of(context).dark,
-          AppLocalizations.of(context).settingsDarkMode,
-          Icons.dark_mode,
-        ),
-        _buildMapStyleItem(
-          AppLocalizations.of(context).light,
-          AppLocalizations.of(context).lightMode,
-          Icons.light_mode,
-        ),
-        _buildMapStyleItem(
-          AppLocalizations.of(context).humanitarian,
-          AppLocalizations.of(context).humanitarian2,
-          Icons.favorite,
-        ),
-      ],
     );
   }
 
-  PopupMenuItem<String> _buildMapStyleItem(
+  AdaptivePopupMenuItem<String> _buildMapStyleItem(
     String value,
     String label,
     IconData icon,
   ) {
-    final isSelected = _selectedMapStyle == value;
-    return PopupMenuItem(
+    return AdaptivePopupMenuItem<String>(
+      label: label,
+      icon: icon,
       value: value,
-      child: Row(
-        children: [
-          Icon(
-            icon,
-            size: 20.sp,
-            color: isSelected ? AppColors.primary : AppColors.textSecondary,
-          ),
-          SizedBox(width: 12.w),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 14.sp,
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-              color: isSelected ? AppColors.primary : AppColors.textPrimary,
-            ),
-          ),
-          if (isSelected) ...[
-            const Spacer(),
-            Icon(Icons.check_rounded, size: 18.sp, color: AppColors.primary),
-          ],
-        ],
-      ),
     );
   }
 
@@ -590,7 +606,7 @@ class _MapLocationPickerState extends ConsumerState<MapLocationPicker>
   }
 
   Widget _buildSearchResultItem(SearchResult result, int index) {
-    return ListTile(
+    return AdaptiveListTile(
       onTap: () => _selectSearchResult(result),
       leading: Container(
         padding: EdgeInsets.all(10.w),
@@ -781,6 +797,23 @@ class _MapLocationPickerState extends ConsumerState<MapLocationPicker>
                 urlTemplate: tileProvider.urlTemplate,
                 subdomains: tileProvider.subdomains ?? const [],
                 userAgentPackageName: 'com.sportconnect.app',
+              ),
+              CurrentLocationLayer(
+                style: LocationMarkerStyle(
+                  marker: DefaultLocationMarker(
+                    color: AppColors.primary,
+                    child: Icon(
+                      Icons.navigation_rounded,
+                      color: Colors.white,
+                      size: 14.sp,
+                    ),
+                  ),
+                  markerSize: Size.square(28.w),
+                  accuracyCircleColor: AppColors.primary.withValues(
+                    alpha: 0.12,
+                  ),
+                  headingSectorColor: AppColors.primary.withValues(alpha: 0.4),
+                ),
               ),
               if (_selectedLocation != null)
                 MarkerLayer(
@@ -1029,6 +1062,16 @@ class _MapLocationPickerState extends ConsumerState<MapLocationPicker>
                       Icons.check_circle_rounded,
                       color: AppColors.success,
                       size: 22.sp,
+                    ),
+                    SizedBox(width: 8.w),
+                    IconButton(
+                      tooltip: 'Open in maps',
+                      onPressed: _openSelectedLocationInMaps,
+                      icon: Icon(
+                        Icons.near_me_rounded,
+                        color: AppColors.primary,
+                        size: 22.sp,
+                      ),
                     ),
                   ],
                 ),

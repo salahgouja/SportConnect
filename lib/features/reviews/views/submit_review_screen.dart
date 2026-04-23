@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -43,13 +44,9 @@ class _SubmitReviewScreenState extends ConsumerState<SubmitReviewScreen> {
     final viewModel = ref.read(reviewFormViewModelProvider.notifier);
     final availableTags = ReviewTag.getTagsFor(widget.reviewType);
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text(AppLocalizations.of(context).leaveAReview),
-        backgroundColor: AppColors.background,
-        elevation: 0,
-        systemOverlayStyle: SystemUiOverlayStyle.dark,
+    return AdaptiveScaffold(
+      appBar: AdaptiveAppBar(
+        title: AppLocalizations.of(context).leaveAReview,
       ),
       body: state.isSubmitting
           ? const Center(child: CircularProgressIndicator.adaptive())
@@ -376,11 +373,10 @@ class _SubmitReviewScreenState extends ConsumerState<SubmitReviewScreen> {
     );
 
     if (success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context).thankYouForYourReview),
-          backgroundColor: AppColors.success,
-        ),
+      AdaptiveSnackBar.show(
+        context,
+        message: AppLocalizations.of(context).thankYouForYourReview,
+        type: AdaptiveSnackBarType.success,
       );
       context.pop();
     }

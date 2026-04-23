@@ -1,3 +1,4 @@
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -6,11 +7,12 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/repository_providers.dart';
-import 'package:sport_connect/core/services/push_notification_service.dart';
 import 'package:sport_connect/core/providers/settings_provider.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
+import 'package:sport_connect/core/services/push_notification_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/platform_adaptive.dart';
+import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/core/widgets/custom_button.dart';
 import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
@@ -18,6 +20,7 @@ import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 import 'package:sport_connect/features/auth/views/reauth_dialog.dart';
 import 'package:sport_connect/features/profile/view_models/driver_settings_view_model.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
+import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -33,32 +36,27 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   @override
   void initState() {
     super.initState();
-    SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.dark,
-      ),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final localeAsync = ref.watch(localeProviderProvider);
+    final localeAsync = ref.watch(localeProvider);
     final currentLocale = localeAsync.value ?? Localizations.localeOf(context);
-    final currentUserAsync = ref.watch(currentUserProvider);
-    final isDriver = currentUserAsync.value?.role == UserRole.driver;
+    final isDriver = ref.watch(
+      currentUserProvider.select(
+        (value) => value.value?.role == UserRole.driver,
+      ),
+    );
 
     final notificationsEnabled =
-        ref.watch(notificationsEnabledProviderProvider).value ?? true;
-    final rideReminders =
-        ref.watch(rideRemindersProviderProvider).value ?? true;
+        ref.watch(notificationsEnabledProvider).value ?? true;
+    final rideReminders = ref.watch(rideRemindersProvider).value ?? true;
     final chatNotifications =
-        ref.watch(chatNotificationsProviderProvider).value ?? true;
-    final showLocation = ref.watch(showLocationProviderProvider).value ?? true;
-    final publicProfile =
-        ref.watch(publicProfileProviderProvider).value ?? true;
-    final mapStyle = ref.watch(mapStyleProviderProvider).value ?? 'standard';
+        ref.watch(chatNotificationsProvider).value ?? true;
+    final showLocation = ref.watch(showLocationProvider).value ?? true;
+    final publicProfile = ref.watch(publicProfileProvider).value ?? true;
+    final mapStyle = ref.watch(mapStyleProvider).value ?? 'standard';
 
     final driverSettings = isDriver
         ? ref.watch(driverSettingsViewModelProvider)
@@ -67,13 +65,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ? ref.read(driverSettingsViewModelProvider.notifier)
         : null;
 
-    return Scaffold(
-      backgroundColor: AppColors.scaffoldBg,
-      appBar: AppBar(
-        backgroundColor: AppColors.background,
-        elevation: 0,
-        scrolledUnderElevation: 1,
-        shadowColor: AppColors.borderLight,
+    return AdaptiveScaffold(
+      appBar: AdaptiveAppBar(
         leading: IconButton(
           tooltip: l10n.goBackTooltip,
           onPressed: () => context.pop(),
@@ -83,14 +76,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             size: 20.sp,
           ),
         ),
-        title: Text(
-          l10n.settingsTitle,
-          style: TextStyle(
-            fontSize: 18.sp,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          ),
-        ),
+        title: l10n.settingsTitle,
       ),
       body: ListView(
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
@@ -121,9 +107,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               subtitle: l10n.settingsPushNotificationsDesc,
               value: notificationsEnabled,
               icon: Icons.notifications_outlined,
-              onChanged: (v) => ref
-                  .read(notificationsEnabledProviderProvider.notifier)
-                  .setEnabled(v),
+              onChanged: (v) =>
+                  ref.read(notificationsEnabledProvider.notifier).setEnabled(v),
             ),
             _buildDivider(),
             _buildSwitchTile(
@@ -132,9 +117,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               value: rideReminders,
               icon: Icons.alarm_outlined,
               enabled: notificationsEnabled,
-              onChanged: (v) => ref
-                  .read(rideRemindersProviderProvider.notifier)
-                  .setEnabled(v),
+              onChanged: (v) =>
+                  ref.read(rideRemindersProvider.notifier).setEnabled(v),
             ),
             _buildDivider(),
             _buildSwitchTile(
@@ -143,9 +127,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               value: chatNotifications,
               icon: Icons.chat_bubble_outline_rounded,
               enabled: notificationsEnabled,
-              onChanged: (v) => ref
-                  .read(chatNotificationsProviderProvider.notifier)
-                  .setEnabled(v),
+              onChanged: (v) =>
+                  ref.read(chatNotificationsProvider.notifier).setEnabled(v),
             ),
             _buildDivider(),
             _buildNavTile(
@@ -163,9 +146,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           _buildCard([
             _buildMapStyleTile(
               currentStyle: mapStyle,
-              onChanged: (style) => ref
-                  .read(mapStyleProviderProvider.notifier)
-                  .setMapStyle(style),
+              onChanged: (style) =>
+                  ref.read(mapStyleProvider.notifier).setMapStyle(style),
             ),
             _buildDivider(),
             _buildLanguageTile(
@@ -173,9 +155,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               currentLocale: currentLocale,
               onChanged: (code) async {
                 if (code != null) {
-                  await ref
-                      .read(localeProviderProvider.notifier)
-                      .setLanguage(code);
+                  await ref.read(localeProvider.notifier).setLanguage(code);
                 }
               },
             ),
@@ -194,9 +174,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               subtitle: l10n.settingsPublicProfileDesc,
               value: publicProfile,
               icon: Icons.person_outline_rounded,
-              onChanged: (v) => ref
-                  .read(publicProfileProviderProvider.notifier)
-                  .setEnabled(v),
+              onChanged: (v) =>
+                  ref.read(publicProfileProvider.notifier).setEnabled(v),
             ),
             _buildDivider(),
             _buildSwitchTile(
@@ -205,7 +184,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               value: showLocation,
               icon: Icons.location_on_outlined,
               onChanged: (v) =>
-                  ref.read(showLocationProviderProvider.notifier).setEnabled(v),
+                  ref.read(showLocationProvider.notifier).setEnabled(v),
             ),
             _buildDivider(),
             _buildNavTile(
@@ -660,7 +639,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ],
               ),
             ),
-            Switch.adaptive(
+            AdaptiveSwitch(
               value: value && enabled,
               onChanged: enabled
                   ? (v) {
@@ -786,7 +765,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ],
           ),
-          Slider.adaptive(
+          AdaptiveSlider(
             value: value,
             min: min,
             max: max,
@@ -795,7 +774,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               onChanged(v);
             },
             activeColor: AppColors.primary,
-            inactiveColor: AppColors.border,
           ),
         ],
       ),
@@ -1074,17 +1052,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     if (await pns.hasPermission()) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            AppLocalizations.of(context).notificationsAlreadyEnabled,
-          ),
-          backgroundColor: AppColors.success,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12.r),
-          ),
-        ),
+      AdaptiveSnackBar.show(
+        context,
+        message: AppLocalizations.of(context).notificationsAlreadyEnabled,
+        type: AdaptiveSnackBarType.success,
       );
       return;
     }
@@ -1098,17 +1069,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     await pns.requestPermission();
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          AppLocalizations.of(context).notificationPermissionRequested,
-        ),
-        backgroundColor: AppColors.primary,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12.r),
-        ),
-      ),
+    AdaptiveSnackBar.show(
+      context,
+      message: AppLocalizations.of(context).notificationPermissionRequested,
+      type: AdaptiveSnackBarType.success,
     );
   }
 
@@ -1122,15 +1086,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   void _showDataExportDialog() {
-    showModalBottomSheet<void>(
+    AppModalSheet.show<void>(
       context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
+      title: AppLocalizations.of(context).downloadMyData,
+      maxHeightFactor: 0.72,
+      child: Container(
         padding: EdgeInsets.all(24.w),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
-        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1168,12 +1129,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               text: AppLocalizations.of(context).requestDataExport,
               onPressed: () {
                 Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      AppLocalizations.of(context).dataExportRequestSubmitted,
-                    ),
-                  ),
+                AdaptiveSnackBar.show(
+                  context,
+                  message: AppLocalizations.of(
+                    context,
+                  ).dataExportRequestSubmitted,
+                  type: AdaptiveSnackBarType.success,
                 );
               },
               style: PremiumButtonStyle.gradient,
@@ -1186,22 +1147,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   void _showDataProcessingNotice() {
-    showModalBottomSheet<void>(
+    AppModalSheet.show<void>(
       context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.7,
-        minChildSize: 0.5,
-        maxChildSize: 0.9,
-        builder: (context, scrollController) => Container(
+      title: AppLocalizations.of(context).dataProcessingNotice,
+      forceMaxHeight: true,
+      maxHeightFactor: 0.86,
+      child: Container(
           padding: EdgeInsets.all(24.w),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
-          ),
           child: ListView(
-            controller: scrollController,
             children: [
               Center(
                 child: Container(
@@ -1267,7 +1220,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               SizedBox(height: 16.h),
             ],
           ),
-        ),
       ),
     );
   }
@@ -1390,7 +1342,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ElevatedButton(
             onPressed: () async {
               context.pop();
-              await ref.read(authActionsViewModelProvider).signOut();
+              await ref.read(authActionsViewModelProvider.notifier).signOut();
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
             child: Text(AppLocalizations.of(context).settingsLogout),
@@ -1497,7 +1449,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       );
                       try {
                         await ref
-                            .read(authActionsViewModelProvider)
+                            .read(authActionsViewModelProvider.notifier)
                             .deleteAccount();
                         if (context.mounted) context.pop();
                       } on AuthException catch (e) {
@@ -1505,7 +1457,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           context.pop();
                           if (e.code == 'requires-recent-login') {
                             final ok = await showReauthDialog(context, ref);
-                            if (!ok || !context.mounted) return;
+                            if (!ok || !context.mounted) {
+                              return;
+                            }
                             await showDialog<void>(
                               context: context,
                               barrierDismissible: false,
@@ -1515,49 +1469,40 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             );
                             try {
                               await ref
-                                  .read(authActionsViewModelProvider)
+                                  .read(authActionsViewModelProvider.notifier)
                                   .deleteAccount();
                               if (context.mounted) context.pop();
-                            } on Exception catch (retryErr) {
+                            } catch (e, st) {
                               if (context.mounted) {
                                 context.pop();
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      AppLocalizations.of(
-                                        context,
-                                      ).failedToDeleteAccountValue(retryErr),
-                                    ),
-                                    backgroundColor: AppColors.error,
-                                  ),
+                                AdaptiveSnackBar.show(
+                                  context,
+                                  message: AppLocalizations.of(
+                                    context,
+                                  ).failedToDeleteAccountValue(e),
+                                  type: AdaptiveSnackBarType.error,
                                 );
                               }
                             }
                             return;
                           }
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                AppLocalizations.of(
-                                  context,
-                                ).failedToDeleteAccountValue(e),
-                              ),
-                              backgroundColor: AppColors.error,
-                            ),
+                          AdaptiveSnackBar.show(
+                            context,
+                            message: AppLocalizations.of(
+                              context,
+                            ).failedToDeleteAccountValue(e),
+                            type: AdaptiveSnackBarType.error,
                           );
                         }
-                      } on Exception catch (e) {
+                      } catch (e, st) {
                         if (context.mounted) {
                           context.pop();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                AppLocalizations.of(
-                                  context,
-                                ).failedToDeleteAccountValue(e),
-                              ),
-                              backgroundColor: AppColors.error,
-                            ),
+                          AdaptiveSnackBar.show(
+                            context,
+                            message: AppLocalizations.of(
+                              context,
+                            ).failedToDeleteAccountValue(e),
+                            type: AdaptiveSnackBarType.error,
                           );
                         }
                       }
@@ -1617,13 +1562,8 @@ class _BlockedUsersScreenState extends ConsumerState<_BlockedUsersScreen> {
     final l10n = AppLocalizations.of(context);
     final blockedUsersAsync = ref.watch(blockedUsersProvider);
 
-    return Scaffold(
-      backgroundColor: AppColors.scaffoldBg,
-      appBar: AppBar(
-        backgroundColor: AppColors.background,
-        elevation: 0,
-        scrolledUnderElevation: 1,
-        shadowColor: AppColors.borderLight,
+    return AdaptiveScaffold(
+      appBar: AdaptiveAppBar(
         leading: IconButton(
           tooltip: l10n.goBackTooltip,
           onPressed: () => context.pop(),
@@ -1633,18 +1573,11 @@ class _BlockedUsersScreenState extends ConsumerState<_BlockedUsersScreen> {
             size: 20.sp,
           ),
         ),
-        title: Text(
-          l10n.settingsBlockedUsers,
-          style: TextStyle(
-            fontSize: 18.sp,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          ),
-        ),
+        title: l10n.settingsBlockedUsers,
       ),
       body: blockedUsersAsync.when(
         loading: () =>
-            const Center(child: CircularProgressIndicator.adaptive()),
+            const SkeletonLoader(type: SkeletonType.profileCard, itemCount: 4),
         error: (_, _) => Center(
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 24.w),
@@ -1696,7 +1629,7 @@ class _BlockedUsersScreenState extends ConsumerState<_BlockedUsersScreen> {
           final filteredUsers = blockedUsers
               .where((user) {
                 if (normalizedQuery.isEmpty) return true;
-                return user.displayName.toLowerCase().contains(
+                return user.username.toLowerCase().contains(
                       normalizedQuery,
                     ) ||
                     user.email.toLowerCase().contains(normalizedQuery) ||
@@ -1757,8 +1690,8 @@ class _BlockedUsersScreenState extends ConsumerState<_BlockedUsersScreen> {
                           separatorBuilder: (_, _) => SizedBox(height: 10.h),
                           itemBuilder: (context, index) {
                             final user = filteredUsers[index];
-                            final displayName = user.displayName.isNotEmpty
-                                ? user.displayName
+                            final displayName = user.username.isNotEmpty
+                                ? user.username
                                 : user.uid;
 
                             return Container(
@@ -1867,33 +1800,28 @@ class _BlockedUsersScreenState extends ConsumerState<_BlockedUsersScreen> {
                                       try {
                                         await ref
                                             .read(
-                                              profileActionsViewModelProvider,
+                                              profileActionsViewModelProvider
+                                                  .notifier,
                                             )
                                             .unblockCurrentUser(user.uid);
+                                        if (!context.mounted) {
+                                          return;
+                                        }
                                         ref.invalidate(blockedUsersProvider);
                                         ref.invalidate(currentUserProvider);
-                                        if (!mounted) return;
-                                        ScaffoldMessenger.of(
+                                        AdaptiveSnackBar.show(
                                           context,
-                                        ).showSnackBar(
-                                          SnackBar(
-                                            content: Text(l10n.userUnblocked),
-                                            backgroundColor: AppColors.success,
-                                            behavior: SnackBarBehavior.floating,
-                                          ),
+                                          message: l10n.userUnblocked,
+                                          type: AdaptiveSnackBarType.success,
                                         );
-                                      } on Exception catch (_) {
-                                        if (!mounted) return;
-                                        ScaffoldMessenger.of(
+                                      } catch (e, st) {
+                                        if (!context.mounted) return;
+
+                                        AdaptiveSnackBar.show(
                                           context,
-                                        ).showSnackBar(
-                                          SnackBar(
-                                            content: Text(
+                                          message:
                                               l10n.couldNotUnblockUserTryAgain,
-                                            ),
-                                            backgroundColor: AppColors.error,
-                                            behavior: SnackBarBehavior.floating,
-                                          ),
+                                          type: AdaptiveSnackBarType.error,
                                         );
                                       }
                                     },

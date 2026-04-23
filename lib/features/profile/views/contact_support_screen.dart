@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -10,6 +11,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:reactive_forms/reactive_forms.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
@@ -66,28 +68,25 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
   }
 
   Future<void> _pickFiles() async {
-    final source = await showModalBottomSheet<ImageSource>(
+    final source = await AppModalSheet.show<ImageSource>(
       context: context,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Column(
+      title: 'Attach image',
+      maxHeightFactor: 0.45,
+      child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ListTile(
+            AdaptiveListTile(
               leading: const Icon(Icons.photo_library_rounded),
               title: Text(AppLocalizations.of(context).chooseFromGallery),
-              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
             ),
-            ListTile(
+            AdaptiveListTile(
               leading: const Icon(Icons.camera_alt_rounded),
               title: Text(AppLocalizations.of(context).takePhoto),
-              onTap: () => Navigator.pop(ctx, ImageSource.camera),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
             ),
           ],
         ),
-      ),
     );
 
     if (source == null) return;
@@ -100,6 +99,7 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
     );
 
     if (picked == null) return;
+    if (!mounted) return;
 
     await ref
         .read(contactSupportViewModelProvider.notifier)
@@ -115,7 +115,7 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
         .submitTicket(
           userId: user?.uid ?? 'anonymous',
           userEmail: user?.email ?? '',
-          userName: user?.displayName ?? '',
+          userName: user?.username ?? '',
         );
   }
 
@@ -131,29 +131,17 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
 
       if (next.errorMessage != null &&
           next.errorMessage != previous?.errorMessage) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.errorMessage!),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-          ),
+        AdaptiveSnackBar.show(
+          context,
+          message: next.errorMessage!,
+          type: AdaptiveSnackBarType.error,
         );
       }
     });
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text(
-          l10n.contactSupport,
-          style: TextStyle(
-            fontSize: 18.sp,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          ),
-        ),
+    return AdaptiveScaffold(
+      appBar: AdaptiveAppBar(
+        title: l10n.contactSupport,
         leading: IconButton(
           tooltip: l10n.goBackTooltip,
           icon: Icon(Icons.adaptive.arrow_back_rounded),
@@ -178,322 +166,322 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
     return ReactiveForm(
       formGroup: _form,
       child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(height: 8.h),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(height: 8.h),
 
-        // Info card
-        Container(
-          padding: EdgeInsets.all(16.w),
-          decoration: BoxDecoration(
-            color: AppColors.primarySurface,
-            borderRadius: BorderRadius.circular(12.r),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                Icons.support_agent_rounded,
-                color: AppColors.primary,
-                size: 28.sp,
-              ),
-              SizedBox(width: 12.w),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l10n.howCanWeHelp,
-                      style: TextStyle(
-                        fontSize: 15.sp,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    SizedBox(height: 4.h),
-                    Text(
-                      l10n.responseTimeMessage,
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ).animate().fadeIn(duration: 300.ms),
-
-        SizedBox(height: 24.h),
-
-        // Category selector
-        Text(
-          l10n.categoryLabel,
-          style: TextStyle(
-            fontSize: 14.sp,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        SizedBox(height: 8.h),
-        Container(
-          padding: EdgeInsets.symmetric(horizontal: 16.w),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12.r),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: supportState.selectedCategory,
-              isExpanded: true,
-              items: _categories.map((cat) {
-                return DropdownMenuItem(
-                  value: cat,
-                  child: Text(_localizedCategoryLabel(l10n, cat)),
-                );
-              }).toList(),
-              onChanged: (value) {
-                if (value == null) return;
-                ref
-                    .read(contactSupportViewModelProvider.notifier)
-                    .setCategory(value);
-              },
-            ),
-          ),
-        ).animate().fadeIn(delay: 100.ms),
-
-        SizedBox(height: 20.h),
-
-        // Subject
-        ReactiveTextField<String>(
-          formControlName: 'subject',
-          maxLength: 100,
-          textCapitalization: TextCapitalization.sentences,
-          onChanged: (control) => ref
-              .read(contactSupportViewModelProvider.notifier)
-              .setSubject(control.value ?? ''),
-          validationMessages: {
-            ValidationMessage.required: (_) => 'Please enter a subject',
-            ValidationMessage.minLength: (_) =>
-                'Subject must be at least 3 characters',
-          },
-          decoration: InputDecoration(
-            labelText: l10n.subjectLabel,
-            hintText: l10n.subjectHint,
-            prefixIcon: const Icon(Icons.subject_rounded),
-          ),
-        ).animate().fadeIn(delay: 200.ms),
-
-        SizedBox(height: 20.h),
-
-        // Message
-        Text(
-          l10n.messageFieldLabel,
-          style: TextStyle(
-            fontSize: 14.sp,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        SizedBox(height: 8.h),
-        ReactiveTextField<String>(
-          formControlName: 'message',
-          maxLines: 6,
-          maxLength: 2000,
-          textCapitalization: TextCapitalization.sentences,
-          onChanged: (control) => ref
-              .read(contactSupportViewModelProvider.notifier)
-              .setMessage(control.value ?? ''),
-          validationMessages: {
-            ValidationMessage.required: (_) => 'Please describe your issue',
-            ValidationMessage.minLength: (_) =>
-                'Please provide at least 10 characters',
-          },
-          decoration: InputDecoration(
-            hintText: l10n.messageFieldHint,
-            hintStyle: TextStyle(
-              fontSize: 14.sp,
-              color: AppColors.textTertiary,
-            ),
-            filled: true,
-            fillColor: Colors.white,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.r),
-              borderSide: const BorderSide(color: AppColors.border),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.r),
-              borderSide: const BorderSide(color: AppColors.border),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.r),
-              borderSide: const BorderSide(
-                color: AppColors.primary,
-                width: 1.5,
-              ),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.r),
-              borderSide: const BorderSide(color: AppColors.error),
-            ),
-          ),
-        ).animate().fadeIn(delay: 300.ms),
-
-        SizedBox(height: 20.h),
-
-        // Attachment
-        GestureDetector(
-          onTap: _pickFiles,
-          child: Container(
-            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+          // Info card
+          Container(
+            padding: EdgeInsets.all(16.w),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.primarySurface,
               borderRadius: BorderRadius.circular(12.r),
-              border: Border.all(
-                color: AppColors.border,
-              ),
             ),
             child: Row(
               children: [
                 Icon(
-                  Icons.attach_file_rounded,
-                  size: 20.sp,
-                  color: AppColors.textSecondary,
-                ),
-                SizedBox(width: 10.w),
-                Expanded(
-                  child: Text(
-                    supportState.attachedFiles.isEmpty
-                        ? l10n.attachFilesHint
-                        : l10n.filesAttachedCount(
-                            supportState.attachedFiles.length,
-                            ContactSupportViewModel.maxAttachments,
-                          ),
-                    style: TextStyle(
-                      fontSize: 13.sp,
-                      color: supportState.attachedFiles.isEmpty
-                          ? AppColors.textTertiary
-                          : AppColors.textPrimary,
-                    ),
-                  ),
-                ),
-                Icon(
-                  Icons.add_circle_outline_rounded,
-                  size: 20.sp,
+                  Icons.support_agent_rounded,
                   color: AppColors.primary,
+                  size: 28.sp,
+                ),
+                SizedBox(width: 12.w),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.howCanWeHelp,
+                        style: TextStyle(
+                          fontSize: 15.sp,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      SizedBox(height: 4.h),
+                      Text(
+                        l10n.responseTimeMessage,
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
-          ),
-        ).animate().fadeIn(delay: 350.ms),
+          ).animate().fadeIn(duration: 300.ms),
 
-        if (supportState.attachedFiles.isNotEmpty) ...[
-          SizedBox(height: 10.h),
-          SizedBox(
-            height: 80.h,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: supportState.attachedFiles.length,
-              separatorBuilder: (_, _) => SizedBox(width: 8.w),
-              itemBuilder: (context, index) {
-                return Stack(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8.r),
-                      child: Image.file(
-                        supportState.attachedFiles[index],
-                        width: 80.w,
-                        height: 80.h,
-                        fit: BoxFit.cover,
+          SizedBox(height: 24.h),
+
+          // Category selector
+          Text(
+            l10n.categoryLabel,
+            style: TextStyle(
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          SizedBox(height: 8.h),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 16.w),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12.r),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: supportState.selectedCategory,
+                isExpanded: true,
+                items: _categories.map((cat) {
+                  return DropdownMenuItem(
+                    value: cat,
+                    child: Text(_localizedCategoryLabel(l10n, cat)),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  if (value == null) return;
+                  ref
+                      .read(contactSupportViewModelProvider.notifier)
+                      .setCategory(value);
+                },
+              ),
+            ),
+          ).animate().fadeIn(delay: 100.ms),
+
+          SizedBox(height: 20.h),
+
+          // Subject
+          ReactiveTextField<String>(
+            formControlName: 'subject',
+            maxLength: 100,
+            textCapitalization: TextCapitalization.sentences,
+            onChanged: (control) => ref
+                .read(contactSupportViewModelProvider.notifier)
+                .setSubject(control.value ?? ''),
+            validationMessages: {
+              ValidationMessage.required: (_) => 'Please enter a subject',
+              ValidationMessage.minLength: (_) =>
+                  'Subject must be at least 3 characters',
+            },
+            decoration: InputDecoration(
+              labelText: l10n.subjectLabel,
+              hintText: l10n.subjectHint,
+              prefixIcon: const Icon(Icons.subject_rounded),
+            ),
+          ).animate().fadeIn(delay: 200.ms),
+
+          SizedBox(height: 20.h),
+
+          // Message
+          Text(
+            l10n.messageFieldLabel,
+            style: TextStyle(
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          SizedBox(height: 8.h),
+          ReactiveTextField<String>(
+            formControlName: 'message',
+            maxLines: 6,
+            maxLength: 2000,
+            textCapitalization: TextCapitalization.sentences,
+            onChanged: (control) => ref
+                .read(contactSupportViewModelProvider.notifier)
+                .setMessage(control.value ?? ''),
+            validationMessages: {
+              ValidationMessage.required: (_) => 'Please describe your issue',
+              ValidationMessage.minLength: (_) =>
+                  'Please provide at least 10 characters',
+            },
+            decoration: InputDecoration(
+              hintText: l10n.messageFieldHint,
+              hintStyle: TextStyle(
+                fontSize: 14.sp,
+                color: AppColors.textTertiary,
+              ),
+              filled: true,
+              fillColor: Colors.white,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12.r),
+                borderSide: const BorderSide(color: AppColors.border),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12.r),
+                borderSide: const BorderSide(color: AppColors.border),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12.r),
+                borderSide: const BorderSide(
+                  color: AppColors.primary,
+                  width: 1.5,
+                ),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12.r),
+                borderSide: const BorderSide(color: AppColors.error),
+              ),
+            ),
+          ).animate().fadeIn(delay: 300.ms),
+
+          SizedBox(height: 20.h),
+
+          // Attachment
+          GestureDetector(
+            onTap: _pickFiles,
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12.r),
+                border: Border.all(
+                  color: AppColors.border,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.attach_file_rounded,
+                    size: 20.sp,
+                    color: AppColors.textSecondary,
+                  ),
+                  SizedBox(width: 10.w),
+                  Expanded(
+                    child: Text(
+                      supportState.attachedFiles.isEmpty
+                          ? l10n.attachFilesHint
+                          : l10n.filesAttachedCount(
+                              supportState.attachedFiles.length,
+                              ContactSupportViewModel.maxAttachments,
+                            ),
+                      style: TextStyle(
+                        fontSize: 13.sp,
+                        color: supportState.attachedFiles.isEmpty
+                            ? AppColors.textTertiary
+                            : AppColors.textPrimary,
                       ),
                     ),
-                    Positioned(
-                      top: 4.h,
-                      right: 4.w,
-                      child: GestureDetector(
-                        onTap: () => ref
-                            .read(contactSupportViewModelProvider.notifier)
-                            .removeAttachmentAt(index),
-                        child: Container(
-                          padding: EdgeInsets.all(2.w),
-                          decoration: const BoxDecoration(
-                            color: Colors.black54,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.close_rounded,
-                            size: 14.sp,
-                            color: Colors.white,
+                  ),
+                  Icon(
+                    Icons.add_circle_outline_rounded,
+                    size: 20.sp,
+                    color: AppColors.primary,
+                  ),
+                ],
+              ),
+            ),
+          ).animate().fadeIn(delay: 350.ms),
+
+          if (supportState.attachedFiles.isNotEmpty) ...[
+            SizedBox(height: 10.h),
+            SizedBox(
+              height: 80.h,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: supportState.attachedFiles.length,
+                separatorBuilder: (_, _) => SizedBox(width: 8.w),
+                itemBuilder: (context, index) {
+                  return Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8.r),
+                        child: Image.file(
+                          supportState.attachedFiles[index],
+                          width: 80.w,
+                          height: 80.h,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      Positioned(
+                        top: 4.h,
+                        right: 4.w,
+                        child: GestureDetector(
+                          onTap: () => ref
+                              .read(contactSupportViewModelProvider.notifier)
+                              .removeAttachmentAt(index),
+                          child: Container(
+                            padding: EdgeInsets.all(2.w),
+                            decoration: const BoxDecoration(
+                              color: Colors.black54,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.close_rounded,
+                              size: 14.sp,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
-                );
-              },
+                    ],
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
 
-        SizedBox(height: 32.h),
+          SizedBox(height: 32.h),
 
-        SizedBox(
-          width: double.infinity,
-          child: PremiumButton(
-            text: l10n.submitTicketButton,
-            onPressed: supportState.isSubmitting ? null : _submitTicket,
-            isLoading: supportState.isSubmitting,
-            icon: Icons.send_rounded,
-          ),
-        ).animate().fadeIn(delay: 400.ms),
+          SizedBox(
+            width: double.infinity,
+            child: PremiumButton(
+              text: l10n.submitTicketButton,
+              onPressed: supportState.isSubmitting ? null : _submitTicket,
+              isLoading: supportState.isSubmitting,
+              icon: Icons.send_rounded,
+            ),
+          ).animate().fadeIn(delay: 400.ms),
 
-        SizedBox(height: 24.h),
+          SizedBox(height: 24.h),
 
-        // Response time expectations
-        Container(
-          padding: EdgeInsets.all(14.w),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceVariant,
-            borderRadius: BorderRadius.circular(10.r),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                Icons.schedule_rounded,
-                size: 18.sp,
-                color: AppColors.textTertiary,
-              ),
-              SizedBox(width: 10.w),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l10n.averageResponseTime,
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    Text(
-                      l10n.responseTimeInfo,
-                      style: TextStyle(
-                        fontSize: 11.sp,
-                        color: AppColors.textTertiary,
-                      ),
-                    ),
-                  ],
+          // Response time expectations
+          Container(
+            padding: EdgeInsets.all(14.w),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceVariant,
+              borderRadius: BorderRadius.circular(10.r),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.schedule_rounded,
+                  size: 18.sp,
+                  color: AppColors.textTertiary,
                 ),
-              ),
-            ],
-          ),
-        ).animate().fadeIn(delay: 450.ms),
+                SizedBox(width: 10.w),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.averageResponseTime,
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      Text(
+                        l10n.responseTimeInfo,
+                        style: TextStyle(
+                          fontSize: 11.sp,
+                          color: AppColors.textTertiary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ).animate().fadeIn(delay: 450.ms),
 
-        SizedBox(height: 32.h),
-      ],
-    ),
+          SizedBox(height: 32.h),
+        ],
+      ),
     );
   }
 

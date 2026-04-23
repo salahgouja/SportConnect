@@ -23,6 +23,8 @@ class AnalyticsService {
 
   bool _initialized = false;
 
+  bool get isInitialized => _initialized;
+
   // ── Initialization ────────────────────────────────────────────────
 
   /// Call once during app startup, **after** [FirebaseService.initialize].
@@ -49,7 +51,7 @@ class AnalyticsService {
   Future<void> logEvent(String name, {Map<String, Object>? parameters}) async {
     try {
       await _analytics.logEvent(name: name, parameters: parameters);
-    } on Exception catch (e) {
+    } catch (e, st) {
       TalkerService.error('Analytics logEvent failed', e);
     }
   }

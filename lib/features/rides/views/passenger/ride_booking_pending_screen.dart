@@ -1,6 +1,8 @@
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -8,6 +10,7 @@ import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/core/widgets/driver_info_widget.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
@@ -36,12 +39,10 @@ class _RideBookingPendingScreenState
     extends ConsumerState<RideBookingPendingScreen> {
   void _showStatusSnackBar(String message, {Color? backgroundColor}) {
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: backgroundColor,
-        behavior: SnackBarBehavior.floating,
-      ),
+    AdaptiveSnackBar.show(
+      context,
+      message: message,
+      type: AdaptiveSnackBarType.error,
     );
   }
 
@@ -106,23 +107,16 @@ class _RideBookingPendingScreenState
   }
 
   Widget _buildLoading() {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.textOnPrimary,
-      ),
-      body: const Center(child: CircularProgressIndicator.adaptive()),
+    return AdaptiveScaffold(
+      appBar: AdaptiveAppBar(),
+      body: const SkeletonLoader(type: SkeletonType.rideCard, itemCount: 4),
     );
   }
 
   Widget _buildError(String message) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.textOnPrimary,
-        title: Text(AppLocalizations.of(context).bookingRequestTitle),
+    return AdaptiveScaffold(
+      appBar: AdaptiveAppBar(
+        title: AppLocalizations.of(context).bookingRequestTitle,
       ),
       body: Center(
         child: Padding(
@@ -153,13 +147,9 @@ class _RideBookingPendingScreenState
         '${minutes.toString().padLeft(2, '0')}:'
         '${seconds.toString().padLeft(2, '0')}';
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.textOnPrimary,
-        title: Text(AppLocalizations.of(context).bookingRequestTitle),
-        centerTitle: true,
+    return AdaptiveScaffold(
+      appBar: AdaptiveAppBar(
+        title: AppLocalizations.of(context).bookingRequestTitle,
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(
@@ -326,6 +316,7 @@ class _RideBookingPendingScreenState
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 userAgentPackageName: 'com.sportconnect.app',
               ),
+              const CurrentLocationLayer(),
               PolylineLayer(
                 polylines: [
                   Polyline(
@@ -602,13 +593,12 @@ class _RideBookingPendingScreenState
               ),
               const Spacer(),
               Icon(
-                Icons.attach_money_rounded,
+                Icons.euro_rounded,
                 size: 14.sp,
                 color: AppColors.success,
               ),
               Text(
-                '${ride.pricing.pricePerSeat.amount.toStringAsFixed(0)} '
-                '${ride.pricing.pricePerSeat.currency}/seat',
+                '€${(ride.pricing.pricePerSeatInCents.amountInCents / 100).toStringAsFixed(2)}/seat',
                 style: TextStyle(
                   fontSize: 12.sp,
                   color: AppColors.textSecondary,

@@ -51,7 +51,7 @@ class ForgotPasswordViewModel extends _$ForgotPasswordViewModel {
 
     try {
       await ref
-          .read(authActionsViewModelProvider)
+          .read(authActionsViewModelProvider.notifier)
           .sendPasswordResetEmail(email);
       if (!ref.mounted) return;
 
@@ -62,7 +62,7 @@ class ForgotPasswordViewModel extends _$ForgotPasswordViewModel {
         sentEmail: email,
       );
       _startCooldown();
-    } on Exception catch (e) {
+    } catch (e, st) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }

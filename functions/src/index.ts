@@ -13,8 +13,17 @@ import { defineSecret } from "firebase-functions/params";
 import { logger } from "firebase-functions/v2";
 import * as admin from "firebase-admin";
 import Stripe from "stripe";
+import {
+  DocumentData,
+  DocumentSnapshot,
+  FieldValue,
+  Firestore,
+  QueryDocumentSnapshot,
+  Timestamp,
+} from "firebase-admin/firestore";
 
 admin.initializeApp();
+// const db = getFirestore();
 
 const stripeSecretKey = defineSecret("STRIPE_SECRET_KEY");
 const stripeWebhookSecret = defineSecret("STRIPE_WEBHOOK_SECRET");
@@ -24,6 +33,27 @@ const supportInboxEmail = defineSecret("SUPPORT_INBOX_EMAIL");
 
 const PLATFORM_FEE_PERCENT = 0.15; // 15%
 const RESOLVED_STATUSES = new Set(["resolved", "closed", "done", "completed"]);
+
+type StripeClient = Stripe.Stripe;
+type StripeAccount = Awaited<ReturnType<StripeClient["accounts"]["create"]>>;
+type StripeAccountCreateParams = NonNullable<
+  Parameters<StripeClient["accounts"]["create"]>[0]
+>;
+type StripeIndividualParams = NonNullable<
+  StripeAccountCreateParams["individual"]
+>;
+type StripeAccountLink = Awaited<
+  ReturnType<StripeClient["accountLinks"]["create"]>
+>;
+type StripeEvent = ReturnType<StripeClient["webhooks"]["constructEvent"]>;
+type StripePaymentIntent = Awaited<
+  ReturnType<StripeClient["paymentIntents"]["retrieve"]>
+>;
+type StripeCharge = Awaited<ReturnType<StripeClient["charges"]["retrieve"]>>;
+type StripePayout = Awaited<ReturnType<StripeClient["payouts"]["retrieve"]>>;
+type StripeRefundCreateParams = NonNullable<
+  Parameters<StripeClient["refunds"]["create"]>[0]
+>;
 
 // Stripe Express Connect is only available in specific countries.
 // If the driver's detected country is not supported, fall back to "FR".
@@ -89,7 +119,7 @@ async function removeStaleToken(userId: string): Promise<void> {
     .firestore()
     .collection("users")
     .doc(userId)
-    .update({ fcmToken: admin.firestore.FieldValue.delete() });
+    .update({ fcmToken: FieldValue.delete() });
 }
 
 // ============================================
@@ -323,7 +353,7 @@ async function sendSupportMail({
 // ============================================
 
 async function checkRateLimit(
-  db: admin.firestore.Firestore,
+  db: FirebaseFirestore.Firestore,
   uid: string,
   action: string,
   maxCalls: number,
@@ -350,7 +380,7 @@ async function checkRateLimit(
     if (now - windowStart >= windowMs) {
       tx.set(ref, { windowStart: now, count: 1 });
     } else {
-      tx.update(ref, { count: admin.firestore.FieldValue.increment(1) });
+      tx.update(ref, { count: FieldValue.increment(1) });
     }
   });
 }
@@ -364,10 +394,244 @@ async function checkRateLimit(
 // (captures all time-windowed stats). All-time totals (totalEarnings,
 // totalRides) are maintained as incremental counters via FieldValue.increment
 // so callers must pass the delta for the current event.
+function mapStripeCapabilityStatus(
+  value: string | null | undefined,
+): "active" | "inactive" | "pending" {
+  if (value === "active" || value === "inactive" || value === "pending") {
+    return value;
+  }
+  return "inactive";
+}
+
+function mapStripeDisabledReason(
+  value: string | null | undefined,
+): string | null {
+  switch (value) {
+    case "action_required.requested_capabilities":
+      return "actionRequiredRequestedCapabilities";
+    case "listed":
+      return "listed";
+    case "other":
+      return "other";
+    case "platform_paused":
+      return "platformPaused";
+    case "rejected.fraud":
+      return "rejectedFraud";
+    case "rejected.incomplete_verification":
+      return "rejectedIncompleteVerification";
+    case "rejected.listed":
+      return "rejectedListed";
+    case "rejected.other":
+      return "rejectedOther";
+    case "rejected.platform_fraud":
+      return "rejectedPlatformFraud";
+    case "rejected.platform_other":
+      return "rejectedPlatformOther";
+    case "rejected.platform_terms_of_service":
+      return "rejectedPlatformTermsOfService";
+    case "rejected.terms_of_service":
+      return "rejectedTermsOfService";
+    case "requirements.past_due":
+      return "requirementsPastDue";
+    case "requirements.pending_verification":
+      return "requirementsPendingVerification";
+    case "under_review":
+      return "underReview";
+    default:
+      return null;
+  }
+}
+
+function buildAccountHolderName(account: StripeAccount): string | null {
+  const first = account.individual?.first_name?.trim() ?? "";
+  const last = account.individual?.last_name?.trim() ?? "";
+  const full = `${first} ${last}`.trim();
+
+  if (full) return full;
+
+  const businessName = account.business_profile?.name?.trim();
+  if (businessName) return businessName;
+
+  return null;
+}
+
+async function getConnectedAccountBalances(
+  stripe: StripeClient,
+  accountId: string,
+  preferredCurrency: string,
+): Promise<{
+  availableBalanceInCents: number;
+  pendingBalanceInCents: number;
+}> {
+  try {
+    const balance = await stripe.balance.retrieve(
+      {},
+      { stripeAccount: accountId },
+    );
+
+    return {
+      availableBalanceInCents: sumBalanceForCurrency(
+        balance.available,
+        preferredCurrency,
+      ),
+      pendingBalanceInCents: sumBalanceForCurrency(
+        balance.pending,
+        preferredCurrency,
+      ),
+    };
+  } catch (error) {
+    logger.warn("Failed to retrieve connected account balance", {
+      accountId,
+      error,
+    });
+
+    return {
+      availableBalanceInCents: 0,
+      pendingBalanceInCents: 0,
+    };
+  }
+}
+
+async function syncConnectedAccountSnapshot(
+  db: FirebaseFirestore.Firestore,
+  stripe: StripeClient,
+  account: StripeAccount,
+  userId: string,
+  opts?: {
+    availableBalanceInCents?: number;
+    pendingBalanceInCents?: number;
+  },
+): Promise<void> {
+  const defaultCurrency = (account.default_currency ?? "eur").toUpperCase();
+  const preferredCurrency = defaultCurrency.toLowerCase();
+  const accountHolderName = buildAccountHolderName(account);
+
+  const transfersActive = account.capabilities?.transfers === "active";
+  const isActive =
+    Boolean(account.charges_enabled) &&
+    Boolean(account.payouts_enabled) &&
+    Boolean(account.details_submitted) &&
+    transfersActive;
+
+  let onboardingStatus = "pending";
+  if (isActive) {
+    onboardingStatus = "active";
+  } else if ((account.requirements?.past_due?.length ?? 0) > 0) {
+    onboardingStatus = "restricted";
+  } else if (
+    (account.requirements?.currently_due?.length ?? 0) > 0 ||
+    (account.requirements?.pending_verification?.length ?? 0) > 0
+  ) {
+    onboardingStatus = "incomplete";
+  } else if (account.details_submitted) {
+    onboardingStatus = "under_review";
+  }
+
+  const balances =
+    opts?.availableBalanceInCents != null && opts?.pendingBalanceInCents != null
+      ? {
+          availableBalanceInCents: opts.availableBalanceInCents,
+          pendingBalanceInCents: opts.pendingBalanceInCents,
+        }
+      : await getConnectedAccountBalances(
+          stripe,
+          account.id,
+          preferredCurrency,
+        );
+
+  const requirements = {
+    currentlyDue: account.requirements?.currently_due ?? [],
+    eventuallyDue: account.requirements?.eventually_due ?? [],
+    pastDue: account.requirements?.past_due ?? [],
+    pendingVerification: account.requirements?.pending_verification ?? [],
+    currentDeadline: account.requirements?.current_deadline
+      ? new Date(account.requirements.current_deadline * 1000)
+      : null,
+    disabledReason: mapStripeDisabledReason(
+      account.requirements?.disabled_reason,
+    ),
+  };
+
+  const futureRequirements = {
+    currentlyDue: account.future_requirements?.currently_due ?? [],
+    eventuallyDue: account.future_requirements?.eventually_due ?? [],
+    pastDue: account.future_requirements?.past_due ?? [],
+    pendingVerification:
+      account.future_requirements?.pending_verification ?? [],
+    currentDeadline: account.future_requirements?.current_deadline
+      ? new Date(account.future_requirements.current_deadline * 1000)
+      : null,
+    disabledReason: mapStripeDisabledReason(
+      account.future_requirements?.disabled_reason,
+    ),
+  };
+
+  await db
+    .collection("users")
+    .doc(userId)
+    .set(
+      {
+        stripeAccountId: account.id,
+        stripeAccountStatus: onboardingStatus,
+        chargesEnabled: account.charges_enabled ?? false,
+        payoutsEnabled: account.payouts_enabled ?? false,
+        detailsSubmitted: account.details_submitted ?? false,
+        isStripeEnabled: account.charges_enabled ?? false,
+        isStripeOnboarded: isActive,
+        stripeRequirements: requirements.currentlyDue,
+        stripeDisabledReason: requirements.disabledReason,
+        updatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true },
+    );
+
+  const connectedAccountRef = db
+    .collection("driver_connected_accounts")
+    .doc(userId);
+  const existingSnapshot = await connectedAccountRef.get();
+
+  await connectedAccountRef.set(
+    {
+      driverId: userId,
+      stripeAccountId: account.id,
+      email: account.email ?? "",
+      country: account.country ?? "FR",
+      defaultCurrency,
+      chargesEnabled: account.charges_enabled ?? false,
+      payoutsEnabled: account.payouts_enabled ?? false,
+      detailsSubmitted: account.details_submitted ?? false,
+      onboardingCompleted: isActive,
+      ...(isActive && {
+        onboardingCompletedAt: FieldValue.serverTimestamp(),
+      }),
+      accountHolderName,
+      capabilities: {
+        transfers: mapStripeCapabilityStatus(account.capabilities?.transfers),
+        cardPayments: mapStripeCapabilityStatus(
+          account.capabilities?.card_payments,
+        ),
+      },
+      requirements,
+      futureRequirements,
+      availableBalanceInCents: balances.availableBalanceInCents,
+      pendingBalanceInCents: balances.pendingBalanceInCents,
+      updatedAt: FieldValue.serverTimestamp(),
+      ...(existingSnapshot.exists
+        ? {}
+        : { createdAt: FieldValue.serverTimestamp() }),
+      metadata: {
+        stripeBusinessType: account.business_type ?? null,
+        stripeDefaultCurrency: defaultCurrency,
+      },
+    },
+    { merge: true },
+  );
+}
+
 // ============================================
 
 async function recomputeDriverStats(
-  db: admin.firestore.Firestore,
+  db: Firestore,
   driverId: string,
   earningsDelta?: number,
   ridesDelta?: number,
@@ -385,7 +649,7 @@ async function recomputeDriverStats(
     .collection("payments")
     .where("driverId", "==", driverId)
     .where("status", "==", "succeeded")
-    .where("createdAt", ">=", admin.firestore.Timestamp.fromDate(yearStart))
+    .where("createdAt", ">=", Timestamp.fromDate(yearStart))
     .get();
 
   let totalPlatformFees = 0;
@@ -404,8 +668,8 @@ async function recomputeDriverStats(
     const platformFee = (data.platformFee as number) ?? 0;
     const stripeFee = (data.stripeFee as number) ?? 0;
     const completedAt =
-      (data.completedAt as admin.firestore.Timestamp | null)?.toDate() ??
-      (data.createdAt as admin.firestore.Timestamp | null)?.toDate();
+      (data.completedAt as Timestamp | null)?.toDate() ??
+      (data.createdAt as Timestamp | null)?.toDate();
 
     totalPlatformFees += platformFee;
     totalStripeFees += stripeFee;
@@ -443,19 +707,23 @@ async function recomputeDriverStats(
     ridesToday,
     ridesThisWeek,
     ridesThisMonth,
-    lastUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    lastUpdatedAt: FieldValue.serverTimestamp(),
   };
 
   if (earningsDelta !== undefined) {
-    updates.totalEarnings = admin.firestore.FieldValue.increment(earningsDelta);
+    updates.totalEarnings = FieldValue.increment(earningsDelta);
   }
   if (ridesDelta !== undefined) {
-    updates.totalRides = admin.firestore.FieldValue.increment(ridesDelta);
+    updates.totalRides = FieldValue.increment(ridesDelta);
   }
 
   await statsRef.set(updates, { merge: true });
 
-  logger.info("driver_stats recomputed", { driverId, earningsDelta, ridesDelta });
+  logger.info("driver_stats recomputed", {
+    driverId,
+    earningsDelta,
+    ridesDelta,
+  });
 }
 
 // ============================================
@@ -751,7 +1019,7 @@ export const onNewRideRequest = onDocumentCreated(
     if (request.notificationSentAt) return;
     try {
       await event.data!.ref.update({
-        notificationSentAt: admin.firestore.FieldValue.serverTimestamp(),
+        notificationSentAt: FieldValue.serverTimestamp(),
       });
     } catch {
       // Document may have been deleted between trigger and update — abort.
@@ -773,14 +1041,11 @@ export const onNewRideRequest = onDocumentCreated(
         .collection("rides")
         .doc(rideId)
         .get();
-      const pricePerSeat =
-        (rideSnap.data()?.pricing?.pricePerSeat?.amount as number) ?? 0;
-      if (pricePerSeat > 0) {
-        const currency = (
-          (rideSnap.data()?.pricing?.pricePerSeat?.currency as string) ?? "EUR"
-        ).toUpperCase();
-        const total = pricePerSeat * seatsRequested;
-        fareStr = ` — ${total.toFixed(2)} ${currency}`;
+      const rideData = rideSnap.data() ?? {};
+      const pricePerSeatInCents = getRidePricePerSeatInCents(rideData);
+      if (pricePerSeatInCents !== undefined && pricePerSeatInCents > 0) {
+        const total = (pricePerSeatInCents * seatsRequested) / 100;
+        fareStr = ` — €${total.toFixed(2)}`;
       }
     } catch {
       // Non-critical — proceed without fare if ride fetch fails.
@@ -899,7 +1164,7 @@ export const onRideStatusChanged = onDocumentUpdated(
           status: "completed",
           // GAP-8/9: Flag for review prompt on next app open
           reviewPromptPending: true,
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
         });
       });
       if (!bookingsSnap.empty) await completionBatch.commit();
@@ -917,7 +1182,8 @@ export const onRideStatusChanged = onDocumentUpdated(
       );
 
       // Notify driver their ride is done
-      const driverId = typeof after.driverId === "string" ? after.driverId : null;
+      const driverId =
+        typeof after.driverId === "string" ? after.driverId : null;
       if (driverId) {
         await sendPushToUser(
           driverId,
@@ -1055,7 +1321,7 @@ export const onEventUpdated = onDocumentUpdated(
           await rideDoc.ref.update({
             status: "cancelled",
             cancellationReason: "event_cancelled",
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp(),
           });
           const driverId = rideDoc.data().driverId as string | undefined;
           if (driverId) rideDriverIds.push(driverId);
@@ -1101,9 +1367,10 @@ export const onEventUpdated = onDocumentUpdated(
 // Stripe Helpers
 // ============================================
 
-function getStripeClient(secretKey: string): Stripe {
+function getStripeClient(secretKey: string): StripeClient {
   return new Stripe(secretKey, {
-    apiVersion: "2025-12-15.clover",
+    apiVersion: "2026-03-25.dahlia",
+    typescript: true,
   });
 }
 
@@ -1111,6 +1378,72 @@ function calculateFees(amount: number) {
   const platformFee = Math.round(amount * PLATFORM_FEE_PERCENT);
   const driverAmount = amount - platformFee;
   return { platformFee, driverAmount };
+}
+
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+  if (typeof value !== "object" || value === null) return undefined;
+  return value as Record<string, unknown>;
+}
+
+function finiteNumber(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isFinite(value)
+    ? value
+    : undefined;
+}
+
+function stripeObjectId(value: unknown): string | null {
+  if (typeof value === "string" && value.trim().length > 0) {
+    return value.trim();
+  }
+
+  const record = asRecord(value);
+  const id = record?.id;
+  return typeof id === "string" && id.trim().length > 0 ? id.trim() : null;
+}
+
+function getRidePricePerSeatInCents(
+  rideData: Record<string, unknown>,
+): number | undefined {
+  const pricing = asRecord(rideData.pricing);
+  const pricePerSeatInCents = asRecord(pricing?.pricePerSeatInCents);
+  const amountInCents = finiteNumber(pricePerSeatInCents?.amountInCents);
+  if (amountInCents !== undefined) return Math.round(amountInCents);
+
+  const legacyPricePerSeat = asRecord(pricing?.pricePerSeat);
+  const legacyAmountInCents = finiteNumber(legacyPricePerSeat?.amountInCents);
+  if (legacyAmountInCents !== undefined) {
+    return Math.round(legacyAmountInCents);
+  }
+
+  const legacyAmount = finiteNumber(legacyPricePerSeat?.amount);
+  if (legacyAmount !== undefined) return Math.round(legacyAmount * 100);
+
+  return undefined;
+}
+
+function sumBalanceForCurrency(
+  entries:
+    | Array<{ amount?: number | null; currency?: string | null }>
+    | undefined,
+  preferredCurrency: string,
+): number {
+  if (!entries || entries.length === 0) return 0;
+
+  const normalizedPreferredCurrency = preferredCurrency.toLowerCase();
+  const preferredEntries = entries.filter(
+    (entry) =>
+      (entry.currency ?? "").toLowerCase() === normalizedPreferredCurrency,
+  );
+  const selectedCurrency =
+    preferredEntries.length > 0
+      ? normalizedPreferredCurrency
+      : (entries[0]?.currency ?? "").toLowerCase();
+
+  return entries
+    .filter(
+      (entry) => (entry.currency ?? "").toLowerCase() === selectedCurrency,
+    )
+    .reduce((sum, entry) => sum + (entry.amount ?? 0), 0);
 }
 
 // ============================================
@@ -1130,8 +1463,14 @@ export const createConnectedAccount = onCall(
       throw new HttpsError("unauthenticated", "User must be authenticated");
     }
 
-    // Rate limit: 3 account creations per user per hour
-    await checkRateLimit(admin.firestore(), request.auth.uid, "createConnectedAccount", 3, 3600);
+    // Rate limit: 3 account creations per user per hour.
+    await checkRateLimit(
+      admin.firestore(),
+      request.auth.uid,
+      "createConnectedAccount",
+      3,
+      3600,
+    );
 
     const {
       userId,
@@ -1186,8 +1525,12 @@ export const createConnectedAccount = onCall(
     const stripe = getStripeClient(stripeApiKey);
     const db = admin.firestore();
 
-    const userDoc = await db.collection("users").doc(userId).get();
+    const [userDoc, connectedAccountDoc] = await Promise.all([
+      db.collection("users").doc(userId).get(),
+      db.collection("driver_connected_accounts").doc(userId).get(),
+    ]);
     const userData = userDoc.data();
+    const connectedAccountData = connectedAccountDoc.data();
 
     if (!userData) {
       throw new HttpsError("not-found", "User not found in database");
@@ -1200,7 +1543,12 @@ export const createConnectedAccount = onCall(
       );
     }
 
-    let accountId = userData.stripeAccountId;
+    let accountId =
+      typeof connectedAccountData?.stripeAccountId === "string" &&
+      connectedAccountData.stripeAccountId.trim().length > 0
+        ? connectedAccountData.stripeAccountId
+        : userData.stripeAccountId;
+    let accountDefaultCurrency = "eur";
     logger.info(
       "User data - role:",
       userData.role,
@@ -1212,6 +1560,9 @@ export const createConnectedAccount = onCall(
       logger.info("Found existing stripeAccountId:", accountId);
       try {
         const existingAccount = await stripe.accounts.retrieve(accountId);
+        await syncConnectedAccountSnapshot(db, stripe, existingAccount, userId);
+        accountDefaultCurrency =
+          existingAccount.default_currency ?? accountDefaultCurrency;
         logger.info("Existing Stripe account found:", existingAccount.id);
       } catch (error) {
         logger.info(
@@ -1220,11 +1571,11 @@ export const createConnectedAccount = onCall(
         );
         accountId = null;
         await db.collection("users").doc(userId).update({
-          stripeAccountId: admin.firestore.FieldValue.delete(),
-          stripeAccountStatus: admin.firestore.FieldValue.delete(),
-          chargesEnabled: admin.firestore.FieldValue.delete(),
-          payoutsEnabled: admin.firestore.FieldValue.delete(),
-          detailsSubmitted: admin.firestore.FieldValue.delete(),
+          stripeAccountId: FieldValue.delete(),
+          stripeAccountStatus: FieldValue.delete(),
+          chargesEnabled: FieldValue.delete(),
+          payoutsEnabled: FieldValue.delete(),
+          detailsSubmitted: FieldValue.delete(),
         });
       }
     }
@@ -1287,7 +1638,7 @@ export const createConnectedAccount = onCall(
         };
       }
 
-      let createdAccount: Stripe.Account;
+      let createdAccount: StripeAccount;
       try {
         createdAccount = await stripe.accounts.create({
           type: "express",
@@ -1303,7 +1654,7 @@ export const createConnectedAccount = onCall(
             product_description:
               "Carpooling driver on SportConnect - providing shared ride services to passengers for cost-sharing commutes and sports events",
           },
-          individual: individual as Stripe.AccountCreateParams.Individual,
+          individual: individual as StripeIndividualParams,
           metadata: { userId, userType: "driver" },
         });
       } catch (stripeError: unknown) {
@@ -1326,21 +1677,16 @@ export const createConnectedAccount = onCall(
       }
 
       accountId = createdAccount.id;
+      accountDefaultCurrency =
+        createdAccount.default_currency ?? accountDefaultCurrency;
       logger.info("New Stripe account created:", accountId);
 
-      await db.collection("users").doc(userId).update({
-        stripeAccountId: accountId,
-        stripeAccountStatus: "pending",
-        chargesEnabled: false,
-        payoutsEnabled: false,
-        detailsSubmitted: false,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
+      await syncConnectedAccountSnapshot(db, stripe, createdAccount, userId);
     }
 
     const baseUrl = "https://sportaxitrip.com";
 
-    let accountLink: Stripe.AccountLink;
+    let accountLink: StripeAccountLink;
     try {
       accountLink = await stripe.accountLinks.create({
         account: accountId,
@@ -1361,7 +1707,11 @@ export const createConnectedAccount = onCall(
       );
     }
 
-    return { accountId, onboardingUrl: accountLink.url };
+    return {
+      accountId,
+      onboardingUrl: accountLink.url,
+      defaultCurrency: accountDefaultCurrency.toUpperCase(),
+    };
   },
 );
 
@@ -1414,18 +1764,58 @@ export const getAccountStatus = onCall(
     }
 
     const stripe = getStripeClient(stripeSecretKey.value().trim());
+    const db = admin.firestore();
 
     try {
+      const uid = request.auth.uid;
+      const [callerDoc, connectedAccountDoc] = await Promise.all([
+        db.collection("users").doc(uid).get(),
+        db.collection("driver_connected_accounts").doc(uid).get(),
+      ]);
+      const callerAccountId = callerDoc.data()?.stripeAccountId;
+      const connectedAccountId = connectedAccountDoc.data()?.stripeAccountId;
+      const authorizedAccountIds = new Set(
+        [callerAccountId, connectedAccountId].filter(
+          (id): id is string => typeof id === "string" && id.length > 0,
+        ),
+      );
+
+      if (
+        authorizedAccountIds.size > 0 &&
+        !authorizedAccountIds.has(accountId)
+      ) {
+        throw new HttpsError(
+          "permission-denied",
+          "You are not authorized to access this Stripe account",
+        );
+      }
+
       const account = await stripe.accounts.retrieve(accountId);
+      if (
+        authorizedAccountIds.size === 0 &&
+        account.metadata?.userId !== uid
+      ) {
+        throw new HttpsError(
+          "permission-denied",
+          "You are not authorized to access this Stripe account",
+        );
+      }
+
       const defaultCurrency = (account.default_currency ?? "eur").toLowerCase();
 
-      // Fetch balance for this connected account
-      let availableBalance = 0;
-      let pendingBalance = 0;
+      // Fetch balance for this connected account. Stripe balance amounts are
+      // already in minor units, so keep cents canonical and expose legacy major
+      // unit fields only for old app versions.
+      let availableBalanceInCents = 0;
+      let pendingBalanceInCents = 0;
+
       try {
-        const balance = await stripe.balance.retrieve({
-          stripeAccount: accountId,
-        });
+        const balance = await stripe.balance.retrieve(
+          {},
+          {
+            stripeAccount: accountId,
+          },
+        );
         logger.info("Stripe balance retrieved", {
           accountId,
           availableCount: balance.available?.length,
@@ -1434,58 +1824,17 @@ export const getAccountStatus = onCall(
           rawPending: JSON.stringify(balance.pending),
         });
 
-        // CF-8: Sum ALL balance entries for the default currency, not just the
-        // first one.  A connected account can have multiple entries per currency
-        // (e.g. from different payment sources).  Using find() silently dropped
-        // any beyond the first, under-reporting the driver's true balance.
-        if (balance.available && balance.available.length > 0) {
-          const matchingEntries = balance.available.filter(
-            (b) => (b.currency || "").toLowerCase() === defaultCurrency,
-          );
-          if (matchingEntries.length > 0) {
-            availableBalance =
-              matchingEntries.reduce((sum, b) => sum + (b.amount || 0), 0) /
-              100;
-          } else {
-            // No entry for defaultCurrency: sum all entries of the first
-            // currency found rather than taking only index 0.
-            const firstCurrency = (
-              balance.available[0]?.currency || ""
-            ).toLowerCase();
-            availableBalance =
-              balance.available
-                .filter(
-                  (b) => (b.currency || "").toLowerCase() === firstCurrency,
-                )
-                .reduce((sum, b) => sum + (b.amount || 0), 0) / 100;
-          }
-        }
-
-        // CF-8: Same sum-all approach for pending balances.
-        if (balance.pending && balance.pending.length > 0) {
-          const matchingEntries = balance.pending.filter(
-            (b) => (b.currency || "").toLowerCase() === defaultCurrency,
-          );
-          if (matchingEntries.length > 0) {
-            pendingBalance =
-              matchingEntries.reduce((sum, b) => sum + (b.amount || 0), 0) /
-              100;
-          } else {
-            const firstCurrency = (
-              balance.pending[0]?.currency || ""
-            ).toLowerCase();
-            pendingBalance =
-              balance.pending
-                .filter(
-                  (b) => (b.currency || "").toLowerCase() === firstCurrency,
-                )
-                .reduce((sum, b) => sum + (b.amount || 0), 0) / 100;
-          }
-        }
-
+        availableBalanceInCents = sumBalanceForCurrency(
+          balance.available,
+          defaultCurrency,
+        );
+        pendingBalanceInCents = sumBalanceForCurrency(
+          balance.pending,
+          defaultCurrency,
+        );
         logger.info("Calculated balances", {
-          availableBalance,
-          pendingBalance,
+          availableBalanceInCents,
+          pendingBalanceInCents,
           defaultCurrency,
         });
       } catch (balanceError) {
@@ -1495,17 +1844,33 @@ export const getAccountStatus = onCall(
         });
       }
 
+      await syncConnectedAccountSnapshot(db, stripe, account, uid, {
+        availableBalanceInCents,
+        pendingBalanceInCents,
+      });
+
       return {
         chargesEnabled: account.charges_enabled ?? false,
         payoutsEnabled: account.payouts_enabled ?? false,
         detailsSubmitted: account.details_submitted ?? false,
         requirements: account.requirements?.currently_due ?? [],
         disabledReason: account.requirements?.disabled_reason ?? null,
-        availableBalance,
-        pendingBalance,
+        capabilities: {
+          transfers: mapStripeCapabilityStatus(account.capabilities?.transfers),
+          cardPayments: mapStripeCapabilityStatus(
+            account.capabilities?.card_payments,
+          ),
+        },
+        availableBalance: availableBalanceInCents / 100,
+        pendingBalance: pendingBalanceInCents / 100,
+        availableBalanceInCents,
+        pendingBalanceInCents,
         currency: defaultCurrency.toUpperCase(),
       };
     } catch (error: unknown) {
+      if (error instanceof HttpsError) {
+        throw error;
+      }
       // FIX: Use typed error handling instead of `any`
       const e = error as { message?: string };
       logger.error("getAccountStatus failed", { accountId, error: e.message });
@@ -1529,30 +1894,53 @@ export const createInstantPayout = onCall(
     }
 
     // Rate limit: 5 instant payouts per user per hour
-    await checkRateLimit(admin.firestore(), request.auth.uid, "createInstantPayout", 5, 3600);
+    //await checkRateLimit(admin.firestore(), request.auth.uid, "createInstantPayout", 5, 3600);
 
-    const { stripeAccountId, amount, currency = "eur" } = request.data;
+    const {
+      stripeAccountId,
+      amountInCents: requestedAmountInCents,
+      amount: legacyAmount,
+      currency = "eur",
+    } = request.data;
+    const normalizedCurrency =
+      typeof currency === "string" && currency.trim().length > 0
+        ? currency.trim().toLowerCase()
+        : "eur";
+    const payoutAmountInCents =
+      finiteNumber(requestedAmountInCents) !== undefined
+        ? Math.round(finiteNumber(requestedAmountInCents)!)
+        : finiteNumber(legacyAmount) !== undefined
+          ? Math.round(finiteNumber(legacyAmount)!)
+          : undefined;
 
-    if (!stripeAccountId || !amount) {
+    if (!stripeAccountId || !payoutAmountInCents || payoutAmountInCents <= 0) {
       throw new HttpsError(
         "invalid-argument",
-        "stripeAccountId and amount are required",
+        "stripeAccountId and a positive amountInCents are required",
       );
     }
 
     const stripe = getStripeClient(stripeSecretKey.value().trim());
     const db = admin.firestore();
 
-    const callerDoc = await db.collection("users").doc(request.auth.uid).get();
+    const [callerDoc, connectedAccountDoc] = await Promise.all([
+      db.collection("users").doc(request.auth.uid).get(),
+      db.collection("driver_connected_accounts").doc(request.auth.uid).get(),
+    ]);
     const callerData = callerDoc.data();
-    if (!callerData || callerData.stripeAccountId !== stripeAccountId) {
+    const connectedAccountData = connectedAccountDoc.data();
+    const callerStripeAccountId = callerData?.stripeAccountId;
+    const connectedStripeAccountId = connectedAccountData?.stripeAccountId;
+    if (
+      !callerData ||
+      (callerStripeAccountId !== stripeAccountId &&
+        connectedStripeAccountId !== stripeAccountId)
+    ) {
       throw new HttpsError(
         "permission-denied",
         "You are not authorized to create payouts for this account",
       );
     }
-
-    const amountInCents = Math.round(amount * 100);
 
     // FIX: Moved charges_enabled check OUTSIDE the try/catch so the
     // meaningful HttpsError message is preserved and not caught+re-wrapped.
@@ -1580,8 +1968,8 @@ export const createInstantPayout = onCall(
 
     const payout = await stripe.payouts.create(
       {
-        amount: amountInCents,
-        currency: currency.toLowerCase(),
+        amount: payoutAmountInCents,
+        currency: normalizedCurrency,
         method: "instant",
       },
       { stripeAccount: stripeAccountId },
@@ -1592,14 +1980,24 @@ export const createInstantPayout = onCall(
     // Map to Dart PayoutStatus enum values: pending, inTransit, paid, failed, cancelled.
     const payoutRef = await db.collection("payouts").add({
       driverId: request.auth.uid,
+      driverName:
+        (callerData.displayName as string | undefined) ??
+        (callerData.name as string | undefined) ??
+        `${callerData.firstName ?? ""} ${callerData.lastName ?? ""}`.trim(),
       stripePayoutId: payout.id,
       connectedAccountId: stripeAccountId,
-      amount,
-      currency,
+      amount: payoutAmountInCents / 100,
+      amountInCents: payoutAmountInCents,
+      currency: normalizedCurrency,
       status: "pending",
+      method: payout.method === "instant" ? "instant" : "standard",
+      type: payout.type === "card" ? "card" : "bankAccount",
+      destination: stripeObjectId(payout.destination),
+      stripeBalanceTransactionId: stripeObjectId(payout.balance_transaction),
+      transactionIds: [],
       isInstantPayout: true,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
       expectedArrivalDate: payout.arrival_date
         ? new Date(payout.arrival_date * 1000)
         : null,
@@ -1609,6 +2007,8 @@ export const createInstantPayout = onCall(
       payoutId: payoutRef.id,
       stripePayoutId: payout.id,
       status: payout.status,
+      amountInCents: payoutAmountInCents,
+      stripeBalanceTransactionId: stripeObjectId(payout.balance_transaction),
       arrivalDate: payout.arrival_date,
     };
   },
@@ -1627,7 +2027,8 @@ export const refundPayment = onCall(
 
     const {
       paymentIntentId,
-      amount,
+      amountInCents: requestedAmountInCents,
+      amount: legacyAmount,
       reason = "requested_by_customer",
     } = request.data;
 
@@ -1651,6 +2052,7 @@ export const refundPayment = onCall(
 
     const paymentDoc = paymentSnap.docs[0].data();
     if (
+      paymentDoc.riderId !== request.auth.uid &&
       paymentDoc.passengerId !== request.auth.uid &&
       paymentDoc.driverId !== request.auth.uid
     ) {
@@ -1660,27 +2062,84 @@ export const refundPayment = onCall(
       );
     }
 
-    const refundParams: Record<string, unknown> = {
+    const refundAmountInCents =
+      finiteNumber(requestedAmountInCents) !== undefined
+        ? Math.round(finiteNumber(requestedAmountInCents)!)
+        : finiteNumber(legacyAmount) !== undefined
+          ? Math.round(finiteNumber(legacyAmount)! * 100)
+          : undefined;
+
+    if (refundAmountInCents !== undefined && refundAmountInCents <= 0) {
+      throw new HttpsError(
+        "invalid-argument",
+        "amountInCents must be greater than zero",
+      );
+    }
+
+    const paymentRef = paymentSnap.docs[0].ref;
+    let claimedPayment: DocumentData = paymentDoc;
+    try {
+      await db.runTransaction(async (txn) => {
+        const snap = await txn.get(paymentRef);
+        if (!snap.exists) throw new Error("payment_not_found");
+        const data = snap.data()!;
+        if (
+          data.status === "refunded" ||
+          data.status === "partiallyRefunded" ||
+          data.status === "refunding"
+        ) {
+          throw new Error("already_refunded");
+        }
+        if (data.status !== "succeeded") {
+          throw new Error("payment_not_succeeded");
+        }
+        claimedPayment = data;
+        txn.update(paymentRef, {
+          status: "refunding",
+          updatedAt: FieldValue.serverTimestamp(),
+        });
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (message === "already_refunded") {
+        throw new HttpsError(
+          "failed-precondition",
+          "Payment has already been refunded",
+        );
+      }
+      if (message === "payment_not_succeeded") {
+        throw new HttpsError(
+          "failed-precondition",
+          "Only succeeded payments can be refunded",
+        );
+      }
+      throw error;
+    }
+
+    const refundParams: StripeRefundCreateParams = {
       payment_intent: paymentIntentId,
       reason,
     };
 
-    if (amount) {
-      refundParams.amount = Math.round(amount * 100);
+    if (refundAmountInCents !== undefined) {
+      refundParams.amount = refundAmountInCents;
     }
 
-    const refund = await stripe.refunds.create(
-      refundParams as Parameters<typeof stripe.refunds.create>[0],
-    );
+    const refund = await stripe.refunds.create(refundParams);
 
     // FIX: Reuse paymentSnap.docs instead of running a second identical query
+    const originalAmountInCents =
+      (claimedPayment.amountInCents as number | undefined) ??
+      Math.round(((claimedPayment.amount as number | undefined) ?? 0) * 100);
+    const isFullRefund =
+      refundAmountInCents === undefined ||
+      refundAmountInCents >= originalAmountInCents;
     for (const doc of paymentSnap.docs) {
-      const isFullRefund = !amount || amount >= (doc.data().amount ?? 0);
       await doc.ref.update({
         status: isFullRefund ? "refunded" : "partiallyRefunded",
-        refundedAt: admin.firestore.FieldValue.serverTimestamp(),
+        refundedAt: FieldValue.serverTimestamp(),
         refundReason: reason,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
       });
     }
 
@@ -1688,6 +2147,7 @@ export const refundPayment = onCall(
       refundId: refund.id,
       status: refund.status,
       amount: (refund.amount ?? 0) / 100,
+      amountInCents: refund.amount ?? 0,
     };
   },
 );
@@ -1704,7 +2164,7 @@ export const getOrCreateCustomer = onCall(
     }
 
     // Rate limit: 10 calls per user per 60 s
-    await checkRateLimit(admin.firestore(), request.auth.uid, "getOrCreateCustomer", 10, 60);
+    //await checkRateLimit(admin.firestore(), request.auth.uid, "getOrCreateCustomer", 10, 60);
 
     const { email, name, phone, existingCustomerId } = request.data;
 
@@ -1751,7 +2211,7 @@ export const getOrCreateCustomer = onCall(
 
     await db.collection("users").doc(userId).update({
       stripeCustomerId: customer.id,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     });
 
     return { customerId: customer.id };
@@ -1770,11 +2230,11 @@ export const createPaymentIntent = onCall(
     }
 
     // Rate limit: 10 payment intents per user per 60 s
-    await checkRateLimit(admin.firestore(), request.auth.uid, "createPaymentIntent", 10, 60);
+    //await checkRateLimit(admin.firestore(), request.auth.uid, "createPaymentIntent", 10, 60);
 
     const {
-      amount,
-      currency = "eur",
+      amount: legacyAmount,
+      amountInCents: requestedAmountInCents,
       rideId,
       driverId,
       riderId,
@@ -1786,7 +2246,14 @@ export const createPaymentIntent = onCall(
       stripeApiVersion,
     } = request.data;
 
-    if (!amount || !rideId || !driverId || !riderId) {
+    if (
+      finiteNumber(requestedAmountInCents) === undefined &&
+      finiteNumber(legacyAmount) === undefined
+    ) {
+      throw new HttpsError("invalid-argument", "amountInCents is required");
+    }
+
+    if (!rideId || !driverId || !riderId) {
       throw new HttpsError("invalid-argument", "Missing required fields");
     }
 
@@ -1812,7 +2279,7 @@ export const createPaymentIntent = onCall(
 
     // FIX P-4: Ignore the client-supplied `amount` and recompute the price
     // server-side from the canonical ride document.  A modified client could
-    // otherwise request a $0.01 charge instead of the real fare.
+    // otherwise request a €0.01 charge instead of the real fare.
     const rideDoc = await db.collection("rides").doc(rideId).get();
     if (!rideDoc.exists) {
       throw new HttpsError("not-found", "Ride not found");
@@ -1838,11 +2305,35 @@ export const createPaymentIntent = onCall(
         "No active booking found for this ride",
       );
     }
+    const bookingId = bookingsSnap.docs[0].id;
     const bookingData = bookingsSnap.docs[0].data();
+    if (bookingData.paidAt || bookingData.paymentIntentId) {
+      throw new HttpsError(
+        "failed-precondition",
+        "This booking has already been paid",
+      );
+    }
     const seatsBooked = (bookingData.seatsBooked as number) ?? 1;
-    const serverAmount: number =
-      ((rideData.pricing?.pricePerSeat?.amount as number) ?? amount) *
-      seatsBooked;
+    const pricePerSeatInCents = getRidePricePerSeatInCents(rideData);
+    const requestAmountInCents =
+      finiteNumber(requestedAmountInCents) !== undefined
+        ? Math.round(finiteNumber(requestedAmountInCents)!)
+        : finiteNumber(legacyAmount) !== undefined
+          ? Math.round(finiteNumber(legacyAmount)!)
+          : Number.NaN;
+    const amountInCents =
+      pricePerSeatInCents !== undefined
+        ? pricePerSeatInCents * seatsBooked
+        : requestAmountInCents;
+
+    if (!Number.isFinite(amountInCents) || amountInCents <= 0) {
+      throw new HttpsError(
+        "failed-precondition",
+        "Ride price could not be calculated",
+      );
+    }
+
+    const paymentCurrency = "eur";
 
     // FIX: Moved charges_enabled check OUTSIDE the try/catch to preserve
     // the meaningful error message. The original swallowed it into a generic catch.
@@ -1875,40 +2366,51 @@ export const createPaymentIntent = onCall(
     }
 
     // Use the server-computed amount (P-4) so the client cannot manipulate the charge.
-    const amountInCents = Math.round(serverAmount * 100);
     const { platformFee, driverAmount } = calculateFees(amountInCents);
 
-    const idempotencyKey = `pi_${rideId}_${riderId}_${amountInCents}`;
+    const idempotencyKey = `pi_${bookingId}_${amountInCents}`;
 
     const paymentIntent = await stripe.paymentIntents.create(
       {
         amount: amountInCents,
-        currency,
+        currency: paymentCurrency,
         automatic_payment_methods: { enabled: true },
         application_fee_amount: platformFee,
         transfer_data: { destination: driverStripeAccountId },
         description: description || `SportConnect ride payment - ${rideId}`,
-        metadata: { rideId, driverId, riderId },
+        metadata: { rideId, driverId, riderId, bookingId },
       },
       { idempotencyKey },
     );
 
-    await db.collection("payments").add({
-      paymentIntentId: paymentIntent.id,
-      rideId,
-      driverId,
-      riderId,
-      riderName: riderName || "",
-      driverName: driverName || "",
-      driverStripeAccountId,
-      amount,
-      currency,
-      platformFee: platformFee / 100,
-      driverEarnings: driverAmount / 100,
-      stripeFee: 0,
-      status: "pending",
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
+    const paymentRef = db.collection("payments").doc(paymentIntent.id);
+    const existingPaymentDoc = await paymentRef.get();
+    if (!existingPaymentDoc.exists) {
+      await paymentRef.set({
+        paymentIntentId: paymentIntent.id,
+        stripePaymentIntentId: paymentIntent.id,
+        bookingId,
+        rideId,
+        driverId,
+        riderId,
+        riderName: riderName || "",
+        driverName: driverName || "",
+        driverStripeAccountId,
+        amount: amountInCents / 100,
+        amountInCents,
+        currency: paymentCurrency,
+        platformFee: platformFee / 100,
+        platformFeeInCents: platformFee,
+        driverEarnings: driverAmount / 100,
+        driverEarningsInCents: driverAmount,
+        stripeFee: 0,
+        stripeFeeInCents: 0,
+        seatsBooked,
+        status: "pending",
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+    }
 
     // FIX: The ephemeral key apiVersion MUST be the version required by the
     // Flutter stripe SDK (client-side), NOT the server API version.
@@ -1949,13 +2451,17 @@ export const stripeWebhook = onRequest(
       return;
     }
 
-    let event: Stripe.Event;
+    let event: StripeEvent;
     try {
       event = stripe.webhooks.constructEvent(
         req.rawBody,
         sig,
         stripeWebhookSecret.value(),
       );
+      logger.info("stripeWebhook received event", {
+        type: event.type,
+        id: event.id,
+      });
     } catch (err) {
       logger.error("Webhook signature verification failed:", err);
       res.status(400).json({ error: "Invalid signature" });
@@ -1967,11 +2473,17 @@ export const stripeWebhook = onRequest(
     try {
       switch (event.type) {
         case "payment_intent.succeeded": {
-          const pi = event.data.object as Stripe.PaymentIntent;
-          const payments = await db
+          const pi = event.data.object as StripePaymentIntent;
+          let payments = await db
             .collection("payments")
             .where("paymentIntentId", "==", pi.id)
             .get();
+          if (payments.empty) {
+            payments = await db
+              .collection("payments")
+              .where("stripePaymentIntentId", "==", pi.id)
+              .get();
+          }
 
           const paymentMethodId =
             typeof pi.payment_method === "string"
@@ -1990,51 +2502,99 @@ export const stripeWebhook = onRequest(
             }
           }
 
+          const latestChargeId = stripeObjectId(pi.latest_charge);
+          let stripeChargeId = latestChargeId;
+          let stripeTransferId: string | null = null;
+          let stripeBalanceTransactionId: string | null = null;
+
+          if (latestChargeId) {
+            try {
+              const charge: StripeCharge = await stripe.charges.retrieve(
+                latestChargeId,
+                { expand: ["transfer", "balance_transaction"] },
+              );
+              stripeChargeId = stripeObjectId(charge);
+              stripeTransferId = stripeObjectId(charge.transfer);
+              stripeBalanceTransactionId = stripeObjectId(
+                charge.balance_transaction,
+              );
+            } catch (chargeError) {
+              logger.warn("Could not retrieve charge reconciliation details", {
+                paymentIntentId: pi.id,
+                latestChargeId,
+                error: chargeError,
+              });
+            }
+          }
+
           for (const doc of payments.docs) {
             await doc.ref.update({
               status: "succeeded",
-              completedAt: admin.firestore.FieldValue.serverTimestamp(),
-              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+              completedAt: FieldValue.serverTimestamp(),
+              updatedAt: FieldValue.serverTimestamp(),
               ...(last4 && { paymentMethodLast4: last4 }),
               ...(brand && { paymentMethodBrand: brand }),
+              ...(stripeChargeId && { stripeChargeId }),
+              ...(stripeTransferId && { stripeTransferId }),
+              ...(stripeBalanceTransactionId && {
+                stripeBalanceTransactionId,
+              }),
             });
           }
 
           const rideId = pi.metadata?.rideId;
           const riderId = pi.metadata?.riderId;
           const driverId = pi.metadata?.driverId;
+          const bookingId = pi.metadata?.bookingId;
 
           if (rideId && riderId) {
-            const bookingsSnap = await db
-              .collection("bookings")
-              .where("rideId", "==", rideId)
-              .where("passengerId", "==", riderId)
-              .where("status", "==", "accepted")
-              .get();
+            let bookingDoc:
+              | QueryDocumentSnapshot<DocumentData>
+              | DocumentSnapshot<DocumentData>
+              | undefined;
 
-            const matchingBookings = bookingsSnap.docs
-              .filter((doc) => !doc.data()["paidAt"])
-              .sort((a, b) => {
-                const aTimestamp = (a.data()["createdAt"] ??
-                  a.data()["respondedAt"]) as
-                  | admin.firestore.Timestamp
-                  | undefined;
-                const bTimestamp = (b.data()["createdAt"] ??
-                  b.data()["respondedAt"]) as
-                  | admin.firestore.Timestamp
-                  | undefined;
+            if (bookingId) {
+              const exactBooking = await db
+                .collection("bookings")
+                .doc(bookingId)
+                .get();
+              if (
+                exactBooking.exists &&
+                exactBooking.data()?.status === "accepted" &&
+                !exactBooking.data()?.paidAt
+              ) {
+                bookingDoc = exactBooking;
+              }
+            }
 
-                const aMillis = aTimestamp?.toMillis() ?? 0;
-                const bMillis = bTimestamp?.toMillis() ?? 0;
-                return bMillis - aMillis;
-              });
+            if (!bookingDoc) {
+              const bookingsSnap = await db
+                .collection("bookings")
+                .where("rideId", "==", rideId)
+                .where("passengerId", "==", riderId)
+                .where("status", "==", "accepted")
+                .get();
 
-            const bookingDoc = matchingBookings[0];
+              const matchingBookings = bookingsSnap.docs
+                .filter((doc) => !doc.data()["paidAt"])
+                .sort((a, b) => {
+                  const aTimestamp = (a.data()["createdAt"] ??
+                    a.data()["respondedAt"]) as Timestamp | undefined;
+                  const bTimestamp = (b.data()["createdAt"] ??
+                    b.data()["respondedAt"]) as Timestamp | undefined;
+
+                  const aMillis = aTimestamp?.toMillis() ?? 0;
+                  const bMillis = bTimestamp?.toMillis() ?? 0;
+                  return bMillis - aMillis;
+                });
+
+              bookingDoc = matchingBookings[0];
+            }
 
             if (bookingDoc) {
               await bookingDoc.ref.update({
                 paymentIntentId: pi.id,
-                paidAt: admin.firestore.FieldValue.serverTimestamp(),
+                paidAt: FieldValue.serverTimestamp(),
               });
             }
           }
@@ -2044,16 +2604,13 @@ export const stripeWebhook = onRequest(
             try {
               const paymentDoc = payments.docs[0]?.data();
               const driverEarnings = paymentDoc?.driverEarnings ?? 0;
-              const currency =
-                (paymentDoc?.currency as string | undefined)?.toUpperCase() ??
-                "EUR";
               const riderDisplayName =
                 (paymentDoc?.riderName as string | undefined) ?? "A passenger";
 
               await sendPushToUser(
                 driverId,
                 "Payment Received 💰",
-                `${riderDisplayName} paid ${driverEarnings.toFixed(2)} ${currency} for the ride.`,
+                `${riderDisplayName} paid €${driverEarnings.toFixed(2)} for the ride.`,
                 { type: "ride_update", referenceId: rideId ?? driverId },
               );
 
@@ -2065,10 +2622,15 @@ export const stripeWebhook = onRequest(
                 .doc(driverId);
               const connectedSnap = await connectedRef.get();
               if (connectedSnap.exists) {
+                const driverEarningsInCents =
+                  (paymentDoc?.driverEarningsInCents as number | undefined) ??
+                  Math.round(driverEarnings * 100);
                 await connectedRef.update({
-                  pendingBalance:
-                    admin.firestore.FieldValue.increment(driverEarnings),
-                  updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                  pendingBalance: FieldValue.increment(driverEarnings),
+                  pendingBalanceInCents: FieldValue.increment(
+                    driverEarningsInCents,
+                  ),
+                  updatedAt: FieldValue.serverTimestamp(),
                 });
               }
             } catch (notifyError) {
@@ -2099,36 +2661,54 @@ export const stripeWebhook = onRequest(
         }
 
         case "payment_intent.payment_failed": {
-          const pi = event.data.object as Stripe.PaymentIntent;
-          const [failedPayments, failedBookings] = await Promise.all([
-            db.collection("payments").where("paymentIntentId", "==", pi.id).get(),
-            db.collection("bookings").where("paymentIntentId", "==", pi.id).get(),
+          const pi = event.data.object as StripePaymentIntent;
+          const [failedPayments, failedBookingsSnap] = await Promise.all([
+            db
+              .collection("payments")
+              .where("paymentIntentId", "==", pi.id)
+              .get(),
+            db
+              .collection("bookings")
+              .where("paymentIntentId", "==", pi.id)
+              .get(),
           ]);
+          const failedBookingDocs: Array<
+            QueryDocumentSnapshot<DocumentData> | DocumentSnapshot<DocumentData>
+          > = [...failedBookingsSnap.docs];
+          const failedBookingId = pi.metadata?.bookingId;
+          if (failedBookingDocs.length === 0 && failedBookingId) {
+            const failedBookingDoc = await db
+              .collection("bookings")
+              .doc(failedBookingId)
+              .get();
+            if (failedBookingDoc.exists)
+              failedBookingDocs.push(failedBookingDoc);
+          }
 
           // Mark payment docs as failed
           for (const doc of failedPayments.docs) {
             await doc.ref.update({
               status: "failed",
-              failedAt: admin.firestore.FieldValue.serverTimestamp(),
+              failedAt: FieldValue.serverTimestamp(),
               failureMessage:
                 pi.last_payment_error?.message || "Payment failed",
             });
           }
 
           // GAP-3: Cancel related bookings + notify passengers
-          if (!failedBookings.empty) {
+          if (failedBookingDocs.length > 0) {
             const bookingBatch = db.batch();
-            failedBookings.docs.forEach((doc) => {
+            failedBookingDocs.forEach((doc) => {
               bookingBatch.update(doc.ref, {
                 status: "rejected",
                 cancellationReason: "payment_failed",
-                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                updatedAt: FieldValue.serverTimestamp(),
               });
             });
             await bookingBatch.commit();
 
-            for (const doc of failedBookings.docs) {
-              const passengerId = doc.data().passengerId as string | undefined;
+            for (const doc of failedBookingDocs) {
+              const passengerId = doc.data()?.passengerId as string | undefined;
               if (passengerId) {
                 await sendPushToUser(
                   passengerId,
@@ -2140,87 +2720,45 @@ export const stripeWebhook = onRequest(
             }
             logger.info("GAP-3: cancelled bookings after payment failure", {
               paymentIntentId: pi.id,
-              count: failedBookings.size,
+              count: failedBookingDocs.length,
             });
           }
           break;
         }
 
         case "account.updated": {
-          const account = event.data.object as Stripe.Account;
+          const account = event.data.object as StripeAccount;
           const userId = account.metadata?.userId;
-          if (!userId) break;
+logger.info("Stripe account status", {
+  accountId: account.id,
+  chargesEnabled: account.charges_enabled,
+  payoutsEnabled: account.payouts_enabled,
+  detailsSubmitted: account.details_submitted,
+  currentlyDue: account.requirements?.currently_due ?? [],
+  pastDue: account.requirements?.past_due ?? [],
+  pendingVerification: account.requirements?.pending_verification ?? [],
+  disabledReason: account.requirements?.disabled_reason ?? null,
+  transfersCapability: account.capabilities?.transfers ?? null,
+  cardPaymentsCapability: account.capabilities?.card_payments ?? null,
+});
+          if (!userId) {
+            logger.warn("account.updated received without metadata.userId", {
+              accountId: account.id,
+            });
+            break;
+          }
+
+          await syncConnectedAccountSnapshot(db, stripe, account, userId);
 
           const isActive =
-            account.charges_enabled &&
-            account.payouts_enabled &&
-            account.details_submitted;
+            Boolean(account.charges_enabled) &&
+            Boolean(account.payouts_enabled) &&
+            Boolean(account.details_submitted) &&
+            account.capabilities?.transfers === "active";
 
-          let onboardingStatus = "pending";
-          if (isActive) {
-            onboardingStatus = "active";
-          } else if (account.details_submitted) {
-            onboardingStatus = "under_review";
-          } else if (account.requirements?.currently_due?.length) {
-            onboardingStatus = "incomplete";
-          }
-
-          const accountStatusFields = {
-            stripeAccountStatus: onboardingStatus,
-            chargesEnabled: account.charges_enabled ?? false,
-            payoutsEnabled: account.payouts_enabled ?? false,
-            detailsSubmitted: account.details_submitted ?? false,
-            isStripeEnabled: account.charges_enabled ?? false,
-            isStripeOnboarded: isActive,
-            stripeRequirements: account.requirements?.currently_due ?? [],
-            stripeDisabledReason: account.requirements?.disabled_reason ?? null,
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-          };
-
-          // Update users collection
-          await db.collection("users").doc(userId).update(accountStatusFields);
-
-          // Also keep driver_connected_accounts in sync — the Flutter app reads
-          // from this collection for Stripe Connect status. Without this update
-          // the two collections diverge every time Stripe sends account.updated.
-          const connectedAccountRef = db
-            .collection("driver_connected_accounts")
-            .doc(userId);
-          const connectedAccountSnap = await connectedAccountRef.get();
-          if (connectedAccountSnap.exists) {
-            await connectedAccountRef.update({
-              chargesEnabled: account.charges_enabled ?? false,
-              payoutsEnabled: account.payouts_enabled ?? false,
-              detailsSubmitted: account.details_submitted ?? false,
-              onboardingCompleted: isActive,
-              ...(isActive && {
-                onboardingCompletedAt:
-                  admin.firestore.FieldValue.serverTimestamp(),
-              }),
-              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-            });
-          } else if (account.id) {
-            // Connected account doc doesn't exist yet — create a minimal one
-            // so the Flutter app can read it without needing the user to
-            // re-trigger onboarding.
-            await connectedAccountRef.set(
-              {
-                driverId: userId,
-                stripeAccountId: account.id,
-                chargesEnabled: account.charges_enabled ?? false,
-                payoutsEnabled: account.payouts_enabled ?? false,
-                detailsSubmitted: account.details_submitted ?? false,
-                onboardingCompleted: isActive,
-                email: account.email ?? "",
-                country: account.country ?? "FR",
-                availableBalance: 0,
-                pendingBalance: 0,
-                createdAt: admin.firestore.FieldValue.serverTimestamp(),
-                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-              },
-              { merge: true },
-            );
-          }
+          const hasCurrentlyDue =
+            (account.requirements?.currently_due?.length ?? 0) > 0;
+          const hasPastDue = (account.requirements?.past_due?.length ?? 0) > 0;
 
           if (isActive) {
             await sendPushToUser(
@@ -2229,7 +2767,7 @@ export const stripeWebhook = onRequest(
               "Your payout account is ready. You can now receive ride payments directly!",
               { type: "stripe", referenceId: userId },
             );
-          } else if (onboardingStatus === "incomplete") {
+          } else if (hasPastDue || hasCurrentlyDue) {
             await sendPushToUser(
               userId,
               "Complete Your Stripe Setup",
@@ -2237,11 +2775,12 @@ export const stripeWebhook = onRequest(
               { type: "stripe", referenceId: userId },
             );
           }
+
           break;
         }
 
         case "payout.paid": {
-          const po = event.data.object as Stripe.Payout;
+          const po = event.data.object as StripePayout;
           const payoutsSnap = await db
             .collection("payouts")
             .where("stripePayoutId", "==", po.id)
@@ -2249,15 +2788,24 @@ export const stripeWebhook = onRequest(
           for (const doc of payoutsSnap.docs) {
             await doc.ref.update({
               status: "paid",
-              arrivedAt: admin.firestore.FieldValue.serverTimestamp(),
-              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+              amountInCents: po.amount,
+              amount: po.amount / 100,
+              currency: po.currency,
+              method: po.method === "instant" ? "instant" : "standard",
+              type: po.type === "card" ? "card" : "bankAccount",
+              destination: stripeObjectId(po.destination),
+              stripeBalanceTransactionId: stripeObjectId(
+                po.balance_transaction,
+              ),
+              arrivedAt: FieldValue.serverTimestamp(),
+              updatedAt: FieldValue.serverTimestamp(),
             });
           }
           break;
         }
 
         case "payout.updated": {
-          const po = event.data.object as Stripe.Payout;
+          const po = event.data.object as StripePayout;
           const payoutsSnap = await db
             .collection("payouts")
             .where("stripePayoutId", "==", po.id)
@@ -2274,12 +2822,22 @@ export const stripeWebhook = onRequest(
           for (const doc of payoutsSnap.docs) {
             await doc.ref.update({
               status: mappedStatus,
-              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+              amountInCents: po.amount,
+              amount: po.amount / 100,
+              currency: po.currency,
+              method: po.method === "instant" ? "instant" : "standard",
+              type: po.type === "card" ? "card" : "bankAccount",
+              destination: stripeObjectId(po.destination),
+              stripeBalanceTransactionId: stripeObjectId(
+                po.balance_transaction,
+              ),
+              updatedAt: FieldValue.serverTimestamp(),
               ...(po.status === "paid" && {
-                arrivedAt: admin.firestore.FieldValue.serverTimestamp(),
+                arrivedAt: FieldValue.serverTimestamp(),
               }),
               ...(po.status === "failed" && {
                 failureReason: po.failure_message ?? "Payout failed",
+                failureCode: po.failure_code ?? null,
               }),
             });
           }
@@ -2287,7 +2845,7 @@ export const stripeWebhook = onRequest(
         }
 
         case "payout.failed": {
-          const po = event.data.object as Stripe.Payout;
+          const po = event.data.object as StripePayout;
           const payoutsSnap = await db
             .collection("payouts")
             .where("stripePayoutId", "==", po.id)
@@ -2295,8 +2853,18 @@ export const stripeWebhook = onRequest(
           for (const doc of payoutsSnap.docs) {
             await doc.ref.update({
               status: "failed",
+              amountInCents: po.amount,
+              amount: po.amount / 100,
+              currency: po.currency,
+              method: po.method === "instant" ? "instant" : "standard",
+              type: po.type === "card" ? "card" : "bankAccount",
+              destination: stripeObjectId(po.destination),
+              stripeBalanceTransactionId: stripeObjectId(
+                po.balance_transaction,
+              ),
               failureReason: po.failure_message ?? "Payout failed",
-              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+              failureCode: po.failure_code ?? null,
+              updatedAt: FieldValue.serverTimestamp(),
             });
           }
           const driverId = payoutsSnap.docs[0]?.data().driverId as
@@ -2362,7 +2930,8 @@ export const onBookingCancelled = onDocumentUpdated(
       });
       const db = admin.firestore();
       const rideId = typeof after.rideId === "string" ? after.rideId : null;
-      const riderId = typeof after.riderId === "string" ? after.riderId : null;
+      const riderId =
+        typeof after.passengerId === "string" ? after.passengerId : null;
       if (rideId && riderId) {
         const pendingPayments = await db
           .collection("payments")
@@ -2375,7 +2944,7 @@ export const onBookingCancelled = onDocumentUpdated(
           pendingPayments.docs.forEach((doc) => {
             batch.update(doc.ref, {
               status: "cancelled",
-              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+              updatedAt: FieldValue.serverTimestamp(),
             });
           });
           await batch.commit();
@@ -2407,7 +2976,8 @@ export const onBookingCancelled = onDocumentUpdated(
           bookingId: event.params.bookingId,
           rideId,
         });
-        const passengerId = typeof after.passengerId === "string" ? after.passengerId : null;
+        const passengerId =
+          typeof after.passengerId === "string" ? after.passengerId : null;
         if (passengerId) {
           await sendPushToUser(
             passengerId,
@@ -2442,7 +3012,7 @@ export const onBookingCancelled = onDocumentUpdated(
       // "refunding".  If another trigger already claimed it the transaction
       // will throw and we bail out.
       const paymentRef = paymentsSnap.docs[0].ref;
-      let paymentData: admin.firestore.DocumentData = {};
+      let paymentData: DocumentData = {};
       try {
         await db.runTransaction(async (txn) => {
           const snap = await txn.get(paymentRef);
@@ -2458,7 +3028,7 @@ export const onBookingCancelled = onDocumentUpdated(
           paymentData = data;
           txn.update(paymentRef, {
             status: "refunding",
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp(),
           });
         });
       } catch (txnErr) {
@@ -2482,9 +3052,9 @@ export const onBookingCancelled = onDocumentUpdated(
       for (const doc of paymentsSnap.docs) {
         await doc.ref.update({
           status: "refunded",
-          refundedAt: admin.firestore.FieldValue.serverTimestamp(),
+          refundedAt: FieldValue.serverTimestamp(),
           refundReason: "booking_cancelled",
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
         });
       }
 
@@ -2493,12 +3063,10 @@ export const onBookingCancelled = onDocumentUpdated(
         typeof after.passengerId === "string" ? after.passengerId : null;
       if (passengerId) {
         const refundAmount = (refund.amount ?? 0) / 100;
-        const currency =
-          (paymentData.currency as string | undefined)?.toUpperCase() ?? "EUR";
         await sendPushToUser(
           passengerId,
           "Refund Processed ✅",
-          `Your refund of ${refundAmount.toFixed(2)} ${currency} has been initiated and will arrive within 5–10 days.`,
+          `Your refund of €${refundAmount.toFixed(2)} has been initiated and will arrive within 5–10 days.`,
           {
             type: "ride_update",
             referenceId: event.params.bookingId,
@@ -2511,6 +3079,9 @@ export const onBookingCancelled = onDocumentUpdated(
       const driverId =
         typeof after.driverId === "string" ? after.driverId : null;
       const driverEarnings = (paymentData.driverEarnings as number) ?? 0;
+      const driverEarningsInCents =
+        (paymentData.driverEarningsInCents as number | undefined) ??
+        Math.round(driverEarnings * 100);
       if (driverId) {
         await sendPushToUser(
           driverId,
@@ -2530,9 +3101,9 @@ export const onBookingCancelled = onDocumentUpdated(
         const connectedSnap = await connectedRef.get();
         if (connectedSnap.exists && driverEarnings > 0) {
           await connectedRef.update({
-            pendingBalance:
-              admin.firestore.FieldValue.increment(-driverEarnings),
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            pendingBalance: FieldValue.increment(-driverEarnings),
+            pendingBalanceInCents: FieldValue.increment(-driverEarningsInCents),
+            updatedAt: FieldValue.serverTimestamp(),
           });
         }
       }
@@ -2547,7 +3118,7 @@ export const onBookingCancelled = onDocumentUpdated(
       // Pass negative delta so totalEarnings is decremented atomically.
       if (driverId) {
         try {
-          await recomputeDriverStats(db, driverId, -driverEarnings);
+          await recomputeDriverStats(db, driverId, -driverEarnings, -1);
         } catch (statsError) {
           logger.warn("Failed to recompute driver_stats after refund", {
             driverId,
@@ -2600,8 +3171,16 @@ export const onRideCancelled = onDocumentUpdated(
 
     // Find all accepted bookings for this ride
     const [bookingsSnap, pendingBookingsSnap] = await Promise.all([
-      db.collection("bookings").where("rideId", "==", rideId).where("status", "==", "accepted").get(),
-      db.collection("bookings").where("rideId", "==", rideId).where("status", "==", "pending").get(),
+      db
+        .collection("bookings")
+        .where("rideId", "==", rideId)
+        .where("status", "==", "accepted")
+        .get(),
+      db
+        .collection("bookings")
+        .where("rideId", "==", rideId)
+        .where("status", "==", "pending")
+        .get(),
     ]);
 
     // GAP-15: Cancel pending bookings immediately (no payment to refund)
@@ -2611,7 +3190,7 @@ export const onRideCancelled = onDocumentUpdated(
         pendingBatch.update(doc.ref, {
           status: "cancelled",
           cancellationReason: "ride_cancelled_by_driver",
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
         });
       });
       await pendingBatch.commit();
@@ -2654,7 +3233,7 @@ export const onRideCancelled = onDocumentUpdated(
       await bookingDoc.ref.update({
         status: "cancelled",
         cancellationReason: "ride_cancelled_by_driver",
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
       });
 
       if (!paymentIntentId || !booking.paidAt) continue;
@@ -2674,6 +3253,7 @@ export const onRideCancelled = onDocumentUpdated(
 
       try {
         let refundableAmount: number | undefined = undefined;
+        let paymentData: DocumentData = {};
 
         await db.runTransaction(async (txn) => {
           const snap = await txn.get(paymentRef);
@@ -2691,13 +3271,14 @@ export const onRideCancelled = onDocumentUpdated(
           if (rideWasInProgress) {
             refundableAmount = (data.driverEarnings as number) ?? undefined;
           }
+          paymentData = data;
           txn.update(paymentRef, {
             status: "refunding",
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp(),
           });
         });
 
-        const refundParams: Stripe.RefundCreateParams = {
+        const refundParams: StripeRefundCreateParams = {
           payment_intent: paymentIntentId,
           reason: "requested_by_customer",
         };
@@ -2710,10 +3291,51 @@ export const onRideCancelled = onDocumentUpdated(
 
         await paymentRef.update({
           status: isFullRefund ? "refunded" : "partiallyRefunded",
-          refundedAt: admin.firestore.FieldValue.serverTimestamp(),
+          refundedAt: FieldValue.serverTimestamp(),
           refundReason: "driver_cancelled_ride",
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
         });
+
+        const paymentDriverId =
+          typeof paymentData.driverId === "string"
+            ? paymentData.driverId
+            : typeof after.driverId === "string"
+              ? after.driverId
+              : null;
+        const driverEarnings = (paymentData.driverEarnings as number) ?? 0;
+        const driverEarningsInCents =
+          (paymentData.driverEarningsInCents as number | undefined) ??
+          Math.round(driverEarnings * 100);
+
+        if (paymentDriverId && driverEarnings > 0) {
+          const connectedRef = db
+            .collection("driver_connected_accounts")
+            .doc(paymentDriverId);
+          const connectedSnap = await connectedRef.get();
+          if (connectedSnap.exists) {
+            await connectedRef.update({
+              pendingBalance: FieldValue.increment(-driverEarnings),
+              pendingBalanceInCents: FieldValue.increment(
+                -driverEarningsInCents,
+              ),
+              updatedAt: FieldValue.serverTimestamp(),
+            });
+          }
+
+          try {
+            await recomputeDriverStats(
+              db,
+              paymentDriverId,
+              -driverEarnings,
+              -1,
+            );
+          } catch (statsError) {
+            logger.warn("onRideCancelled: failed to recompute driver_stats", {
+              paymentDriverId,
+              error: statsError,
+            });
+          }
+        }
 
         logger.info("onRideCancelled: refunded passenger", {
           rideId,
@@ -2767,7 +3389,7 @@ export const onRideCancelled = onDocumentUpdated(
           txn.update(driverRef, {
             cancellationCount: newCount,
             cancellationRate: rate,
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp(),
           });
         });
         logger.info("GAP-5: updated driver cancellation rate", {
@@ -2796,7 +3418,7 @@ export const syncDriverBalance = onCall(
     }
 
     // Rate limit: 20 balance syncs per user per 60 s
-    await checkRateLimit(admin.firestore(), request.auth.uid, "syncDriverBalance", 20, 60);
+    //await checkRateLimit(admin.firestore(), request.auth.uid, "syncDriverBalance", 20, 60);
 
     const stripe = getStripeClient(stripeSecretKey.value().trim());
     const db = admin.firestore();
@@ -2824,48 +3446,58 @@ export const syncDriverBalance = onCall(
       }
 
       // Fetch balance from Stripe
-      const balance = await stripe.balance.retrieve({
-        stripeAccount: stripeAccountId,
-      });
+      const balance = await stripe.balance.retrieve(
+        {},
+        {
+          stripeAccount: stripeAccountId,
+        },
+      );
 
-      // Sum all available amounts
-      let availableBalance = 0;
-      if (balance.available && balance.available.length > 0) {
-        availableBalance =
-          balance.available.reduce((sum, b) => sum + (b.amount || 0), 0) / 100;
-      }
-
-      // Sum all pending amounts
-      let pendingBalance = 0;
-      if (balance.pending && balance.pending.length > 0) {
-        pendingBalance =
-          balance.pending.reduce((sum, b) => sum + (b.amount || 0), 0) / 100;
-      }
+      const defaultCurrency = (
+        (connectedAccountDoc.data()?.defaultCurrency as string | undefined) ??
+        (userDoc.data()?.defaultCurrency as string | undefined) ??
+        "eur"
+      ).toLowerCase();
+      const availableBalanceInCents = sumBalanceForCurrency(
+        balance.available,
+        defaultCurrency,
+      );
+      const pendingBalanceInCents = sumBalanceForCurrency(
+        balance.pending,
+        defaultCurrency,
+      );
 
       logger.info("Synced balance for driver", {
         driverId,
         stripeAccountId,
-        availableBalance,
-        pendingBalance,
+        availableBalanceInCents,
+        pendingBalanceInCents,
       });
 
       // Upsert driver_connected_accounts — if the doc was never created
       // (e.g. onboarding completed via the webhook path) set it now.
-      await db.collection("driver_connected_accounts").doc(driverId).set(
-        {
-          driverId,
-          stripeAccountId,
-          availableBalance,
-          pendingBalance,
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        },
-        { merge: true },
-      );
+      await db
+        .collection("driver_connected_accounts")
+        .doc(driverId)
+        .set(
+          {
+            driverId,
+            stripeAccountId,
+            availableBalance: availableBalanceInCents / 100,
+            pendingBalance: pendingBalanceInCents / 100,
+            availableBalanceInCents,
+            pendingBalanceInCents,
+            updatedAt: FieldValue.serverTimestamp(),
+          },
+          { merge: true },
+        );
 
       return {
         success: true,
-        availableBalance,
-        pendingBalance,
+        availableBalance: availableBalanceInCents / 100,
+        pendingBalance: pendingBalanceInCents / 100,
+        availableBalanceInCents,
+        pendingBalanceInCents,
       };
     } catch (error) {
       const e = error as { message?: string };
@@ -2911,7 +3543,7 @@ export const expireOldRides = onSchedule("every 6 hours", async () => {
       await rideDoc.ref.update({
         status: "cancelled",
         cancellationReason: "expired",
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
       });
       logger.info("expireOldRides: expired ride", { rideId: rideDoc.id });
     } catch (err) {
@@ -2949,7 +3581,7 @@ export const expirePendingBookings = onSchedule("every 6 hours", async () => {
     batch.update(doc.ref, {
       status: "cancelled",
       cancellationReason: "expired_no_driver_response",
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     });
   });
   await batch.commit();
@@ -2982,17 +3614,23 @@ export const expirePendingBookings = onSchedule("every 6 hours", async () => {
 export const onReviewUpdated = onDocumentUpdated(
   "reviews/{reviewId}",
   async (event) => {
-    const before = event.data?.before.data() as Record<string, unknown> | undefined;
-    const after = event.data?.after.data() as Record<string, unknown> | undefined;
+    const before = event.data?.before.data() as
+      | Record<string, unknown>
+      | undefined;
+    const after = event.data?.after.data() as
+      | Record<string, unknown>
+      | undefined;
     if (!before || !after) return;
 
     const oldRating = typeof before.rating === "number" ? before.rating : null;
     const newRating = typeof after.rating === "number" ? after.rating : null;
 
     // Only act when the numeric rating actually changed
-    if (oldRating === null || newRating === null || oldRating === newRating) return;
+    if (oldRating === null || newRating === null || oldRating === newRating)
+      return;
 
-    const revieweeId = typeof after.revieweeId === "string" ? after.revieweeId : null;
+    const revieweeId =
+      typeof after.revieweeId === "string" ? after.revieweeId : null;
     if (!revieweeId) return;
 
     const db = admin.firestore();
@@ -3005,14 +3643,16 @@ export const onReviewUpdated = onDocumentUpdated(
 
     if (allReviews.empty) return;
 
-    const ratings = allReviews.docs.map((d) => (d.data().rating as number) ?? 0);
+    const ratings = allReviews.docs.map(
+      (d) => (d.data().rating as number) ?? 0,
+    );
     const avg = ratings.reduce((a, b) => a + b, 0) / ratings.length;
     const rounded = Math.round(avg * 10) / 10;
 
     await db.collection("users").doc(revieweeId).update({
       averageRating: rounded,
       totalReviews: ratings.length,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     });
 
     logger.info("GAP-14: recalculated rating after review edit", {
@@ -3062,7 +3702,7 @@ export const createCustomerSheetSetup = onCall(
 
       await db.collection("users").doc(userId).update({
         stripeCustomerId: customerId,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
       });
     } else {
       // Verify the customer still exists
@@ -3077,7 +3717,7 @@ export const createCustomerSheetSetup = onCall(
           customerId = customer.id;
           await db.collection("users").doc(userId).update({
             stripeCustomerId: customerId,
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp(),
           });
         }
       } catch {
@@ -3090,7 +3730,7 @@ export const createCustomerSheetSetup = onCall(
         customerId = customer.id;
         await db.collection("users").doc(userId).update({
           stripeCustomerId: customerId,
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
         });
       }
     }

@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,11 +12,15 @@ import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
 import 'package:sport_connect/core/theme/platform_adaptive.dart';
+import 'package:sliver_tools/sliver_tools.dart';
+import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/core/widgets/analytics_payment_widgets.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
+import 'package:sport_connect/features/payments/models/payment_model.dart'
+    show DriverConnectedAccount;
 import 'package:sport_connect/features/payments/view_models/payment_view_model.dart';
 import 'package:sport_connect/features/rides/models/driver_stats.dart';
-import 'package:sport_connect/features/rides/view_models/driver_view_model.dart';
+import 'package:sport_connect/features/rides/repositories/driver_stats_repository.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Driver Earnings Screen  - View earnings with real Firestore data
@@ -49,27 +56,21 @@ class DriverEarningsScreen extends ConsumerWidget {
     }
   }
 
-  /// Resolves the driver's currency code from their Stripe connected account.
-  String _currencyCode(WidgetRef ref) {
-    final stripeStatus = ref.watch(driverStripeStatusProvider).value;
-    return stripeStatus?.currency ?? 'EUR';
-  }
+  /// Displays all money values in Euro.
+  String _currencyCode(WidgetRef _) => 'EUR';
 
   void _exportEarnings(BuildContext context, WidgetRef ref) {
-    final driverState = ref.read(driverViewModelProvider);
-    final driverStats = driverState.stats;
-    final transactions = driverState.earningsTransactions;
+    final driverStats = ref.read(driverStatsProvider);
+    final transactions = ref.read(earningsTransactionsProvider);
 
     final stats = driverStats.value;
     final txList = transactions.value;
 
     if (stats == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context).noData),
-          backgroundColor: AppColors.primary,
-          behavior: SnackBarBehavior.floating,
-        ),
+      AdaptiveSnackBar.show(
+        context,
+        message: AppLocalizations.of(context).noData,
+        type: AdaptiveSnackBarType.info,
       );
       return;
     }
@@ -84,16 +85,16 @@ class DriverEarningsScreen extends ConsumerWidget {
       ..writeln()
       ..writeln(l10n.exportEarningsSummary)
       ..writeln(
-        '  ${l10n.periodToday}:      ${stats.earningsToday.toStringAsFixed(2)} ${_currencyCode(ref)}',
+        '  ${l10n.periodToday}:      €${(stats.earningsTodayInCents / 100).toStringAsFixed(2)}',
       )
       ..writeln(
-        '  ${l10n.periodThisWeek}:  ${stats.earningsThisWeek.toStringAsFixed(2)} ${_currencyCode(ref)}',
+        '  ${l10n.periodThisWeek}:  €${(stats.earningsThisWeekInCents / 100).toStringAsFixed(2)}',
       )
       ..writeln(
-        '  ${l10n.periodThisMonth}: ${stats.earningsThisMonth.toStringAsFixed(2)} ${_currencyCode(ref)}',
+        '  ${l10n.periodThisMonth}: €${(stats.earningsThisMonthInCents / 100).toStringAsFixed(2)}',
       )
       ..writeln(
-        '  ${l10n.periodAllTime}:      ${stats.totalEarnings.toStringAsFixed(2)} ${_currencyCode(ref)}',
+        '  ${l10n.periodAllTime}:      €${(stats.totalEarningsInCents / 100).toStringAsFixed(2)}',
       )
       ..writeln()
       ..writeln(l10n.exportRideStatistics)
@@ -110,7 +111,7 @@ class DriverEarningsScreen extends ConsumerWidget {
       for (final tx in txList.take(20)) {
         final date = dateFormat.format(tx.createdAt);
         buffer.writeln(
-          '  $date | ${tx.amount.toStringAsFixed(2)} ${_currencyCode(ref)} | ${tx.description}',
+          '  $date | €${(tx.amountInCents / 100).toStringAsFixed(2)} | ${tx.description}',
         );
       }
     }
@@ -120,22 +121,22 @@ class DriverEarningsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final driverState = ref.watch(driverViewModelProvider);
-    final driverStats = driverState.stats;
-    final transactions = driverState.earningsTransactions;
+    final driverStats = ref.watch(driverStatsProvider);
+    final transactions = ref.watch(earningsTransactionsProvider);
     final selectedPeriod = ref
         .watch(driverEarningsPeriodViewModelProvider)
         .selectedPeriod;
-    // Watch Stripe status to reactively resolve the driver's currency.
-    ref.watch(driverStripeStatusProvider);
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return AdaptiveScaffold(
       body: RefreshIndicator.adaptive(
         onRefresh: () async {
           ref.invalidate(driverStripeStatusProvider);
-          ref.read(driverViewModelProvider.notifier).refresh();
-          await ref.read(driverStripeStatusProvider.future);
+          await Future.wait<Object?>([
+            ref.refresh(driverStatsProvider.future),
+            ref.refresh(earningsTransactionsProvider.future),
+            ref.read(driverStripeStatusProvider.future),
+          ]);
+          ref.invalidate(currentDriverConnectedAccountProvider);
         },
         child: CustomScrollView(
           slivers: [
@@ -168,78 +169,85 @@ class DriverEarningsScreen extends ConsumerWidget {
               ],
             ),
 
-            // Period Selector
-            SliverToBoxAdapter(
-              child: _buildPeriodSelector(context, ref, selectedPeriod),
-            ),
-
-            // Stats Grid
-            SliverToBoxAdapter(
-              child: _buildStatsGrid(context, ref, driverStats, selectedPeriod),
-            ),
-
-            // Monthly Summary Card
-            SliverToBoxAdapter(
-              child: driverStats.when(
-                data: (stats) => Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 20.w,
-                    vertical: 8.h,
-                  ),
-                  child: MonthlyRideSummary(
-                    totalRides: stats.totalRides,
-                    totalSpent: stats.totalSpent,
-                    totalEarned: stats.totalEarnings,
-                    totalDistance: stats.totalDistance,
-                    month: DateFormat('MMMM yyyy').format(DateTime.now()),
+            // ── Stats overview group ──────────────────────────
+            MultiSliver(
+              children: [
+                SliverToBoxAdapter(
+                  child: _buildPeriodSelector(context, ref, selectedPeriod),
+                ),
+                SliverToBoxAdapter(
+                  child: _buildStatsGrid(
+                    context,
+                    ref,
+                    driverStats,
+                    selectedPeriod,
                   ),
                 ),
-                loading: () => const SizedBox.shrink(),
-                error: (_, _) => const SizedBox.shrink(),
-              ),
-            ),
-
-            // Earnings Chart
-            SliverToBoxAdapter(
-              child: _buildEarningsChart(context, driverStats, selectedPeriod),
-            ),
-
-            // Monthly cost history chart – from real earnings transactions
-            SliverToBoxAdapter(
-              child: transactions.when(
-                data: (txList) {
-                  if (txList.isEmpty) return const SizedBox.shrink();
-                  // Group transactions by month and sum amounts
-                  final monthlyMap = <String, double>{};
-                  for (final tx in txList) {
-                    final key = DateFormat('MMM yyyy').format(tx.createdAt);
-                    monthlyMap[key] = (monthlyMap[key] ?? 0) + tx.amount;
-                  }
-                  final monthlyCosts = monthlyMap.entries
-                      .map((e) => MonthlyCost(e.key, e.value))
-                      .toList();
-                  return Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 20.w,
-                      vertical: 8.h,
+                SliverToBoxAdapter(
+                  child: driverStats.when(
+                    data: (stats) => Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 20.w,
+                        vertical: 8.h,
+                      ),
+                      child: MonthlyRideSummary(
+                        totalRides: stats.totalRides,
+                        totalSpent: stats.totalSpentInCents / 100,
+                        totalEarned: stats.totalEarningsInCents / 100,
+                        totalDistance: stats.totalDistance,
+                        month: DateFormat('MMMM yyyy').format(DateTime.now()),
+                      ),
                     ),
-                    child: RideCostHistoryChart(data: monthlyCosts),
-                  ).animate().fadeIn(delay: 350.ms).slideY(begin: 0.1);
-                },
-                loading: () => const SizedBox.shrink(),
-                error: (_, _) => const SizedBox.shrink(),
-              ),
+                    loading: () => const SizedBox.shrink(),
+                    error: (_, _) => const SizedBox.shrink(),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: _buildEarningsChart(
+                    context,
+                    driverStats,
+                    selectedPeriod,
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: transactions.when(
+                    data: (txList) {
+                      if (txList.isEmpty) return const SizedBox.shrink();
+                      final monthlyMap = <String, int>{};
+                      for (final tx in txList) {
+                        final key = DateFormat('MMM yyyy').format(tx.createdAt);
+                        monthlyMap[key] =
+                            (monthlyMap[key] ?? 0) +
+                            (tx.amountInCents / 100).toInt();
+                      }
+                      final monthlyCosts = monthlyMap.entries
+                          .map((e) => MonthlyCost(e.key, e.value))
+                          .toList();
+                      return Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 20.w,
+                          vertical: 8.h,
+                        ),
+                        child: RideCostHistoryChart(data: monthlyCosts),
+                      ).animate().fadeIn(delay: 350.ms).slideY(begin: 0.1);
+                    },
+                    loading: () => const SizedBox.shrink(),
+                    error: (_, _) => const SizedBox.shrink(),
+                  ),
+                ),
+              ],
             ),
 
-            // Payout Section
-            SliverToBoxAdapter(child: _buildPayoutSection(context, ref)),
-
-            // Recent Transactions
-            SliverToBoxAdapter(
-              child: _buildRecentTransactions(context, ref, transactions),
+            // ── Payout + Transactions group ───────────────────
+            MultiSliver(
+              children: [
+                SliverToBoxAdapter(child: _buildPayoutSection(context, ref)),
+                SliverToBoxAdapter(
+                  child: _buildRecentTransactions(context, ref, transactions),
+                ),
+              ],
             ),
 
-            // Bottom Padding
             SliverToBoxAdapter(child: SizedBox(height: 100.h)),
           ],
         ),
@@ -286,13 +294,13 @@ class DriverEarningsScreen extends ConsumerWidget {
                     (() {
                       switch (selectedPeriod) {
                         case 'today':
-                          return stats.earningsToday;
+                          return stats.earningsTodayInCents / 100;
                         case 'thisWeek':
-                          return stats.earningsThisWeek;
+                          return stats.earningsThisWeekInCents / 100;
                         case 'thisMonth':
-                          return stats.earningsThisMonth;
+                          return stats.earningsThisMonthInCents / 100;
                         default:
-                          return stats.totalEarnings;
+                          return stats.totalEarningsInCents / 100;
                       }
                     })().toStringAsFixed(0),
                   ),
@@ -336,9 +344,7 @@ class DriverEarningsScreen extends ConsumerWidget {
           ),
         ),
         child: const Center(
-          child: CircularProgressIndicator.adaptive(
-            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-          ),
+          child: SkeletonLoader(type: SkeletonType.compactTile, itemCount: 1),
         ),
       ),
       error: (_, _) => Container(
@@ -363,8 +369,10 @@ class DriverEarningsScreen extends ConsumerWidget {
               ),
               SizedBox(height: 12.h),
               TextButton.icon(
-                onPressed: () =>
-                    ref.read(driverViewModelProvider.notifier).refresh(),
+                onPressed: () {
+                  ref.invalidate(driverStatsProvider);
+                  ref.invalidate(earningsTransactionsProvider);
+                },
                 icon: const Icon(Icons.refresh_rounded, color: Colors.white),
                 label: Text(
                   AppLocalizations.of(context).tryAgain,
@@ -392,7 +400,10 @@ class DriverEarningsScreen extends ConsumerWidget {
                 value: p,
                 label: Text(
                   _periodLabel(context, p),
-                  style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             )
@@ -428,22 +439,25 @@ class DriverEarningsScreen extends ConsumerWidget {
 
         switch (selectedPeriod) {
           case 'today':
-            displayEarnings = stats.earningsToday;
+            displayEarnings = stats.earningsTodayInCents / 100;
             displayRides = stats.totalRides;
+            break;
           case 'thisWeek':
-            displayEarnings = stats.earningsThisWeek;
+            displayEarnings = stats.earningsThisWeekInCents / 100;
             displayRides = stats.ridesThisWeek;
+            break;
           case 'thisMonth':
-            displayEarnings = stats.earningsThisMonth;
+            displayEarnings = stats.earningsThisMonthInCents / 100;
             displayRides = stats.ridesThisMonth;
+            break;
           default:
-            displayEarnings = stats.totalEarnings;
+            displayEarnings = stats.totalEarningsInCents / 100;
             displayRides = stats.totalRides;
         }
 
         final avgPerRide = displayRides > 0
-            ? '${(displayEarnings / displayRides).toStringAsFixed(0)} ${_currencyCode(ref)}'
-            : '— ${_currencyCode(ref)}';
+            ? '€${(displayEarnings / displayRides).toStringAsFixed(0)}'
+            : '—';
 
         return Padding(
           padding: EdgeInsets.symmetric(horizontal: 20.w),
@@ -462,10 +476,10 @@ class DriverEarningsScreen extends ConsumerWidget {
                   SizedBox(width: 12.w),
                   Expanded(
                     child: _StatCard(
-                      icon: Icons.attach_money_rounded,
+                      icon: Icons.euro_rounded,
                       iconColor: AppColors.success,
                       title: AppLocalizations.of(context).statEarnings,
-                      value: '${displayEarnings.toStringAsFixed(0)} ${_currencyCode(ref)}',
+                      value: '€${displayEarnings.toStringAsFixed(0)}',
                     ),
                   ),
                 ],
@@ -556,9 +570,7 @@ class DriverEarningsScreen extends ConsumerWidget {
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16.r),
       ),
-      child: const Center(
-        child: CircularProgressIndicator.adaptive(strokeWidth: 2),
-      ),
+      child: const SkeletonLoader(type: SkeletonType.compactTile, itemCount: 1),
     );
   }
 
@@ -593,10 +605,10 @@ class DriverEarningsScreen extends ConsumerWidget {
               context,
               AppLocalizations.of(context).statEarnings,
               switch (selectedPeriod) {
-                'today' => stats.earningsToday,
-                'thisWeek' => stats.earningsThisWeek,
-                'thisMonth' => stats.earningsThisMonth,
-                _ => stats.totalEarnings,
+                'today' => stats.earningsTodayInCents,
+                'thisWeek' => stats.earningsThisWeekInCents,
+                'thisMonth' => stats.earningsThisMonthInCents,
+                _ => stats.totalEarningsInCents,
               },
               AppColors.primary,
             ),
@@ -642,14 +654,11 @@ class DriverEarningsScreen extends ConsumerWidget {
       ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.1),
       loading: () => Container(
         margin: EdgeInsets.all(20.w),
-        height: 200.h,
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(20.r),
         ),
-        child: const Center(
-          child: CircularProgressIndicator.adaptive(strokeWidth: 2),
-        ),
+        child: const SkeletonLoader(type: SkeletonType.rideCard, itemCount: 3),
       ),
       error: (_, _) => _buildErrorPlaceholder(context),
     );
@@ -658,7 +667,7 @@ class DriverEarningsScreen extends ConsumerWidget {
   Widget _buildEarningsBreakdownItem(
     BuildContext context,
     String label,
-    double amount,
+    int amountInCents,
     Color color,
   ) {
     return Row(
@@ -679,7 +688,9 @@ class DriverEarningsScreen extends ConsumerWidget {
           ),
         ),
         Text(
-          AppLocalizations.of(context).value5(amount.toStringAsFixed(0)),
+          AppLocalizations.of(
+            context,
+          ).value5((amountInCents / 100).toStringAsFixed(0)),
           style: TextStyle(
             fontSize: 14.sp,
             fontWeight: FontWeight.w600,
@@ -692,21 +703,33 @@ class DriverEarningsScreen extends ConsumerWidget {
 
   /// Build the payout section with Stripe integration
   Widget _buildPayoutSection(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(driverViewModelProvider).user;
-    final stripeStatus = ref.watch(driverStripeStatusProvider);
+    final connectedAccount = ref.watch(currentDriverConnectedAccountProvider);
 
-    return user.when(
-      data: (userData) {
-        if (userData == null) return const SizedBox.shrink();
-
-        return stripeStatus.when(
-          data: (status) => _buildPayoutCard(context, ref, status),
-          loading: _buildPayoutCardLoading,
-          error: (_, _) => _buildPayoutCard(context, ref, null),
-        );
-      },
+    return connectedAccount.when(
+      data: (account) => _buildPayoutCard(
+        context,
+        ref,
+        _statusFromConnectedAccount(account),
+      ),
       loading: _buildPayoutCardLoading,
       error: (_, _) => _buildErrorPlaceholder(context),
+    );
+  }
+
+  DriverStripeStatus? _statusFromConnectedAccount(
+    DriverConnectedAccount? account,
+  ) {
+    if (account == null) return null;
+
+    return DriverStripeStatus(
+      isConnected: account.isFullySetup,
+      payoutsEnabled: account.payoutsEnabled,
+      chargesEnabled: account.chargesEnabled,
+      detailsSubmitted: account.detailsSubmitted,
+      availableBalanceInCents: account.availableBalanceInCents,
+      pendingBalanceInCents: account.pendingBalanceInCents,
+      currency: account.defaultCurrency,
+      stripeAccountId: account.stripeAccountId,
     );
   }
 
@@ -717,7 +740,7 @@ class DriverEarningsScreen extends ConsumerWidget {
   ) {
     final isConnected = status?.isConnected ?? false;
     final payoutsEnabled = status?.payoutsEnabled ?? false;
-    final availableBalance = status?.availableBalance ?? 0.0;
+    final availableBalanceInCents = status?.availableBalanceInCents ?? 0;
     final stripeAccountId = status?.stripeAccountId;
 
     return Container(
@@ -864,14 +887,19 @@ class DriverEarningsScreen extends ConsumerWidget {
                                   onTap: () async => showDialog<void>(
                                     context: context,
                                     builder: (_) => AlertDialog.adaptive(
-                                      title: Text(AppLocalizations.of(context).availableBalance),
+                                      title: Text(
+                                        AppLocalizations.of(
+                                          context,
+                                        ).availableBalance,
+                                      ),
                                       content: const Text(
                                         'Available Balance is what Stripe has settled and is ready to withdraw to your bank.\n\n'
                                         'Total Earnings (shown above) is your lifetime trip revenue — some may still be processing through Stripe.',
                                       ),
                                       actions: [
                                         TextButton(
-                                          onPressed: () => Navigator.of(context).pop(),
+                                          onPressed: () =>
+                                              Navigator.of(context).pop(),
                                           child: const Text('Got it'),
                                         ),
                                       ],
@@ -889,7 +917,11 @@ class DriverEarningsScreen extends ConsumerWidget {
                             Text(
                               AppLocalizations.of(
                                 context,
-                              ).value5(availableBalance.toStringAsFixed(2)),
+                              ).value5(
+                                (availableBalanceInCents / 100).toStringAsFixed(
+                                  2,
+                                ),
+                              ),
                               style: TextStyle(
                                 fontSize: 22.sp,
                                 fontWeight: FontWeight.w800,
@@ -905,7 +937,7 @@ class DriverEarningsScreen extends ConsumerWidget {
                           context,
                           ref,
                           stripeAccountId: stripeAccountId,
-                          availableBalance: availableBalance,
+                          availableBalanceInCents: availableBalanceInCents,
                           isFullySetup: payoutsEnabled,
                         ),
                         style: PremiumButtonStyle.secondary,
@@ -954,14 +986,11 @@ class DriverEarningsScreen extends ConsumerWidget {
   Widget _buildPayoutCardLoading() {
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 20.w),
-      height: 120.h,
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(20.r),
       ),
-      child: const Center(
-        child: CircularProgressIndicator.adaptive(strokeWidth: 2),
-      ),
+      child: const SkeletonLoader(type: SkeletonType.compactTile, itemCount: 2),
     );
   }
 
@@ -969,7 +998,7 @@ class DriverEarningsScreen extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     String stripeAccountId,
-    double amount,
+    int amountInCents,
   ) async {
     // Show confirmation dialog
     final confirmed = await showDialog<bool>(
@@ -982,7 +1011,9 @@ class DriverEarningsScreen extends ConsumerWidget {
         content: Text(
           AppLocalizations.of(
             context,
-          ).withdrawValueToYourConnected(amount.toStringAsFixed(2)),
+          ).withdrawValueToYourConnected(
+            (amountInCents / 100).toStringAsFixed(2),
+          ),
         ),
         actions: [
           TextButton(
@@ -1004,54 +1035,67 @@ class DriverEarningsScreen extends ConsumerWidget {
     );
 
     if (confirmed != true) return;
+    if (!context.mounted) return;
 
     try {
       final success = await ref
           .read(driverPayoutViewModelProvider.notifier)
           .requestInstantPayout(
             stripeAccountId: stripeAccountId,
-            amount: amount,
+            amountInCents: amountInCents,
             currency: _currencyCode(ref),
           );
 
       if (success) {
         if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
+        AdaptiveSnackBar.show(
+          context,
+          message:
               AppLocalizations.of(
                 context,
-              ).payoutOfValueInitiated(amount.toStringAsFixed(2)),
-            ),
-            backgroundColor: AppColors.success,
-          ),
+              ).payoutOfValueInitiated(
+                (amountInCents / 100).toStringAsFixed(2),
+              ),
+          type: AdaptiveSnackBarType.success,
         );
         ref.invalidate(driverStripeStatusProvider);
-        ref.read(driverViewModelProvider.notifier).refresh();
+        ref.invalidate(driverStatsProvider);
+        ref.invalidate(earningsTransactionsProvider);
+        unawaited(_refreshStripeStatusAfterPayout(context, ref));
       } else {
         if (!context.mounted) return;
         final payoutState = ref.read(driverPayoutViewModelProvider);
         final detailedError = payoutState.hasError
             ? payoutState.error.toString()
             : null;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
+        AdaptiveSnackBar.show(
+          context,
+          message:
               detailedError ??
-                  AppLocalizations.of(context).payoutFailedPleaseTryAgain,
-            ),
-            backgroundColor: AppColors.error,
-          ),
+              AppLocalizations.of(context).payoutFailedPleaseTryAgain,
+          type: AdaptiveSnackBarType.error,
         );
       }
-    } on Exception catch (e) {
+    } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context).errorValue(e)),
-          backgroundColor: AppColors.error,
-        ),
+      AdaptiveSnackBar.show(
+        context,
+        message: AppLocalizations.of(context).errorValue(e),
+        type: AdaptiveSnackBarType.error,
       );
+    }
+  }
+
+  Future<void> _refreshStripeStatusAfterPayout(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    try {
+      await ref.read(driverStripeStatusProvider.future);
+      if (!context.mounted) return;
+      ref.invalidate(currentDriverConnectedAccountProvider);
+    } catch (_) {
+      // The next manual refresh will retry the server sync.
     }
   }
 
@@ -1059,40 +1103,42 @@ class DriverEarningsScreen extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref, {
     required String? stripeAccountId,
-    required double availableBalance,
+    required int availableBalanceInCents,
     required bool isFullySetup,
   }) async {
     if (!isFullySetup) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context).completeVerification),
-          backgroundColor: AppColors.error,
-        ),
+      AdaptiveSnackBar.show(
+        context,
+        message: AppLocalizations.of(context).completeVerification,
+        type: AdaptiveSnackBarType.error,
       );
       return;
     }
 
     if (stripeAccountId == null || stripeAccountId.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context).tryAgain),
-          backgroundColor: AppColors.error,
-        ),
+      AdaptiveSnackBar.show(
+        context,
+        message: AppLocalizations.of(context).tryAgain,
+        type: AdaptiveSnackBarType.error,
       );
       return;
     }
 
-    if (availableBalance <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context).noData),
-          backgroundColor: AppColors.error,
-        ),
+    if (availableBalanceInCents <= 0) {
+      AdaptiveSnackBar.show(
+        context,
+        message: AppLocalizations.of(context).noData,
+        type: AdaptiveSnackBarType.error,
       );
       return;
     }
 
-    await _requestPayout(context, ref, stripeAccountId, availableBalance);
+    await _requestPayout(
+      context,
+      ref,
+      stripeAccountId,
+      availableBalanceInCents,
+    );
   }
 
   Widget _buildRecentTransactions(
@@ -1154,31 +1200,28 @@ class DriverEarningsScreen extends ConsumerWidget {
                 final transaction = transactions[index];
                 return _TransactionItem(
                   description: transaction.description,
-                  amount: transaction.amount,
+                  amountInCents: transaction.amountInCents,
                   type: transaction.type,
-                  currency: _currencyCode(ref),
                   date: DateFormat(
                     'MMM d, h:mm a',
                   ).format(transaction.createdAt),
-                  onTap: transaction.type == TransactionType.payout
+                  onTap: transaction.type == EarningsTransactionType.payout
                       ? () => context.push(
-                            AppRoutes.payoutDetail.path
-                                .replaceFirst(':id', transaction.id),
-                          )
+                          AppRoutes.payoutDetail.path.replaceFirst(
+                            ':id',
+                            transaction.id,
+                          ),
+                        )
                       : null,
                 ).animate().fadeIn(delay: Duration(milliseconds: 100 * index));
               },
             );
           },
-          loading: () => Container(
-            margin: EdgeInsets.symmetric(horizontal: 20.w),
-            height: 100.h,
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(16.r),
-            ),
-            child: const Center(
-              child: CircularProgressIndicator.adaptive(strokeWidth: 2),
+          loading: () => Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20.w),
+            child: const SkeletonLoader(
+              type: SkeletonType.compactTile,
+              itemCount: 4,
             ),
           ),
           error: (_, _) => Container(
@@ -1269,106 +1312,98 @@ class _StatCard extends StatelessWidget {
 class _TransactionItem extends StatelessWidget {
   const _TransactionItem({
     required this.description,
-    required this.amount,
+    required this.amountInCents,
     required this.type,
-    required this.currency,
     required this.date,
     this.onTap,
   });
   final String description;
-  final double amount;
-  final TransactionType type;
-  final String currency;
+  final int amountInCents;
+  final EarningsTransactionType type;
   final String date;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    IconData icon;
-    Color color;
-
-    switch (type) {
-      case TransactionType.ride:
-        icon = Icons.directions_car;
-        color = AppColors.primary;
-      case TransactionType.bonus:
-        icon = Icons.star;
-        color = AppColors.starFilled;
-      case TransactionType.refund:
-        icon = Icons.replay;
-        color = AppColors.warning;
-      case TransactionType.payout:
-        icon = Icons.account_balance;
-        color = AppColors.success;
-    }
+    final (icon, color) = switch (type) {
+      EarningsTransactionType.ride => (Icons.directions_car, AppColors.primary),
+      EarningsTransactionType.bonus => (Icons.star, AppColors.starFilled),
+      EarningsTransactionType.refund => (Icons.replay, AppColors.warning),
+      EarningsTransactionType.payout => (
+        Icons.account_balance,
+        AppColors.success,
+      ),
+    };
 
     return GestureDetector(
       onTap: onTap,
       child: Container(
-      margin: EdgeInsets.only(bottom: 12.h),
-      padding: EdgeInsets.all(16.w),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16.r),
-        boxShadow: AppSpacing.shadowSm,
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: EdgeInsets.all(10.w),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12.r),
+        margin: EdgeInsets.only(bottom: 12.h),
+        padding: EdgeInsets.all(16.w),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(16.r),
+          boxShadow: AppSpacing.shadowSm,
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: EdgeInsets.all(10.w),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12.r),
+              ),
+              child: Icon(icon, color: color, size: 22.sp),
             ),
-            child: Icon(icon, color: color, size: 22.sp),
-          ),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            SizedBox(width: 12.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    description,
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  SizedBox(height: 4.h),
+                  Text(
+                    date,
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  description,
+                  '${amountInCents >= 0 ? '+' : ''}€${(amountInCents / 100).toStringAsFixed(2)}',
                   style: TextStyle(
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w700,
+                    color: amountInCents >= 0
+                        ? AppColors.success
+                        : AppColors.error,
                   ),
                 ),
-                SizedBox(height: 4.h),
-                Text(
-                  date,
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    color: AppColors.textSecondary,
+                if (onTap != null) ...[
+                  SizedBox(width: 4.w),
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    size: 18.sp,
+                    color: AppColors.textTertiary,
                   ),
-                ),
+                ],
               ],
             ),
-          ),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                '${amount >= 0 ? '+' : ''}${amount.toStringAsFixed(2)} $currency',
-                style: TextStyle(
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.w700,
-                  color: amount >= 0 ? AppColors.success : AppColors.error,
-                ),
-              ),
-              if (onTap != null) ...[
-                SizedBox(width: 4.w),
-                Icon(
-                  Icons.chevron_right_rounded,
-                  size: 18.sp,
-                  color: AppColors.textTertiary,
-                ),
-              ],
-            ],
-          ),
-        ],
-      ),
+          ],
+        ),
       ),
     );
   }

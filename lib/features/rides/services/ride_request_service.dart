@@ -42,12 +42,21 @@ class RideRequestService extends _$RideRequestService {
       }
 
       // Increment ride capacity and mark booking accepted atomically.
-      final statsRepo = ref.read(driverStatsRepositoryProvider);
-      await statsRepo.acceptRequest(booking.rideId, bookingId);
+      if (!ref.mounted) return const Failure('Request was cancelled');
+      await ref
+          .read(rideRepositoryProvider)
+          .updateBookingStatus(
+            rideId: booking.rideId,
+            bookingId: bookingId,
+            newStatus: BookingStatus.accepted,
+          );
 
+      if (!ref.mounted) {
+        return Success(booking.copyWith(status: BookingStatus.accepted));
+      }
       await _sendAcceptedNotification(booking);
       return Success(booking.copyWith(status: BookingStatus.accepted));
-    } on Exception catch (e) {
+    } catch (e, st) {
       return Failure('Failed to accept booking: $e');
     }
   }
@@ -65,14 +74,18 @@ class RideRequestService extends _$RideRequestService {
         return const Failure('Booking already processed');
       }
 
+      if (!ref.mounted) return const Failure('Request was cancelled');
       await bookingRepo.updateBookingStatus(
         bookingId: bookingId,
         newStatus: BookingStatus.rejected,
       );
 
+      if (!ref.mounted) {
+        return Success(booking.copyWith(status: BookingStatus.rejected));
+      }
       await _sendRejectedNotification(booking, reason);
       return Success(booking.copyWith(status: BookingStatus.rejected));
-    } on Exception catch (e) {
+    } catch (e, st) {
       return Failure('Failed to reject booking: $e');
     }
   }
@@ -92,12 +105,12 @@ class RideRequestService extends _$RideRequestService {
 
       await notificationRepo.sendRideBookingAccepted(
         toUserId: booking.passengerId,
-        driverName: driver?.displayName ?? 'Driver',
+        driverName: driver?.username ?? 'Driver',
         driverPhoto: driver?.photoUrl,
         rideId: booking.rideId,
         rideName: _formatRideName(ride),
       );
-    } on Exception catch (e) {
+    } catch (e, st) {
       TalkerService.error('Failed to send accepted notification: $e');
     }
   }
@@ -118,13 +131,13 @@ class RideRequestService extends _$RideRequestService {
 
       await notificationRepo.sendRideBookingRejected(
         toUserId: booking.passengerId,
-        driverName: driver?.displayName ?? 'Driver',
+        driverName: driver?.username ?? 'Driver',
         driverPhoto: driver?.photoUrl,
         rideId: booking.rideId,
         rideName: _formatRideName(ride),
         reason: reason,
       );
-    } on Exception catch (e) {
+    } catch (e, st) {
       TalkerService.error('Failed to send rejected notification: $e');
     }
   }

@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$RideSearchFilters {
 
- LocationPoint? get origin; LocationPoint? get destination;@TimestampConverter() DateTime? get departureDate;@TimestampConverter() DateTime? get departureTimeFrom;@TimestampConverter() DateTime? get departureTimeTo; int get minSeats; double? get maxPrice; double? get maxRadiusKm; bool get allowPets; bool get allowSmoking; bool get womenOnly; double? get minDriverRating; String get sortBy; bool get sortAscending;
+ LocationPoint? get origin; LocationPoint? get destination;@TimestampConverter() DateTime? get departureDate;@TimestampConverter() DateTime? get departureTimeFrom;@TimestampConverter() DateTime? get departureTimeTo; int get minSeats; int? get maxPrice; double? get maxRadiusKm; bool get allowPets; bool get allowSmoking; bool get womenOnly; double? get minDriverRating; String get sortBy; bool get sortAscending;
 /// Create a copy of RideSearchFilters
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -48,7 +48,7 @@ abstract mixin class $RideSearchFiltersCopyWith<$Res>  {
   factory $RideSearchFiltersCopyWith(RideSearchFilters value, $Res Function(RideSearchFilters) _then) = _$RideSearchFiltersCopyWithImpl;
 @useResult
 $Res call({
- LocationPoint? origin, LocationPoint? destination,@TimestampConverter() DateTime? departureDate,@TimestampConverter() DateTime? departureTimeFrom,@TimestampConverter() DateTime? departureTimeTo, int minSeats, double? maxPrice, double? maxRadiusKm, bool allowPets, bool allowSmoking, bool womenOnly, double? minDriverRating, String sortBy, bool sortAscending
+ LocationPoint? origin, LocationPoint? destination,@TimestampConverter() DateTime? departureDate,@TimestampConverter() DateTime? departureTimeFrom,@TimestampConverter() DateTime? departureTimeTo, int minSeats, int? maxPrice, double? maxRadiusKm, bool allowPets, bool allowSmoking, bool womenOnly, double? minDriverRating, String sortBy, bool sortAscending
 });
 
 
@@ -74,7 +74,7 @@ as DateTime?,departureTimeFrom: freezed == departureTimeFrom ? _self.departureTi
 as DateTime?,departureTimeTo: freezed == departureTimeTo ? _self.departureTimeTo : departureTimeTo // ignore: cast_nullable_to_non_nullable
 as DateTime?,minSeats: null == minSeats ? _self.minSeats : minSeats // ignore: cast_nullable_to_non_nullable
 as int,maxPrice: freezed == maxPrice ? _self.maxPrice : maxPrice // ignore: cast_nullable_to_non_nullable
-as double?,maxRadiusKm: freezed == maxRadiusKm ? _self.maxRadiusKm : maxRadiusKm // ignore: cast_nullable_to_non_nullable
+as int?,maxRadiusKm: freezed == maxRadiusKm ? _self.maxRadiusKm : maxRadiusKm // ignore: cast_nullable_to_non_nullable
 as double?,allowPets: null == allowPets ? _self.allowPets : allowPets // ignore: cast_nullable_to_non_nullable
 as bool,allowSmoking: null == allowSmoking ? _self.allowSmoking : allowSmoking // ignore: cast_nullable_to_non_nullable
 as bool,womenOnly: null == womenOnly ? _self.womenOnly : womenOnly // ignore: cast_nullable_to_non_nullable
@@ -190,7 +190,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( LocationPoint? origin,  LocationPoint? destination, @TimestampConverter()  DateTime? departureDate, @TimestampConverter()  DateTime? departureTimeFrom, @TimestampConverter()  DateTime? departureTimeTo,  int minSeats,  double? maxPrice,  double? maxRadiusKm,  bool allowPets,  bool allowSmoking,  bool womenOnly,  double? minDriverRating,  String sortBy,  bool sortAscending)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( LocationPoint? origin,  LocationPoint? destination, @TimestampConverter()  DateTime? departureDate, @TimestampConverter()  DateTime? departureTimeFrom, @TimestampConverter()  DateTime? departureTimeTo,  int minSeats,  int? maxPrice,  double? maxRadiusKm,  bool allowPets,  bool allowSmoking,  bool womenOnly,  double? minDriverRating,  String sortBy,  bool sortAscending)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _RideSearchFilters() when $default != null:
 return $default(_that.origin,_that.destination,_that.departureDate,_that.departureTimeFrom,_that.departureTimeTo,_that.minSeats,_that.maxPrice,_that.maxRadiusKm,_that.allowPets,_that.allowSmoking,_that.womenOnly,_that.minDriverRating,_that.sortBy,_that.sortAscending);case _:
@@ -211,7 +211,7 @@ return $default(_that.origin,_that.destination,_that.departureDate,_that.departu
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( LocationPoint? origin,  LocationPoint? destination, @TimestampConverter()  DateTime? departureDate, @TimestampConverter()  DateTime? departureTimeFrom, @TimestampConverter()  DateTime? departureTimeTo,  int minSeats,  double? maxPrice,  double? maxRadiusKm,  bool allowPets,  bool allowSmoking,  bool womenOnly,  double? minDriverRating,  String sortBy,  bool sortAscending)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( LocationPoint? origin,  LocationPoint? destination, @TimestampConverter()  DateTime? departureDate, @TimestampConverter()  DateTime? departureTimeFrom, @TimestampConverter()  DateTime? departureTimeTo,  int minSeats,  int? maxPrice,  double? maxRadiusKm,  bool allowPets,  bool allowSmoking,  bool womenOnly,  double? minDriverRating,  String sortBy,  bool sortAscending)  $default,) {final _that = this;
 switch (_that) {
 case _RideSearchFilters():
 return $default(_that.origin,_that.destination,_that.departureDate,_that.departureTimeFrom,_that.departureTimeTo,_that.minSeats,_that.maxPrice,_that.maxRadiusKm,_that.allowPets,_that.allowSmoking,_that.womenOnly,_that.minDriverRating,_that.sortBy,_that.sortAscending);case _:
@@ -231,7 +231,7 @@ return $default(_that.origin,_that.destination,_that.departureDate,_that.departu
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( LocationPoint? origin,  LocationPoint? destination, @TimestampConverter()  DateTime? departureDate, @TimestampConverter()  DateTime? departureTimeFrom, @TimestampConverter()  DateTime? departureTimeTo,  int minSeats,  double? maxPrice,  double? maxRadiusKm,  bool allowPets,  bool allowSmoking,  bool womenOnly,  double? minDriverRating,  String sortBy,  bool sortAscending)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( LocationPoint? origin,  LocationPoint? destination, @TimestampConverter()  DateTime? departureDate, @TimestampConverter()  DateTime? departureTimeFrom, @TimestampConverter()  DateTime? departureTimeTo,  int minSeats,  int? maxPrice,  double? maxRadiusKm,  bool allowPets,  bool allowSmoking,  bool womenOnly,  double? minDriverRating,  String sortBy,  bool sortAscending)?  $default,) {final _that = this;
 switch (_that) {
 case _RideSearchFilters() when $default != null:
 return $default(_that.origin,_that.destination,_that.departureDate,_that.departureTimeFrom,_that.departureTimeTo,_that.minSeats,_that.maxPrice,_that.maxRadiusKm,_that.allowPets,_that.allowSmoking,_that.womenOnly,_that.minDriverRating,_that.sortBy,_that.sortAscending);case _:
@@ -255,7 +255,7 @@ class _RideSearchFilters implements RideSearchFilters {
 @override@TimestampConverter() final  DateTime? departureTimeFrom;
 @override@TimestampConverter() final  DateTime? departureTimeTo;
 @override@JsonKey() final  int minSeats;
-@override final  double? maxPrice;
+@override final  int? maxPrice;
 @override final  double? maxRadiusKm;
 @override@JsonKey() final  bool allowPets;
 @override@JsonKey() final  bool allowSmoking;
@@ -297,7 +297,7 @@ abstract mixin class _$RideSearchFiltersCopyWith<$Res> implements $RideSearchFil
   factory _$RideSearchFiltersCopyWith(_RideSearchFilters value, $Res Function(_RideSearchFilters) _then) = __$RideSearchFiltersCopyWithImpl;
 @override @useResult
 $Res call({
- LocationPoint? origin, LocationPoint? destination,@TimestampConverter() DateTime? departureDate,@TimestampConverter() DateTime? departureTimeFrom,@TimestampConverter() DateTime? departureTimeTo, int minSeats, double? maxPrice, double? maxRadiusKm, bool allowPets, bool allowSmoking, bool womenOnly, double? minDriverRating, String sortBy, bool sortAscending
+ LocationPoint? origin, LocationPoint? destination,@TimestampConverter() DateTime? departureDate,@TimestampConverter() DateTime? departureTimeFrom,@TimestampConverter() DateTime? departureTimeTo, int minSeats, int? maxPrice, double? maxRadiusKm, bool allowPets, bool allowSmoking, bool womenOnly, double? minDriverRating, String sortBy, bool sortAscending
 });
 
 
@@ -323,7 +323,7 @@ as DateTime?,departureTimeFrom: freezed == departureTimeFrom ? _self.departureTi
 as DateTime?,departureTimeTo: freezed == departureTimeTo ? _self.departureTimeTo : departureTimeTo // ignore: cast_nullable_to_non_nullable
 as DateTime?,minSeats: null == minSeats ? _self.minSeats : minSeats // ignore: cast_nullable_to_non_nullable
 as int,maxPrice: freezed == maxPrice ? _self.maxPrice : maxPrice // ignore: cast_nullable_to_non_nullable
-as double?,maxRadiusKm: freezed == maxRadiusKm ? _self.maxRadiusKm : maxRadiusKm // ignore: cast_nullable_to_non_nullable
+as int?,maxRadiusKm: freezed == maxRadiusKm ? _self.maxRadiusKm : maxRadiusKm // ignore: cast_nullable_to_non_nullable
 as double?,allowPets: null == allowPets ? _self.allowPets : allowPets // ignore: cast_nullable_to_non_nullable
 as bool,allowSmoking: null == allowSmoking ? _self.allowSmoking : allowSmoking // ignore: cast_nullable_to_non_nullable
 as bool,womenOnly: null == womenOnly ? _self.womenOnly : womenOnly // ignore: cast_nullable_to_non_nullable

@@ -8,7 +8,7 @@ part 'ride_pricing.g.dart';
 @freezed
 abstract class RidePricing with _$RidePricing {
   const factory RidePricing({
-    required Money pricePerSeat,
+    required Money pricePerSeatInCents,
   }) = _RidePricing;
   const RidePricing._();
 
@@ -16,11 +16,8 @@ abstract class RidePricing with _$RidePricing {
       _$RidePricingFromJson(json);
 
   /// Get formatted price
-  String get formattedPrice => pricePerSeat.formatted;
+  String get formattedPrice => pricePerSeatInCents.formatted;
 
   /// Calculate total price for seats
-  Money totalForSeats(int seats) => pricePerSeat * seats;
-
-  /// Check if free ride
-  bool get isFree => pricePerSeat.isZero;
+  Money totalForSeats(int seats) => pricePerSeatInCents * seats;
 }

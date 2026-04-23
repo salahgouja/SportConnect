@@ -194,7 +194,7 @@ class LoginViewModel extends _$LoginViewModel {
     try {
       await ref
           .read(authRepositoryProvider)
-          .signInWithEmail(email, password, rememberMe);
+          .signInWithEmail(email, password, rememberMe: rememberMe);
       if (!ref.mounted) return false;
 
       final uid = ref.read(authRepositoryProvider).currentUserId;
@@ -202,10 +202,10 @@ class LoginViewModel extends _$LoginViewModel {
       AnalyticsService.instance.logLogin('email');
       state = const AsyncValue.data(null);
       return true;
-    } on Exception catch (e, stackTrace) {
+    } catch (e, st) {
       if (!ref.mounted) return false;
 
-      state = AsyncValue.error(e, stackTrace);
+      state = AsyncValue.error(e, st);
       return false;
     }
   }
@@ -213,9 +213,9 @@ class LoginViewModel extends _$LoginViewModel {
   Future<void> resetPassword(String email) async {
     try {
       await ref.read(authRepositoryProvider).sendPasswordResetEmail(email);
-    } on Exception catch (e, stackTrace) {
+    } catch (e, st) {
       if (!ref.mounted) rethrow;
-      state = AsyncValue.error(e, stackTrace);
+      state = AsyncValue.error(e, st);
       // Rethrow so calling widgets (e.g. ForgotPasswordScreen) can also
       // handle the error directly (e.g. show a snackbar with the message).
       rethrow;
@@ -232,7 +232,7 @@ class RegisterViewModel extends _$RegisterViewModel {
   Future<bool> register({
     required String email,
     required String password,
-    required String displayName,
+    required String username,
     required UserRole role,
     String? phone,
     File? profileImage,
@@ -246,7 +246,7 @@ class RegisterViewModel extends _$RegisterViewModel {
           .registerWithEmail(
             email: email,
             password: password,
-            displayName: displayName,
+            username: username,
             role: role,
             phone: phone,
             profileImage: profileImage,
@@ -260,15 +260,16 @@ class RegisterViewModel extends _$RegisterViewModel {
           await ref.read(profileRepositoryProvider).updateProfile(uid, {
             'expertise': expertise.name,
           });
+          if (!ref.mounted) return false;
         }
       }
       AnalyticsService.instance.logSignUp('email');
       state = const AsyncValue.data(null);
       return true;
-    } on Exception catch (e, stackTrace) {
+    } catch (e, st) {
       if (!ref.mounted) return false;
 
-      state = AsyncValue.error(e, stackTrace);
+      state = AsyncValue.error(e, st);
       return false;
     }
   }
@@ -280,123 +281,81 @@ class RegisterViewModel extends _$RegisterViewModel {
 /// is a thin pass-through over [authRepositoryProvider] and carries no local
 /// state, so it does not need to be auto-disposed per-widget.
 @Riverpod(keepAlive: true)
-AuthActionsViewModel authActionsViewModel(Ref ref) => AuthActionsViewModel(ref);
-
-class AuthActionsViewModel {
-  AuthActionsViewModel(this._ref);
-
-  final Ref _ref;
+class AuthActionsViewModel extends _$AuthActionsViewModel {
+  @override
+  void build() {
+    return;
+  }
 
   Future<void> signOut() {
-    _ref.invalidate(signupWizardUiViewModelProvider);
-    return _ref.read(authRepositoryProvider).signOut();
+    ref.invalidate(signupWizardUiViewModelProvider);
+    return ref.read(authRepositoryProvider).signOut();
   }
 
   Future<void> deleteAccount() {
-    return _ref.read(authRepositoryProvider).deleteAccount();
+    return ref.read(authRepositoryProvider).deleteAccount();
   }
 
   User? get currentUser {
-    return _ref.read(authRepositoryProvider).currentUser;
+    return ref.read(authRepositoryProvider).currentUser;
   }
 
   Future<void> createUserDocument(UserModel user) {
-    return _ref.read(authRepositoryProvider).createUserDocument(user);
+    return ref.read(authRepositoryProvider).createUserDocument(user);
   }
 
   Future<SocialSignInResult> signInWithGoogle() async {
-    final result = await _ref.read(authRepositoryProvider).signInWithGoogle();
-    final uid = _ref.read(authRepositoryProvider).currentUserId;
+    final result = await ref.read(authRepositoryProvider).signInWithGoogle();
+    if (!ref.mounted) return result;
+    final uid = ref.read(authRepositoryProvider).currentUserId;
     if (uid != null) AnalyticsService.instance.setUserId(uid);
     AnalyticsService.instance.logLogin('google');
     return result;
   }
 
   Future<SocialSignInResult> signInWithApple() async {
-    final result = await _ref.read(authRepositoryProvider).signInWithApple();
-    final uid = _ref.read(authRepositoryProvider).currentUserId;
+    final result = await ref.read(authRepositoryProvider).signInWithApple();
+    if (!ref.mounted) return result;
+    final uid = ref.read(authRepositoryProvider).currentUserId;
     if (uid != null) AnalyticsService.instance.setUserId(uid);
     AnalyticsService.instance.logLogin('apple');
     return result;
   }
 
   Future<void> sendPasswordResetEmail(String email) {
-    return _ref.read(authRepositoryProvider).sendPasswordResetEmail(email);
+    return ref.read(authRepositoryProvider).sendPasswordResetEmail(email);
   }
 
   Future<void> updateUserRole(String uid, UserRole role) {
-    return _ref.read(authRepositoryProvider).updateUserRole(uid, role);
-  }
-
-  Future<void> clearNeedsRoleSelection(String uid) {
-    return _ref.read(authRepositoryProvider).clearNeedsRoleSelection(uid);
+    return ref.read(authRepositoryProvider).updateUserRole(uid, role);
   }
 
   Future<void> reauthenticateWithPassword(String password) {
-    return _ref
+    return ref
         .read(authRepositoryProvider)
         .reauthenticateWithPassword(password);
   }
 
   Future<void> reauthenticateWithGoogle() {
-    return _ref.read(authRepositoryProvider).reauthenticateWithGoogle();
+    return ref.read(authRepositoryProvider).reauthenticateWithGoogle();
+  }
+
+  Future<UserModel> finalizeRoleAs(String uid, UserRole role) {
+    return ref.read(authRepositoryProvider).finalizeRoleAs(uid, role);
   }
 
   // ── Email verification ──────────────────────────────────────────────
 
   Future<void> sendEmailVerification() {
-    return _ref.read(authRepositoryProvider).sendEmailVerification();
+    return ref.read(authRepositoryProvider).sendEmailVerification();
   }
 
   Future<bool> isEmailVerified() {
-    return _ref.read(authRepositoryProvider).isEmailVerified();
+    return ref.read(authRepositoryProvider).isEmailVerified();
   }
 
   Future<void> reloadUser() {
-    return _ref.read(authRepositoryProvider).reloadUser();
-  }
-
-  // ── Phone OTP ───────────────────────────────────────────────────────
-
-  Future<void> verifyPhoneNumber({
-    required String phoneNumber,
-    required void Function(String verificationId, int? resendToken) onCodeSent,
-    required void Function(FirebaseAuthException error) onVerificationFailed,
-    required void Function(PhoneAuthCredential credential)
-    onVerificationCompleted,
-    required void Function(String verificationId) onAutoRetrievalTimeout,
-    int? forceResendingToken,
-  }) {
-    return _ref
-        .read(authRepositoryProvider)
-        .verifyPhoneNumber(
-          phoneNumber: phoneNumber,
-          onCodeSent: onCodeSent,
-          onVerificationFailed: onVerificationFailed,
-          onVerificationCompleted: onVerificationCompleted,
-          onAutoRetrievalTimeout: onAutoRetrievalTimeout,
-          forceResendingToken: forceResendingToken,
-        );
-  }
-
-  Future<UserCredential> signInWithPhoneCredential({
-    required String verificationId,
-    required String smsCode,
-  }) {
-    return _ref
-        .read(authRepositoryProvider)
-        .signInWithPhoneCredential(
-          verificationId: verificationId,
-          smsCode: smsCode,
-        );
-  }
-
-  Future<UserCredential> signInWithPhoneAutoCredential(
-    PhoneAuthCredential credential,
-  ) {
-    return _ref
-        .read(authRepositoryProvider)
-        .signInWithPhoneAutoCredential(credential);
+    return ref.read(authRepositoryProvider).reloadUser();
   }
 
   /// Updates the current user's password.
@@ -404,6 +363,6 @@ class AuthActionsViewModel {
   /// Throws [AuthException] with code `requires-recent-login` if the session
   /// is too old — callers should show a re-auth dialog and retry.
   Future<void> updatePassword(String newPassword) {
-    return _ref.read(authRepositoryProvider).updatePassword(newPassword);
+    return ref.read(authRepositoryProvider).updatePassword(newPassword);
   }
 }

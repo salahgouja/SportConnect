@@ -1,6 +1,7 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
+import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 
 part 'role_selection_view_model.g.dart';
 
@@ -48,11 +49,15 @@ class RoleSelectionViewModel extends _$RoleSelectionViewModel {
     state = state.copyWith(isLoading: true, clearError: true);
 
     try {
-      final authActions = ref.read(authActionsViewModelProvider);
+      // Keep user role as `pending` until onboarding completion, but persist
+      // selected intent so refresh can resume at the correct onboarding screen.
+      final authActions = ref.read(authActionsViewModelProvider.notifier);
       final currentUser = authActions.currentUser;
       if (currentUser == null) throw StateError('User not authenticated');
 
-      await authActions.updateUserRole(currentUser.uid, role);
+      await ref
+          .read(profileActionsViewModelProvider.notifier)
+          .updateProfile(currentUser.uid, {'selectedRoleIntent': role.name});
       if (!ref.mounted) return;
 
       state = state.copyWith(
@@ -60,7 +65,7 @@ class RoleSelectionViewModel extends _$RoleSelectionViewModel {
         isSuccess: true,
         clearError: true,
       );
-    } on Exception catch (e) {
+    } catch (e, st) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }

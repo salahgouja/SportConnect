@@ -1,9 +1,15 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/features/payments/models/premium_plan.dart';
+
+part 'premium_iap_service.g.dart';
 
 class PremiumIapResult {
   const PremiumIapResult._({
@@ -22,35 +28,36 @@ class PremiumIapResult {
   final PurchaseDetails? purchase;
 }
 
-class PremiumIapService {
-  PremiumIapService({InAppPurchase? inAppPurchase})
-    : _inAppPurchase = inAppPurchase ?? InAppPurchase.instance;
+@Riverpod(keepAlive: true)
+class PremiumIapService extends _$PremiumIapService {
+  @override
+  void build() {
+    return;
+  }
 
-  final InAppPurchase _inAppPurchase;
+  // Access the dependency safely via Riverpod
+  InAppPurchase get _iap => InAppPurchase.instance;
 
-  bool get isSupportedPlatform {
+  Future<bool> get isSupported async {
     if (kIsWeb) return false;
-    return defaultTargetPlatform == TargetPlatform.iOS ||
+    final isIosOrAndroid =
+        defaultTargetPlatform == TargetPlatform.iOS ||
         defaultTargetPlatform == TargetPlatform.android;
+    if (!isIosOrAndroid) return false;
+
+    return _iap.isAvailable();
   }
 
   Future<PremiumIapResult> purchasePlan(PremiumPlan plan) async {
     try {
-      if (!isSupportedPlatform) {
+      if (!await isSupported) {
         return const PremiumIapResult.failure(
           'In-app purchases are only available on iOS and Android.',
         );
       }
 
-      final available = await _inAppPurchase.isAvailable();
-      if (!available) {
-        return const PremiumIapResult.failure(
-          'Store is currently unavailable. Please try again later.',
-        );
-      }
-
       final productId = plan.iapProductId;
-      final response = await _inAppPurchase.queryProductDetails({productId});
+      final response = await _iap.queryProductDetails({productId});
 
       if (response.error != null) {
         return PremiumIapResult.failure(response.error!.message);
@@ -80,7 +87,7 @@ class PremiumIapService {
         await streamSubscription.cancel();
       }
 
-      streamSubscription = _inAppPurchase.purchaseStream.listen(
+      streamSubscription = _iap.purchaseStream.listen(
         (purchases) async {
           for (final purchase in purchases.where(
             (item) => item.productID == productId,
@@ -91,7 +98,7 @@ class PremiumIapService {
               }
 
               if (purchase.pendingCompletePurchase) {
-                await _inAppPurchase.completePurchase(purchase);
+                await _iap.completePurchase(purchase);
               }
 
               if (purchase.status == PurchaseStatus.error) {
@@ -152,7 +159,7 @@ class PremiumIapService {
         );
       });
 
-      final launched = await _inAppPurchase.buyNonConsumable(
+      final launched = await _iap.buyNonConsumable(
         purchaseParam: PurchaseParam(productDetails: product),
       );
 
@@ -171,7 +178,7 @@ class PremiumIapService {
       return const PremiumIapResult.failure(
         'In-app purchase plugin is not ready. Fully restart the app and try again.',
       );
-    } on Exception catch (e) {
+    } catch (e, st) {
       return PremiumIapResult.failure(
         'In-app purchase failed unexpectedly: $e',
       );

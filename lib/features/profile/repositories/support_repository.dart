@@ -53,7 +53,7 @@ class SupportRepository implements ISupportRepository {
 
       TalkerService.info('Report submitted: ${docRef.id}');
       return docRef.id;
-    } on Exception catch (e) {
+    } catch (e, st) {
       TalkerService.error('Error submitting report: $e');
       rethrow;
     }
@@ -96,7 +96,7 @@ class SupportRepository implements ISupportRepository {
 
       TalkerService.info('Support ticket submitted: ${docRef.id}');
       return docRef.id;
-    } on Exception catch (e) {
+    } catch (e, st) {
       TalkerService.error('Error submitting support ticket: $e');
       rethrow;
     }

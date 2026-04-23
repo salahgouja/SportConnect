@@ -42,7 +42,7 @@ final class CustomerSheetViewModelProvider
 }
 
 String _$customerSheetViewModelHash() =>
-    r'a26631286a32305b63931dc5e3f8220dc504ee0f';
+    r'3923c2709ee0db5b8620074a3be01faaabdfd281';
 
 abstract class _$CustomerSheetViewModel extends $Notifier<CustomerSheetState> {
   CustomerSheetState build();

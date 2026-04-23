@@ -73,12 +73,8 @@ abstract class MessageModel with _$MessageModel {
 @freezed
 abstract class ChatParticipant with _$ChatParticipant {
   const factory ChatParticipant({
-    // FIX: Dart field renamed odid → userId for clarity, but the Firestore
-    // document field is kept as 'odid' via @JsonKey for backward compatibility
-    // with existing participant arrays already written to Firestore.
-    // Removing @JsonKey(name: 'odid') would require a Firestore data migration.
-    @JsonKey(name: 'odid') required String userId,
-    required String displayName,
+    @JsonKey(name: 'uid') required String userId,
+    required String username,
     String? photoUrl,
     @Default(false) bool isAdmin,
     @Default(false) bool isMuted,
@@ -153,9 +149,7 @@ abstract class ChatModel with _$ChatModel {
       ChatType.eventGroup => groupName ?? 'Event Chat',
       ChatType.support => 'Support',
       _ =>
-        groupName ??
-            getOtherParticipant(currentUserId)?.displayName ??
-            'Unknown',
+        groupName ?? getOtherParticipant(currentUserId)?.username ?? 'Unknown',
     };
   }
 
@@ -172,11 +166,8 @@ abstract class ChatModel with _$ChatModel {
 @freezed
 abstract class TypingIndicator with _$TypingIndicator {
   const factory TypingIndicator({
-    // No @JsonKey here: new Firestore writes use 'userId' (written by
-    // setTyping in the repository). Existing indicators expire in ≤30 s
-    // so backward-compat with the old 'odid' field is not needed.
     required String userId,
-    required String displayName,
+    required String username,
     required String chatId,
     @TimestampConverter() DateTime? startedAt,
   }) = _TypingIndicator;

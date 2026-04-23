@@ -1,52 +1,34 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:async';
+
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
-import 'package:sport_connect/core/config/page_transitions.dart'
-    hide NoTransitionPage;
+import 'package:sport_connect/core/config/routes/auth_routes.dart';
+import 'package:sport_connect/core/config/routes/chat_routes.dart';
 import 'package:sport_connect/core/config/routes/events_routes.dart';
+import 'package:sport_connect/core/config/routes/legal_routes.dart';
+import 'package:sport_connect/core/config/routes/premium_routes.dart';
 import 'package:sport_connect/core/config/routes/profile_routes.dart';
+import 'package:sport_connect/core/config/routes/reviews_routes.dart';
 import 'package:sport_connect/core/config/routes/ride_routes.dart';
-import 'package:sport_connect/core/config/routes/route_params.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/services/analytics_service.dart';
 import 'package:sport_connect/core/services/route_guard_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/main_wrapper.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
-import 'package:sport_connect/features/auth/views/change_password_screen.dart';
-import 'package:sport_connect/features/auth/views/driver_onboarding_screen.dart';
-import 'package:sport_connect/features/auth/views/email_verification_screen.dart';
-import 'package:sport_connect/features/auth/views/forgot_password_screen.dart';
-// Feature imports - Auth
-import 'package:sport_connect/features/auth/views/login_screen.dart';
-import 'package:sport_connect/features/auth/views/rider_onboarding_screen.dart';
-import 'package:sport_connect/features/auth/views/role_selection_screen.dart';
-import 'package:sport_connect/features/auth/views/signup_wizard_screen.dart';
-import 'package:sport_connect/features/auth/views/splash_screen.dart';
 import 'package:sport_connect/features/events/views/event_list_screen.dart';
 import 'package:sport_connect/features/home/views/driver_home_screen.dart';
-// Feature imports - Home
 import 'package:sport_connect/features/home/views/rider_home_screen.dart';
-// Feature imports - Other
-import 'package:sport_connect/features/legal/views/legal_screen.dart';
-import 'package:sport_connect/features/messaging/views/chat_detail_screen.dart';
-// Feature imports - Messaging
 import 'package:sport_connect/features/messaging/views/chat_list_screen.dart';
 import 'package:sport_connect/features/onboarding/repositories/onboarding_repository.dart';
-import 'package:sport_connect/features/onboarding/views/onboarding_screen.dart';
-import 'package:sport_connect/features/payments/views/driver_earnings_screen.dart';
-import 'package:sport_connect/features/payments/views/premium_checkout_screen.dart';
-import 'package:sport_connect/features/payments/views/premium_subscribe_screen.dart';
-// Feature imports - Profile (used in StatefulShellRoute)
+import 'package:sport_connect/features/payments/payments.dart';
 import 'package:sport_connect/features/profile/views/profile_screen.dart';
-// Feature imports - Reviews
-import 'package:sport_connect/features/reviews/models/review_model.dart';
-import 'package:sport_connect/features/reviews/views/reviews_list_screen.dart';
-import 'package:sport_connect/features/reviews/views/submit_review_screen.dart';
 import 'package:sport_connect/features/rides/views/driver/driver_my_rides_screen.dart';
-// Feature imports - Rides (used in StatefulShellRoute)
 import 'package:sport_connect/features/rides/views/passenger/rider_my_rides_screen.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
@@ -54,48 +36,79 @@ part 'app_router.g.dart';
 
 final rootNavigatorKey = GlobalKey<NavigatorState>();
 
-/// Main router provider with centralized redirect logic
-@riverpod
+const _enableRouterDiagnostics = bool.fromEnvironment(
+  'SPORT_CONNECT_DEBUG_INSTRUMENTATION',
+);
+
+/// Main router provider with centralized redirect logic.
+@Riverpod(keepAlive: true)
 GoRouter appRouter(Ref ref) {
   // Use ref.listen (NOT ref.watch) to avoid full router disposal/recreation
   // on every auth state change. The refreshListenable triggers redirect
   // re-evaluation without rebuilding the entire GoRouter instance.
-  //
-  // ChangeNotifier.notifyListeners() is used instead of a boolean toggle to
-  // prevent rapid successive emissions from cancelling each other out.
   final routerListenable = _AuthChangeNotifier();
+
   ref.listen(currentUserProvider, (previous, next) {
-    routerListenable.notify();
+    if (_routeUserStateKey(previous) != _routeUserStateKey(next)) {
+      routerListenable.notify();
+    }
   });
-  // Also listen to raw Firebase auth state so email-verification changes
+
+  ref.listen(selectedRoleIntentProvider, (previous, next) {
+    if (_routeRoleIntentStateKey(previous) != _routeRoleIntentStateKey(next)) {
+      routerListenable.notify();
+    }
+  });
+
+  // Also listen to raw Firebase Auth state so email-verification changes
   // (which don't affect the Firestore UserModel) still trigger a redirect.
   ref.listen(authStateProvider, (previous, next) {
     routerListenable.notify();
   });
+
   // Listen to onboarding completion so splash redirect can switch between
   // onboarding and login without recreating the router.
   ref.listen(isOnboardingCompleteProvider, (previous, next) {
     routerListenable.notify();
   });
+
   ref.onDispose(routerListenable.dispose);
 
   return GoRouter(
     navigatorKey: rootNavigatorKey,
     initialLocation: AppRoutes.splash.path,
-    debugLogDiagnostics: true,
+    debugLogDiagnostics: kDebugMode && _enableRouterDiagnostics,
     refreshListenable: routerListenable,
-    observers: [AnalyticsService.instance.navigatorObserver],
+    requestFocus: false,
+    observers: [
+      if (AnalyticsService.instance.isInitialized)
+        AnalyticsService.instance.navigatorObserver,
+    ],
     redirect: (context, state) {
-      // Read current user state at redirect time
       final userState = ref.read(currentUserProvider);
       final onboardingState = ref.read(isOnboardingCompleteProvider);
-      final firebaseUser = FirebaseAuth.instance.currentUser;
+      final firebaseUser = ref.read(authStateProvider).value;
+
+      final isFirestoreStillLoading =
+          firebaseUser != null &&
+          userState.value == null &&
+          !userState.hasValue &&
+          !userState.hasError;
+
+      final needsRoleSelection = userState.value?.role == UserRole.pending;
+      final selectedRoleIntent = needsRoleSelection
+          ? ref.read(selectedRoleIntentProvider).value
+          : null;
+
       return _handleRedirect(
         userState,
         onboardingState,
         state,
         isEmailVerified: firebaseUser?.emailVerified ?? false,
+        needsRoleSelection: needsRoleSelection,
         hasVerifiableEmail: firebaseUser?.email?.isNotEmpty ?? false,
+        isFirestoreStillLoading: isFirestoreStillLoading,
+        selectedRoleIntent: selectedRoleIntent,
       );
     },
     routes: _buildRoutes(),
@@ -103,182 +116,64 @@ GoRouter appRouter(Ref ref) {
   );
 }
 
-/// Centralized redirect handler using RouteGuardService
+/// Centralized redirect handler using [RouteGuardService].
 String? _handleRedirect(
   AsyncValue<UserModel?> userState,
   AsyncValue<bool> onboardingState,
   GoRouterState state, {
   bool isEmailVerified = false,
+  bool needsRoleSelection = false,
   bool hasVerifiableEmail = false,
+  bool isFirestoreStillLoading = false,
+  UserRole? selectedRoleIntent,
 }) {
   final guard = RouteGuardService.fromAuthState(
     userState,
     isOnboardingLoading: onboardingState.isLoading,
+    isFirestoreStillLoading: isFirestoreStillLoading,
+    needsRoleSelection: needsRoleSelection,
     hasCompletedOnboarding: onboardingState.value ?? true,
     isEmailVerified: isEmailVerified,
     hasVerifiableEmail: hasVerifiableEmail,
+    selectedRoleIntent: selectedRoleIntent,
   );
   return guard.getRedirect(state.uri);
 }
 
-/// Modular route configurations
+// ── Modular route configurations ─────────────────────────────────────────────
+
 final _rideRoutes = RideRoutes();
 final _profileRoutes = ProfileRoutes();
 final _eventsRoutes = EventsRoutes();
+final _legalRoutes = LegalRoutes();
+final _chatRoutes = ChatRoutes();
+final _authRoutes = AuthRoutes();
+final _premiumRoutes = PremiumRoutes();
+final _reviewsRoutes = ReviewsRoutes();
 
-/// Build all application routes using modular route configurations
 List<RouteBase> _buildRoutes() {
   return [
-    // Auth & Onboarding Routes (Full Screen)
-    ..._buildAuthRoutes(),
-
-    // Legal Routes (public – accessible without authentication)
-    ..._buildLegalRoutes(),
-
-    // Main App Shell with Bottom Navigation
+    ..._authRoutes.getRoutes().cast<GoRoute>(),
+    ..._legalRoutes.getRoutes().cast<GoRoute>(),
     _buildMainShell(),
-
-    // Modular Routes from routes/ folder
     ..._rideRoutes.getRoutes().cast<GoRoute>(),
-
-    // Chat Routes (require complex extra parameters - keep inline)
-    ..._buildChatRoutes(),
-
-    // Premium Subscription Routes
-    ..._buildPremiumRoutes(),
-
-    // Profile Sub-Routes from modular config
+    ..._chatRoutes.getRoutes().cast<GoRoute>(),
+    ..._premiumRoutes.getRoutes().cast<GoRoute>(),
     ..._profileRoutes.getRoutes().cast<GoRoute>(),
-
-    // Events Sub-Routes from modular config
     ..._eventsRoutes.getRoutes().cast<GoRoute>(),
-
-    // Review Routes
-    ..._buildReviewRoutes(),
+    ..._reviewsRoutes.getRoutes().cast<GoRoute>(),
   ];
 }
 
-// =============================================================================
-// 🔐 AUTH & ONBOARDING ROUTES
-// =============================================================================
-List<GoRoute> _buildAuthRoutes() {
-  return [
-    GoRoute(
-      path: AppRoutes.splash.path,
-      name: AppRoutes.splash.name,
-      pageBuilder: (context, state) =>
-          FadeTransitionPage(key: state.pageKey, child: const SplashScreen()),
-    ),
-    GoRoute(
-      path: AppRoutes.onboarding.path,
-      name: AppRoutes.onboarding.name,
-      pageBuilder: (context, state) => SlideUpTransitionPage(
-        key: state.pageKey,
-        child: const OnboardingScreen(),
-      ),
-    ),
-    GoRoute(
-      path: AppRoutes.login.path,
-      name: AppRoutes.login.name,
-      pageBuilder: (context, state) =>
-          FadeTransitionPage(key: state.pageKey, child: const LoginScreen()),
-    ),
-    GoRoute(
-      path: AppRoutes.signupWizard.path,
-      name: AppRoutes.signupWizard.name,
-      pageBuilder: (context, state) => SlideUpTransitionPage(
-        key: state.pageKey,
-        child: const SignupWizardScreen(),
-      ),
-    ),
-    GoRoute(
-      path: AppRoutes.roleSelection.path,
-      name: AppRoutes.roleSelection.name,
-      pageBuilder: (context, state) => SlideUpTransitionPage(
-        key: state.pageKey,
-        child: const RoleSelectionScreen(),
-      ),
-    ),
-    GoRoute(
-      path: AppRoutes.driverOnboarding.path,
-      name: AppRoutes.driverOnboarding.name,
-      pageBuilder: (context, state) => SlideUpTransitionPage(
-        key: state.pageKey,
-        child: const DriverOnboardingScreen(),
-      ),
-    ),
-    GoRoute(
-      path: AppRoutes.riderOnboarding.path,
-      name: AppRoutes.riderOnboarding.name,
-      pageBuilder: (context, state) => SlideUpTransitionPage(
-        key: state.pageKey,
-        child: const RiderOnboardingScreen(),
-      ),
-    ),
-    GoRoute(
-      path: AppRoutes.forgotPassword.path,
-      name: AppRoutes.forgotPassword.name,
-      pageBuilder: (context, state) => SlideUpTransitionPage(
-        key: state.pageKey,
-        child: const ForgotPasswordScreen(),
-      ),
-    ),
-    GoRoute(
-      path: AppRoutes.emailVerification.path,
-      name: AppRoutes.emailVerification.name,
-      pageBuilder: (context, state) => SlideUpTransitionPage(
-        key: state.pageKey,
-        child: const EmailVerificationScreen(),
-      ),
-    ),
-    GoRoute(
-      path: AppRoutes.changePassword.path,
-      name: AppRoutes.changePassword.name,
-      pageBuilder: (context, state) => SlideUpTransitionPage(
-        key: state.pageKey,
-        child: const ChangePasswordScreen(),
-      ),
-    ),
-  ];
-}
+// ── Main app shell (Bottom Navigation) ───────────────────────────────────────
 
-// =============================================================================
-// ⚖️ LEGAL ROUTES (Terms of Service & Privacy Policy – no auth required)
-// =============================================================================
-List<GoRoute> _buildLegalRoutes() {
-  return [
-    GoRoute(
-      path: AppRoutes.terms.path,
-      name: AppRoutes.terms.name,
-      pageBuilder: (context, state) => SlideUpTransitionPage(
-        key: state.pageKey,
-        child: const LegalScreen(type: LegalDocumentType.terms),
-      ),
-    ),
-    GoRoute(
-      path: AppRoutes.privacy.path,
-      name: AppRoutes.privacy.name,
-      pageBuilder: (context, state) => SlideUpTransitionPage(
-        key: state.pageKey,
-        child: const LegalScreen(type: LegalDocumentType.privacy),
-      ),
-    ),
-  ];
-}
-
-// =============================================================================
-// 🏠 MAIN APP SHELL (Bottom Navigation)
-// =============================================================================
 StatefulShellRoute _buildMainShell() {
   return StatefulShellRoute.indexedStack(
     builder: (context, state, navigationShell) {
       return MainWrapper(navigationShell: navigationShell);
     },
     branches: [
-      // RIDER BRANCHES (Indices 0-4)
       ..._buildRiderBranches(),
-
-      // DRIVER BRANCHES (Indices 5-9)
       ..._buildDriverBranches(),
     ],
   );
@@ -292,10 +187,15 @@ List<StatefulShellBranch> _buildRiderBranches() {
         GoRoute(
           path: AppRoutes.home.path,
           name: AppRoutes.home.name,
-          pageBuilder: (context, state) => FadeTransitionPage(
-            key: state.pageKey,
-            child: const RiderHomeScreen(),
-          ),
+          pageBuilder: (context, state) => PlatformInfo.isIOS
+              ? CupertinoPage(
+                  key: state.pageKey,
+                  child: const RiderHomeScreen(),
+                )
+              : MaterialPage(
+                  key: state.pageKey,
+                  child: const RiderHomeScreen(),
+                ),
         ),
       ],
     ),
@@ -306,38 +206,47 @@ List<StatefulShellBranch> _buildRiderBranches() {
         GoRoute(
           path: AppRoutes.riderMyRides.path,
           name: AppRoutes.riderMyRides.name,
-          pageBuilder: (context, state) => NoTransitionPage(
-            key: state.pageKey,
-            child: const RiderMyRidesScreen(),
-          ),
+          pageBuilder: (context, state) => PlatformInfo.isIOS
+              ? CupertinoPage(
+                  key: state.pageKey,
+                  child: const RiderMyRidesScreen(),
+                )
+              : MaterialPage(
+                  key: state.pageKey,
+                  child: const RiderMyRidesScreen(),
+                ),
         ),
       ],
     ),
 
-    // [2] Request (Middle Tab - Action)
+    // [2] Events (Middle Tab)
     StatefulShellBranch(
       routes: [
         GoRoute(
           path: AppRoutes.events.path,
           name: AppRoutes.events.name,
-          pageBuilder: (context, state) => NoTransitionPage(
-            key: state.pageKey,
-            child: const EventListScreen(),
-          ),
+          pageBuilder: (context, state) => PlatformInfo.isIOS
+              ? CupertinoPage(
+                  key: state.pageKey,
+                  child: const EventListScreen(),
+                )
+              : MaterialPage(
+                  key: state.pageKey,
+                  child: const EventListScreen(),
+                ),
         ),
       ],
     ),
 
-    // [3] Chat (Messages)
+    // [3] Chat
     StatefulShellBranch(
       routes: [
         GoRoute(
           path: AppRoutes.chat.path,
           name: AppRoutes.chat.name,
-          pageBuilder: (context, state) => NoTransitionPage(
-            key: state.pageKey,
-            child: const ChatListScreen(),
-          ),
+          pageBuilder: (context, state) => PlatformInfo.isIOS
+              ? CupertinoPage(key: state.pageKey, child: const ChatListScreen())
+              : MaterialPage(key: state.pageKey, child: const ChatListScreen()),
         ),
       ],
     ),
@@ -348,10 +257,9 @@ List<StatefulShellBranch> _buildRiderBranches() {
         GoRoute(
           path: AppRoutes.profile.path,
           name: AppRoutes.profile.name,
-          pageBuilder: (context, state) => NoTransitionPage(
-            key: state.pageKey,
-            child: const ProfileScreen(),
-          ),
+          pageBuilder: (context, state) => PlatformInfo.isIOS
+              ? CupertinoPage(key: state.pageKey, child: const ProfileScreen())
+              : MaterialPage(key: state.pageKey, child: const ProfileScreen()),
         ),
       ],
     ),
@@ -360,16 +268,21 @@ List<StatefulShellBranch> _buildRiderBranches() {
 
 List<StatefulShellBranch> _buildDriverBranches() {
   return [
-    // [5] Dashboard (Home)
+    // [5] Dashboard
     StatefulShellBranch(
       routes: [
         GoRoute(
           path: AppRoutes.driverHome.path,
           name: AppRoutes.driverHome.name,
-          pageBuilder: (context, state) => FadeTransitionPage(
-            key: state.pageKey,
-            child: const DriverHomeScreen(),
-          ),
+          pageBuilder: (context, state) => PlatformInfo.isIOS
+              ? CupertinoPage(
+                  key: state.pageKey,
+                  child: const DriverHomeScreen(),
+                )
+              : MaterialPage(
+                  key: state.pageKey,
+                  child: const DriverHomeScreen(),
+                ),
         ),
       ],
     ),
@@ -380,10 +293,15 @@ List<StatefulShellBranch> _buildDriverBranches() {
         GoRoute(
           path: AppRoutes.driverRides.path,
           name: AppRoutes.driverRides.name,
-          pageBuilder: (context, state) => NoTransitionPage(
-            key: state.pageKey,
-            child: const DriverMyRidesScreen(),
-          ),
+          pageBuilder: (context, state) => PlatformInfo.isIOS
+              ? CupertinoPage(
+                  key: state.pageKey,
+                  child: const DriverMyRidesScreen(),
+                )
+              : MaterialPage(
+                  key: state.pageKey,
+                  child: const DriverMyRidesScreen(),
+                ),
         ),
       ],
     ),
@@ -394,10 +312,15 @@ List<StatefulShellBranch> _buildDriverBranches() {
         GoRoute(
           path: AppRoutes.driverEarnings.path,
           name: AppRoutes.driverEarnings.name,
-          pageBuilder: (context, state) => NoTransitionPage(
-            key: state.pageKey,
-            child: const DriverEarningsScreen(),
-          ),
+          pageBuilder: (context, state) => PlatformInfo.isIOS
+              ? CupertinoPage(
+                  key: state.pageKey,
+                  child: const DriverEarningsScreen(),
+                )
+              : MaterialPage(
+                  key: state.pageKey,
+                  child: const DriverEarningsScreen(),
+                ),
         ),
       ],
     ),
@@ -408,10 +331,9 @@ List<StatefulShellBranch> _buildDriverBranches() {
         GoRoute(
           path: AppRoutes.driverChat.path,
           name: AppRoutes.driverChat.name,
-          pageBuilder: (context, state) => NoTransitionPage(
-            key: state.pageKey,
-            child: const ChatListScreen(),
-          ),
+          pageBuilder: (context, state) => PlatformInfo.isIOS
+              ? CupertinoPage(key: state.pageKey, child: const ChatListScreen())
+              : MaterialPage(key: state.pageKey, child: const ChatListScreen()),
         ),
       ],
     ),
@@ -422,206 +344,88 @@ List<StatefulShellBranch> _buildDriverBranches() {
         GoRoute(
           path: AppRoutes.driverProfileTab.path,
           name: AppRoutes.driverProfileTab.name,
-          pageBuilder: (context, state) => NoTransitionPage(
-            key: state.pageKey,
-            child: const ProfileScreen(),
-          ),
+          pageBuilder: (context, state) => PlatformInfo.isIOS
+              ? CupertinoPage(key: state.pageKey, child: const ProfileScreen())
+              : MaterialPage(key: state.pageKey, child: const ProfileScreen()),
         ),
       ],
     ),
   ];
 }
 
-// =============================================================================
-// � CHAT ROUTES (Requires complex extra parameters - keep inline)
-// =============================================================================
-List<GoRoute> _buildChatRoutes() {
-  UserModel fallbackReceiver(GoRouterState state) {
-    final receiverId = state.params.getQueryOrDefault('receiverId', '');
-    final receiverName = state.params.getQueryOrDefault('receiverName', 'User');
-    final receiverPhoto = state.params.getQuery('receiverPhotoUrl');
+// ── Router refresh listenable ─────────────────────────────────────────────────
 
-    return UserModel.rider(
-      uid: receiverId,
-      email: '',
-      displayName: receiverName,
-      photoUrl: receiverPhoto,
-    );
+/// A simple ChangeNotifier that forwards auth/user state changes to GoRouter.
+///
+/// Using notifyListeners() is safer than a boolean toggle, which can silently
+/// cancel out if two emissions arrive in the same frame (true→false→true
+/// evaluates as no change in a ValueNotifier).
+class _AuthChangeNotifier extends ChangeNotifier {
+  var _disposed = false;
+  var _notifyScheduled = false;
+
+  void notify() {
+    if (_notifyScheduled || _disposed) return;
+    _notifyScheduled = true;
+    scheduleMicrotask(() {
+      _notifyScheduled = false;
+      if (!_disposed) notifyListeners();
+    });
   }
 
-  return [
-    GoRoute(
-      path: AppRoutes.chatDetail.path,
-      name: AppRoutes.chatDetail.name,
-      pageBuilder: (context, state) {
-        final chatId = state.params.getStringOrThrow('id');
-        final receiver =
-            state.params.getExtra<UserModel>() ?? fallbackReceiver(state);
-        return SlideRightTransitionPage(
-          key: state.pageKey,
-          child: ChatDetailScreen(chatId: chatId, receiver: receiver),
-        );
-      },
-    ),
-    GoRoute(
-      path: AppRoutes.chatGroup.path,
-      name: AppRoutes.chatGroup.name,
-      pageBuilder: (context, state) {
-        final groupId = state.params.getStringOrThrow('id');
-        final receiver =
-            state.params.getExtra<UserModel>() ?? fallbackReceiver(state);
-        return SlideRightTransitionPage(
-          key: state.pageKey,
-          child: ChatDetailScreen(
-            chatId: groupId,
-            receiver: receiver,
-            isGroup: true,
-          ),
-        );
-      },
-    ),
-    GoRoute(
-      path: AppRoutes.chatRide.path,
-      name: AppRoutes.chatRide.name,
-      pageBuilder: (context, state) {
-        final rideId = state.params.getStringOrThrow('id');
-        final receiver =
-            state.params.getExtra<UserModel>() ?? fallbackReceiver(state);
-        return SlideRightTransitionPage(
-          key: state.pageKey,
-          child: ChatDetailScreen(
-            chatId: rideId,
-            receiver: receiver,
-            isGroup: true,
-          ),
-        );
-      },
-    ),
-  ];
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
 }
 
-// =============================================================================
-// 💎 PREMIUM ROUTES
-// =============================================================================
-List<GoRoute> _buildPremiumRoutes() {
-  return [
-    GoRoute(
-      path: AppRoutes.premiumSubscribe.path,
-      name: AppRoutes.premiumSubscribe.name,
-      pageBuilder: (context, state) => SlideUpTransitionPage(
-        key: state.pageKey,
-        child: const PremiumSubscribeScreen(),
-      ),
-    ),
-    GoRoute(
-      path: AppRoutes.premiumCheckout.path,
-      name: AppRoutes.premiumCheckout.name,
-      pageBuilder: (context, state) => SlideUpTransitionPage(
-        key: state.pageKey,
-        child: const PremiumCheckoutScreen(),
-      ),
-    ),
-  ];
+String _routeUserStateKey(AsyncValue<UserModel?>? state) {
+  if (state == null) return 'none';
+  return '${state.isLoading}:${state.hasError}:${_routeUserKey(state.value)}';
 }
 
-// =============================================================================
-// ⭐ REVIEW ROUTES
-// =============================================================================
-List<GoRoute> _buildReviewRoutes() {
-  return [
-    GoRoute(
-      path: AppRoutes.submitReview.path,
-      name: AppRoutes.submitReview.name,
-      pageBuilder: (context, state) {
-        final params = state.params;
-        final rideId = params.getQueryOrDefault('rideId', '');
-        final revieweeId = params.getQueryOrDefault('revieweeId', '');
-        final revieweeName = params.getQueryOrDefault('revieweeName', 'User');
-        final revieweePhotoUrl = params.getQuery('revieweePhotoUrl');
-        final reviewTypeStr = params.getQueryOrDefault(
-          'reviewType',
-          'driverReview',
-        );
-        final reviewType = reviewTypeStr == 'passengerReview'
-            ? ReviewType.rider
-            : ReviewType.driver;
-
-        return SlideUpTransitionPage(
-          key: state.pageKey,
-          child: SubmitReviewScreen(
-            rideId: rideId,
-            revieweeId: revieweeId,
-            revieweeName: revieweeName,
-            revieweePhotoUrl: revieweePhotoUrl,
-            reviewType: reviewType,
-          ),
-        );
-      },
-    ),
-    GoRoute(
-      path: AppRoutes.reviewsList.path,
-      name: AppRoutes.reviewsList.name,
-      pageBuilder: (context, state) {
-        final params = state.params;
-        final userId = params.getStringOrThrow('userId');
-        final userName = params.getQueryOrDefault('userName', 'User');
-        final userPhotoUrl = params.getQuery('userPhotoUrl');
-
-        return SlideRightTransitionPage(
-          key: state.pageKey,
-          child: ReviewsListScreen(
-            userId: userId,
-            userName: userName,
-            userPhotoUrl: userPhotoUrl,
-          ),
-        );
-      },
-    ),
-  ];
+String _routeRoleIntentStateKey(AsyncValue<UserRole?>? state) {
+  if (state == null) return 'none';
+  return '${state.isLoading}:${state.hasError}:${state.value?.name ?? 'null'}';
 }
 
-// =============================================================================
-// 🏆 EVENT ROUTES
-// =============================================================================
+String _routeUserKey(UserModel? user) {
+  if (user == null) return 'signed-out';
 
-// 🔔 ROUTER REFRESH LISTENABLE
-// =============================================================================
-
-/// A simple ChangeNotifier that forwards auth state changes to the GoRouter
-/// refresh listener. Using ChangeNotifier.notifyListeners() is safer than a
-/// boolean toggle, which can silently cancel out if two emissions arrive in
-/// the same frame (true → false → true evaluates as no change).
-class _AuthChangeNotifier extends ChangeNotifier {
-  void notify() => notifyListeners();
+  return user.map(
+    rider: (rider) => 'rider:${rider.uid}',
+    driver: (driver) =>
+        'driver:${driver.uid}:${driver.vehicleIds.join(',')}:'
+        '${driver.stripeAccountId ?? ''}',
+    pending: (pending) => 'pending:${pending.uid}',
+  );
 }
 
-// =============================================================================
-// ❌ ERROR PAGE
-// =============================================================================
+// ── Error page ────────────────────────────────────────────────────────────────
+
 Widget _buildErrorPage(BuildContext context, GoRouterState state) {
-  return Scaffold(
-    body: Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.error_outline, size: 64, color: AppColors.error),
-          const SizedBox(height: 16),
-          Text(
-            AppLocalizations.of(context).pageNotFound,
-            style: Theme.of(context).textTheme.headlineSmall,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            state.error?.toString() ?? 'Unknown error',
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: () => context.go(AppRoutes.home.path),
-            child: Text(AppLocalizations.of(context).goHome),
-          ),
-        ],
-      ),
+  return Center(
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Icon(Icons.error_outline, size: 64, color: AppColors.error),
+        const SizedBox(height: 16),
+        Text(
+          AppLocalizations.of(context).pageNotFound,
+          style: Theme.of(context).textTheme.headlineSmall,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          state.error?.toString() ?? 'Unknown error',
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 24),
+        ElevatedButton(
+          onPressed: () => context.go(AppRoutes.home.path),
+          child: Text(AppLocalizations.of(context).goHome),
+        ),
+      ],
     ),
   );
 }

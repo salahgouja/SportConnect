@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$RatingBreakdown {
 
- int get total; double get average; int get fiveStars; int get fourStars; int get threeStars; int get twoStars; int get oneStars;
+ int get fiveStars; int get fourStars; int get threeStars; int get twoStars; int get oneStars;
 /// Create a copy of RatingBreakdown
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $RatingBreakdownCopyWith<RatingBreakdown> get copyWith => _$RatingBreakdownCopyW
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is RatingBreakdown&&(identical(other.total, total) || other.total == total)&&(identical(other.average, average) || other.average == average)&&(identical(other.fiveStars, fiveStars) || other.fiveStars == fiveStars)&&(identical(other.fourStars, fourStars) || other.fourStars == fourStars)&&(identical(other.threeStars, threeStars) || other.threeStars == threeStars)&&(identical(other.twoStars, twoStars) || other.twoStars == twoStars)&&(identical(other.oneStars, oneStars) || other.oneStars == oneStars));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is RatingBreakdown&&(identical(other.fiveStars, fiveStars) || other.fiveStars == fiveStars)&&(identical(other.fourStars, fourStars) || other.fourStars == fourStars)&&(identical(other.threeStars, threeStars) || other.threeStars == threeStars)&&(identical(other.twoStars, twoStars) || other.twoStars == twoStars)&&(identical(other.oneStars, oneStars) || other.oneStars == oneStars));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,total,average,fiveStars,fourStars,threeStars,twoStars,oneStars);
+int get hashCode => Object.hash(runtimeType,fiveStars,fourStars,threeStars,twoStars,oneStars);
 
 @override
 String toString() {
-  return 'RatingBreakdown(total: $total, average: $average, fiveStars: $fiveStars, fourStars: $fourStars, threeStars: $threeStars, twoStars: $twoStars, oneStars: $oneStars)';
+  return 'RatingBreakdown(fiveStars: $fiveStars, fourStars: $fourStars, threeStars: $threeStars, twoStars: $twoStars, oneStars: $oneStars)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $RatingBreakdownCopyWith<$Res>  {
   factory $RatingBreakdownCopyWith(RatingBreakdown value, $Res Function(RatingBreakdown) _then) = _$RatingBreakdownCopyWithImpl;
 @useResult
 $Res call({
- int total, double average, int fiveStars, int fourStars, int threeStars, int twoStars, int oneStars
+ int fiveStars, int fourStars, int threeStars, int twoStars, int oneStars
 });
 
 
@@ -65,11 +65,9 @@ class _$RatingBreakdownCopyWithImpl<$Res>
 
 /// Create a copy of RatingBreakdown
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? total = null,Object? average = null,Object? fiveStars = null,Object? fourStars = null,Object? threeStars = null,Object? twoStars = null,Object? oneStars = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? fiveStars = null,Object? fourStars = null,Object? threeStars = null,Object? twoStars = null,Object? oneStars = null,}) {
   return _then(_self.copyWith(
-total: null == total ? _self.total : total // ignore: cast_nullable_to_non_nullable
-as int,average: null == average ? _self.average : average // ignore: cast_nullable_to_non_nullable
-as double,fiveStars: null == fiveStars ? _self.fiveStars : fiveStars // ignore: cast_nullable_to_non_nullable
+fiveStars: null == fiveStars ? _self.fiveStars : fiveStars // ignore: cast_nullable_to_non_nullable
 as int,fourStars: null == fourStars ? _self.fourStars : fourStars // ignore: cast_nullable_to_non_nullable
 as int,threeStars: null == threeStars ? _self.threeStars : threeStars // ignore: cast_nullable_to_non_nullable
 as int,twoStars: null == twoStars ? _self.twoStars : twoStars // ignore: cast_nullable_to_non_nullable
@@ -159,10 +157,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int total,  double average,  int fiveStars,  int fourStars,  int threeStars,  int twoStars,  int oneStars)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int fiveStars,  int fourStars,  int threeStars,  int twoStars,  int oneStars)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _RatingBreakdown() when $default != null:
-return $default(_that.total,_that.average,_that.fiveStars,_that.fourStars,_that.threeStars,_that.twoStars,_that.oneStars);case _:
+return $default(_that.fiveStars,_that.fourStars,_that.threeStars,_that.twoStars,_that.oneStars);case _:
   return orElse();
 
 }
@@ -180,10 +178,10 @@ return $default(_that.total,_that.average,_that.fiveStars,_that.fourStars,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int total,  double average,  int fiveStars,  int fourStars,  int threeStars,  int twoStars,  int oneStars)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int fiveStars,  int fourStars,  int threeStars,  int twoStars,  int oneStars)  $default,) {final _that = this;
 switch (_that) {
 case _RatingBreakdown():
-return $default(_that.total,_that.average,_that.fiveStars,_that.fourStars,_that.threeStars,_that.twoStars,_that.oneStars);case _:
+return $default(_that.fiveStars,_that.fourStars,_that.threeStars,_that.twoStars,_that.oneStars);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -200,10 +198,10 @@ return $default(_that.total,_that.average,_that.fiveStars,_that.fourStars,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int total,  double average,  int fiveStars,  int fourStars,  int threeStars,  int twoStars,  int oneStars)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int fiveStars,  int fourStars,  int threeStars,  int twoStars,  int oneStars)?  $default,) {final _that = this;
 switch (_that) {
 case _RatingBreakdown() when $default != null:
-return $default(_that.total,_that.average,_that.fiveStars,_that.fourStars,_that.threeStars,_that.twoStars,_that.oneStars);case _:
+return $default(_that.fiveStars,_that.fourStars,_that.threeStars,_that.twoStars,_that.oneStars);case _:
   return null;
 
 }
@@ -214,12 +212,10 @@ return $default(_that.total,_that.average,_that.fiveStars,_that.fourStars,_that.
 /// @nodoc
 @JsonSerializable()
 
-class _RatingBreakdown implements RatingBreakdown {
-  const _RatingBreakdown({this.total = 0, this.average = 0.0, this.fiveStars = 0, this.fourStars = 0, this.threeStars = 0, this.twoStars = 0, this.oneStars = 0});
+class _RatingBreakdown extends RatingBreakdown {
+  const _RatingBreakdown({this.fiveStars = 0, this.fourStars = 0, this.threeStars = 0, this.twoStars = 0, this.oneStars = 0}): super._();
   factory _RatingBreakdown.fromJson(Map<String, dynamic> json) => _$RatingBreakdownFromJson(json);
 
-@override@JsonKey() final  int total;
-@override@JsonKey() final  double average;
 @override@JsonKey() final  int fiveStars;
 @override@JsonKey() final  int fourStars;
 @override@JsonKey() final  int threeStars;
@@ -239,16 +235,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RatingBreakdown&&(identical(other.total, total) || other.total == total)&&(identical(other.average, average) || other.average == average)&&(identical(other.fiveStars, fiveStars) || other.fiveStars == fiveStars)&&(identical(other.fourStars, fourStars) || other.fourStars == fourStars)&&(identical(other.threeStars, threeStars) || other.threeStars == threeStars)&&(identical(other.twoStars, twoStars) || other.twoStars == twoStars)&&(identical(other.oneStars, oneStars) || other.oneStars == oneStars));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RatingBreakdown&&(identical(other.fiveStars, fiveStars) || other.fiveStars == fiveStars)&&(identical(other.fourStars, fourStars) || other.fourStars == fourStars)&&(identical(other.threeStars, threeStars) || other.threeStars == threeStars)&&(identical(other.twoStars, twoStars) || other.twoStars == twoStars)&&(identical(other.oneStars, oneStars) || other.oneStars == oneStars));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,total,average,fiveStars,fourStars,threeStars,twoStars,oneStars);
+int get hashCode => Object.hash(runtimeType,fiveStars,fourStars,threeStars,twoStars,oneStars);
 
 @override
 String toString() {
-  return 'RatingBreakdown(total: $total, average: $average, fiveStars: $fiveStars, fourStars: $fourStars, threeStars: $threeStars, twoStars: $twoStars, oneStars: $oneStars)';
+  return 'RatingBreakdown(fiveStars: $fiveStars, fourStars: $fourStars, threeStars: $threeStars, twoStars: $twoStars, oneStars: $oneStars)';
 }
 
 
@@ -259,7 +255,7 @@ abstract mixin class _$RatingBreakdownCopyWith<$Res> implements $RatingBreakdown
   factory _$RatingBreakdownCopyWith(_RatingBreakdown value, $Res Function(_RatingBreakdown) _then) = __$RatingBreakdownCopyWithImpl;
 @override @useResult
 $Res call({
- int total, double average, int fiveStars, int fourStars, int threeStars, int twoStars, int oneStars
+ int fiveStars, int fourStars, int threeStars, int twoStars, int oneStars
 });
 
 
@@ -276,11 +272,9 @@ class __$RatingBreakdownCopyWithImpl<$Res>
 
 /// Create a copy of RatingBreakdown
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? total = null,Object? average = null,Object? fiveStars = null,Object? fourStars = null,Object? threeStars = null,Object? twoStars = null,Object? oneStars = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? fiveStars = null,Object? fourStars = null,Object? threeStars = null,Object? twoStars = null,Object? oneStars = null,}) {
   return _then(_RatingBreakdown(
-total: null == total ? _self.total : total // ignore: cast_nullable_to_non_nullable
-as int,average: null == average ? _self.average : average // ignore: cast_nullable_to_non_nullable
-as double,fiveStars: null == fiveStars ? _self.fiveStars : fiveStars // ignore: cast_nullable_to_non_nullable
+fiveStars: null == fiveStars ? _self.fiveStars : fiveStars // ignore: cast_nullable_to_non_nullable
 as int,fourStars: null == fourStars ? _self.fourStars : fourStars // ignore: cast_nullable_to_non_nullable
 as int,threeStars: null == threeStars ? _self.threeStars : threeStars // ignore: cast_nullable_to_non_nullable
 as int,twoStars: null == twoStars ? _self.twoStars : twoStars // ignore: cast_nullable_to_non_nullable

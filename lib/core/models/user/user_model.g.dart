@@ -9,7 +9,7 @@ part of 'user_model.dart';
 RiderModel _$RiderModelFromJson(Map json) => RiderModel(
   uid: json['uid'] as String,
   email: json['email'] as String,
-  displayName: json['displayName'] as String,
+  username: json['username'] as String,
   photoUrl: json['photoUrl'] as String?,
   phoneNumber: json['phoneNumber'] as String?,
   dateOfBirth: const TimestampConverter().fromJson(json['dateOfBirth']),
@@ -21,17 +21,10 @@ RiderModel _$RiderModelFromJson(Map json) => RiderModel(
   city: json['city'] as String?,
   country: json['country'] as String?,
   isEmailVerified: json['isEmailVerified'] as bool? ?? false,
-  isPhoneVerified: json['isPhoneVerified'] as bool? ?? false,
-  isIdVerified: json['isIdVerified'] as bool? ?? false,
-  isActive: json['isActive'] as bool? ?? true,
+  isBanned: json['isBanned'] as bool? ?? false,
   isPremium: json['isPremium'] as bool? ?? false,
   blockedUsers:
       (json['blockedUsers'] as List<dynamic>?)
-          ?.map((e) => e as String)
-          .toList() ??
-      const [],
-  favoriteRoutes:
-      (json['favoriteRoutes'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList() ??
       const [],
@@ -41,11 +34,10 @@ RiderModel _$RiderModelFromJson(Map json) => RiderModel(
           Map<String, dynamic>.from(json['rating'] as Map),
         ),
   gamification: json['gamification'] == null
-      ? const GamificationStats.rider()
+      ? const GamificationStats()
       : GamificationStats.fromJson(
           Map<String, dynamic>.from(json['gamification'] as Map),
         ),
-  needsRoleSelection: json['needsRoleSelection'] as bool? ?? false,
   preferences: json['preferences'] == null
       ? const UserPreferences()
       : UserPreferences.fromJson(
@@ -54,9 +46,10 @@ RiderModel _$RiderModelFromJson(Map json) => RiderModel(
   expertise:
       $enumDecodeNullable(_$ExpertiseEnumMap, json['expertise']) ??
       Expertise.rookie,
+  stripeCustomerId: json['stripeCustomerId'] as String?,
+  isStripeCustomerCreated: json['isStripeCustomerCreated'] as bool? ?? false,
   createdAt: const TimestampConverter().fromJson(json['createdAt']),
   updatedAt: const TimestampConverter().fromJson(json['updatedAt']),
-  lastSeenAt: const TimestampConverter().fromJson(json['lastSeenAt']),
   $type: json['role'] as String?,
 );
 
@@ -64,7 +57,7 @@ Map<String, dynamic> _$RiderModelToJson(RiderModel instance) =>
     <String, dynamic>{
       'uid': instance.uid,
       'email': instance.email,
-      'displayName': instance.displayName,
+      'username': instance.username,
       'photoUrl': instance.photoUrl,
       'phoneNumber': instance.phoneNumber,
       'dateOfBirth': const TimestampConverter().toJson(instance.dateOfBirth),
@@ -76,20 +69,17 @@ Map<String, dynamic> _$RiderModelToJson(RiderModel instance) =>
       'city': instance.city,
       'country': instance.country,
       'isEmailVerified': instance.isEmailVerified,
-      'isPhoneVerified': instance.isPhoneVerified,
-      'isIdVerified': instance.isIdVerified,
-      'isActive': instance.isActive,
+      'isBanned': instance.isBanned,
       'isPremium': instance.isPremium,
       'blockedUsers': instance.blockedUsers,
-      'favoriteRoutes': instance.favoriteRoutes,
       'rating': instance.rating.toJson(),
       'gamification': instance.gamification.toJson(),
-      'needsRoleSelection': instance.needsRoleSelection,
       'preferences': instance.preferences.toJson(),
       'expertise': _$ExpertiseEnumMap[instance.expertise]!,
+      'stripeCustomerId': instance.stripeCustomerId,
+      'isStripeCustomerCreated': instance.isStripeCustomerCreated,
       'createdAt': const TimestampConverter().toJson(instance.createdAt),
       'updatedAt': const TimestampConverter().toJson(instance.updatedAt),
-      'lastSeenAt': const TimestampConverter().toJson(instance.lastSeenAt),
       'role': instance.$type,
     };
 
@@ -103,7 +93,7 @@ const _$ExpertiseEnumMap = {
 DriverModel _$DriverModelFromJson(Map json) => DriverModel(
   uid: json['uid'] as String,
   email: json['email'] as String,
-  displayName: json['displayName'] as String,
+  username: json['username'] as String,
   photoUrl: json['photoUrl'] as String?,
   phoneNumber: json['phoneNumber'] as String?,
   dateOfBirth: const TimestampConverter().fromJson(json['dateOfBirth']),
@@ -115,17 +105,10 @@ DriverModel _$DriverModelFromJson(Map json) => DriverModel(
   city: json['city'] as String?,
   country: json['country'] as String?,
   isEmailVerified: json['isEmailVerified'] as bool? ?? false,
-  isPhoneVerified: json['isPhoneVerified'] as bool? ?? false,
-  isIdVerified: json['isIdVerified'] as bool? ?? false,
-  isActive: json['isActive'] as bool? ?? true,
+  isBanned: json['isBanned'] as bool? ?? false,
   isPremium: json['isPremium'] as bool? ?? false,
   blockedUsers:
       (json['blockedUsers'] as List<dynamic>?)
-          ?.map((e) => e as String)
-          .toList() ??
-      const [],
-  vehicleIds:
-      (json['vehicleIds'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList() ??
       const [],
@@ -135,25 +118,10 @@ DriverModel _$DriverModelFromJson(Map json) => DriverModel(
           Map<String, dynamic>.from(json['rating'] as Map),
         ),
   gamification: json['gamification'] == null
-      ? const GamificationStats.driver()
+      ? const GamificationStats()
       : GamificationStats.fromJson(
           Map<String, dynamic>.from(json['gamification'] as Map),
         ),
-  stripeAccountId: json['stripeAccountId'] as String?,
-  stripeCustomerId: json['stripeCustomerId'] as String?,
-  isStripeEnabled: json['isStripeEnabled'] as bool? ?? false,
-  isStripeOnboarded: json['isStripeOnboarded'] as bool? ?? false,
-  stripeAccountStatus: json['stripeAccountStatus'] as String?,
-  chargesEnabled: json['chargesEnabled'] as bool? ?? false,
-  payoutsEnabled: json['payoutsEnabled'] as bool? ?? false,
-  detailsSubmitted: json['detailsSubmitted'] as bool? ?? false,
-  stripeRequirements:
-      (json['stripeRequirements'] as List<dynamic>?)
-          ?.map((e) => e as String)
-          .toList() ??
-      const [],
-  stripeDisabledReason: json['stripeDisabledReason'] as String?,
-  needsRoleSelection: json['needsRoleSelection'] as bool? ?? false,
   preferences: json['preferences'] == null
       ? const UserPreferences()
       : UserPreferences.fromJson(
@@ -162,9 +130,14 @@ DriverModel _$DriverModelFromJson(Map json) => DriverModel(
   expertise:
       $enumDecodeNullable(_$ExpertiseEnumMap, json['expertise']) ??
       Expertise.rookie,
+  vehicleIds:
+      (json['vehicleIds'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList() ??
+      const [],
+  stripeAccountId: json['stripeAccountId'] as String?,
   createdAt: const TimestampConverter().fromJson(json['createdAt']),
   updatedAt: const TimestampConverter().fromJson(json['updatedAt']),
-  lastSeenAt: const TimestampConverter().fromJson(json['lastSeenAt']),
   $type: json['role'] as String?,
 );
 
@@ -172,7 +145,7 @@ Map<String, dynamic> _$DriverModelToJson(DriverModel instance) =>
     <String, dynamic>{
       'uid': instance.uid,
       'email': instance.email,
-      'displayName': instance.displayName,
+      'username': instance.username,
       'photoUrl': instance.photoUrl,
       'phoneNumber': instance.phoneNumber,
       'dateOfBirth': const TimestampConverter().toJson(instance.dateOfBirth),
@@ -184,29 +157,47 @@ Map<String, dynamic> _$DriverModelToJson(DriverModel instance) =>
       'city': instance.city,
       'country': instance.country,
       'isEmailVerified': instance.isEmailVerified,
-      'isPhoneVerified': instance.isPhoneVerified,
-      'isIdVerified': instance.isIdVerified,
-      'isActive': instance.isActive,
+      'isBanned': instance.isBanned,
       'isPremium': instance.isPremium,
       'blockedUsers': instance.blockedUsers,
-      'vehicleIds': instance.vehicleIds,
       'rating': instance.rating.toJson(),
       'gamification': instance.gamification.toJson(),
-      'stripeAccountId': instance.stripeAccountId,
-      'stripeCustomerId': instance.stripeCustomerId,
-      'isStripeEnabled': instance.isStripeEnabled,
-      'isStripeOnboarded': instance.isStripeOnboarded,
-      'stripeAccountStatus': instance.stripeAccountStatus,
-      'chargesEnabled': instance.chargesEnabled,
-      'payoutsEnabled': instance.payoutsEnabled,
-      'detailsSubmitted': instance.detailsSubmitted,
-      'stripeRequirements': instance.stripeRequirements,
-      'stripeDisabledReason': instance.stripeDisabledReason,
-      'needsRoleSelection': instance.needsRoleSelection,
       'preferences': instance.preferences.toJson(),
       'expertise': _$ExpertiseEnumMap[instance.expertise]!,
+      'vehicleIds': instance.vehicleIds,
+      'stripeAccountId': instance.stripeAccountId,
       'createdAt': const TimestampConverter().toJson(instance.createdAt),
       'updatedAt': const TimestampConverter().toJson(instance.updatedAt),
-      'lastSeenAt': const TimestampConverter().toJson(instance.lastSeenAt),
+      'role': instance.$type,
+    };
+
+PendingUserModel _$PendingUserModelFromJson(Map json) => PendingUserModel(
+  uid: json['uid'] as String,
+  email: json['email'] as String,
+  username: json['username'] as String,
+  photoUrl: json['photoUrl'] as String?,
+  expertise:
+      $enumDecodeNullable(_$ExpertiseEnumMap, json['expertise']) ??
+      Expertise.rookie,
+  isEmailVerified: json['isEmailVerified'] as bool? ?? false,
+  isBanned: json['isBanned'] as bool? ?? false,
+  fcmToken: json['fcmToken'] as String? ?? '',
+  createdAt: const TimestampConverter().fromJson(json['createdAt']),
+  updatedAt: const TimestampConverter().fromJson(json['updatedAt']),
+  $type: json['role'] as String?,
+);
+
+Map<String, dynamic> _$PendingUserModelToJson(PendingUserModel instance) =>
+    <String, dynamic>{
+      'uid': instance.uid,
+      'email': instance.email,
+      'username': instance.username,
+      'photoUrl': instance.photoUrl,
+      'expertise': _$ExpertiseEnumMap[instance.expertise]!,
+      'isEmailVerified': instance.isEmailVerified,
+      'isBanned': instance.isBanned,
+      'fcmToken': instance.fcmToken,
+      'createdAt': const TimestampConverter().toJson(instance.createdAt),
+      'updatedAt': const TimestampConverter().toJson(instance.updatedAt),
       'role': instance.$type,
     };

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -170,19 +171,9 @@ class HelpCenterScreen extends ConsumerWidget {
     final uiState = ref.watch(helpCenterUiViewModelProvider);
     final filteredCategories = _filteredCategories(uiState.searchQuery);
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text(
-          l10n.settingsHelpCenter,
-          style: TextStyle(
-            fontSize: 18.sp,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          ),
-        ),
+    return AdaptiveScaffold(
+      appBar: AdaptiveAppBar(
+        title: l10n.settingsHelpCenter,
         leading: IconButton(
           tooltip: l10n.goBackTooltip,
           icon: Icon(Icons.adaptive.arrow_back_rounded),
@@ -363,7 +354,7 @@ class HelpCenterScreen extends ConsumerWidget {
       ),
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-        child: ExpansionTile(
+        child: AdaptiveExpansionTile(
           leading: Container(
             padding: EdgeInsets.all(8.w),
             decoration: BoxDecoration(
@@ -401,7 +392,7 @@ class HelpCenterScreen extends ConsumerWidget {
       ),
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-        child: ExpansionTile(
+        child: AdaptiveExpansionTile(
           tilePadding: EdgeInsets.symmetric(horizontal: 14.w),
           childrenPadding: EdgeInsets.fromLTRB(14.w, 0, 14.w, 12.h),
           title: Text(

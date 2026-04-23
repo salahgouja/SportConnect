@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:shimmer/shimmer.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 
 /// Reusable skeleton shimmer loader for list loading states.
@@ -21,25 +22,27 @@ class SkeletonLoader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Shimmer.fromColors(
-      baseColor: AppColors.shimmer,
-      highlightColor: AppColors.shimmerHighlight,
-      child: ListView.separated(
-        padding:
-            padding ?? EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-        physics: const NeverScrollableScrollPhysics(),
-        shrinkWrap: true,
-        itemCount: itemCount,
-        separatorBuilder: (_, _) => SizedBox(height: 12.h),
-        itemBuilder: (_, _) => switch (type) {
-          SkeletonType.rideCard => const _RideCardSkeleton(),
-          SkeletonType.eventCard => const _EventCardSkeleton(),
-          SkeletonType.chatTile => const _ChatTileSkeleton(),
-          SkeletonType.notificationTile => const _NotificationTileSkeleton(),
-          SkeletonType.profileCard => const _ProfileCardSkeleton(),
-          SkeletonType.compactTile => const _CompactTileSkeleton(),
-        },
-      ),
+    final list = ListView.separated(
+      padding:
+          padding ?? EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+      physics: const NeverScrollableScrollPhysics(),
+      shrinkWrap: true,
+      itemCount: itemCount,
+      separatorBuilder: (_, _) => SizedBox(height: 12.h),
+      itemBuilder: (_, _) => switch (type) {
+        SkeletonType.rideCard => const _RideCardSkeleton(),
+        SkeletonType.eventCard => const _EventCardSkeleton(),
+        SkeletonType.chatTile => const _ChatTileSkeleton(),
+        SkeletonType.notificationTile => const _NotificationTileSkeleton(),
+        SkeletonType.profileCard => const _ProfileCardSkeleton(),
+        SkeletonType.compactTile => const _CompactTileSkeleton(),
+      },
+    );
+
+    return Skeletonizer(
+      enabled: true,
+      containersColor: AppColors.shimmer,
+      child: list,
     );
   }
 }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 
 /// Premium loading indicator with multiple styles
@@ -44,15 +46,17 @@ class PremiumLoader extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: List.generate(3, (index) {
-        return Container(
-              width: (size / 4).w,
-              height: (size / 4).w,
-              margin: EdgeInsets.symmetric(horizontal: 3.w),
-              decoration: BoxDecoration(
-                color: color ?? AppColors.primary,
-                shape: BoxShape.circle,
-              ),
-            )
+        final dot = Container(
+          width: (size / 4).w,
+          height: (size / 4).w,
+          margin: EdgeInsets.symmetric(horizontal: 3.w),
+          decoration: BoxDecoration(
+            color: color ?? AppColors.primary,
+            shape: BoxShape.circle,
+          ),
+        );
+
+        return dot
             .animate(onPlay: (controller) => controller.repeat(reverse: true))
             .fadeIn(
               delay: Duration(milliseconds: index * 150),
@@ -69,24 +73,26 @@ class PremiumLoader extends StatelessWidget {
   }
 
   Widget _buildPulse() {
-    return Container(
-          width: size.w,
-          height: size.w,
+    final pulse = Container(
+      width: size.w,
+      height: size.w,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: (color ?? AppColors.primary).withValues(alpha: 0.15),
+      ),
+      child: Center(
+        child: Container(
+          width: (size * 0.5).w,
+          height: (size * 0.5).w,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: (color ?? AppColors.primary).withValues(alpha: 0.15),
+            color: color ?? AppColors.primary,
           ),
-          child: Center(
-            child: Container(
-              width: (size * 0.5).w,
-              height: (size * 0.5).w,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: color ?? AppColors.primary,
-              ),
-            ),
-          ),
-        )
+        ),
+      ),
+    );
+
+    return pulse
         .animate(onPlay: (controller) => controller.repeat(reverse: true))
         .scale(
           duration: 800.ms,
@@ -114,18 +120,14 @@ class PremiumLoader extends StatelessWidget {
             ),
           ),
           SizedBox(
-                width: size.w,
-                height: size.w,
-                child: CircularProgressIndicator.adaptive(
-                  strokeWidth: 3,
-                  strokeCap: StrokeCap.round,
-                  valueColor: AlwaysStoppedAnimation(
-                    color ?? AppColors.primary,
-                  ),
-                ),
-              )
-              .animate(onPlay: (controller) => controller.repeat())
-              .rotate(duration: 1200.ms),
+            width: size.w,
+            height: size.w,
+            child: CircularProgressIndicator.adaptive(
+              strokeWidth: 3,
+              strokeCap: StrokeCap.round,
+              valueColor: AlwaysStoppedAnimation(color ?? AppColors.primary),
+            ),
+          ),
         ],
       ),
     );
@@ -151,52 +153,50 @@ class PremiumLoadingOverlay extends StatelessWidget {
     return Stack(
       children: [
         child,
-        if (isVisible)
-          ColoredBox(
-            color: Colors.black.withValues(alpha: 0.5),
-            child: Center(
-              child:
-                  Container(
-                        padding: EdgeInsets.all(32.w),
-                        decoration: BoxDecoration(
-                          color: AppColors.cardBg,
-                          borderRadius: BorderRadius.circular(24.r),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.15),
-                              blurRadius: 30,
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const PremiumLoader(
-                              size: 48,
-                              style: LoaderStyle.ring,
-                            ),
-                            if (message != null) ...[
-                              SizedBox(height: 20.h),
-                              Text(
-                                message!,
-                                style: TextStyle(
-                                  fontSize: 15.sp,
-                                  fontWeight: FontWeight.w500,
-                                  color: AppColors.textSecondary,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
-                          ],
-                        ),
-                      )
-                      .animate()
-                      .fadeIn(duration: 200.ms)
-                      .scale(begin: const Offset(0.9, 0.9), duration: 200.ms),
-            ),
-          ).animate().fadeIn(duration: 200.ms),
+        if (isVisible) _buildOverlay(context),
       ],
     );
+  }
+
+  Widget _buildOverlay(BuildContext context) {
+    final overlay = ColoredBox(
+      color: Colors.black.withValues(alpha: 0.5),
+      child: Center(
+        child: Container(
+          padding: EdgeInsets.all(32.w),
+          decoration: BoxDecoration(
+            color: AppColors.cardBg,
+            borderRadius: BorderRadius.circular(24.r),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.15),
+                blurRadius: 30,
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const PremiumLoader(size: 48, style: LoaderStyle.ring),
+              if (message != null) ...[
+                SizedBox(height: 20.h),
+                Text(
+                  message!,
+                  style: TextStyle(
+                    fontSize: 15.sp,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textSecondary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+
+    return overlay.animate().fadeIn(duration: 200.ms);
   }
 }
 
@@ -218,12 +218,11 @@ class SkeletonShimmer extends StatelessWidget {
   Widget build(BuildContext context) {
     if (!isLoading) return child;
 
-    return child
-        .animate(onPlay: (controller) => controller.repeat())
-        .shimmer(
-          duration: 1200.ms,
-          color: highlightColor ?? AppColors.surfaceVariant,
-        );
+    return Skeletonizer(
+      enabled: true,
+      containersColor: baseColor ?? AppColors.border.withValues(alpha: 0.5),
+      child: child,
+    );
   }
 }
 
@@ -241,19 +240,20 @@ class SkeletonBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-          width: width,
-          height: height,
-          decoration: BoxDecoration(
-            color: AppColors.border.withValues(alpha: 0.5),
-            borderRadius: BorderRadius.circular(borderRadius.r),
-          ),
-        )
-        .animate(onPlay: (controller) => controller.repeat())
-        .shimmer(
-          duration: 1200.ms,
-          color: AppColors.surfaceVariant.withValues(alpha: 0.6),
-        );
+    final box = Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: AppColors.border.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(borderRadius.r),
+      ),
+    );
+
+    return Skeletonizer(
+      enabled: true,
+      containersColor: AppColors.border.withValues(alpha: 0.5),
+      child: box,
+    );
   }
 }
 
@@ -264,19 +264,20 @@ class SkeletonCircle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-          width: size.w,
-          height: size.w,
-          decoration: BoxDecoration(
-            color: AppColors.border.withValues(alpha: 0.5),
-            shape: BoxShape.circle,
-          ),
-        )
-        .animate(onPlay: (controller) => controller.repeat())
-        .shimmer(
-          duration: 1200.ms,
-          color: AppColors.surfaceVariant.withValues(alpha: 0.6),
-        );
+    final circle = Container(
+      width: size.w,
+      height: size.w,
+      decoration: BoxDecoration(
+        color: AppColors.border.withValues(alpha: 0.5),
+        shape: BoxShape.circle,
+      ),
+    );
+
+    return Skeletonizer(
+      enabled: true,
+      containersColor: AppColors.border.withValues(alpha: 0.5),
+      child: circle,
+    );
   }
 }
 
@@ -307,7 +308,7 @@ class RideCardSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final card = Container(
       margin: EdgeInsets.only(bottom: 16.h),
       padding: EdgeInsets.all(18.w),
       decoration: BoxDecoration(
@@ -383,7 +384,9 @@ class RideCardSkeleton extends StatelessWidget {
           ),
         ],
       ),
-    ).animate().fadeIn(
+    );
+
+    return card.animate().fadeIn(
       delay: Duration(milliseconds: delay),
       duration: 300.ms,
     );
@@ -396,7 +399,7 @@ class ProfileCardSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final card = Container(
       padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
         color: AppColors.cardBg,
@@ -439,7 +442,9 @@ class ProfileCardSkeleton extends StatelessWidget {
           ),
         ],
       ),
-    ).animate().fadeIn(duration: 300.ms);
+    );
+
+    return card.animate().fadeIn(duration: 300.ms);
   }
 }
 
@@ -455,7 +460,7 @@ class MessageItemSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Align(
+    final item = Align(
       alignment: isOwnMessage ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
         margin: EdgeInsets.only(
@@ -491,7 +496,9 @@ class MessageItemSkeleton extends StatelessWidget {
           ],
         ),
       ),
-    ).animate().fadeIn(
+    );
+
+    return item.animate().fadeIn(
       delay: Duration(milliseconds: delay),
       duration: 200.ms,
     );

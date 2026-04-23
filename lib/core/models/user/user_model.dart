@@ -1,6 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:sport_connect/core/converters/timestamp_converter.dart';
-
 import 'package:sport_connect/core/models/user/gamification_stats.dart';
 import 'package:sport_connect/core/models/user/rating_breakdown.dart';
 import 'package:sport_connect/core/models/user/user_enums.dart';
@@ -19,7 +18,7 @@ sealed class UserModel with _$UserModel {
   const factory UserModel.rider({
     required String uid,
     required String email,
-    required String displayName,
+    required String username,
     String? photoUrl,
     String? phoneNumber,
     @TimestampConverter() DateTime? dateOfBirth,
@@ -35,26 +34,17 @@ sealed class UserModel with _$UserModel {
 
     // Verification & status
     @Default(false) bool isEmailVerified,
-    @Default(false) bool isPhoneVerified,
-    @Default(false) bool isIdVerified,
-    @Default(true) bool isActive,
+    @Default(false) bool isBanned,
     @Default(false) bool isPremium,
 
     // Social
     @Default([]) List<String> blockedUsers,
 
-    // Rider-specific: Favorite routes
-    @Default([]) List<String> favoriteRoutes,
-
     // Rider-specific: Passenger rating
     @Default(RatingBreakdown()) RatingBreakdown rating,
 
     // Rider-specific: Gamification
-    // CHANGED: Use the factory constructor .rider()
-    @Default(GamificationStats.rider()) GamificationStats gamification,
-
-    // Onboarding
-    @Default(false) bool needsRoleSelection,
+    @Default(GamificationStats()) GamificationStats gamification,
 
     // Preferences
     @Default(UserPreferences()) UserPreferences preferences,
@@ -62,10 +52,12 @@ sealed class UserModel with _$UserModel {
     // Expertise
     @Default(Expertise.rookie) Expertise expertise,
 
+    String? stripeCustomerId,
+    @Default(false) bool isStripeCustomerCreated,
+
     // Timestamps
     @TimestampConverter() DateTime? createdAt,
     @TimestampConverter() DateTime? updatedAt,
-    @TimestampConverter() DateTime? lastSeenAt,
   }) = RiderModel;
 
   /// Driver user type
@@ -73,7 +65,7 @@ sealed class UserModel with _$UserModel {
   const factory UserModel.driver({
     required String uid,
     required String email,
-    required String displayName,
+    required String username,
     String? photoUrl,
     String? phoneNumber,
     @TimestampConverter() DateTime? dateOfBirth,
@@ -89,49 +81,17 @@ sealed class UserModel with _$UserModel {
 
     // Verification & status
     @Default(false) bool isEmailVerified,
-    @Default(false) bool isPhoneVerified,
-    @Default(false) bool isIdVerified,
-    @Default(true) bool isActive,
+    @Default(false) bool isBanned,
     @Default(false) bool isPremium,
 
     // Social
     @Default([]) List<String> blockedUsers,
 
-    // Driver-specific: Vehicle IDs (resolved through VehicleRepository)
-    @Default([]) List<String> vehicleIds,
-
     // Driver-specific: Driver rating
     @Default(RatingBreakdown()) RatingBreakdown rating,
 
     // Driver-specific: Gamification
-    @Default(GamificationStats.driver()) GamificationStats gamification,
-
-    // Driver-specific: Stripe Connect (fields mirror Cloud Function writes)
-    String? stripeAccountId,
-    String? stripeCustomerId,
-    @Default(false) bool isStripeEnabled,
-    @Default(false) bool isStripeOnboarded,
-
-    /// "pending" | "active" | "under_review" | "incomplete"
-    String? stripeAccountStatus,
-
-    /// Whether Stripe has enabled charges on this account
-    @Default(false) bool chargesEnabled,
-
-    /// Whether Stripe has enabled payouts on this account
-    @Default(false) bool payoutsEnabled,
-
-    /// Whether the driver has submitted all required Stripe details
-    @Default(false) bool detailsSubmitted,
-
-    /// Outstanding Stripe requirements (e.g. ["individual.dob"])
-    @Default([]) List<String> stripeRequirements,
-
-    /// Reason charges/payouts are disabled, if any
-    String? stripeDisabledReason,
-
-    // Onboarding
-    @Default(false) bool needsRoleSelection,
+    @Default(GamificationStats()) GamificationStats gamification,
 
     // Preferences
     @Default(UserPreferences()) UserPreferences preferences,
@@ -139,11 +99,30 @@ sealed class UserModel with _$UserModel {
     // Expertise
     @Default(Expertise.rookie) Expertise expertise,
 
+    // Driver-specific: Vehicle IDs (resolved through VehicleRepository)
+    @Default([]) List<String> vehicleIds,
+
+    // Driver-specific: Stripe Connect
+    String? stripeAccountId,
+
     // Timestamps
     @TimestampConverter() DateTime? createdAt,
     @TimestampConverter() DateTime? updatedAt,
-    @TimestampConverter() DateTime? lastSeenAt,
   }) = DriverModel;
+
+  @FreezedUnionValue('pending')
+  const factory UserModel.pending({
+    required String uid,
+    required String email,
+    required String username,
+    String? photoUrl,
+    @Default(Expertise.rookie) Expertise expertise,
+    @Default(false) bool isEmailVerified,
+    @Default(false) bool isBanned,
+    @Default('') String fcmToken,
+    @TimestampConverter() DateTime? createdAt,
+    @TimestampConverter() DateTime? updatedAt,
+  }) = PendingUserModel;
 
   /// Auto-generated JSON serialization
   factory UserModel.fromJson(Map<String, dynamic> json) =>
@@ -156,41 +135,34 @@ sealed class UserModel with _$UserModel {
 
 /// Logic for all User types
 extension UserModelLogic on UserModel {
-  GamificationStats get _commonStats =>
-      map(rider: (r) => r.gamification, driver: (d) => d.gamification);
-
-  UserRole get role =>
-      map(rider: (_) => UserRole.rider, driver: (_) => UserRole.driver);
+  UserRole get role => map(
+    rider: (_) => UserRole.rider,
+    driver: (_) => UserRole.driver,
+    pending: (_) => UserRole.pending,
+  );
 
   // Works because 'totalXP' exists on the base GamificationStats class
-  UserLevel get userLevel => UserLevel.fromXP(_commonStats.totalXP);
-
-  double get levelProgress {
-    final stats = _commonStats;
-    return stats.xpToNextLevel == 0
-        ? 1.0
-        : stats.currentLevelXP / stats.xpToNextLevel;
-  }
-
-  int get xpNeeded {
-    final stats = _commonStats;
-    return stats.xpToNextLevel - stats.currentLevelXP;
-  }
-
-  int get totalXP => _commonStats.totalXP;
-  int get totalRides => _commonStats.totalRides;
+  UserLevel get userLevel => map(
+    rider: (r) => UserLevel.fromXP(r.gamification.totalXP),
+    driver: (d) => UserLevel.fromXP(d.gamification.totalXP),
+    pending: (_) => UserLevel.bronze,
+  );
 
   /// Profile completion check
   bool get isProfileComplete {
-    final basicInfo =
-        displayName.isNotEmpty &&
-        photoUrl != null &&
-        phoneNumber != null &&
-        isEmailVerified;
-
     return map(
-      rider: (_) => basicInfo,
-      driver: (d) => basicInfo && d.vehicleIds.isNotEmpty,
+      rider: (r) =>
+          r.username.isNotEmpty &&
+          r.photoUrl != null &&
+          r.phoneNumber != null &&
+          r.isEmailVerified,
+      driver: (d) =>
+          d.username.isNotEmpty &&
+          d.photoUrl != null &&
+          d.phoneNumber != null &&
+          d.isEmailVerified &&
+          d.vehicleIds.isNotEmpty,
+      pending: (_) => false,
     );
   }
 }
@@ -199,34 +171,16 @@ extension UserModelLogic on UserModel {
 extension UserTypeCheck on UserModel {
   bool get isRider => role == UserRole.rider;
   bool get isDriver => role == UserRole.driver;
+  bool get isPending => role == UserRole.pending;
 
   RiderModel? get asRider => this is RiderModel ? this as RiderModel : null;
   DriverModel? get asDriver => this is DriverModel ? this as DriverModel : null;
 }
 
-/// Rider specific logic
-extension RiderLogic on RiderModel {
-  double get moneySaved => gamification.maybeMap(
-    rider: (data) => data.moneySaved,
-    orElse: () => 0.0,
-  );
-
-  bool isFavoriteRoute(String routeId) => favoriteRoutes.contains(routeId);
-}
-
 /// Driver specific logic
 extension DriverLogic on DriverModel {
-  /// Safely extract totalEarnings using pattern matching
-  double get totalEarnings => gamification.maybeMap(
-    driver: (data) => data.totalEarnings,
-    orElse: () => 0.0,
-  );
-
-  /// Backward-compat alias – views reference `.vehicles` but
-  /// the Freezed field is `vehicleIds`.
   List<String> get vehicles => vehicleIds;
-
   bool get hasVehicles => vehicleIds.isNotEmpty;
   bool get hasCompletedOnboarding => vehicleIds.isNotEmpty;
-  bool get canReceivePayments => isStripeEnabled && isStripeOnboarded;
+  bool get hasStripeAccount => stripeAccountId != null;
 }

@@ -4474,7 +4474,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pricePerSeatLabel => 'Price per Seat';
 
   @override
-  String get minimumPriceError => 'Minimum \$1';
+  String get minimumPriceError => 'Minimum €1';
 
   @override
   String get priceNegotiableToggle => 'Price Negotiable';
@@ -4580,7 +4580,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String totalPriceForSeats(String price, int seats) {
-    return 'Total: \$$price for $seats seats';
+    return 'Total: €$price for $seats seats';
   }
 
   @override
@@ -4637,12 +4637,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String pricePerSeatSummary(String price) {
-    return '\$$price per seat';
+    return '€$price per seat';
   }
 
   @override
   String pricePerSeatNegotiableSummary(String price) {
-    return '\$$price per seat (negotiable)';
+    return '€$price per seat (negotiable)';
   }
 
   @override

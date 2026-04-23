@@ -9,6 +9,98 @@ part of 'profile_view_model.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 
+@ProviderFor(ProfileActionsViewModel)
+final profileActionsViewModelProvider = ProfileActionsViewModelProvider._();
+
+final class ProfileActionsViewModelProvider
+    extends $NotifierProvider<ProfileActionsViewModel, void> {
+  ProfileActionsViewModelProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'profileActionsViewModelProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$profileActionsViewModelHash();
+
+  @$internal
+  @override
+  ProfileActionsViewModel create() => ProfileActionsViewModel();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(void value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<void>(value),
+    );
+  }
+}
+
+String _$profileActionsViewModelHash() =>
+    r'627a97c193f89ac40fe3d5122074fbc662423d8b';
+
+abstract class _$ProfileActionsViewModel extends $Notifier<void> {
+  void build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<void, void>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<void, void>,
+              void,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}
+
+@ProviderFor(blockedUsers)
+final blockedUsersProvider = BlockedUsersProvider._();
+
+final class BlockedUsersProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<UserModel>>,
+          List<UserModel>,
+          FutureOr<List<UserModel>>
+        >
+    with $FutureModifier<List<UserModel>>, $FutureProvider<List<UserModel>> {
+  BlockedUsersProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'blockedUsersProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$blockedUsersHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<List<UserModel>> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<List<UserModel>> create(Ref ref) {
+    return blockedUsers(ref);
+  }
+}
+
+String _$blockedUsersHash() => r'ac1fd3dd1c226c65f024c4fbaef8cffed2538e49';
+
 @ProviderFor(ReportIssueFormViewModel)
 final reportIssueFormViewModelProvider = ReportIssueFormViewModelFamily._();
 
@@ -60,7 +152,7 @@ final class ReportIssueFormViewModelProvider
 }
 
 String _$reportIssueFormViewModelHash() =>
-    r'9c234dcf1d1e0378cab0969bd0ac9ae9522fdaa6';
+    r'6ae05498859be0da79ca3a958e34c946c35fd991';
 
 final class ReportIssueFormViewModelFamily extends $Family
     with
@@ -252,7 +344,7 @@ final class UserProfileProvider
   }
 }
 
-String _$userProfileHash() => r'39b3de49df4c6bf90a373329a9fbc6021bf565f3';
+String _$userProfileHash() => r'e14b5bf54fbb885a8d9f2e28d46bf7f3392fb7c4';
 
 /// Other User Profile
 
@@ -330,7 +422,7 @@ final class ProfileEditViewModelProvider
 }
 
 String _$profileEditViewModelHash() =>
-    r'19e44b761eb95884c28442b1d077a752f9379e92';
+    r'756df0de955c29ff06d5fd868a12ee658def430c';
 
 /// Profile Edit View Model
 
@@ -453,7 +545,7 @@ final class SocialActionsViewModelProvider
   }) : super(
          retry: null,
          name: r'socialActionsViewModelProvider',
-         isAutoDispose: true,
+         isAutoDispose: false,
          dependencies: null,
          $allTransitiveDependencies: null,
        );
@@ -493,7 +585,7 @@ final class SocialActionsViewModelProvider
 }
 
 String _$socialActionsViewModelHash() =>
-    r'2c1e87d392c405e0e10435f8c159d10d7ad80a3e';
+    r'bd62c9b038d95a33c97ee32312564c3365244afc';
 
 /// Social Actions View Model
 
@@ -512,7 +604,7 @@ final class SocialActionsViewModelFamily extends $Family
         name: r'socialActionsViewModelProvider',
         dependencies: null,
         $allTransitiveDependencies: null,
-        isAutoDispose: true,
+        isAutoDispose: false,
       );
 
   /// Social Actions View Model
@@ -606,7 +698,7 @@ final class VehicleViewModelProvider
   }
 }
 
-String _$vehicleViewModelHash() => r'ad630b43d658d32ea7665ca97fa02797f9c0b516';
+String _$vehicleViewModelHash() => r'81d3fb74b070c90fab0b2e1193954066e0995abe';
 
 /// Vehicle Management View Model
 

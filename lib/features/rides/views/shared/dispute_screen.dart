@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -9,6 +10,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
@@ -30,7 +32,7 @@ class _DisputeScreenState extends ConsumerState<DisputeScreen> {
   List<_DisputeType> _getDisputeTypes(AppLocalizations l10n) => [
     _DisputeType(
       id: 'incorrect_fare',
-      icon: Icons.attach_money_rounded,
+      icon: Icons.euro_rounded,
       title: l10n.incorrectFareType,
       description: l10n.incorrectFareDesc,
     ),
@@ -73,28 +75,25 @@ class _DisputeScreenState extends ConsumerState<DisputeScreen> {
 
   Future<void> _pickFiles() async {
     final l10n = AppLocalizations.of(context);
-    final source = await showModalBottomSheet<ImageSource>(
+    final source = await AppModalSheet.show<ImageSource>(
       context: context,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Column(
+      title: 'Attach evidence',
+      maxHeightFactor: 0.45,
+      child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ListTile(
+            AdaptiveListTile(
               leading: const Icon(Icons.photo_library_rounded),
               title: Text(l10n.chooseFromGallery),
-              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
             ),
-            ListTile(
+            AdaptiveListTile(
               leading: const Icon(Icons.camera_alt_rounded),
               title: Text(l10n.takeAPhoto),
-              onTap: () => Navigator.pop(ctx, ImageSource.camera),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
             ),
           ],
         ),
-      ),
     );
 
     if (source == null) return;
@@ -150,28 +149,17 @@ class _DisputeScreenState extends ConsumerState<DisputeScreen> {
     ) {
       if (next.errorMessage != null &&
           next.errorMessage != previous?.errorMessage) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.errorMessage!),
-            backgroundColor: AppColors.error,
-          ),
+        AdaptiveSnackBar.show(
+          context,
+          message: next.errorMessage!,
+          type: AdaptiveSnackBarType.error,
         );
       }
     });
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text(
-          l10n.fileDisputeTitle,
-          style: TextStyle(
-            fontSize: 18.sp,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          ),
-        ),
+    return AdaptiveScaffold(
+      appBar: AdaptiveAppBar(
+        title: l10n.fileDisputeTitle,
         leading: IconButton(
           tooltip: AppLocalizations.of(context).goBackTooltip,
           icon: Icon(Icons.adaptive.arrow_back_rounded),

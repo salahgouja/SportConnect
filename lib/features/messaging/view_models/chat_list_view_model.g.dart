@@ -95,7 +95,7 @@ final class NewChatSearchViewModelProvider
 }
 
 String _$newChatSearchViewModelHash() =>
-    r'ef260f2fcc0ba375f797f1cde2df191492b6a569';
+    r'8eec798cc0ccf78acf884422771e2ccdbe55d711';
 
 abstract class _$NewChatSearchViewModel extends $Notifier<NewChatSearchState> {
   NewChatSearchState build();

@@ -21,18 +21,31 @@ StripeService stripeService(Ref ref) => StripeService();
 /// - All sensitive operations handled server-side for security
 class StripeService {
   factory StripeService() => _instance;
-  StripeService._internal();
+
+  StripeService._internal() : _functions = FirebaseFunctions.instance;
+
   static final StripeService _instance = StripeService._internal();
 
-  late FirebaseFunctions _functions;
+  final FirebaseFunctions _functions;
+
+  Future<Map<String, dynamic>> getAccountStatus({
+    required String accountId,
+  }) async {
+    final result = await _functions.httpsCallable('getAccountStatus').call({
+      'accountId': accountId,
+    });
+
+    return Map<String, dynamic>.from(result.data as Map);
+  }
+
+  Future<void> syncDriverBalance() async {
+    await _functions.httpsCallable('syncDriverBalance').call();
+  }
 
   /// Initialize Stripe with publishable key
   Future<void> initialize({required String publishableKey}) async {
     Stripe.publishableKey = publishableKey;
     await Stripe.instance.applySettings();
-
-    // Initialize Firebase Functions
-    _functions = FirebaseFunctions.instance;
 
     // Connect to emulator if in development mode
     if (AppConfig.useEmulators) {
@@ -65,7 +78,7 @@ class StripeService {
         e.message ?? 'Function call failed',
         code: e.code,
       );
-    } on Exception catch (e) {
+    } catch (e, st) {
       TalkerService.error('Error calling function $name: $e');
       throw StripePaymentException('Failed to call function: $e');
     }
@@ -82,7 +95,7 @@ class StripeService {
     required String riderName,
     required String driverId,
     required String driverName,
-    required double amount,
+    required int amountInCents,
     required String currency,
     String? customerId,
     String? existingCustomerId,
@@ -96,7 +109,7 @@ class StripeService {
         'riderName': riderName,
         'driverId': driverId,
         'driverName': driverName,
-        'amount': amount,
+        'amountInCents': amountInCents,
         'currency': currency.toLowerCase(),
         'customerId': customerId ?? existingCustomerId,
         'driverStripeAccountId': driverStripeAccountId,
@@ -104,7 +117,7 @@ class StripeService {
       });
 
       return response;
-    } on Exception catch (e) {
+    } catch (e, st) {
       TalkerService.error('Error creating payment intent: $e');
       if (e is StripePaymentException) rethrow;
       throw StripePaymentException('Failed to create payment: $e');
@@ -116,7 +129,7 @@ class StripeService {
   /// Uses Stripe's conversion-optimized Payment Sheet UI which supports
   /// saved cards, Apple Pay, Google Pay, and localized payment methods.
   ///
-  /// [currency] - ISO 4217 currency code (e.g. 'eur', 'usd') for Google Pay
+  /// [currency] - ISO 4217 currency code for Google Pay
   Future<bool> processPaymentWithSheet({
     required String paymentIntentClientSecret,
     required String customerId,
@@ -211,7 +224,7 @@ class StripeService {
       }
       TalkerService.error('Stripe error: $msg');
       throw StripePaymentException(msg.isNotEmpty ? msg : 'Payment failed');
-    } on Exception catch (e) {
+    } catch (e, st) {
       TalkerService.error('Payment error: $e');
       throw StripePaymentException('Payment processing failed');
     }
@@ -237,7 +250,7 @@ class StripeService {
       });
 
       return response;
-    } on Exception catch (e) {
+    } catch (e, st) {
       TalkerService.error('Error creating/getting customer: $e');
       if (e is StripePaymentException) rethrow;
       throw StripePaymentException('Failed to create customer: $e');
@@ -274,7 +287,7 @@ class StripeService {
       });
 
       return response;
-    } on Exception catch (e) {
+    } catch (e, st) {
       TalkerService.error('Error creating connected account: $e');
       if (e is StripePaymentException) rethrow;
       throw StripePaymentException('Failed to create account: $e');
@@ -296,40 +309,10 @@ class StripeService {
       });
 
       return response;
-    } on Exception catch (e) {
+    } catch (e, st) {
       TalkerService.error('Error creating account link: $e');
       if (e is StripePaymentException) rethrow;
       throw StripePaymentException('Failed to create account link: $e');
-    }
-  }
-
-  /// Get Connected Account Status
-  /// Uses Firebase Cloud Functions
-  Future<Map<String, dynamic>> getAccountStatus({
-    required String accountId,
-  }) async {
-    try {
-      final response = await _callFunction('getAccountStatus', {
-        'accountId': accountId,
-      });
-
-      return response;
-    } on Exception catch (e) {
-      TalkerService.error('Error getting account status: $e');
-      if (e is StripePaymentException) rethrow;
-      throw StripePaymentException('Failed to get account status: $e');
-    }
-  }
-
-  /// Sync driver's Stripe balance to Firestore
-  Future<Map<String, dynamic>> syncDriverBalance() async {
-    try {
-      final response = await _callFunction('syncDriverBalance', {});
-      return response;
-    } on Exception catch (e) {
-      TalkerService.error('Error syncing balance: $e');
-      if (e is StripePaymentException) rethrow;
-      throw StripePaymentException('Failed to sync balance: $e');
     }
   }
 
@@ -337,21 +320,21 @@ class StripeService {
   /// Uses Firebase Cloud Functions
   ///
   /// [stripeAccountId] - Driver's Stripe Connect account ID (from Firestore)
-  /// [amount] - Amount in main currency unit (e.g., euros). Server converts to cents.
+  /// [amountInCents] - Amount in cents (e.g., 100 = 1.00 EUR)
   Future<Map<String, dynamic>> createInstantPayout({
     required String stripeAccountId,
-    required double amount,
+    required int amountInCents,
     required String currency,
   }) async {
     try {
       final response = await _callFunction('createInstantPayout', {
         'stripeAccountId': stripeAccountId,
-        'amount': amount,
+        'amountInCents': amountInCents,
         'currency': currency.toLowerCase(),
       });
 
       return response;
-    } on Exception catch (e) {
+    } catch (e, st) {
       TalkerService.error('Error creating instant payout: $e');
       if (e is StripePaymentException) rethrow;
       throw StripePaymentException('Payout failed: $e');
@@ -362,18 +345,18 @@ class StripeService {
   /// Uses Firebase Cloud Functions
   Future<Map<String, dynamic>> refundPayment({
     required String paymentIntentId,
-    double? amount, // If null, full refund
+    int? amountInCents, // If null, full refund
     String? reason,
   }) async {
     try {
       final response = await _callFunction('refundPayment', {
         'paymentIntentId': paymentIntentId,
-        'amount': ?amount,
+        'amountInCents': amountInCents,
         'reason': reason ?? 'requested_by_customer',
       });
 
       return response;
-    } on Exception catch (e) {
+    } catch (e, st) {
       TalkerService.error('Error processing refund: $e');
       if (e is StripePaymentException) rethrow;
       throw StripePaymentException('Refund failed: $e');
@@ -419,7 +402,7 @@ class StripeService {
     final ephemeralKeySecret = setup['ephemeralKeySecret'] as String;
 
     await Stripe.instance.initCustomerSheet(
-      customerSheetInitParams: CustomerSheetInitParams(
+      customerSheetInitParams: CustomerSheetInitParams.adapter(
         setupIntentClientSecret: setupIntentClientSecret,
         merchantDisplayName: 'SportConnect',
         customerId: customerId,

@@ -14,6 +14,26 @@ class RideRepository implements IRideRepository {
   RideRepository(this._firestore);
   final FirebaseFirestore _firestore;
 
+  Map<String, dynamic> _bookingCreateMap(RideBooking booking) {
+    return <String, dynamic>{
+      'rideId': booking.rideId,
+      'passengerId': booking.passengerId,
+      'driverId': booking.driverId,
+      'status': BookingStatus.pending.name,
+      'seatsBooked': booking.seatsBooked,
+      'createdAt': booking.createdAt ?? DateTime.now(),
+      'updatedAt': DateTime.now(),
+      if (booking.note != null && booking.note!.trim().isNotEmpty)
+        'note': booking.note!.trim(),
+      if (booking.pickupLocation != null)
+        'pickupLocation': {
+          'latitude': booking.pickupLocation!.latitude,
+          'longitude': booking.pickupLocation!.longitude,
+          'address': booking.pickupLocation!.address,
+        },
+    };
+  }
+
   // Tracks ride IDs for which onDisconnect().remove() has been registered,
   // so we only pay the round-trip cost once per ride session.
   final _disconnectRegistered = <String>{};
@@ -114,15 +134,15 @@ class RideRepository implements IRideRepository {
   @override
   Future<String> createRideRequest(String rideId, RideBooking booking) async {
     // Unified flow: creating a "request" simply creates a pending booking.
-    final docRef = _rideBookingsCollection.doc(
-      booking.id.isNotEmpty ? booking.id : null,
-    );
+    final bookingId = booking.id.isNotEmpty
+        ? booking.id
+        : _rideBookingsCollection.doc().id;
     final bookingWithId = booking.copyWith(
-      id: docRef.id,
-      createdAt: DateTime.now(),
+      id: bookingId,
+      createdAt: booking.createdAt ?? DateTime.now(),
     );
-    await docRef.set(bookingWithId);
-    return docRef.id;
+    await bookRide(rideId: rideId, booking: bookingWithId);
+    return bookingId;
   }
 
   @override
@@ -133,11 +153,13 @@ class RideRepository implements IRideRepository {
     required double destLng,
     DateTime? date,
     int? minSeats,
-    double? maxPrice,
+    int? maxPriceInCents,
   }) async {
     // R-2: A negative maxPrice silently hides all rides.
-    if (maxPrice != null && maxPrice < 0) {
-      throw ArgumentError('maxPrice must be >= 0 (got $maxPrice).');
+    if (maxPriceInCents != null && maxPriceInCents < 0) {
+      throw ArgumentError(
+        'maxPriceInCents must be >= 0 (got $maxPriceInCents).',
+      );
     }
 
     const radiusKm = 10.0;
@@ -158,7 +180,8 @@ class RideRepository implements IRideRepository {
       if (minSeats != null && ride.capacity.available < minSeats) {
         return false;
       }
-      if (maxPrice != null && ride.pricing.pricePerSeat.amount > maxPrice) {
+      if (maxPriceInCents != null &&
+          ride.pricing.pricePerSeatInCents.amountInCents > maxPriceInCents) {
         return false;
       }
 
@@ -233,7 +256,10 @@ class RideRepository implements IRideRepository {
   Stream<List<RideModel>> streamRidesAsPassenger(String userId) {
     return _rideBookingsCollection
         .where('passengerId', isEqualTo: userId)
-        .where('status', whereIn: ['pending', 'accepted', 'completed', 'cancelled'])
+        .where(
+          'status',
+          whereIn: ['pending', 'accepted', 'completed', 'cancelled'],
+        )
         .orderBy('createdAt', descending: true)
         .limit(100)
         .snapshots()
@@ -364,8 +390,47 @@ class RideRepository implements IRideRepository {
     required String rideId,
     required RideBooking booking,
   }) async {
-    // Store the booking in the bookings collection
-    await _rideBookingsCollection.doc(booking.id).set(booking);
+    final rideDoc = await _ridesCollection.doc(rideId).get();
+    final ride = rideDoc.data();
+    if (ride == null) {
+      throw StateError('Ride $rideId not found.');
+    }
+    if (!ride.isBookable) {
+      throw StateError('Ride $rideId is no longer available for booking.');
+    }
+    if (booking.seatsBooked <= 0) {
+      throw ArgumentError('seatsBooked must be greater than zero.');
+    }
+    if (ride.capacity.remaining < booking.seatsBooked) {
+      throw StateError(
+        'Not enough seats: ${ride.capacity.remaining} available, '
+        '${booking.seatsBooked} requested.',
+      );
+    }
+
+    final existing = await _rideBookingsCollection
+        .where('passengerId', isEqualTo: booking.passengerId)
+        .where('rideId', isEqualTo: rideId)
+        .where(
+          'status',
+          whereIn: [BookingStatus.pending.name, BookingStatus.accepted.name],
+        )
+        .limit(1)
+        .get();
+    if (existing.docs.isNotEmpty) {
+      throw StateError('You already have an active booking for this ride.');
+    }
+
+    final bookingWithTimestamps = booking.copyWith(
+      createdAt: booking.createdAt ?? DateTime.now(),
+    );
+
+    // Store only client-allowed fields.
+    // Do NOT send paymentIntentId / paidAt on create.
+    await _firestore
+        .collection(AppConstants.bookingsCollection)
+        .doc(booking.id)
+        .set(_bookingCreateMap(bookingWithTimestamps));
 
     // Track the booking ID on the ride document (but don't touch capacity yet)
     await _ridesCollection.doc(rideId).update({
@@ -387,61 +452,50 @@ class RideRepository implements IRideRepository {
     required String bookingId,
     required BookingStatus newStatus,
   }) async {
-    // Read booking data first (before any writes) to avoid TOCTOU race
-    var seatsBooked = 1;
-    BookingStatus? previousStatus;
-    Map<String, dynamic>? pickupLocationMap;
-    if (newStatus == BookingStatus.cancelled ||
-        newStatus == BookingStatus.rejected ||
-        newStatus == BookingStatus.accepted) {
-      final bookingDoc = await _rideBookingsCollection.doc(bookingId).get();
-      if (bookingDoc.exists) {
-        seatsBooked = bookingDoc.data()?.seatsBooked ?? 1;
-        previousStatus = bookingDoc.data()?.status;
-        // Capture pickup location for waypoint creation on accept
-        if (newStatus == BookingStatus.accepted &&
-            bookingDoc.data()?.pickupLocation != null) {
-          final pickup = bookingDoc.data()!.pickupLocation;
-          if (pickup != null) {
-            pickupLocationMap = pickup.toJson();
-          } else {
-            throw StateError('Pickup location is required to accept booking.');
-          }
-        }
-      }
-    }
-
-    // Generate a 4-digit OTP when accepting — shown to passenger, entered by driver.
-    // Use Random.secure() to prevent OTP prediction from a time-seeded RNG.
-    final pickupOtp = newStatus == BookingStatus.accepted
-        ? (1000 + math.Random.secure().nextInt(9000)).toString()
-        : null;
-
-    // Update the booking document
-    await _rideBookingsCollection.doc(bookingId).update({
-      'status': newStatus.name,
-      'respondedAt': DateTime.now(),
-      'pickupOtp': pickupOtp,
-    });
-
-    // If accepted, reserve the seats on the ride and add pickup waypoint.
-    // R-6/R-7: Use a transaction so capacity check + increment and waypoint
-    // order assignment are atomic — preventing overselling and duplicate order
-    // values when two bookings are accepted concurrently.
     if (newStatus == BookingStatus.accepted) {
+      // Generate a 4-digit OTP when accepting — shown to passenger, entered by driver.
+      // Use Random.secure() to prevent OTP prediction from a time-seeded RNG.
+      final pickupOtp = (1000 + math.Random.secure().nextInt(9000)).toString();
+
+      // Reserve seats and mark the booking accepted in the same transaction.
+      // This prevents an accepted booking from being left behind if capacity
+      // checks fail under concurrent driver actions.
       await _firestore.runTransaction((txn) async {
+        final bookingRef = _firestore
+            .collection(AppConstants.bookingsCollection)
+            .doc(bookingId);
         final rideRef = _firestore
             .collection(AppConstants.ridesCollection)
             .doc(rideId);
+
+        final bookingSnap = await txn.get(bookingRef);
+        if (!bookingSnap.exists) {
+          throw StateError('Booking $bookingId not found.');
+        }
+        final bookingData = bookingSnap.data()!;
+        final currentStatus = bookingData['status'] as String?;
+        if (currentStatus == BookingStatus.accepted.name) {
+          return;
+        }
+        if (currentStatus != BookingStatus.pending.name) {
+          throw StateError(
+            'Only pending bookings can be accepted '
+            '(current status: $currentStatus).',
+          );
+        }
+
         final rideSnap = await txn.get(rideRef);
         if (!rideSnap.exists) throw StateError('Ride $rideId not found.');
 
         final data = rideSnap.data()!;
-        final total = (data['capacity']?['total'] as int?) ?? 0;
+        final total =
+            (data['capacity']?['available'] as int?) ??
+            (data['capacity']?['total'] as int?) ??
+            0;
         final booked = (data['capacity']?['booked'] as int?) ?? 0;
         final available = total - booked;
+        final seatsBooked = (bookingData['seatsBooked'] as int?) ?? 1;
 
-        // R-6: Reject if not enough seats available at transaction time.
         if (available < seatsBooked) {
           throw StateError(
             'Not enough seats: $available available, $seatsBooked requested.',
@@ -455,7 +509,8 @@ class RideRepository implements IRideRepository {
 
         // R-7: Derive waypoint order inside the transaction using the
         // snapshot's current count — eliminates the duplicate-order race.
-        if (pickupLocationMap != null) {
+        final pickupLocationMap = bookingData['pickupLocation'];
+        if (pickupLocationMap is Map<String, dynamic>) {
           final waypointsList = (data['route']?['waypoints'] as List?) ?? [];
           final nextOrder = waypointsList.length;
           updates['route.waypoints'] = FieldValue.arrayUnion([
@@ -463,29 +518,55 @@ class RideRepository implements IRideRepository {
           ]);
         }
 
+        txn.update(bookingRef, {
+          'status': newStatus.name,
+          'respondedAt': DateTime.now(),
+          'pickupOtp': pickupOtp,
+        });
         txn.update(rideRef, updates);
       });
+      return;
     }
 
-    // Free up seats ONLY if the booking was previously accepted (i.e. seats
-    // were actually reserved). Rejecting a pending booking must not touch
-    // capacity — seats were never reserved for it.
     if (newStatus == BookingStatus.cancelled ||
         newStatus == BookingStatus.rejected) {
-      if (previousStatus == BookingStatus.accepted) {
-        await _ridesCollection.doc(rideId).update({
-          'bookingIds': FieldValue.arrayRemove([bookingId]),
-          'capacity.booked': FieldValue.increment(-seatsBooked),
-          'updatedAt': DateTime.now(),
+      await _firestore.runTransaction((txn) async {
+        final bookingRef = _firestore
+            .collection(AppConstants.bookingsCollection)
+            .doc(bookingId);
+        final rideRef = _firestore
+            .collection(AppConstants.ridesCollection)
+            .doc(rideId);
+        final bookingSnap = await txn.get(bookingRef);
+        if (!bookingSnap.exists) {
+          throw StateError('Booking $bookingId not found.');
+        }
+
+        final bookingData = bookingSnap.data()!;
+        final previousStatus = bookingData['status'] as String?;
+        final seatsBooked = (bookingData['seatsBooked'] as int?) ?? 1;
+
+        txn.update(bookingRef, {
+          'status': newStatus.name,
+          'respondedAt': DateTime.now(),
         });
-      } else {
-        // Booking was pending/rejected — only remove from bookingIds, no capacity change
-        await _ridesCollection.doc(rideId).update({
+
+        final rideUpdates = <String, dynamic>{
           'bookingIds': FieldValue.arrayRemove([bookingId]),
           'updatedAt': DateTime.now(),
-        });
-      }
+        };
+        if (previousStatus == BookingStatus.accepted.name) {
+          rideUpdates['capacity.booked'] = FieldValue.increment(-seatsBooked);
+        }
+        txn.update(rideRef, rideUpdates);
+      });
+      return;
     }
+
+    await _rideBookingsCollection.doc(bookingId).update({
+      'status': newStatus.name,
+      'respondedAt': DateTime.now(),
+    });
   }
 
   /// Cancels a booking by delegating to [updateBookingStatus].

@@ -1,7 +1,9 @@
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -9,6 +11,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/core/widgets/driver_info_widget.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
@@ -69,14 +72,14 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
         : null;
 
     if (bookingAsync.isLoading) {
-      return _buildScaffold(
+      return _buildAdaptiveScaffold(
         title: AppLocalizations.of(context).yourRide,
-        body: const Center(child: CircularProgressIndicator.adaptive()),
+        body: const SkeletonLoader(type: SkeletonType.rideCard, itemCount: 4),
       );
     }
 
     if (bookingAsync.hasError) {
-      return _buildScaffold(
+      return _buildAdaptiveScaffold(
         title: AppLocalizations.of(context).yourRide,
         body: Center(
           child: Padding(
@@ -92,7 +95,7 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
     }
 
     if (booking == null) {
-      return _buildScaffold(
+      return _buildAdaptiveScaffold(
         title: AppLocalizations.of(context).yourRide,
         body: Center(
           child: Padding(
@@ -106,39 +109,39 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
     }
 
     if (vmState == null) {
-      return _buildScaffold(
+      return _buildAdaptiveScaffold(
         title: AppLocalizations.of(context).yourRide,
-        body: const Center(child: CircularProgressIndicator.adaptive()),
+        body: const SkeletonLoader(type: SkeletonType.rideCard, itemCount: 4),
       );
     }
 
     return vmState.ride.when(
       data: (ride) => ride == null
-          ? _buildScaffold(
+          ? _buildAdaptiveScaffold(
               title: AppLocalizations.of(context).yourRide,
               body: Center(
                 child: Text(AppLocalizations.of(context).rideNotFound),
               ),
             )
           : _buildContent(ride, booking, uiState),
-      loading: () => _buildScaffold(
+      loading: () => _buildAdaptiveScaffold(
         title: AppLocalizations.of(context).yourRide,
-        body: const Center(child: CircularProgressIndicator.adaptive()),
+        body: const SkeletonLoader(type: SkeletonType.rideCard, itemCount: 4),
       ),
-      error: (e, _) => _buildScaffold(
+      error: (e, _) => _buildAdaptiveScaffold(
         title: AppLocalizations.of(context).yourRide,
         body: Center(child: Text(AppLocalizations.of(context).errorValue(e))),
       ),
     );
   }
 
-  Scaffold _buildScaffold({required String title, required Widget body}) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.primary,
-        title: Text(title),
-        centerTitle: true,
+  AdaptiveScaffold _buildAdaptiveScaffold({
+    required String title,
+    required Widget body,
+  }) {
+    return AdaptiveScaffold(
+      appBar: AdaptiveAppBar(
+        title: title,
       ),
       body: body,
     );
@@ -191,10 +194,10 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
         }
 
         if (ride.status == RideStatus.cancelled) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(AppLocalizations.of(context).rideHasBeenCancelled),
-            ),
+          AdaptiveSnackBar.show(
+            context,
+            message: AppLocalizations.of(context).rideHasBeenCancelled,
+            type: AdaptiveSnackBarType.error,
           );
           context.goNamed(AppRoutes.riderMyRides.name);
           return;
@@ -211,12 +214,9 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
     final isInPast = uiState.timeUntilDeparture == Duration.zero;
     final isImminent = !isInPast && uiState.timeUntilDeparture.inMinutes <= 15;
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.primary,
-        title: Text(AppLocalizations.of(context).yourRide),
-        centerTitle: true,
+    return AdaptiveScaffold(
+      appBar: AdaptiveAppBar(
+        title: AppLocalizations.of(context).yourRide,
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 32.h),
@@ -364,6 +364,7 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 userAgentPackageName: 'com.sportconnect.app',
               ),
+              const CurrentLocationLayer(),
               PolylineLayer(
                 polylines: [
                   Polyline(
@@ -642,7 +643,7 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
         getOrCreateChatProvider(
           userId1: currentUser.uid,
           userId2: ride.driverId,
-          userName1: currentUser.displayName,
+          userName1: currentUser.username,
           userName2: driverName,
         ).future,
       );
@@ -652,7 +653,7 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
       final driverUser = UserModel.driver(
         uid: ride.driverId,
         email: '',
-        displayName: driverName,
+        username: driverName,
         photoUrl: driverPhotoUrl,
       );
 
@@ -661,13 +662,12 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
         pathParameters: {'id': chat.id},
         extra: driverUser,
       );
-    } on Exception catch (_) {
+    } catch (e, st) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context).failedOpenChatError),
-          backgroundColor: AppColors.error,
-        ),
+      AdaptiveSnackBar.show(
+        context,
+        message: AppLocalizations.of(context).failedOpenChatError,
+        type: AdaptiveSnackBarType.error,
       );
     }
   }
@@ -675,15 +675,13 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
   Future<void> _callDriver(String driverId) async {
     try {
       final profile = await ref.read(userProfileProvider(driverId).future);
-      final phone = profile?.phoneNumber;
+      final phone = profile?.asDriver?.phoneNumber;
       if (phone == null || phone.isEmpty) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              AppLocalizations.of(context).driverPhoneUnavailableError,
-            ),
-          ),
+        AdaptiveSnackBar.show(
+          context,
+          message: AppLocalizations.of(context).driverPhoneUnavailableError,
+          type: AdaptiveSnackBarType.error,
         );
         return;
       }
@@ -691,12 +689,12 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri);
       }
-    } on Exception catch (_) {
+    } catch (e, st) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context).couldNotLaunchDialerError),
-        ),
+      AdaptiveSnackBar.show(
+        context,
+        message: AppLocalizations.of(context).couldNotLaunchDialerError,
+        type: AdaptiveSnackBarType.error,
       );
     }
   }
@@ -821,8 +819,7 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
   }
 
   Widget _buildBookingInfoCard(RideModel ride, RideBooking booking) {
-    final totalPrice = booking.seatsBooked * ride.pricePerSeat;
-    final currency = ride.currency ?? '€';
+    final totalPrice = booking.seatsBooked * ride.pricePerSeatInCents;
     final refCode = booking.id.length >= 6
         ? booking.id.substring(0, 6).toUpperCase()
         : booking.id.toUpperCase();
@@ -856,14 +853,12 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
                 onTap: () {
                   Clipboard.setData(ClipboardData(text: booking.id));
                   HapticFeedback.lightImpact();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        AppLocalizations.of(context).bookingRefCopied(refCode),
-                      ),
-                      duration: const Duration(seconds: 2),
-                      behavior: SnackBarBehavior.floating,
-                    ),
+                  AdaptiveSnackBar.show(
+                    context,
+                    message: AppLocalizations.of(
+                      context,
+                    ).bookingRefCopied(refCode),
+                    type: AdaptiveSnackBarType.success,
                   );
                 },
                 child: Column(
@@ -906,7 +901,7 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
               Container(width: 1.w, height: 32.h, color: AppColors.divider),
               _buildInfoItem(
                 icon: Icons.payments_outlined,
-                value: '$currency${totalPrice.toStringAsFixed(2)}',
+                value: '€${(totalPrice / 100).toStringAsFixed(2)}',
                 label: AppLocalizations.of(context).totalLabel,
               ),
             ],

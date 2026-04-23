@@ -1,4 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:sport_connect/features/auth/models/models.dart';
 
 part 'user_preferences.freezed.dart';
 part 'user_preferences.g.dart';
@@ -11,7 +12,7 @@ abstract class UserPreferences with _$UserPreferences {
     @Default(true) bool emailNotifications,
     @Default(true) bool rideReminders,
     @Default(true) bool chatNotifications,
-    @Default('en') String language,
+    @Default(AppLocale.french) AppLocale language,
     @Default(20.0) double maxPickupRadius,
     @Default(true) bool allowMessages,
   }) = _UserPreferences;

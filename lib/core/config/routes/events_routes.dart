@@ -1,8 +1,9 @@
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
-import 'package:sport_connect/core/config/page_transitions.dart';
 import 'package:sport_connect/core/config/routes/route_config.dart';
-import 'package:sport_connect/features/events/models/event_model.dart';
 import 'package:sport_connect/features/events/views/create_event_screen.dart';
 import 'package:sport_connect/features/events/views/edit_event_screen.dart';
 import 'package:sport_connect/features/events/views/event_attendees_screen.dart';
@@ -24,20 +25,30 @@ class EventsRoutes implements RouteConfig {
       GoRoute(
         path: AppRoutes.createEvent.path,
         name: AppRoutes.createEvent.name,
-        pageBuilder: (context, state) => SlideUpTransitionPage(
-          key: state.pageKey,
-          child: const CreateEventScreen(),
-        ),
+        pageBuilder: (context, state) => PlatformInfo.isIOS
+            ? CupertinoPage(
+                key: state.pageKey,
+                child: const CreateEventScreen(),
+              )
+            : MaterialPage(
+                key: state.pageKey,
+                child: const CreateEventScreen(),
+              ),
       ),
 
       // My Events
       GoRoute(
         path: AppRoutes.myEvents.path,
         name: AppRoutes.myEvents.name,
-        pageBuilder: (context, state) => SlideRightTransitionPage(
-          key: state.pageKey,
-          child: const MyEventsScreen(),
-        ),
+        pageBuilder: (context, state) => PlatformInfo.isIOS
+            ? CupertinoPage(
+                key: state.pageKey,
+                child: const MyEventsScreen(),
+              )
+            : MaterialPage(
+                key: state.pageKey,
+                child: const MyEventsScreen(),
+              ),
       ),
 
       // Event Detail
@@ -46,10 +57,15 @@ class EventsRoutes implements RouteConfig {
         name: AppRoutes.eventDetail.name,
         pageBuilder: (context, state) {
           final eventId = state.pathParameters['id']!;
-          return SlideRightTransitionPage(
-            key: state.pageKey,
-            child: EventDetailScreen(eventId: eventId),
-          );
+          return PlatformInfo.isIOS
+              ? CupertinoPage(
+                  key: state.pageKey,
+                  child: EventDetailScreen(eventId: eventId),
+                )
+              : MaterialPage(
+                  key: state.pageKey,
+                  child: EventDetailScreen(eventId: eventId),
+                );
         },
       ),
 
@@ -59,10 +75,15 @@ class EventsRoutes implements RouteConfig {
         name: AppRoutes.eventAttendees.name,
         pageBuilder: (context, state) {
           final eventId = state.pathParameters['id']!;
-          return SlideRightTransitionPage(
-            key: state.pageKey,
-            child: EventAttendeesScreen(eventId: eventId),
-          );
+          return PlatformInfo.isIOS
+              ? CupertinoPage(
+                  key: state.pageKey,
+                  child: EventAttendeesScreen(eventId: eventId),
+                )
+              : MaterialPage(
+                  key: state.pageKey,
+                  child: EventAttendeesScreen(eventId: eventId),
+                );
         },
       ),
 
@@ -72,10 +93,15 @@ class EventsRoutes implements RouteConfig {
         name: AppRoutes.editEvent.name,
         pageBuilder: (context, state) {
           final eventId = state.pathParameters['id']!;
-          return SlideUpTransitionPage(
-            key: state.pageKey,
-            child: EditEventScreen(eventId: eventId),
-          );
+          return PlatformInfo.isIOS
+              ? CupertinoPage(
+                  key: state.pageKey,
+                  child: EditEventScreen(eventId: eventId),
+                )
+              : MaterialPage(
+                  key: state.pageKey,
+                  child: EditEventScreen(eventId: eventId),
+                );
         },
       ),
     ];

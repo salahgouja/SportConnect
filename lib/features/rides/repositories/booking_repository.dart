@@ -16,6 +16,25 @@ class BookingRepository implements IBookingRepository {
             RideBooking.fromJson({...snap.data()!, 'id': snap.id}),
         toFirestore: (booking, _) => booking.toJson(),
       );
+  Map<String, dynamic> _bookingCreateMap(RideBooking booking) {
+    return <String, dynamic>{
+      'rideId': booking.rideId,
+      'passengerId': booking.passengerId,
+      'driverId': booking.driverId,
+      'status': BookingStatus.pending.name,
+      'seatsBooked': booking.seatsBooked,
+      'createdAt': booking.createdAt ?? DateTime.now(),
+      'updatedAt': DateTime.now(),
+      if (booking.note != null && booking.note!.trim().isNotEmpty)
+        'note': booking.note!.trim(),
+      if (booking.pickupLocation != null)
+        'pickupLocation': {
+          'latitude': booking.pickupLocation!.latitude,
+          'longitude': booking.pickupLocation!.longitude,
+          'address': booking.pickupLocation!.address,
+        },
+    };
+  }
 
   /// Create a new booking
   @override
@@ -48,8 +67,11 @@ class BookingRepository implements IBookingRepository {
       );
     }
 
-    final docRef = _bookingsCollection.doc(booking.id);
-    await docRef.set(booking);
+    final docRef = _firestore
+        .collection(AppConstants.bookingsCollection)
+        .doc(booking.id);
+
+    await docRef.set(_bookingCreateMap(booking));
     return booking.id;
   }
 
@@ -186,10 +208,9 @@ class BookingRepository implements IBookingRepository {
     required String bookingId,
     required String paymentIntentId,
   }) async {
-    await _bookingsCollection.doc(bookingId).update({
-      'paymentIntentId': paymentIntentId,
-      'paidAt': DateTime.now(),
-    });
+    // Server-owned fields.
+    // Stripe webhook writes paymentIntentId + paidAt after payment succeeds.
+    return;
   }
 
   /// Delete booking

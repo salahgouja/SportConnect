@@ -7,10 +7,12 @@ part of 'ride_pricing.dart';
 // **************************************************************************
 
 _RidePricing _$RidePricingFromJson(Map json) => _RidePricing(
-  pricePerSeat: Money.fromJson(
-    Map<String, dynamic>.from(json['pricePerSeat'] as Map),
+  pricePerSeatInCents: Money.fromJson(
+    Map<String, dynamic>.from(json['pricePerSeatInCents'] as Map),
   ),
 );
 
 Map<String, dynamic> _$RidePricingToJson(_RidePricing instance) =>
-    <String, dynamic>{'pricePerSeat': instance.pricePerSeat.toJson()};
+    <String, dynamic>{
+      'pricePerSeatInCents': instance.pricePerSeatInCents.toJson(),
+    };

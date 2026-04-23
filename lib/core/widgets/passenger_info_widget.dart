@@ -53,7 +53,7 @@ class PassengerNameWidget extends ConsumerWidget {
 
     return passengerAsync.when(
       data: (passenger) => Text(
-        passenger?.displayName ?? AppLocalizations.of(context).unknown,
+        passenger?.username ?? AppLocalizations.of(context).unknown,
         style: style,
         maxLines: maxLines,
         overflow: overflow,
@@ -91,8 +91,8 @@ class PassengerAvatarWidget extends ConsumerWidget {
     return passengerAsync.when(
       data: (passenger) {
         final photoUrl = passenger?.photoUrl;
-        final displayName =
-            passenger?.displayName ?? AppLocalizations.of(context).unknown;
+        final username =
+            passenger?.username ?? AppLocalizations.of(context).unknown;
 
         return CircleAvatar(
           radius: radius,
@@ -100,7 +100,7 @@ class PassengerAvatarWidget extends ConsumerWidget {
           backgroundColor: AppColors.primarySurface,
           child: photoUrl == null
               ? Text(
-                  displayName.isNotEmpty ? displayName[0] : '?',
+                  username.isNotEmpty ? username[0] : '?',
                   style: TextStyle(
                     fontSize: radius * 0.7,
                     color: AppColors.primary,
@@ -140,10 +140,9 @@ class PassengerPhoneWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final passengerAsync = ref.watch(userProfileProvider(passengerId));
-
     return passengerAsync.when(
       data: (passenger) => Text(
-        passenger?.phoneNumber ?? AppLocalizations.of(context).noPhone,
+        passenger?.asRider?.phoneNumber ?? AppLocalizations.of(context).noPhone,
         style: style,
       ),
       loading: () => Text(

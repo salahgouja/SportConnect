@@ -8,7 +8,7 @@ part 'leaderboard_entry.g.dart';
 abstract class LeaderboardEntry with _$LeaderboardEntry {
   const factory LeaderboardEntry({
     required String userId,
-    required String displayName,
+    required String username,
     required int totalXP,
     required int level,
     required int rank,

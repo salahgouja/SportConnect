@@ -5,16 +5,36 @@
 // gestures. You can also use WidgetTester to find child widgets in the widget
 // tree, read text, and verify that the values of widget properties are correct.
 
+import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 
+import 'package:sport_connect/core/config/app_router.dart';
 import 'package:sport_connect/main.dart';
 
 void main() {
   testWidgets('App builds smoke test', (tester) async {
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, state) => const SizedBox.shrink(),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const SportConnectApp());
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [appRouterProvider.overrideWithValue(router)],
+        child: const SportConnectApp(),
+      ),
+    );
 
     // Verify app loads - basic smoke test
     await tester.pump();
+    await tester.pumpWidget(const SizedBox.shrink());
   });
 }

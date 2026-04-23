@@ -24,7 +24,7 @@ class RideService extends _$RideService {
       throw ArgumentError('Ride must have at least 1 available seat');
     }
 
-    if (ride.pricing.pricePerSeat.amount < 0) {
+    if (ride.pricing.pricePerSeatInCents.amountInCents < 0) {
       throw ArgumentError('Price cannot be negative');
     }
 
@@ -33,10 +33,11 @@ class RideService extends _$RideService {
     final rideId = await repo.createRide(ride);
 
     // Award XP for creating a ride
+    if (!ref.mounted) return rideId;
     try {
       final profileRepo = ref.read(profileRepositoryProvider);
       await profileRepo.addXP(ride.driverId, 10);
-    } on Exception catch (e) {
+    } catch (e, st) {
       TalkerService.error('Failed to award ride creation XP: $e');
     }
 
@@ -105,6 +106,7 @@ class RideService extends _$RideService {
     await repo.updateRide(cancelled);
 
     // Cancel all pending/accepted bookings for this ride
+    if (!ref.mounted) return;
     try {
       final bookingRepo = ref.read(bookingRepositoryProvider);
       final bookings = await bookingRepo.getBookingsByRideId(
@@ -117,7 +119,7 @@ class RideService extends _$RideService {
           await repo.cancelBooking(rideId: rideId, bookingId: booking.id);
         }
       }
-    } on Exception catch (e) {
+    } catch (e, st) {
       TalkerService.error('Failed to cancel bookings for ride $rideId: $e');
     }
 
@@ -146,6 +148,7 @@ class RideService extends _$RideService {
     await repo.completeRide(rideId);
 
     // Mark all accepted bookings as completed and collect passenger IDs
+    if (!ref.mounted) return;
     final completedPassengerIds = <String>[];
     try {
       final bookingRepo = ref.read(bookingRepositoryProvider);
@@ -163,9 +166,10 @@ class RideService extends _$RideService {
           completedPassengerIds.add(booking.passengerId);
         }
       }
-    } on Exception catch (e) {
+    } catch (e, st) {
       TalkerService.error('Failed to update booking statuses: $e');
     }
+    if (!ref.mounted) return;
 
     // FIX RC-1: Only award XP when the ride was genuinely completed with at
     // least one passenger who was picked up.  A force-completed or corrupted
@@ -181,14 +185,16 @@ class RideService extends _$RideService {
     try {
       final xp = calculateXpReward(ride);
       final distanceKm = ride.route.distanceKm ?? 0.0;
-      final earnings = ride.pricing.pricePerSeat.amount * ride.capacity.booked;
+      final earningsInCents =
+          ride.pricing.pricePerSeatInCents.amountInCents * ride.capacity.booked;
 
       final statsRepo = ref.read(driverStatsRepositoryProvider);
       await statsRepo.recordRideCompletion(
         driverId: ride.driverId,
-        earnings: earnings,
+        earningsInCents: earningsInCents,
         distanceKm: distanceKm,
       );
+      if (!ref.mounted) return;
 
       final profileRepo = ref.read(profileRepositoryProvider);
       final notificationRepo = ref.read(notificationRepositoryProvider);
@@ -214,7 +220,7 @@ class RideService extends _$RideService {
           uid: passengerId,
           asDriver: false,
           distance: distanceKm,
-          fareAmountPaid: ride.pricing.pricePerSeat.amount,
+          fareAmountPaidInCents: ride.pricing.pricePerSeatInCents.amountInCents,
         );
         if (passengerLevelUp != null) {
           await notificationRepo.sendLevelUpNotification(
@@ -263,9 +269,9 @@ class RideService extends _$RideService {
       }
 
       TalkerService.info(
-        'Ride $rideId completed. XP awarded: $xp, earnings: $earnings',
+        'Ride $rideId completed. XP awarded: $xp, earnings: ${earningsInCents / 100}',
       );
-    } on Exception catch (e) {
+    } catch (e, st) {
       // Stats failure should NOT roll back the completion
       TalkerService.error('Failed to record ride completion stats: $e');
     }
@@ -321,7 +327,7 @@ class RideService extends _$RideService {
 
       // Fetch driver info for the notification
       final driver = await profileRepo.getUserById(ride.driverId);
-      final driverName = driver?.displayName ?? 'Driver';
+      final driverName = driver?.username ?? 'Driver';
       final driverPhoto = driver?.photoUrl;
 
       final origin = ride.origin.city ?? ride.origin.address;
@@ -343,7 +349,7 @@ class RideService extends _$RideService {
           reason: reason,
         );
       }
-    } on Exception catch (e) {
+    } catch (e, st) {
       // Notification failure should not break the main cancellation flow
       TalkerService.error('Failed to notify passengers of cancellation: $e');
     }
@@ -365,11 +371,12 @@ class RideService extends _$RideService {
     );
 
     // GAP-13: Penalize no-show in gamification — deduct 20 XP + reset streak
+    if (!ref.mounted) return;
     try {
       final profileRepo = ref.read(profileRepositoryProvider);
       await profileRepo.addXP(passengerId, -20);
       await profileRepo.resetStreak(passengerId);
-    } on Exception catch (e) {
+    } catch (e, st) {
       TalkerService.error('Failed to apply no-show gamification penalty: $e');
     }
 
@@ -377,9 +384,11 @@ class RideService extends _$RideService {
     try {
       final ride = await repo.getRideById(rideId);
       if (ride == null) return;
+      if (!ref.mounted) return;
       final profileRepo = ref.read(profileRepositoryProvider);
       final driver = await profileRepo.getUserById(ride.driverId);
-      final driverName = driver?.displayName ?? 'Driver';
+      if (!ref.mounted) return;
+      final driverName = driver?.username ?? 'Driver';
       final origin = ride.origin.city ?? ride.origin.address;
       final dest = ride.destination.city ?? ride.destination.address;
 
@@ -399,7 +408,7 @@ class RideService extends _$RideService {
           priority: NotificationPriority.high,
         ),
       );
-    } on Exception catch (e) {
+    } catch (e, st) {
       TalkerService.error('Failed to send no-show notification: $e');
     }
   }
@@ -443,7 +452,8 @@ class RideService extends _$RideService {
     try {
       final profileRepo = ref.read(profileRepositoryProvider);
       final driver = await profileRepo.getUserById(ride.driverId);
-      final driverName = driver?.displayName ?? 'Driver';
+      if (!ref.mounted) return;
+      final driverName = driver?.username ?? 'Driver';
       final origin = ride.origin.city ?? ride.origin.address;
       final dest = ride.destination.city ?? ride.destination.address;
       final rideName = '$origin → $dest';
@@ -472,7 +482,7 @@ class RideService extends _$RideService {
           ),
         );
       }
-    } on Exception catch (e) {
+    } catch (e, st) {
       TalkerService.error('Failed to send delay notifications: $e');
     }
   }

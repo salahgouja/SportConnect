@@ -151,7 +151,7 @@ final class LoginViewModelProvider
   }
 }
 
-String _$loginViewModelHash() => r'565febae949499834216691a217b441d9a2f92fd';
+String _$loginViewModelHash() => r'fcc3fed8bbd698bcab72866df54b39442f94ede3';
 
 /// Login view model
 
@@ -209,7 +209,7 @@ final class RegisterViewModelProvider
   }
 }
 
-String _$registerViewModelHash() => r'10049fb4aeb3fa085e070b1b5ebef6c236e831a5';
+String _$registerViewModelHash() => r'9cc3ad806f87127526671ac0a7ca8fe3fa9a9456';
 
 /// Register view model
 
@@ -237,7 +237,7 @@ abstract class _$RegisterViewModel extends $Notifier<AsyncValue<void>> {
 /// is a thin pass-through over [authRepositoryProvider] and carries no local
 /// state, so it does not need to be auto-disposed per-widget.
 
-@ProviderFor(authActionsViewModel)
+@ProviderFor(AuthActionsViewModel)
 final authActionsViewModelProvider = AuthActionsViewModelProvider._();
 
 /// Provides shared auth actions (sign-out, social sign-in, role management).
@@ -245,15 +245,8 @@ final authActionsViewModelProvider = AuthActionsViewModelProvider._();
 /// Declaring this as a [Provider] at global scope is intentional: the class
 /// is a thin pass-through over [authRepositoryProvider] and carries no local
 /// state, so it does not need to be auto-disposed per-widget.
-
 final class AuthActionsViewModelProvider
-    extends
-        $FunctionalProvider<
-          AuthActionsViewModel,
-          AuthActionsViewModel,
-          AuthActionsViewModel
-        >
-    with $Provider<AuthActionsViewModel> {
+    extends $NotifierProvider<AuthActionsViewModel, void> {
   /// Provides shared auth actions (sign-out, social sign-in, role management).
   ///
   /// Declaring this as a [Provider] at global scope is intentional: the class
@@ -275,23 +268,40 @@ final class AuthActionsViewModelProvider
 
   @$internal
   @override
-  $ProviderElement<AuthActionsViewModel> $createElement(
-    $ProviderPointer pointer,
-  ) => $ProviderElement(pointer);
-
-  @override
-  AuthActionsViewModel create(Ref ref) {
-    return authActionsViewModel(ref);
-  }
+  AuthActionsViewModel create() => AuthActionsViewModel();
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(AuthActionsViewModel value) {
+  Override overrideWithValue(void value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<AuthActionsViewModel>(value),
+      providerOverride: $SyncValueProvider<void>(value),
     );
   }
 }
 
 String _$authActionsViewModelHash() =>
-    r'0fec17f7c30c895f7fffe72139d248e9aa1f2ee3';
+    r'565ca7f9bcbe23e215cfb8682d123ef1b12c9c3f';
+
+/// Provides shared auth actions (sign-out, social sign-in, role management).
+///
+/// Declaring this as a [Provider] at global scope is intentional: the class
+/// is a thin pass-through over [authRepositoryProvider] and carries no local
+/// state, so it does not need to be auto-disposed per-widget.
+
+abstract class _$AuthActionsViewModel extends $Notifier<void> {
+  void build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<void, void>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<void, void>,
+              void,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}

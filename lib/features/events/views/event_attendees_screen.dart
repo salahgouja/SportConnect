@@ -1,3 +1,4 @@
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -6,6 +7,7 @@ import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
+import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/features/events/view_models/event_view_model.dart';
 import 'package:sport_connect/features/messaging/view_models/chat_view_model.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
@@ -19,30 +21,21 @@ class EventAttendeesScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final eventAsync = ref.watch(eventByIdProvider(eventId));
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.surface,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
+    return AdaptiveScaffold(
+      appBar: AdaptiveAppBar(
         leading: IconButton(
           icon: Icon(Icons.adaptive.arrow_back_rounded, size: 20.sp),
           onPressed: () => context.pop(),
         ),
-        title: Text(
-          eventAsync.value != null
-              ? 'Attendees (${eventAsync.value!.participantIds.length})'
-              : 'Attendees',
-          style: TextStyle(
-            fontSize: 18.sp,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          ),
-        ),
+        title: eventAsync.value != null
+            ? 'Attendees (${eventAsync.value!.participantIds.length})'
+            : 'Attendees',
       ),
       body: eventAsync.when(
-        loading: () =>
-            const Center(child: CircularProgressIndicator.adaptive()),
+        loading: () => const SkeletonLoader(
+          type: SkeletonType.profileCard,
+          itemCount: 5,
+        ),
         error: (e, _) => const Center(
           child: Text(
             'Failed to load attendees',
@@ -87,6 +80,38 @@ class EventAttendeesScreen extends ConsumerWidget {
   }
 }
 
+class _AttendeeCurrentUser {
+  const _AttendeeCurrentUser({
+    required this.uid,
+    required this.username,
+    this.photoUrl,
+  });
+
+  factory _AttendeeCurrentUser.from(UserModel user) {
+    return _AttendeeCurrentUser(
+      uid: user.uid,
+      username: user.username,
+      photoUrl: user.photoUrl,
+    );
+  }
+
+  final String uid;
+  final String username;
+  final String? photoUrl;
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        other is _AttendeeCurrentUser &&
+            other.uid == uid &&
+            other.username == username &&
+            other.photoUrl == photoUrl;
+  }
+
+  @override
+  int get hashCode => Object.hash(uid, username, photoUrl);
+}
+
 class _AttendeeCard extends ConsumerWidget {
   const _AttendeeCard({required this.userId, required this.eventId});
 
@@ -97,7 +122,12 @@ class _AttendeeCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final profileAsync = ref.watch(userProfileProvider(userId));
     final profile = profileAsync.value;
-    final currentUser = ref.watch(currentUserProvider).value;
+    final currentUser = ref.watch(
+      currentUserProvider.select((value) {
+        final user = value.value;
+        return user == null ? null : _AttendeeCurrentUser.from(user);
+      }),
+    );
     final isSelf = currentUser?.uid == userId;
 
     return Container(
@@ -140,7 +170,7 @@ class _AttendeeCard extends ConsumerWidget {
                   children: [
                     Flexible(
                       child: Text(
-                        profile?.displayName ?? '…',
+                        profile?.username ?? '…',
                         style: TextStyle(
                           fontSize: 14.sp,
                           fontWeight: FontWeight.w700,
@@ -198,7 +228,11 @@ class _AttendeeCard extends ConsumerWidget {
                     ),
                     SizedBox(width: 3.w),
                     Text(
-                      (profile?.rating.average ?? 0.0).toStringAsFixed(1),
+                      (switch (profile) {
+                        final RiderModel rider => rider.rating.average,
+                        final DriverModel driver => driver.rating.average,
+                        _ => 0.0,
+                      }).toStringAsFixed(1),
                       style: TextStyle(
                         fontSize: 12.sp,
                         color: AppColors.textSecondary,
@@ -233,7 +267,7 @@ class _AttendeeCard extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     UserModel? profile,
-    UserModel? currentUser,
+    _AttendeeCurrentUser? currentUser,
   ) async {
     if (profile == null || currentUser == null) return;
     try {
@@ -241,8 +275,8 @@ class _AttendeeCard extends ConsumerWidget {
         getOrCreateChatProvider(
           userId1: currentUser.uid,
           userId2: userId,
-          userName1: currentUser.displayName,
-          userName2: profile.displayName,
+          userName1: currentUser.username,
+          userName2: profile.username,
           userPhoto1: currentUser.photoUrl,
           userPhoto2: profile.photoUrl,
         ).future,
@@ -253,12 +287,12 @@ class _AttendeeCard extends ConsumerWidget {
         pathParameters: {'id': chat.id},
         extra: profile,
       );
-    } on Exception catch (_) {
+    } catch (e, st) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to open chat. Please try again.'),
-          ),
+        AdaptiveSnackBar.show(
+          context,
+          message: 'Failed to open chat. Please try again.',
+          type: AdaptiveSnackBarType.error,
         );
       }
     }

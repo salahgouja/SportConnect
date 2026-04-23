@@ -20,6 +20,8 @@ import 'package:sport_connect/features/home/view_models/rider_home_view_model.da
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
+import 'package:sliver_tools/sliver_tools.dart';
+import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Scrollable content-first feed for the Rider Home Screen.
@@ -38,27 +40,26 @@ class RiderHomeFeed extends ConsumerWidget {
 
     return CustomScrollView(
       slivers: [
-        // ── Greeting + Search ────────────────────────────────
-        SliverToBoxAdapter(
-          child: _GreetingHeader(user: user, onSearchTap: onSearchTap),
+        // ── Hero section: Greeting + XP strip ───────────────
+        MultiSliver(
+          children: [
+            SliverToBoxAdapter(
+              child: _GreetingHeader(user: user, onSearchTap: onSearchTap),
+            ),
+            SliverToBoxAdapter(child: _GamificationStrip(user: user)),
+          ],
         ),
 
-        // ── XP & Streak Strip ────────────────────────────────
-        SliverToBoxAdapter(child: _GamificationStrip(user: user)),
+        // ── Contextual feed ──────────────────────────────────
+        MultiSliver(
+          children: [
+            const SliverToBoxAdapter(child: _NextRideSection()),
+            const SliverToBoxAdapter(child: _EventsNearYouSection()),
+            SliverToBoxAdapter(child: _NearbyRidesSection(vmState: vmState)),
+          ],
+        ),
 
-        // ── Next Ride ────────────────────────────────────────
-        const SliverToBoxAdapter(child: _NextRideSection()),
-
-        // ── Quick Actions ────────────────────────────────────
-        const SliverToBoxAdapter(child: _QuickActionsSection()),
-
-        // ── Events Near You ──────────────────────────────────
-        const SliverToBoxAdapter(child: _EventsNearYouSection()),
-
-        // ── Available Rides Nearby ───────────────────────────
-        SliverToBoxAdapter(child: _NearbyRidesSection(vmState: vmState)),
-
-        // ── Map Toggle ───────────────────────────────────────
+        // ── Map discovery ────────────────────────────────────
         SliverToBoxAdapter(
           child: _MapToggleCard(
             onTap: () =>
@@ -66,7 +67,6 @@ class RiderHomeFeed extends ConsumerWidget {
           ),
         ),
 
-        // Bottom padding
         SliverToBoxAdapter(child: SizedBox(height: 100.h)),
       ],
     );
@@ -80,7 +80,7 @@ class RiderHomeFeed extends ConsumerWidget {
 class _GreetingHeader extends StatelessWidget {
   const _GreetingHeader({required this.user, required this.onSearchTap});
 
-  final AsyncValue<dynamic> user;
+  final AsyncValue<UserModel?> user;
   final VoidCallback onSearchTap;
 
   String _getGreeting(AppLocalizations l10n) {
@@ -95,7 +95,7 @@ class _GreetingHeader extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final greeting = _getGreeting(l10n);
     final userName = user.whenOrNull(
-      data: (u) => u?.displayName?.split(' ').first,
+      data: (u) => u?.username.split(' ').first,
     );
 
     return SafeArea(
@@ -223,13 +223,20 @@ class _GamificationStrip extends StatelessWidget {
     if (userData == null) return const SizedBox.shrink();
 
     final level = userData.userLevel;
-    final totalXP = userData.totalXP;
+    final gamification = switch (userData) {
+      final RiderModel rider => rider.gamification,
+      final DriverModel driver => driver.gamification,
+      _ => null,
+    };
+    final totalXP = gamification?.totalXP ?? 0;
     final int streak;
     switch (userData) {
       case RiderModel(:final gamification):
         streak = gamification.currentStreak;
       case DriverModel(:final gamification):
         streak = gamification.currentStreak;
+      case _:
+        streak = 0;
     }
 
     return Padding(
@@ -262,10 +269,12 @@ class _NextRideSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(currentUserProvider).value;
-    if (user == null) return const SizedBox.shrink();
+    final userId = ref.watch(
+      currentUserProvider.select((value) => value.value?.uid),
+    );
+    if (userId == null) return const SizedBox.shrink();
 
-    final bookingsAsync = ref.watch(bookingsByPassengerProvider(user.uid));
+    final bookingsAsync = ref.watch(bookingsByPassengerProvider(userId));
 
     return bookingsAsync.when(
       loading: () => const SizedBox.shrink(),
@@ -570,84 +579,6 @@ class _NextRideCard extends ConsumerWidget {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Quick Actions Section (recent/frequent routes)
-// ─────────────────────────────────────────────────────────────
-
-class _QuickActionsSection extends ConsumerWidget {
-  const _QuickActionsSection();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context);
-    final user = ref.watch(currentUserProvider).value;
-
-    // Use favorite routes from user model as quick actions (rider-specific field)
-    final routes = user is RiderModel ? user.favoriteRoutes : <String>[];
-    if (routes.isEmpty) return const SizedBox.shrink();
-
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _SectionTitle(icon: Icons.bolt_rounded, title: l10n.quickActions),
-          SizedBox(height: 10.h),
-          SizedBox(
-            height: 44.h,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: routes.length > 5 ? 5 : routes.length,
-              separatorBuilder: (_, _) => SizedBox(width: 8.w),
-              itemBuilder: (context, index) {
-                final route = routes[index];
-                return GestureDetector(
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    context.push(AppRoutes.searchRides.path);
-                  },
-                  child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 14.w,
-                      vertical: 10.h,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.primarySurface,
-                      borderRadius: BorderRadius.circular(22.r),
-                      border: Border.all(
-                        color: AppColors.primary.withValues(alpha: 0.2),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.route_rounded,
-                          size: 16.sp,
-                          color: AppColors.primary,
-                        ),
-                        SizedBox(width: 6.w),
-                        Text(
-                          route,
-                          style: TextStyle(
-                            fontSize: 13.sp,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.primaryDark,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    ).animate().fadeIn(delay: 250.ms, duration: 400.ms);
-  }
-}
-
-// ─────────────────────────────────────────────────────────────
 // Events Near You Section
 // ─────────────────────────────────────────────────────────────
 
@@ -857,16 +788,7 @@ class _NearbyRidesSection extends ConsumerWidget {
               title: l10n.availableRides,
             ),
             SizedBox(height: 12.h),
-            Center(
-              child: SizedBox(
-                width: 24.w,
-                height: 24.w,
-                child: const CircularProgressIndicator.adaptive(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-                ),
-              ),
-            ),
+            const SkeletonLoader(type: SkeletonType.rideCard, itemCount: 3),
           ],
         ),
       ),
@@ -1067,7 +989,9 @@ class _NearbyRideCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(20.r),
                   ),
                   child: Text(
-                    l10n.value5(ride.pricePerSeat.toStringAsFixed(0)),
+                    l10n.value5(
+                      (ride.pricePerSeatInCents / 100).toStringAsFixed(2),
+                    ),
                     style: TextStyle(
                       fontSize: 15.sp,
                       fontWeight: FontWeight.w700,

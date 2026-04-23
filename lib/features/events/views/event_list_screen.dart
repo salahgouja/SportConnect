@@ -1,3 +1,4 @@
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -8,10 +9,13 @@ import 'package:intl/intl.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
+import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/core/widgets/premium_card.dart';
 import 'package:sport_connect/features/events/models/event_model.dart';
 import 'package:sport_connect/features/events/view_models/event_view_model.dart';
+import 'package:sliver_tools/sliver_tools.dart';
+import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Browse / discover upcoming events, filter by sport type.
@@ -22,8 +26,7 @@ class EventListScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final vm = ref.watch(eventListViewModelProvider);
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return AdaptiveScaffold(
       body: RefreshIndicator.adaptive(
         onRefresh: () async {
           ref.invalidate(eventListViewModelProvider);
@@ -45,8 +48,8 @@ class EventListScreen extends ConsumerWidget {
 
             // ── Event list ──
             if (vm.isLoading)
-              const SliverFillRemaining(
-                child: Center(child: CircularProgressIndicator.adaptive()),
+              const SliverToBoxAdapter(
+                child: SkeletonLoader(type: SkeletonType.eventCard, itemCount: 4),
               )
             else if (vm.error != null)
               SliverFillRemaining(
@@ -306,14 +309,11 @@ class EventListScreen extends ConsumerWidget {
     EventListState vm,
   ) async {
     final options = [5.0, 10.0, 25.0, 50.0];
-    final chosen = await showModalBottomSheet<double?>(
+    final chosen = await AppModalSheet.show<double?>(
       context: context,
-      backgroundColor: AppColors.surface,
-      showDragHandle: false,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-      ),
-      builder: (ctx) => Padding(
+      title: 'Events near me',
+      maxHeightFactor: 0.6,
+      child: Padding(
         padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 32.h),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -342,7 +342,7 @@ class EventListScreen extends ConsumerWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     ...options.map(
-                      (km) => ListTile(
+                      (km) => AdaptiveListTile(
                         leading: Icon(
                           Icons.radio_button_checked_rounded,
                           color: vm.radiusKm == km
@@ -357,11 +357,11 @@ class EventListScreen extends ConsumerWidget {
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        onTap: () => Navigator.of(ctx).pop(km),
+                        onTap: () => Navigator.of(context).pop(km),
                       ),
                     ),
                     const Divider(),
-                    ListTile(
+                    AdaptiveListTile(
                       leading: Icon(
                         Icons.public_rounded,
                         size: 20.sp,
@@ -374,7 +374,7 @@ class EventListScreen extends ConsumerWidget {
                           color: AppColors.textSecondary,
                         ),
                       ),
-                      onTap: () => Navigator.of(ctx).pop(-1),
+                      onTap: () => Navigator.of(context).pop(-1),
                     ),
                   ],
                 ),
@@ -548,10 +548,11 @@ class _EventCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return PremiumCard(
-onTap: () => context.pushNamed(
-  AppRoutes.eventDetail.name,
-  pathParameters: {'id': event.id},
-),      padding: EdgeInsets.zero,
+      onTap: () => context.pushNamed(
+        AppRoutes.eventDetail.name,
+        pathParameters: {'id': event.id},
+      ),
+      padding: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

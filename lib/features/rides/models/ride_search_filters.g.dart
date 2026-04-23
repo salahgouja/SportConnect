@@ -23,7 +23,7 @@ _RideSearchFilters _$RideSearchFiltersFromJson(Map json) => _RideSearchFilters(
   ),
   departureTimeTo: const TimestampConverter().fromJson(json['departureTimeTo']),
   minSeats: (json['minSeats'] as num?)?.toInt() ?? 1,
-  maxPrice: (json['maxPrice'] as num?)?.toDouble(),
+  maxPrice: (json['maxPrice'] as num?)?.toInt(),
   maxRadiusKm: (json['maxRadiusKm'] as num?)?.toDouble(),
   allowPets: json['allowPets'] as bool? ?? false,
   allowSmoking: json['allowSmoking'] as bool? ?? false,

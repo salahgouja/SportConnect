@@ -1,6 +1,8 @@
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
-import 'package:sport_connect/core/config/page_transitions.dart';
 import 'package:sport_connect/core/config/routes/route_config.dart';
 import 'package:sport_connect/core/config/routes/route_params.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
@@ -38,10 +40,15 @@ class RideRoutes implements RouteConfig {
         name: AppRoutes.searchRides.name,
         pageBuilder: (context, state) {
           final extra = state.extra as Map<String, dynamic>?;
-          return SlideRightTransitionPage(
-            key: state.pageKey,
-            child: RideSearchScreen(initialDestination: extra),
-          );
+          return PlatformInfo.isIOS
+              ? CupertinoPage(
+                  key: state.pageKey,
+                  child: RideSearchScreen(initialDestination: extra),
+                )
+              : MaterialPage(
+                  key: state.pageKey,
+                  child: RideSearchScreen(initialDestination: extra),
+                );
         },
       ),
 
@@ -56,10 +63,15 @@ class RideRoutes implements RouteConfig {
           final params = state.params;
           final rideId = params.getStringOrThrow('id');
 
-          return ScaleTransitionPage(
-            key: state.pageKey,
-            child: RiderViewRideScreen(rideId: rideId),
-          );
+          return PlatformInfo.isIOS
+              ? CupertinoPage(
+                  key: state.pageKey,
+                  child: RiderViewRideScreen(rideId: rideId),
+                )
+              : MaterialPage(
+                  key: state.pageKey,
+                  child: RiderViewRideScreen(rideId: rideId),
+                );
         },
       ),
 
@@ -76,10 +88,19 @@ class RideRoutes implements RouteConfig {
               'riderActiveRide requires a non-empty rideId query param',
             );
           }
-          return SlideUpTransitionPage(
-            key: state.pageKey,
-            child: passenger_active.PassengerActiveRideScreen(rideId: rideId),
-          );
+          return PlatformInfo.isIOS
+              ? CupertinoPage(
+                  key: state.pageKey,
+                  child: passenger_active.PassengerActiveRideScreen(
+                    rideId: rideId,
+                  ),
+                )
+              : MaterialPage(
+                  key: state.pageKey,
+                  child: passenger_active.PassengerActiveRideScreen(
+                    rideId: rideId,
+                  ),
+                );
         },
       ),
 
@@ -91,10 +112,15 @@ class RideRoutes implements RouteConfig {
           final params = state.params;
           final rideId = params.getStringOrThrow('id');
 
-          return SlideUpTransitionPage(
-            key: state.pageKey,
-            child: RideDetailScreen(rideId: rideId),
-          );
+          return PlatformInfo.isIOS
+              ? CupertinoPage(
+                  key: state.pageKey,
+                  child: RideDetailScreen(rideId: rideId),
+                )
+              : MaterialPage(
+                  key: state.pageKey,
+                  child: RideDetailScreen(rideId: rideId),
+                );
         },
       ),
 
@@ -107,13 +133,21 @@ class RideRoutes implements RouteConfig {
           final existingRide = state.extra is RideModel
               ? state.extra! as RideModel
               : null;
-          return SlideUpTransitionPage(
-            key: state.pageKey,
-            child: DriverOfferRideScreen(
-              existingRide: existingRide,
-              isEditMode: existingRide != null,
-            ),
-          );
+          return PlatformInfo.isIOS
+              ? CupertinoPage(
+                  key: state.pageKey,
+                  child: DriverOfferRideScreen(
+                    existingRide: existingRide,
+                    isEditMode: existingRide != null,
+                  ),
+                )
+              : MaterialPage(
+                  key: state.pageKey,
+                  child: DriverOfferRideScreen(
+                    existingRide: existingRide,
+                    isEditMode: existingRide != null,
+                  ),
+                );
         },
       ),
 
@@ -128,10 +162,15 @@ class RideRoutes implements RouteConfig {
           final params = state.params;
           final rideId = params.getStringOrThrow('id');
 
-          return ScaleTransitionPage(
-            key: state.pageKey,
-            child: DriverViewRideScreen(rideId: rideId),
-          );
+          return PlatformInfo.isIOS
+              ? CupertinoPage(
+                  key: state.pageKey,
+                  child: DriverViewRideScreen(rideId: rideId),
+                )
+              : MaterialPage(
+                  key: state.pageKey,
+                  child: DriverViewRideScreen(rideId: rideId),
+                );
         },
       ),
 
@@ -142,13 +181,21 @@ class RideRoutes implements RouteConfig {
         pageBuilder: (context, state) {
           final params = state.params;
           final rideId = params.getStringOrThrow('id');
-          return SlideUpTransitionPage(
-            key: state.pageKey,
-            child: DriverOfferRideScreen(
-              existingRideId: rideId,
-              isEditMode: true,
-            ),
-          );
+          return PlatformInfo.isIOS
+              ? CupertinoPage(
+                  key: state.pageKey,
+                  child: DriverOfferRideScreen(
+                    existingRideId: rideId,
+                    isEditMode: true,
+                  ),
+                )
+              : MaterialPage(
+                  key: state.pageKey,
+                  child: DriverOfferRideScreen(
+                    existingRideId: rideId,
+                    isEditMode: true,
+                  ),
+                );
         },
       ),
 
@@ -165,10 +212,15 @@ class RideRoutes implements RouteConfig {
               'driverActiveRide requires a non-empty rideId query param',
             );
           }
-          return SlideUpTransitionPage(
-            key: state.pageKey,
-            child: driver_active.DriverActiveRideScreen(rideId: rideId),
-          );
+          return PlatformInfo.isIOS
+              ? CupertinoPage(
+                  key: state.pageKey,
+                  child: driver_active.DriverActiveRideScreen(rideId: rideId),
+                )
+              : MaterialPage(
+                  key: state.pageKey,
+                  child: driver_active.DriverActiveRideScreen(rideId: rideId),
+                );
         },
       ),
 
@@ -177,10 +229,15 @@ class RideRoutes implements RouteConfig {
         path: AppRoutes.driverRequests.path,
         name: AppRoutes.driverRequests.name,
         pageBuilder: (context, state) {
-          return SlideUpTransitionPage(
-            key: state.pageKey,
-            child: const DriverRequestsScreen(),
-          );
+          return PlatformInfo.isIOS
+              ? CupertinoPage(
+                  key: state.pageKey,
+                  child: const DriverRequestsScreen(),
+                )
+              : MaterialPage(
+                  key: state.pageKey,
+                  child: const DriverRequestsScreen(),
+                );
         },
       ),
 
@@ -192,10 +249,15 @@ class RideRoutes implements RouteConfig {
           final params = state.params;
           final rideId = params.getStringOrThrow('id');
 
-          return SlideUpTransitionPage(
-            key: state.pageKey,
-            child: RideCompletionScreen(rideId: rideId),
-          );
+          return PlatformInfo.isIOS
+              ? CupertinoPage(
+                  key: state.pageKey,
+                  child: RideCompletionScreen(rideId: rideId),
+                )
+              : MaterialPage(
+                  key: state.pageKey,
+                  child: RideCompletionScreen(rideId: rideId),
+                );
         },
       ),
 
@@ -208,10 +270,21 @@ class RideRoutes implements RouteConfig {
           final rideId = params.getStringOrThrow('id');
           final isDriver = params.getQuery('isDriver') == 'true';
 
-          return SlideUpTransitionPage(
-            key: state.pageKey,
-            child: CancellationReasonScreen(rideId: rideId, isDriver: isDriver),
-          );
+          return PlatformInfo.isIOS
+              ? CupertinoPage(
+                  key: state.pageKey,
+                  child: CancellationReasonScreen(
+                    rideId: rideId,
+                    isDriver: isDriver,
+                  ),
+                )
+              : MaterialPage(
+                  key: state.pageKey,
+                  child: CancellationReasonScreen(
+                    rideId: rideId,
+                    isDriver: isDriver,
+                  ),
+                );
         },
       ),
 
@@ -224,10 +297,21 @@ class RideRoutes implements RouteConfig {
           final rideId = params.getStringOrThrow('id');
           final rideSummary = params.getQuery('summary');
 
-          return SlideUpTransitionPage(
-            key: state.pageKey,
-            child: DisputeScreen(rideId: rideId, rideSummary: rideSummary),
-          );
+          return PlatformInfo.isIOS
+              ? CupertinoPage(
+                  key: state.pageKey,
+                  child: DisputeScreen(
+                    rideId: rideId,
+                    rideSummary: rideSummary,
+                  ),
+                )
+              : MaterialPage(
+                  key: state.pageKey,
+                  child: DisputeScreen(
+                    rideId: rideId,
+                    rideSummary: rideSummary,
+                  ),
+                );
         },
       ),
 
@@ -238,10 +322,15 @@ class RideRoutes implements RouteConfig {
         pageBuilder: (context, state) {
           final params = state.params;
           final rideId = params.getStringOrThrow('rideId');
-          return SlideUpTransitionPage(
-            key: state.pageKey,
-            child: RideBookingPendingScreen(rideId: rideId),
-          );
+          return PlatformInfo.isIOS
+              ? CupertinoPage(
+                  key: state.pageKey,
+                  child: RideBookingPendingScreen(rideId: rideId),
+                )
+              : MaterialPage(
+                  key: state.pageKey,
+                  child: RideBookingPendingScreen(rideId: rideId),
+                );
         },
       ),
 
@@ -252,10 +341,15 @@ class RideRoutes implements RouteConfig {
         pageBuilder: (context, state) {
           final params = state.params;
           final bookingId = params.getStringOrThrow('bookingId');
-          return SlideUpTransitionPage(
-            key: state.pageKey,
-            child: RideCountdownScreen(bookingId: bookingId),
-          );
+          return PlatformInfo.isIOS
+              ? CupertinoPage(
+                  key: state.pageKey,
+                  child: RideCountdownScreen(bookingId: bookingId),
+                )
+              : MaterialPage(
+                  key: state.pageKey,
+                  child: RideCountdownScreen(bookingId: bookingId),
+                );
         },
       ),
 
@@ -266,10 +360,15 @@ class RideRoutes implements RouteConfig {
         pageBuilder: (context, state) {
           final params = state.params;
           final rideId = params.getStringOrThrow('rideId');
-          return SlideUpTransitionPage(
-            key: state.pageKey,
-            child: DriverRatePassengerScreen(rideId: rideId),
-          );
+          return PlatformInfo.isIOS
+              ? CupertinoPage(
+                  key: state.pageKey,
+                  child: DriverRatePassengerScreen(rideId: rideId),
+                )
+              : MaterialPage(
+                  key: state.pageKey,
+                  child: DriverRatePassengerScreen(rideId: rideId),
+                );
         },
       ),
     ];

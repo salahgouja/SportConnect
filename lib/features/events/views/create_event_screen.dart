@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -11,6 +12,7 @@ import 'package:intl/intl.dart';
 import 'package:reactive_forms/reactive_forms.dart';
 import 'package:sport_connect/core/models/location/location_point.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/core/widgets/map_location_picker.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/features/events/models/event_model.dart';
@@ -71,25 +73,26 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
       if (next.error != null &&
           next.error != previous?.error &&
           context.mounted) {
-        ScaffoldMessenger.of(
+        AdaptiveSnackBar.show(
           context,
-        ).showSnackBar(SnackBar(content: Text(next.error!)));
+          message: next.error!,
+          type: AdaptiveSnackBarType.error,
+        );
       }
 
       if (next.warningMessage != null &&
           next.warningMessage != previous?.warningMessage &&
           context.mounted) {
-        ScaffoldMessenger.of(
+        AdaptiveSnackBar.show(
           context,
-        ).showSnackBar(SnackBar(content: Text(next.warningMessage!)));
+          message: next.warningMessage!,
+          type: AdaptiveSnackBarType.warning,
+        );
       }
     });
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
+    return AdaptiveScaffold(
+      appBar: AdaptiveAppBar(
         leading: IconButton(
           icon: Icon(
             Icons.close_rounded,
@@ -98,47 +101,39 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
           ),
           onPressed: () => context.pop(),
         ),
-        title: Text(
-          l10n.createEventTitle,
-          style: TextStyle(
-            fontSize: 18.sp,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        centerTitle: true,
+        title: l10n.createEventTitle,
       ),
       body: ReactiveForm(
         formGroup: _form,
         child: GestureDetector(
           onTap: () => FocusScope.of(context).unfocus(),
           child: SafeArea(
-          top: false,
-          child: ListView(
-            padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 32.h),
-            children: [
-              _buildSportTypeSelector(ref, createState, l10n),
-              SizedBox(height: 20.h),
-              _buildTitleField(ref, createState, l10n),
-              SizedBox(height: 14.h),
-              SizedBox(height: 14.h),
-              _buildDescriptionField(ref, createState, l10n),
-              SizedBox(height: 20.h),
-              _buildImagePicker(ref, createState, l10n),
-              SizedBox(height: 20.h),
-              _buildLocationPicker(context, ref, createState, l10n),
-              SizedBox(height: 20.h),
-              _buildWhenSection(context, ref, createState, l10n),
-              SizedBox(height: 20.h),
-              _buildParticipantSlider(ref, createState, l10n),
-              SizedBox(height: 20.h),
-              _buildRecurringToggle(context, ref, createState, l10n),
-              SizedBox(height: 32.h),
-              _buildSubmitButton(context, ref, createState, l10n),
-            ],
+            top: false,
+            child: ListView(
+              padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 32.h),
+              children: [
+                _buildSportTypeSelector(ref, createState, l10n),
+                SizedBox(height: 20.h),
+                _buildTitleField(ref, createState, l10n),
+                SizedBox(height: 14.h),
+                SizedBox(height: 14.h),
+                _buildDescriptionField(ref, createState, l10n),
+                SizedBox(height: 20.h),
+                _buildImagePicker(ref, createState, l10n),
+                SizedBox(height: 20.h),
+                _buildLocationPicker(context, ref, createState, l10n),
+                SizedBox(height: 20.h),
+                _buildWhenSection(context, ref, createState, l10n),
+                SizedBox(height: 20.h),
+                _buildParticipantSlider(ref, createState, l10n),
+                SizedBox(height: 20.h),
+                _buildRecurringToggle(context, ref, createState, l10n),
+                SizedBox(height: 32.h),
+                _buildSubmitButton(context, ref, createState, l10n),
+              ],
+            ),
           ),
         ),
-      ),
       ),
     );
   }
@@ -554,7 +549,7 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
             ),
           ],
         ),
-        Slider.adaptive(
+        AdaptiveSlider(
           value: createState.maxParticipants.toDouble(),
           max: 100,
           divisions: 20,
@@ -707,12 +702,11 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
 
     if (!context.mounted) return;
 
-    await showModalBottomSheet<void>(
+    await AppModalSheet.show<void>(
       context: context,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
-      ),
-      builder: (context) => Container(
+      title: 'Repeat',
+      maxHeightFactor: 0.7,
+      child: Container(
         padding: EdgeInsets.symmetric(vertical: 16.h),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -1005,4 +999,3 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
     context.pop(result.event);
   }
 }
-

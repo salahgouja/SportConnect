@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$RidePricing {
 
- Money get pricePerSeat;
+ Money get pricePerSeatInCents;
 /// Create a copy of RidePricing
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $RidePricingCopyWith<RidePricing> get copyWith => _$RidePricingCopyWithImpl<Ride
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is RidePricing&&(identical(other.pricePerSeat, pricePerSeat) || other.pricePerSeat == pricePerSeat));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is RidePricing&&(identical(other.pricePerSeatInCents, pricePerSeatInCents) || other.pricePerSeatInCents == pricePerSeatInCents));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,pricePerSeat);
+int get hashCode => Object.hash(runtimeType,pricePerSeatInCents);
 
 @override
 String toString() {
-  return 'RidePricing(pricePerSeat: $pricePerSeat)';
+  return 'RidePricing(pricePerSeatInCents: $pricePerSeatInCents)';
 }
 
 
@@ -48,11 +48,11 @@ abstract mixin class $RidePricingCopyWith<$Res>  {
   factory $RidePricingCopyWith(RidePricing value, $Res Function(RidePricing) _then) = _$RidePricingCopyWithImpl;
 @useResult
 $Res call({
- Money pricePerSeat
+ Money pricePerSeatInCents
 });
 
 
-$MoneyCopyWith<$Res> get pricePerSeat;
+$MoneyCopyWith<$Res> get pricePerSeatInCents;
 
 }
 /// @nodoc
@@ -65,9 +65,9 @@ class _$RidePricingCopyWithImpl<$Res>
 
 /// Create a copy of RidePricing
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? pricePerSeat = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? pricePerSeatInCents = null,}) {
   return _then(_self.copyWith(
-pricePerSeat: null == pricePerSeat ? _self.pricePerSeat : pricePerSeat // ignore: cast_nullable_to_non_nullable
+pricePerSeatInCents: null == pricePerSeatInCents ? _self.pricePerSeatInCents : pricePerSeatInCents // ignore: cast_nullable_to_non_nullable
 as Money,
   ));
 }
@@ -75,10 +75,10 @@ as Money,
 /// with the given fields replaced by the non-null parameter values.
 @override
 @pragma('vm:prefer-inline')
-$MoneyCopyWith<$Res> get pricePerSeat {
+$MoneyCopyWith<$Res> get pricePerSeatInCents {
   
-  return $MoneyCopyWith<$Res>(_self.pricePerSeat, (value) {
-    return _then(_self.copyWith(pricePerSeat: value));
+  return $MoneyCopyWith<$Res>(_self.pricePerSeatInCents, (value) {
+    return _then(_self.copyWith(pricePerSeatInCents: value));
   });
 }
 }
@@ -162,10 +162,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( Money pricePerSeat)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( Money pricePerSeatInCents)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _RidePricing() when $default != null:
-return $default(_that.pricePerSeat);case _:
+return $default(_that.pricePerSeatInCents);case _:
   return orElse();
 
 }
@@ -183,10 +183,10 @@ return $default(_that.pricePerSeat);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( Money pricePerSeat)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( Money pricePerSeatInCents)  $default,) {final _that = this;
 switch (_that) {
 case _RidePricing():
-return $default(_that.pricePerSeat);case _:
+return $default(_that.pricePerSeatInCents);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -203,10 +203,10 @@ return $default(_that.pricePerSeat);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( Money pricePerSeat)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( Money pricePerSeatInCents)?  $default,) {final _that = this;
 switch (_that) {
 case _RidePricing() when $default != null:
-return $default(_that.pricePerSeat);case _:
+return $default(_that.pricePerSeatInCents);case _:
   return null;
 
 }
@@ -218,10 +218,10 @@ return $default(_that.pricePerSeat);case _:
 @JsonSerializable()
 
 class _RidePricing extends RidePricing {
-  const _RidePricing({required this.pricePerSeat}): super._();
+  const _RidePricing({required this.pricePerSeatInCents}): super._();
   factory _RidePricing.fromJson(Map<String, dynamic> json) => _$RidePricingFromJson(json);
 
-@override final  Money pricePerSeat;
+@override final  Money pricePerSeatInCents;
 
 /// Create a copy of RidePricing
 /// with the given fields replaced by the non-null parameter values.
@@ -236,16 +236,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RidePricing&&(identical(other.pricePerSeat, pricePerSeat) || other.pricePerSeat == pricePerSeat));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RidePricing&&(identical(other.pricePerSeatInCents, pricePerSeatInCents) || other.pricePerSeatInCents == pricePerSeatInCents));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,pricePerSeat);
+int get hashCode => Object.hash(runtimeType,pricePerSeatInCents);
 
 @override
 String toString() {
-  return 'RidePricing(pricePerSeat: $pricePerSeat)';
+  return 'RidePricing(pricePerSeatInCents: $pricePerSeatInCents)';
 }
 
 
@@ -256,11 +256,11 @@ abstract mixin class _$RidePricingCopyWith<$Res> implements $RidePricingCopyWith
   factory _$RidePricingCopyWith(_RidePricing value, $Res Function(_RidePricing) _then) = __$RidePricingCopyWithImpl;
 @override @useResult
 $Res call({
- Money pricePerSeat
+ Money pricePerSeatInCents
 });
 
 
-@override $MoneyCopyWith<$Res> get pricePerSeat;
+@override $MoneyCopyWith<$Res> get pricePerSeatInCents;
 
 }
 /// @nodoc
@@ -273,9 +273,9 @@ class __$RidePricingCopyWithImpl<$Res>
 
 /// Create a copy of RidePricing
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? pricePerSeat = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? pricePerSeatInCents = null,}) {
   return _then(_RidePricing(
-pricePerSeat: null == pricePerSeat ? _self.pricePerSeat : pricePerSeat // ignore: cast_nullable_to_non_nullable
+pricePerSeatInCents: null == pricePerSeatInCents ? _self.pricePerSeatInCents : pricePerSeatInCents // ignore: cast_nullable_to_non_nullable
 as Money,
   ));
 }
@@ -284,10 +284,10 @@ as Money,
 /// with the given fields replaced by the non-null parameter values.
 @override
 @pragma('vm:prefer-inline')
-$MoneyCopyWith<$Res> get pricePerSeat {
+$MoneyCopyWith<$Res> get pricePerSeatInCents {
   
-  return $MoneyCopyWith<$Res>(_self.pricePerSeat, (value) {
-    return _then(_self.copyWith(pricePerSeat: value));
+  return $MoneyCopyWith<$Res>(_self.pricePerSeatInCents, (value) {
+    return _then(_self.copyWith(pricePerSeatInCents: value));
   });
 }
 }

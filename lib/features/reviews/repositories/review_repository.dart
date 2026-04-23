@@ -1,7 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:riverpod/src/providers/future_provider.dart';
-import 'package:riverpod/src/providers/stream_provider.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/interfaces/repositories/i_review_repository.dart';
 import 'package:sport_connect/core/models/models.dart';
@@ -9,6 +6,9 @@ import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/features/reviews/models/review_model.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:uuid/uuid.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+part 'review_repository.g.dart';
 
 /// Firestore Collection Structure for Reviews:
 ///
@@ -45,54 +45,39 @@ import 'package:uuid/uuid.dart';
 /// 5. Tag aggregation: Can compute tag statistics
 
 /// Provider to get reviews for a specific user
-final FutureProviderFamily<List<ReviewModel>, String> userReviewsProvider =
-    FutureProvider.family<List<ReviewModel>, String>((
-      ref,
-      userId,
-    ) async {
-      final repo = ref.read(reviewRepositoryProvider);
-      return repo.getReviewsForUser(userId);
-    });
+@riverpod
+Future<List<ReviewModel>> userReviews(Ref ref, String userId) async {
+  final repo = ref.watch(reviewRepositoryProvider);
+  return repo.getReviewsForUser(userId);
+}
 
 /// Provider to get reviews left by a specific user
-final FutureProviderFamily<List<ReviewModel>, String> reviewsByUserProvider =
-    FutureProvider.family<List<ReviewModel>, String>((
-      ref,
-      userId,
-    ) async {
-      final repo = ref.read(reviewRepositoryProvider);
-      return repo.getReviewsByUser(userId);
-    });
+@riverpod
+Future<List<ReviewModel>> reviewsByUser(Ref ref, String userId) async {
+  final repo = ref.watch(reviewRepositoryProvider);
+  return repo.getReviewsByUser(userId);
+}
 
 /// Provider to get rating stats for a user
-final FutureProviderFamily<RatingStats, String> userRatingStatsProvider =
-    FutureProvider.family<RatingStats, String>((
-      ref,
-      userId,
-    ) async {
-      final repo = ref.read(reviewRepositoryProvider);
-      return repo.getRatingStatsForUser(userId);
-    });
+@riverpod
+Future<RatingStats> userRatingStats(Ref ref, String userId) async {
+  final repo = ref.watch(reviewRepositoryProvider);
+  return repo.getRatingStatsForUser(userId);
+}
 
 /// Provider to get reviews for a specific ride
-final FutureProviderFamily<List<ReviewModel>, String> rideReviewsProvider =
-    FutureProvider.family<List<ReviewModel>, String>((
-      ref,
-      rideId,
-    ) async {
-      final repo = ref.read(reviewRepositoryProvider);
-      return repo.getReviewsForRide(rideId);
-    });
+@riverpod
+Future<List<ReviewModel>> rideReviews(Ref ref, String rideId) async {
+  final repo = ref.watch(reviewRepositoryProvider);
+  return repo.getReviewsForRide(rideId);
+}
 
 /// Stream provider for real-time review updates for a user
-final StreamProviderFamily<List<ReviewModel>, String>
-userReviewsStreamProvider = StreamProvider.family<List<ReviewModel>, String>((
-  ref,
-  userId,
-) {
-  final repo = ref.read(reviewRepositoryProvider);
+@riverpod
+Stream<List<ReviewModel>> userReviewsStream(Ref ref, String userId) {
+  final repo = ref.watch(reviewRepositoryProvider);
   return repo.watchReviewsForUser(userId);
-});
+}
 
 class ReviewRepository implements IReviewRepository {
   ReviewRepository(this._firestore);
@@ -179,7 +164,7 @@ class ReviewRepository implements IReviewRepository {
       id: reviewId,
       rideId: request.rideId,
       reviewerId: currentUser.uid,
-      reviewerName: currentUser.displayName,
+      reviewerName: currentUser.username,
       reviewerPhotoUrl: currentUser.photoUrl,
       revieweeId: request.revieweeId,
       revieweeName: request.revieweeName,
@@ -422,7 +407,7 @@ class ReviewRepository implements IReviewRepository {
             pending.add({
               'rideId': rideId,
               'revieweeId': passengerId,
-              'revieweeName': passenger?.displayName ?? 'Passenger',
+              'revieweeName': passenger?.username ?? 'Passenger',
               'revieweePhotoUrl': passenger?.photoUrl ?? '',
               'type': ReviewType.rider,
               'rideDate': rideData.departureTime,
@@ -446,7 +431,7 @@ class ReviewRepository implements IReviewRepository {
           pending.add({
             'rideId': rideId,
             'revieweeId': driverId,
-            'revieweeName': driver?.displayName ?? 'Driver',
+            'revieweeName': driver?.username ?? 'Driver',
             'revieweePhotoUrl': driver?.photoUrl ?? '',
             'type': ReviewType.driver,
             'rideDate': rideData.departureTime,

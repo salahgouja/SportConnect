@@ -1,5 +1,4 @@
-import 'dart:io' show Platform;
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart';
 
 /// Environment mode for Firebase services
 enum EnvironmentMode {
@@ -15,35 +14,76 @@ class AppConfig {
   AppConfig._();
 
   /// Current environment mode
-  /// Change this to switch between emulator and production
-  static const EnvironmentMode environmentMode = /*kDebugMode
+  static const EnvironmentMode environmentMode = kDebugMode
       ? EnvironmentMode.emulator
-      :*/
-      EnvironmentMode.production;
+      : EnvironmentMode.production;
 
   /// Check if we're using emulators
   static bool get useEmulators => environmentMode == EnvironmentMode.emulator;
 
-  /// Emulator host configuration
-  /// - Android emulator uses 10.0.2.2 to access host machine's localhost
-  /// - iOS simulator and web use localhost/127.0.0.1
-  /// - Physical devices need the actual IP address of your machine
+  /// Optional override for Firebase emulator host.
+  ///
+  /// Example for physical Android/iOS device over Wi-Fi:
+  /// --dart-define=FIREBASE_EMULATOR_HOST=192.168.1.23
+  static const String emulatorHostOverride = String.fromEnvironment(
+    'FIREBASE_EMULATOR_HOST',
+    defaultValue: 'localhost',
+  );
+
+  /// Enable Android emulator loopback host (10.0.2.2) when needed.
+  ///
+  /// Example for Android emulator:
+  /// --dart-define=FIREBASE_USE_ANDROID_EMULATOR_HOST=true
+  static const bool useAndroidEmulatorHost = bool.fromEnvironment(
+    'FIREBASE_USE_ANDROID_EMULATOR_HOST',
+    defaultValue: false,
+  );
+
+  /// Emulator host resolution.
+  ///
+  /// Priority:
+  /// 1) Explicit FIREBASE_EMULATOR_HOST override.
+  /// 2) Android emulator loopback (10.0.2.2) when enabled.
+  /// 3) Loopback (127.0.0.1) for local reverse/forward workflows.
   static String get emulatorHost {
+    return '10.67.2.105';
+    final overrideHost = emulatorHostOverride.trim();
+    if (overrideHost.isNotEmpty) {
+      return overrideHost;
+    }
+
     if (kIsWeb) {
-      return 'localhost';
+      return '10.116.167.105';
     }
-    if (Platform.isAndroid) {
-      return 'localhost';
+
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      return '10.116.167.105';
     }
-    return 'localhost';
+
+    return '10.116.167.105';
   }
 
   /// Emulator ports (must match firebase.json)
-  static const int authEmulatorPort = 9099;
-  static const int firestoreEmulatorPort = 8080;
-  static const int storageEmulatorPort = 9199;
-  static const int functionsEmulatorPort = 5001;
-  static const int databaseEmulatorPort = 9000;
+  static const int authEmulatorPort = int.fromEnvironment(
+    'FIREBASE_AUTH_EMULATOR_PORT',
+    defaultValue: 9099,
+  );
+  static const int firestoreEmulatorPort = int.fromEnvironment(
+    'FIREBASE_FIRESTORE_EMULATOR_PORT',
+    defaultValue: 8080,
+  );
+  static const int storageEmulatorPort = int.fromEnvironment(
+    'FIREBASE_STORAGE_EMULATOR_PORT',
+    defaultValue: 9199,
+  );
+  static const int functionsEmulatorPort = int.fromEnvironment(
+    'FIREBASE_FUNCTIONS_EMULATOR_PORT',
+    defaultValue: 5001,
+  );
+  static const int databaseEmulatorPort = int.fromEnvironment(
+    'FIREBASE_DATABASE_EMULATOR_PORT',
+    defaultValue: 9000,
+  );
 
   /// App-level settings
   static const String appName = 'SportConnect';

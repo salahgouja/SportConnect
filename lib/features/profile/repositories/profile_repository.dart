@@ -1,7 +1,9 @@
 import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/interfaces/repositories/i_user_repository.dart';
 import 'package:sport_connect/core/providers/repository_providers.dart';
@@ -168,8 +170,8 @@ class ProfileRepository implements IUserRepository {
     if (user == null) {
       throw StateError('User not found for vehicle creation');
     }
-    if (user is! DriverModel) {
-      throw StateError('Only drivers can add vehicles');
+    if (user is! DriverModel && user is! PendingUserModel) {
+      throw StateError('Only drivers or pending users can add vehicles');
     }
 
     // Store vehicle in its own collection
@@ -281,6 +283,7 @@ class ProfileRepository implements IUserRepository {
         gamification.level,
         gamification.xpToNextLevel,
       ),
+      PendingUserModel() => (0, 0, 0, 0),
     };
 
     // FIX G-1: Cap XP/level progression at level 50.
@@ -318,52 +321,50 @@ class ProfileRepository implements IUserRepository {
     final user = await getUserById(uid);
     if (user == null) return;
 
+    // --- SharedPreferences logic for local streak tracking ---
+    // This code assumes it is running in a Flutter environment.
+    // If you want to keep this logic in the repository, you must add shared_preferences as a dependency.
+    // ignore: unnecessary_import
+    final prefs = await SharedPreferences.getInstance();
     final now = DateTime.now();
-    final (
-      DateTime? lastRide,
-      int currentStreak,
-      int longestStreak,
-    ) = switch (user) {
-      RiderModel(:final gamification) => (
-        gamification.lastRideDate,
-        gamification.currentStreak,
-        gamification.longestStreak,
-      ),
-      DriverModel(:final gamification) => (
-        gamification.lastRideDate,
-        gamification.currentStreak,
-        gamification.longestStreak,
-      ),
-    };
+    final today = DateTime(now.year, now.month, now.day);
+    final lastActiveMillis = prefs.getInt('last_active_date') ?? 0;
+    final lastActive = lastActiveMillis > 0
+        ? DateTime.fromMillisecondsSinceEpoch(lastActiveMillis)
+        : null;
+    int currentStreak = prefs.getInt('current_streak') ?? 0;
+    int longestStreak = prefs.getInt('longest_streak') ?? 0;
 
-    var newCurrentStreak = currentStreak;
-    var newLongestStreak = longestStreak;
-
-    if (lastRide == null) {
-      newCurrentStreak = 1;
+    if (lastActive == null) {
+      currentStreak = 1;
     } else {
-      // Compare calendar days (midnight boundaries), not 24-hour periods.
-      // A ride at 11 PM and the next at 1 AM the following calendar day is
-      // exactly 1 calendar day apart — inDays would incorrectly return 0.
-      final lastRideDay = DateTime(lastRide.year, lastRide.month, lastRide.day);
-      final today = DateTime(now.year, now.month, now.day);
-      final calendarDays = today.difference(lastRideDay).inDays;
+      final lastActiveDay = DateTime(
+        lastActive.year,
+        lastActive.month,
+        lastActive.day,
+      );
+      final calendarDays = today.difference(lastActiveDay).inDays;
       if (calendarDays == 1) {
-        newCurrentStreak++;
+        currentStreak++;
       } else if (calendarDays > 1) {
-        newCurrentStreak = 1;
+        currentStreak = 1;
       }
       // calendarDays == 0 → same calendar day, streak unchanged
     }
 
-    if (newCurrentStreak > newLongestStreak) {
-      newLongestStreak = newCurrentStreak;
+    if (currentStreak > longestStreak) {
+      longestStreak = currentStreak;
     }
 
+    // Save to shared preferences
+    await prefs.setInt('last_active_date', today.millisecondsSinceEpoch);
+    await prefs.setInt('current_streak', currentStreak);
+    await prefs.setInt('longest_streak', longestStreak);
+
+    // --- Always update Firestore with the latest streak values ---
     await _usersCollection.doc(uid).update({
-      'gamification.currentStreak': newCurrentStreak,
-      'gamification.longestStreak': newLongestStreak,
-      'gamification.lastRideDate': Timestamp.now(),
+      'gamification.currentStreak': currentStreak,
+      'gamification.longestStreak': longestStreak,
     });
   }
 
@@ -381,7 +382,7 @@ class ProfileRepository implements IUserRepository {
     required String uid,
     required bool asDriver,
     required double distance,
-    double fareAmountPaid = 0.0,
+    int fareAmountPaidInCents = 0,
   }) async {
     // G-4 guard: verify role matches the asDriver flag to catch call-site bugs.
     final user = await getUserById(uid);
@@ -395,19 +396,15 @@ class ProfileRepository implements IUserRepository {
     final updates = <String, dynamic>{
       'gamification.totalRides': FieldValue.increment(1),
       'gamification.totalDistance': FieldValue.increment(distance),
+      'gamification.totalFareAmountPaidInCents': FieldValue.increment(
+        fareAmountPaidInCents,
+      ),
     };
 
     if (asDriver) {
       updates['gamification.ridesAsDriver'] = FieldValue.increment(1);
     } else {
       updates['gamification.ridesAsPassenger'] = FieldValue.increment(1);
-      // G-3: moneySaved = (standard per-km car cost) − fare paid.
-      // 0.25 EUR/km is a commonly used estimate for per-km car running cost.
-      const perKmCarCost = 0.25;
-      final savedAmount = (distance * perKmCarCost) - fareAmountPaid;
-      if (savedAmount > 0) {
-        updates['gamification.moneySaved'] = FieldValue.increment(savedAmount);
-      }
     }
 
     await _usersCollection.doc(uid).update(updates);
@@ -446,6 +443,7 @@ class ProfileRepository implements IUserRepository {
         gamification.longestStreak,
         gamification.unlockedBadges,
       ),
+      PendingUserModel() => (0, 0, 0, []),
     };
 
     // Badge definitions: id → condition
@@ -487,9 +485,15 @@ class ProfileRepository implements IUserRepository {
   }) async {
     final user = await getUserById(uid);
     if (user == null) return;
+    if (user.role == UserRole.pending) return;
 
     // Get current rating breakdown
-    final breakdown = user.rating;
+    var breakdown = RatingBreakdown();
+    if (user is RiderModel) {
+      breakdown = user.rating;
+    } else if (user is DriverModel) {
+      breakdown = user.rating;
+    }
     final newTotal = breakdown.total + 1;
     final newAverage =
         ((breakdown.average * breakdown.total) + rating) / newTotal;
@@ -528,14 +532,19 @@ class ProfileRepository implements IUserRepository {
     return query.docs.map((doc) {
       rank++;
       final user = doc.data();
+      final gamification = switch (user) {
+        RiderModel(:final gamification) => gamification,
+        DriverModel(:final gamification) => gamification,
+        PendingUserModel() => null,
+      };
       return LeaderboardEntry(
         userId: user.uid,
-        displayName: user.displayName,
+        username: user.username,
         photoUrl: user.photoUrl,
-        totalXP: user.totalXP,
+        totalXP: gamification?.totalXP ?? 0,
         level: user.userLevel.level,
         rank: rank,
-        ridesThisMonth: user.totalRides,
+        ridesThisMonth: gamification?.totalRides ?? 0,
       );
     }).toList();
   }
@@ -545,9 +554,17 @@ class ProfileRepository implements IUserRepository {
   Future<int> getUserRank(String uid) async {
     final user = await getUserById(uid);
     if (user == null) return 0;
-
+    if (user.role == UserRole.pending) return 0;
+    final gamification = switch (user) {
+      RiderModel(:final gamification) => gamification,
+      DriverModel(:final gamification) => gamification,
+      PendingUserModel() => null,
+    };
     final query = await _usersCollection
-        .where('gamification.totalXP', isGreaterThan: user.totalXP)
+        .where(
+          'gamification.totalXP',
+          isGreaterThan: gamification?.totalXP ?? 0,
+        )
         .count()
         .get();
 
@@ -599,15 +616,20 @@ class ProfileRepository implements IUserRepository {
       final snapshot = await queryRef.limit(maxItems * 2).get();
       for (final doc in snapshot.docs) {
         final user = doc.data();
+        final blockedUsers = switch (user) {
+          RiderModel(:final blockedUsers) => blockedUsers,
+          DriverModel(:final blockedUsers) => blockedUsers,
+          PendingUserModel() => <String>[],
+        };
         final isExcludedById = excludedIds.contains(user.uid);
         final hasBlockedCurrentUser =
             excludeUsersWhoBlockedId != null &&
-            user.blockedUsers.contains(excludeUsersWhoBlockedId);
+            blockedUsers.contains(excludeUsersWhoBlockedId);
         if (isExcludedById || hasBlockedCurrentUser) {
           continue;
         }
 
-        final matchesName = user.displayName.toLowerCase().contains(normalized);
+        final matchesName = user.username.toLowerCase().contains(normalized);
         final matchesEmail = user.email.toLowerCase().contains(normalized);
         if (matchesName || matchesEmail) {
           deduped[user.uid] = user;
@@ -638,15 +660,20 @@ class ProfileRepository implements IUserRepository {
       final fallback = await fallbackQuery.limit(maxItems * 8).get();
       for (final doc in fallback.docs) {
         final user = doc.data();
+        final blockedUsers = switch (user) {
+          RiderModel(:final blockedUsers) => blockedUsers,
+          DriverModel(:final blockedUsers) => blockedUsers,
+          PendingUserModel() => <String>[],
+        };
         final isExcludedById = excludedIds.contains(user.uid);
         final hasBlockedCurrentUser =
             excludeUsersWhoBlockedId != null &&
-            user.blockedUsers.contains(excludeUsersWhoBlockedId);
+            blockedUsers.contains(excludeUsersWhoBlockedId);
         if (isExcludedById || hasBlockedCurrentUser) {
           continue;
         }
 
-        final matchesName = user.displayName.toLowerCase().contains(normalized);
+        final matchesName = user.username.toLowerCase().contains(normalized);
         final matchesEmail = user.email.toLowerCase().contains(normalized);
         if (matchesName || matchesEmail) {
           deduped[user.uid] = user;

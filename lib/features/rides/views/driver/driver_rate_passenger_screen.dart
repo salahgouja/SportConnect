@@ -1,3 +1,4 @@
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -6,6 +7,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
@@ -74,35 +76,19 @@ class _DriverRatePassengerScreenState
       if (next.errorMessage != null &&
           next.errorMessage != previous?.errorMessage &&
           context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.errorMessage!),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
+        AdaptiveSnackBar.show(
+          context,
+          message: next.errorMessage!,
+          type: AdaptiveSnackBarType.error,
         );
       }
       if (next.isSubmitted &&
           previous?.isSubmitted != true &&
           context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.check_circle_rounded, color: Colors.white),
-                const SizedBox(width: 8),
-                Text(AppLocalizations.of(context).ratingSubmittedThankYou),
-              ],
-            ),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
+        AdaptiveSnackBar.show(
+          context,
+          message: AppLocalizations.of(context).ratingSubmittedThankYou,
+          type: AdaptiveSnackBarType.success,
         );
         context.go(AppRoutes.driverRides.path);
       }
@@ -111,7 +97,7 @@ class _DriverRatePassengerScreenState
     return vmState.ride.when(
       data: (ride) {
         if (ride == null) {
-          return _buildScaffold(
+          return _buildAdaptiveScaffold(
             body: Center(
               child: Text(AppLocalizations.of(context).rideNotFound),
             ),
@@ -119,22 +105,19 @@ class _DriverRatePassengerScreenState
         }
         return _buildContent(ride, bookings, formState);
       },
-      loading: () => _buildScaffold(
-        body: const Center(child: CircularProgressIndicator.adaptive()),
+      loading: () => _buildAdaptiveScaffold(
+        body: const SkeletonLoader(type: SkeletonType.profileCard, itemCount: 3),
       ),
-      error: (e, _) => _buildScaffold(
+      error: (e, _) => _buildAdaptiveScaffold(
         body: Center(child: Text(AppLocalizations.of(context).errorValue(e))),
       ),
     );
   }
 
-  Scaffold _buildScaffold({required Widget body}) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.primary,
-        title: Text(AppLocalizations.of(context).ratePassenger),
-        centerTitle: true,
+  AdaptiveScaffold _buildAdaptiveScaffold({required Widget body}) {
+    return AdaptiveScaffold(
+      appBar: AdaptiveAppBar(
+        title: AppLocalizations.of(context).ratePassenger,
       ),
       body: body,
     );
@@ -145,12 +128,9 @@ class _DriverRatePassengerScreenState
     List<RideBooking> bookings,
     DriverPassengerRatingState formState,
   ) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.primary,
-        title: Text(AppLocalizations.of(context).ratePassenger),
-        centerTitle: true,
+    return AdaptiveScaffold(
+      appBar: AdaptiveAppBar(
+        title: AppLocalizations.of(context).ratePassenger,
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 24.h),
@@ -444,7 +424,7 @@ class _DriverRatePassengerScreenState
                 children: [
                   passengerAsync.when(
                     data: (profile) => Text(
-                      profile?.displayName ?? 'Passenger',
+                      profile?.username ?? 'Passenger',
                       style: TextStyle(
                         fontSize: 14.sp,
                         fontWeight: FontWeight.w600,
@@ -516,22 +496,17 @@ class _DriverRatePassengerScreenState
       await ref
           .read(driverPassengerRatingViewModelProvider(widget.rideId).notifier)
           .submit(
-            revieweeName: passengerProfile?.displayName ?? 'Passenger',
+            revieweeName: passengerProfile?.username ?? 'Passenger',
             revieweePhotoUrl: passengerProfile?.photoUrl,
           );
-    } on Exception catch (e) {
+    } catch (e, st) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              AppLocalizations.of(context).failedToSubmitValue(e.toString()),
-            ),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
+        AdaptiveSnackBar.show(
+          context,
+          message: AppLocalizations.of(
+            context,
+          ).failedToSubmitValue(e.toString()),
+          type: AdaptiveSnackBarType.error,
         );
       }
     }

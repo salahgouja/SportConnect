@@ -1,3 +1,4 @@
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -9,7 +10,9 @@ import 'package:latlong2/latlong.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/core/theme/platform_adaptive.dart';
+import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/core/widgets/passenger_info_widget.dart';
 import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/core/widgets/poi_search_sheet.dart';
@@ -45,13 +48,6 @@ class _DriverActiveRideScreenState
   @override
   void initState() {
     super.initState();
-    SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.dark,
-      ),
-    );
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _initializeRideSession();
     });
@@ -99,35 +95,15 @@ class _DriverActiveRideScreenState
 
         _mapController.move(poi.location, 16);
         final address = poi.tags['addr:street'] ?? poi.tags['addr:city'];
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.place, color: Colors.white, size: 20),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    AppLocalizations.of(context).valueValue5(
-                      poi.name ?? 'Unknown',
-                      address != null ? ' - $address' : '',
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            action: SnackBarAction(
-              label: AppLocalizations.of(context).addAsStop,
-              textColor: Colors.white,
-              onPressed: () {},
-            ),
+        AdaptiveSnackBar.show(
+          context,
+          message: AppLocalizations.of(context).valueValue5(
+            poi.name ?? 'Unknown',
+            address != null ? ' - $address' : '',
           ),
+          type: AdaptiveSnackBarType.success,
+          action: AppLocalizations.of(context).addAsStop,
+          onActionPressed: () {},
         );
       },
     );
@@ -188,12 +164,10 @@ class _DriverActiveRideScreenState
         }
         return _buildRideContent(ride);
       },
-      loading: () => const Scaffold(
-        backgroundColor: AppColors.background,
-        body: Center(child: CircularProgressIndicator.adaptive()),
+      loading: () => const AdaptiveScaffold(
+        body: SkeletonLoader(type: SkeletonType.rideCard, itemCount: 5),
       ),
-      error: (e, _) => Scaffold(
-        backgroundColor: AppColors.background,
+      error: (e, _) => AdaptiveScaffold(
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -217,11 +191,9 @@ class _DriverActiveRideScreenState
   }
 
   Widget _buildNoRideState() {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text(AppLocalizations.of(context).activeRide),
-        backgroundColor: AppColors.primary,
+    return AdaptiveScaffold(
+      appBar: AdaptiveAppBar(
+        title: AppLocalizations.of(context).activeRide,
       ),
       body: Center(
         child: Column(
@@ -286,7 +258,7 @@ class _DriverActiveRideScreenState
 
     final provider = activeRideViewModelProvider(widget.rideId!);
 
-    return Scaffold(
+    return AdaptiveScaffold(
       body: Stack(
         children: [
           // Map — PERF: isolated Consumer, rebuilds on GPS updates (expected)
@@ -1008,7 +980,8 @@ class _DriverActiveRideScreenState
     final distance = rideState.remainingDistanceKm ?? ride.distanceKm ?? 0.0;
     final duration = rideState.remainingEtaMinutes ?? ride.durationMinutes ?? 0;
     final fare =
-        ride.pricePerSeat * (ride.bookedSeats > 0 ? ride.bookedSeats : 1);
+        ride.pricePerSeatInCents *
+        (ride.bookedSeats > 0 ? ride.bookedSeats : 1);
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
     return Container(
@@ -1137,8 +1110,8 @@ class _DriverActiveRideScreenState
                   label: AppLocalizations.of(context).fare,
                   value: AppLocalizations.of(
                     context,
-                  ).value5(fare.toStringAsFixed(0)),
-                  icon: Icons.attach_money,
+                  ).value5((fare / 100).toStringAsFixed(2)),
+                  icon: Icons.euro_symbol,
                 ),
               ],
             ),
@@ -1583,17 +1556,11 @@ class _DriverActiveRideScreenState
                       GestureDetector(
                         onTap: () {
                           if (booking.paidAt == null) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: const Text(
+                            AdaptiveSnackBar.show(
+                              context,
+                              message:
                                   "This passenger hasn't paid yet. Collect cash or wait for payment.",
-                                ),
-                                backgroundColor: AppColors.warning,
-                                behavior: SnackBarBehavior.floating,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10.r),
-                                ),
-                              ),
+                              type: AdaptiveSnackBarType.warning,
                             );
                             return;
                           }
@@ -1773,7 +1740,11 @@ class _DriverActiveRideScreenState
                         _buildPassengerStat(
                           AppLocalizations.of(
                             context,
-                          ).value2(ride.pricePerSeat.toStringAsFixed(0)),
+                          ).value2(
+                            (ride.pricePerSeatInCents / 100).toStringAsFixed(
+                              2,
+                            ),
+                          ),
                           AppLocalizations.of(context).seat2,
                         ),
                         _buildPassengerStat(
@@ -2058,7 +2029,7 @@ class _DriverActiveRideScreenState
 
     // Gross = price × total seats booked across ALL accepted bookings
     final totalSeats = bookings.fold<int>(0, (sum, b) => sum + b.seatsBooked);
-    final gross = ride.pricePerSeat * totalSeats;
+    final gross = ride.pricePerSeatInCents * totalSeats;
     const platformFeeRate = 0.15;
     final platformFee = gross * platformFeeRate;
     final net = gross - platformFee;
@@ -2068,7 +2039,8 @@ class _DriverActiveRideScreenState
       0,
       (sum, b) => sum + b.seatsBooked,
     );
-    final paidNet = ride.pricePerSeat * paidSeats * (1 - platformFeeRate);
+    final paidNet =
+        ride.pricePerSeatInCents * paidSeats * (1 - platformFeeRate);
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 20.w),
@@ -2132,13 +2104,12 @@ class _DriverActiveRideScreenState
               children: [
                 _EarningsStat(
                   label: 'Gross fare',
-                  value:
-                      '${gross.toStringAsFixed(2)} ${ride.pricing.pricePerSeat.currency.toUpperCase()}',
+                  value: '€${(gross / 100).toStringAsFixed(2)}',
                   dimmed: true,
                 ),
                 _EarningsStat(
                   label: 'Platform (15%)',
-                  value: '−${platformFee.toStringAsFixed(2)}',
+                  value: '−€${(platformFee / 100).toStringAsFixed(2)}',
                   dimmed: true,
                   isDeduction: true,
                 ),
@@ -2147,7 +2118,7 @@ class _DriverActiveRideScreenState
                       ? 'Paid so far'
                       : 'You receive',
                   value:
-                      '${(paidSeats > 0 && paidSeats < totalSeats ? paidNet : net).toStringAsFixed(2)} ${ride.pricing.pricePerSeat.currency.toUpperCase()}',
+                      '€${((paidSeats > 0 && paidSeats < totalSeats ? paidNet : net) / 100).toStringAsFixed(2)}',
                   highlight: true,
                 ),
               ],
@@ -2223,19 +2194,15 @@ class _DriverActiveRideScreenState
                       chatId: ride.id,
                       message: messages[index],
                       senderId: user.uid,
-                      senderName: user.displayName,
+                      senderName: user.username,
                     );
                     HapticFeedback.lightImpact();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          AppLocalizations.of(
-                            context,
-                          ).sentMessage(messages[index]),
-                        ),
-                        duration: const Duration(seconds: 1),
-                        behavior: SnackBarBehavior.floating,
-                      ),
+                    AdaptiveSnackBar.show(
+                      context,
+                      message: AppLocalizations.of(
+                        context,
+                      ).sentMessage(messages[index]),
+                      duration: const Duration(seconds: 1),
                     );
                   },
                   visualDensity: VisualDensity.compact,
@@ -2447,20 +2414,15 @@ class _DriverActiveRideScreenState
                   bookingId: booking.id,
                   enteredOtp: otp,
                 );
-                if (!mounted) return;
+                if (!mounted || !ctx.mounted) return;
                 if (ok) {
                   Navigator.of(ctx).pop();
                   HapticFeedback.mediumImpact();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text('Passenger confirmed!'),
-                      backgroundColor: AppColors.success,
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10.r),
-                      ),
-                      duration: const Duration(seconds: 2),
-                    ),
+                  AdaptiveSnackBar.show(
+                    context,
+                    message: 'Passenger confirmed!',
+                    type: AdaptiveSnackBarType.success,
+                    duration: const Duration(seconds: 2),
                   );
                 } else {
                   setState(
@@ -2504,48 +2466,23 @@ class _DriverActiveRideScreenState
 
               // Show undo snackbar for 30 seconds
               ScaffoldMessenger.of(context).clearSnackBars();
-              ScaffoldMessenger.of(context)
-                  .showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        AppLocalizations.of(context).passengerMarkedNoShow,
-                      ),
-                      duration: const Duration(seconds: 30),
-                      action: SnackBarAction(
-                        label: AppLocalizations.of(context).undo,
-                        textColor: Colors.white,
-                        onPressed: () {
-                          ref
-                              .read(
-                                activeRideViewModelProvider(
-                                  widget.rideId!,
-                                ).notifier,
-                              )
-                              .undoNoShow(passengerId: booking.passengerId);
-                          HapticFeedback.lightImpact();
-                        },
-                      ),
-                      backgroundColor: AppColors.error,
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  )
-                  .closed
-                  .then((reason) {
-                    if (reason == SnackBarClosedReason.action) return;
-                    // Undo was not pressed — commit to Firestore
-                    if (!mounted) return;
-                    ref
-                        .read(
-                          activeRideViewModelProvider(widget.rideId!).notifier,
-                        )
-                        .commitNoShow(
-                          passengerId: booking.passengerId,
-                          bookingId: booking.id,
-                        );
-                  });
+              AdaptiveSnackBar.show(
+                context,
+                message: AppLocalizations.of(context).passengerMarkedNoShow,
+                type: AdaptiveSnackBarType.error,
+                duration: const Duration(seconds: 30),
+                action: AppLocalizations.of(context).undo,
+                onActionPressed: () {
+                  ref
+                      .read(
+                        activeRideViewModelProvider(
+                          widget.rideId!,
+                        ).notifier,
+                      )
+                      .undoNoShow(passengerId: booking.passengerId);
+                  HapticFeedback.lightImpact();
+                },
+              );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.error,
@@ -2583,12 +2520,10 @@ class _DriverActiveRideScreenState
                   .createReturnRide();
               if (!mounted) return;
               if (returnId != null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      AppLocalizations.of(context).returnRideCreated,
-                    ),
-                  ),
+                AdaptiveSnackBar.show(
+                  context,
+                  message: AppLocalizations.of(context).returnRideCreated,
+                  type: AdaptiveSnackBarType.success,
                 );
               }
             },
@@ -2796,32 +2731,21 @@ class _DriverActiveRideScreenState
       ),
     );
 
-    if (confirmed != true || !context.mounted) return;
+    if (confirmed != true || !mounted) return;
 
     try {
       final success = await ref
           .read(activeRideViewModelProvider(widget.rideId!).notifier)
           .startRide();
 
-      if (!context.mounted) return;
+      if (!mounted) return;
 
       if (success) {
         HapticFeedback.mediumImpact();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.check_circle, color: Colors.white),
-                SizedBox(width: 8.w),
-                Text(l10n.rideInProgress),
-              ],
-            ),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10.r),
-            ),
-          ),
+        AdaptiveSnackBar.show(
+          context,
+          message: l10n.rideInProgress,
+          type: AdaptiveSnackBarType.success,
         );
       } else {
         _showErrorSnackBar(
@@ -2829,8 +2753,8 @@ class _DriverActiveRideScreenState
               l10n.failedToLoadRide,
         );
       }
-    } on Exception catch (e) {
-      if (!context.mounted) return;
+    } catch (e, st) {
+      if (!mounted) return;
       _showErrorSnackBar('$e');
     }
   }
@@ -2925,13 +2849,13 @@ class _DriverActiveRideScreenState
       ),
     );
 
-    if (confirmed != true || !context.mounted) return;
+    if (confirmed != true || !mounted) return;
 
     final success = await ref
         .read(activeRideViewModelProvider(widget.rideId!).notifier)
         .departFromPickup();
 
-    if (!context.mounted) return;
+    if (!mounted) return;
 
     if (success) {
       HapticFeedback.mediumImpact();
@@ -2944,22 +2868,11 @@ class _DriverActiveRideScreenState
     ref
         .read(activeRideViewModelProvider(widget.rideId!).notifier)
         .transitionToArriving();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.near_me, color: Colors.white),
-            SizedBox(width: 8.w),
-            const Text('Approaching destination...'),
-          ],
-        ),
-        backgroundColor: AppColors.success,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10.r),
-        ),
-        duration: const Duration(seconds: 2),
-      ),
+    AdaptiveSnackBar.show(
+      context,
+      message: 'Approaching destination...',
+      type: AdaptiveSnackBarType.success,
+      duration: const Duration(seconds: 2),
     );
   }
 
@@ -3019,7 +2932,7 @@ class _DriverActiveRideScreenState
               l10n.failedToLoadRide,
         );
       }
-    } on Exception catch (e) {
+    } catch (e, st) {
       if (!mounted) return;
       _showErrorSnackBar('$e');
     }
@@ -3028,7 +2941,7 @@ class _DriverActiveRideScreenState
   /// Step 4: Navigates to the review screen so driver can rate a passenger.
   Future<void> _navigateToRating(RideModel ride) async {
     final allBookings = await ref
-        .read(rideActionsViewModelProvider)
+        .read(rideActionsViewModelProvider.notifier)
         .getBookingsByRideId(ride.id, ride.driverId);
     final booking = allBookings
         .where((b) => b.status == BookingStatus.accepted)
@@ -3051,7 +2964,7 @@ class _DriverActiveRideScreenState
       if (!mounted) return;
 
       // If profile doesn't exist, still navigate but with fallback
-      final displayName = passengerProfile?.displayName ?? 'Passenger';
+      final displayName = passengerProfile?.username ?? 'Passenger';
       final photoUrl = passengerProfile?.photoUrl ?? '';
 
       context.push(
@@ -3081,129 +2994,136 @@ class _DriverActiveRideScreenState
     if (!mounted) return;
     final l10n = AppLocalizations.of(context);
     final fare =
-        ride.pricePerSeat * (ride.bookedSeats > 0 ? ride.bookedSeats : 1);
+        ride.pricePerSeatInCents *
+        (ride.bookedSeats > 0 ? ride.bookedSeats : 1);
 
-    showModalBottomSheet<void>(
+    AppModalSheet.show<void>(
       context: context,
-      isDismissible: false,
+      barrierDismissible: false,
       enableDrag: false,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
-        padding: EdgeInsets.all(24.w),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(28.r),
-            topRight: Radius.circular(28.r),
-          ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 80.w,
-              height: 80.w,
-              decoration: BoxDecoration(
-                color: AppColors.success.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.check_circle,
-                color: AppColors.success,
-                size: 48.w,
-              ),
-            ).animate().scale(
-              begin: const Offset(0, 0),
-              end: const Offset(1, 1),
-              duration: 500.ms,
-              curve: Curves.elasticOut,
+      showDragHandle: false,
+      showCloseButton: false,
+      child: Builder(
+        builder: (ctx) => Container(
+          padding: EdgeInsets.all(24.w),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(28.r),
+              topRight: Radius.circular(28.r),
             ),
-            SizedBox(height: 16.h),
-            Text(
-              l10n.rideCompletedWellDone,
-              style: TextStyle(
-                fontSize: 22.sp,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 80.w,
+                height: 80.w,
+                decoration: BoxDecoration(
+                  color: AppColors.success.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.check_circle,
+                  color: AppColors.success,
+                  size: 48.w,
+                ),
+              ).animate().scale(
+                begin: const Offset(0, 0),
+                end: const Offset(1, 1),
+                duration: 500.ms,
+                curve: Curves.elasticOut,
               ),
-              textAlign: TextAlign.center,
-            ).animate().fadeIn(delay: 300.ms),
-            SizedBox(height: 8.h),
-            Text(
-              l10n.value5(fare.toStringAsFixed(0)),
-              style: TextStyle(
-                fontSize: 28.sp,
-                fontWeight: FontWeight.w800,
-                color: AppColors.success,
-              ),
-            ).animate().fadeIn(delay: 500.ms),
-            SizedBox(height: 8.h),
-            Text(
-              '${ride.origin.address} → ${ride.destination.address}',
-              style: TextStyle(fontSize: 13.sp, color: AppColors.textSecondary),
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ).animate().fadeIn(delay: 600.ms),
-            SizedBox(height: 12.h),
-            // 7H — Return ride prompt
-            TextButton.icon(
-              onPressed: () {
-                if (mounted) Navigator.of(ctx).pop();
-                if (mounted) _showReturnRidePrompt(ride);
-              },
-              icon: Icon(Icons.swap_horiz, size: 18.sp),
-              label: Text(
-                'Create Return Ride',
-                style: TextStyle(fontSize: 13.sp),
-              ),
-            ).animate().fadeIn(delay: 650.ms),
-            SizedBox(height: 24.h),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () {
-                      if (!mounted) return;
-                      Navigator.of(ctx).pop();
-                      context.pop();
-                    },
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.textSecondary,
-                      side: const BorderSide(color: AppColors.border),
-                      padding: EdgeInsets.symmetric(vertical: 14.h),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12.r),
+              SizedBox(height: 16.h),
+              Text(
+                l10n.rideCompletedWellDone,
+                style: TextStyle(
+                  fontSize: 22.sp,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+                textAlign: TextAlign.center,
+              ).animate().fadeIn(delay: 300.ms),
+              SizedBox(height: 8.h),
+              Text(
+                l10n.value5((fare / 100).toStringAsFixed(2)),
+                style: TextStyle(
+                  fontSize: 28.sp,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.success,
+                ),
+              ).animate().fadeIn(delay: 500.ms),
+              SizedBox(height: 8.h),
+              Text(
+                '${ride.origin.address} → ${ride.destination.address}',
+                style: TextStyle(
+                  fontSize: 13.sp,
+                  color: AppColors.textSecondary,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ).animate().fadeIn(delay: 600.ms),
+              SizedBox(height: 12.h),
+              // 7H — Return ride prompt
+              TextButton.icon(
+                onPressed: () {
+                  if (mounted) Navigator.of(ctx).pop();
+                  if (mounted) _showReturnRidePrompt(ride);
+                },
+                icon: Icon(Icons.swap_horiz, size: 18.sp),
+                label: Text(
+                  'Create Return Ride',
+                  style: TextStyle(fontSize: 13.sp),
+                ),
+              ).animate().fadeIn(delay: 650.ms),
+              SizedBox(height: 24.h),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () {
+                        if (!mounted) return;
+                        Navigator.of(ctx).pop();
+                        context.pop();
+                      },
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.textSecondary,
+                        side: const BorderSide(color: AppColors.border),
+                        padding: EdgeInsets.symmetric(vertical: 14.h),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                      ),
+                      child: Text(l10n.goBack),
+                    ),
+                  ),
+                  SizedBox(width: 12.w),
+                  Expanded(
+                    flex: 2,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        if (!mounted) return;
+                        Navigator.of(ctx).pop();
+                        _navigateToRating(ride);
+                      },
+                      icon: const Icon(Icons.star),
+                      label: Text(l10n.rateYourRide),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(vertical: 14.h),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
                       ),
                     ),
-                    child: Text(l10n.goBack),
                   ),
-                ),
-                SizedBox(width: 12.w),
-                Expanded(
-                  flex: 2,
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      if (!mounted) return;
-                      Navigator.of(ctx).pop();
-                      _navigateToRating(ride);
-                    },
-                    icon: const Icon(Icons.star),
-                    label: Text(l10n.rateYourRide),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(vertical: 14.h),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12.r),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ).animate().fadeIn(delay: 700.ms).slideY(begin: 0.2),
-            SizedBox(height: 16.h),
-          ],
+                ],
+              ).animate().fadeIn(delay: 700.ms).slideY(begin: 0.2),
+              SizedBox(height: 16.h),
+            ],
+          ),
         ),
       ),
     );
@@ -3212,21 +3132,10 @@ class _DriverActiveRideScreenState
   /// Shows an error snackbar with the given message.
   void _showErrorSnackBar(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.error_outline, color: Colors.white),
-            SizedBox(width: 8.w),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor: AppColors.error,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10.r),
-        ),
-      ),
+    AdaptiveSnackBar.show(
+      context,
+      message: message,
+      type: AdaptiveSnackBarType.error,
     );
   }
 
@@ -3235,29 +3144,19 @@ class _DriverActiveRideScreenState
     List<RideBooking> bookings,
     void Function(String passengerId) onSelect,
   ) {
-    showModalBottomSheet<void>(
+    AppModalSheet.show<void>(
       context: context,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Padding(
+      title: 'Select Passenger',
+      maxHeightFactor: 0.6,
+      child: Builder(
+        builder: (ctx) => Padding(
           padding: EdgeInsets.all(20.w),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Select Passenger',
-                style: TextStyle(
-                  fontSize: 18.sp,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              SizedBox(height: 16.h),
               ...bookings.map(
-                (b) => ListTile(
+                (b) => AdaptiveListTile(
                   leading: PassengerAvatarWidget(
                     passengerId: b.passengerId,
                   ),
@@ -3302,13 +3201,10 @@ class _DriverActiveRideScreenState
       if (!mounted) return;
 
       if (passengerProfile == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              AppLocalizations.of(context).passengerProfileNotFound,
-            ),
-            backgroundColor: AppColors.error,
-          ),
+        AdaptiveSnackBar.show(
+          context,
+          message: AppLocalizations.of(context).passengerProfileNotFound,
+          type: AdaptiveSnackBarType.error,
         );
         return;
       }
@@ -3317,8 +3213,8 @@ class _DriverActiveRideScreenState
         getOrCreateChatProvider(
           userId1: currentUser.uid,
           userId2: passengerId,
-          userName1: currentUser.displayName,
-          userName2: passengerProfile.displayName,
+          userName1: currentUser.username,
+          userName2: passengerProfile.username,
           userPhoto1: currentUser.photoUrl,
           userPhoto2: passengerProfile.photoUrl,
         ).future,
@@ -3329,7 +3225,7 @@ class _DriverActiveRideScreenState
       final passengerUser = UserModel.rider(
         uid: passengerId,
         email: passengerProfile.email,
-        displayName: passengerProfile.displayName,
+        username: passengerProfile.username,
         photoUrl: passengerProfile.photoUrl,
       );
 
@@ -3340,11 +3236,10 @@ class _DriverActiveRideScreenState
       );
     } on Exception {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context).failedToOpenChatTryAgain),
-          backgroundColor: AppColors.error,
-        ),
+      AdaptiveSnackBar.show(
+        context,
+        message: AppLocalizations.of(context).failedToOpenChatTryAgain,
+        type: AdaptiveSnackBarType.error,
       );
     }
   }
@@ -3353,14 +3248,18 @@ class _DriverActiveRideScreenState
   Future<void> _callPassenger(String passengerId) async {
     try {
       final passenger = await ref.read(userProfileProvider(passengerId).future);
-      final phoneNumber = passenger?.phoneNumber;
+      final phoneNumber = switch (passenger) {
+        final RiderModel rider => rider.phoneNumber,
+        final DriverModel driver => driver.phoneNumber,
+        _ => null,
+      };
 
       if (phoneNumber == null || phoneNumber.isEmpty) {
-        if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context).phoneNumberNotAvailable),
-          ),
+        if (!mounted) return;
+        AdaptiveSnackBar.show(
+          context,
+          message: AppLocalizations.of(context).phoneNumberNotAvailable,
+          type: AdaptiveSnackBarType.error,
         );
         return;
       }
@@ -3369,19 +3268,19 @@ class _DriverActiveRideScreenState
       if (await canLaunchUrl(phoneUri)) {
         await launchUrl(phoneUri);
       } else {
-        if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context).cannotMakePhoneCalls),
-          ),
+        if (!mounted) return;
+        AdaptiveSnackBar.show(
+          context,
+          message: AppLocalizations.of(context).cannotMakePhoneCalls,
+          type: AdaptiveSnackBarType.error,
         );
       }
     } on Exception {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context).failedToLaunchDialer),
-        ),
+      if (!mounted) return;
+      AdaptiveSnackBar.show(
+        context,
+        message: AppLocalizations.of(context).failedToLaunchDialer,
+        type: AdaptiveSnackBarType.error,
       );
     }
   }
@@ -3389,8 +3288,7 @@ class _DriverActiveRideScreenState
   /// Builds the UI state shown when the ride has been cancelled.
   Widget _buildCancelledState() {
     final l10n = AppLocalizations.of(context);
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return AdaptiveScaffold(
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -3451,22 +3349,12 @@ class _DriverActiveRideScreenState
     // Driver must complete the ride first.
     if (rideState.phase == ActiveRidePhase.arriving) {
       final ride = rideState.currentRide;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Complete the ride before leaving.'),
-          action: ride != null
-              ? SnackBarAction(
-                  label: 'Complete Now',
-                  textColor: Colors.white,
-                  onPressed: () => _handleMainAction(ride),
-                )
-              : null,
-          backgroundColor: AppColors.warning,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
+      AdaptiveSnackBar.show(
+        context,
+        message: 'Complete the ride before leaving.',
+        type: AdaptiveSnackBarType.warning,
+        action: ride != null ? 'Complete Now' : null,
+        onActionPressed: ride != null ? () => _handleMainAction(ride) : null,
       );
       return;
     }
@@ -3491,7 +3379,7 @@ class _DriverActiveRideScreenState
               final success = await ref
                   .read(activeRideViewModelProvider(widget.rideId!).notifier)
                   .cancelRide();
-              if (!context.mounted) return;
+              if (!mounted) return;
               if (!success) {
                 _showErrorSnackBar(
                   ref

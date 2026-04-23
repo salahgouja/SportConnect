@@ -2,10 +2,8 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:riverpod/src/providers/stream_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sport_connect/core/models/location/location_point.dart';
@@ -41,7 +39,7 @@ class RideFormState {
     this.destination,
     this.departureTime,
     this.availableSeats = 3,
-    this.pricePerSeat = 0.0,
+    this.pricePerSeatInCents = 0.0,
     this.isLoading = false,
     this.error,
   });
@@ -49,7 +47,7 @@ class RideFormState {
   final LocationPoint? destination;
   final DateTime? departureTime;
   final int availableSeats;
-  final double pricePerSeat;
+  final double pricePerSeatInCents;
   final bool isLoading;
   final String? error;
 
@@ -58,7 +56,7 @@ class RideFormState {
     LocationPoint? destination,
     DateTime? departureTime,
     int? availableSeats,
-    double? pricePerSeat,
+    double? pricePerSeatInCents,
     bool? isLoading,
     String? error,
   }) {
@@ -67,7 +65,7 @@ class RideFormState {
       destination: destination ?? this.destination,
       departureTime: departureTime ?? this.departureTime,
       availableSeats: availableSeats ?? this.availableSeats,
-      pricePerSeat: pricePerSeat ?? this.pricePerSeat,
+      pricePerSeatInCents: pricePerSeatInCents ?? this.pricePerSeatInCents,
       isLoading: isLoading ?? this.isLoading,
       error: error,
     );
@@ -151,7 +149,7 @@ class RideDetailUiViewModel extends _$RideDetailUiViewModel {
       if (!ref.mounted) return null;
       state = state.copyWith(routeInfo: route, isLoadingRoute: false);
       return route;
-    } on Exception catch (_) {
+    } catch (e, st) {
       if (!ref.mounted) return null;
       state = state.copyWith(isLoadingRoute: false);
       return null;
@@ -186,40 +184,38 @@ class RideDetailUiViewModel extends _$RideDetailUiViewModel {
           rideId: ride.id,
           fromCity: ride.origin.city ?? ride.origin.address,
           toCity: ride.destination.city ?? ride.destination.address,
-          price: ride.pricePerSeat,
+          priceInCents: ride.pricePerSeatInCents,
           seats: ride.remainingSeats,
           departureTime: ride.departureTime,
         );
   }
 }
 
-final rideActionsViewModelProvider = Provider<RideActionsViewModel>((ref) {
-  return RideActionsViewModel(ref);
-});
-
 /// Delegates ride operations through the [RideService] for validated
 /// business logic. Falls back to the repository only for operations
 /// that don't require additional validation (start, complete, stream).
-class RideActionsViewModel {
-  RideActionsViewModel(this._ref);
-
-  final Ref _ref;
+@Riverpod(keepAlive: true)
+class RideActionsViewModel extends _$RideActionsViewModel {
+  @override
+  void build() {
+    return;
+  }
 
   Future<String> createRide(RideModel ride) {
-    return _ref.read(rideServiceProvider.notifier).createRide(ride);
+    return ref.read(rideServiceProvider.notifier).createRide(ride);
   }
 
   Future<void> cancelRide(String rideId, String reason) {
-    return _ref.read(rideServiceProvider.notifier).cancelRide(rideId, reason);
+    return ref.read(rideServiceProvider.notifier).cancelRide(rideId, reason);
   }
 
   Future<void> startRide(String rideId) {
-    return _ref.read(rideRepositoryProvider).startRide(rideId);
+    return ref.read(rideRepositoryProvider).startRide(rideId);
   }
 
   Future<void> completeRide(String rideId) {
     // Route through RideService so XP reward + driver stats are recorded
-    return _ref.read(rideServiceProvider.notifier).completeRide(rideId);
+    return ref.read(rideServiceProvider.notifier).completeRide(rideId);
   }
 
   Future<void> updateBookingStatus({
@@ -227,7 +223,7 @@ class RideActionsViewModel {
     required String bookingId,
     required BookingStatus newStatus,
   }) {
-    return _ref
+    return ref
         .read(rideRepositoryProvider)
         .updateBookingStatus(
           rideId: rideId,
@@ -240,7 +236,7 @@ class RideActionsViewModel {
     required String rideId,
     required RideBooking booking,
   }) {
-    return _ref
+    return ref
         .read(rideRepositoryProvider)
         .bookRide(rideId: rideId, booking: booking);
   }
@@ -249,7 +245,7 @@ class RideActionsViewModel {
     required String rideId,
     required String bookingId,
   }) {
-    return _ref
+    return ref
         .read(rideRepositoryProvider)
         .cancelBooking(rideId: rideId, bookingId: bookingId);
   }
@@ -260,17 +256,13 @@ class RideActionsViewModel {
   Future<void> markBookingPaid({
     required String bookingId,
     required String paymentIntentId,
-  }) {
-    return _ref
-        .read(bookingRepositoryProvider)
-        .updateBookingPaymentIntent(
-          bookingId: bookingId,
-          paymentIntentId: paymentIntentId,
-        );
+  }) async {
+    // No-op on client.
+    // Booking payment fields are written by the Stripe webhook.
   }
 
   Stream<RideModel?> streamRideById(String rideId) {
-    return _ref.read(rideRepositoryProvider).streamRideById(rideId);
+    return ref.read(rideRepositoryProvider).streamRideById(rideId);
   }
 
   /// Fetches a one-shot list of all bookings for a ride (driver-side).
@@ -281,7 +273,7 @@ class RideActionsViewModel {
     String rideId,
     String driverId,
   ) {
-    return _ref
+    return ref
         .read(bookingRepositoryProvider)
         .getBookingsByRideId(rideId, driverId);
   }
@@ -291,7 +283,7 @@ class RideActionsViewModel {
     String rideId,
     String passengerId,
   ) {
-    return _ref
+    return ref
         .read(bookingRepositoryProvider)
         .getPassengerBookingForRide(rideId, passengerId);
   }
@@ -301,7 +293,7 @@ class RideActionsViewModel {
   /// Used for deep-link / route-based prefill scenarios where we only
   /// need the current snapshot, not a live stream.
   Future<RideModel?> getRideById(String rideId) {
-    return _ref.read(rideRepositoryProvider).getRideById(rideId);
+    return ref.read(rideRepositoryProvider).getRideById(rideId);
   }
 
   /// Pushes the driver's GPS coordinates to Firestore.
@@ -311,11 +303,12 @@ class RideActionsViewModel {
   Future<void> updateLiveLocation(
     String rideId,
     double latitude,
-    double longitude,
-  ) {
-    return _ref
+    double longitude, {
+    double heading = 0,
+  }) {
+    return ref
         .read(rideRepositoryProvider)
-        .updateLiveLocation(rideId, latitude, longitude);
+        .updateLiveLocation(rideId, latitude, longitude, heading: heading);
   }
 
   // ==================== Section 7 delegates ====================
@@ -325,7 +318,7 @@ class RideActionsViewModel {
     required String bookingId,
     required String passengerId,
   }) {
-    return _ref
+    return ref
         .read(rideServiceProvider.notifier)
         .markPassengerNoShow(
           rideId: rideId,
@@ -335,17 +328,17 @@ class RideActionsViewModel {
   }
 
   Future<String> createReturnRide(String originalRideId) {
-    return _ref.read(rideRepositoryProvider).createReturnRide(originalRideId);
+    return ref.read(rideRepositoryProvider).createReturnRide(originalRideId);
   }
 
   Future<void> updatePickupOrder(String rideId, List<String> passengerIds) {
-    return _ref
+    return ref
         .read(rideRepositoryProvider)
         .updatePickupOrder(rideId, passengerIds);
   }
 
   Future<void> recordActualDistance(String rideId, double distanceKm) {
-    return _ref
+    return ref
         .read(rideRepositoryProvider)
         .recordActualDistance(rideId, distanceKm);
   }
@@ -442,10 +435,12 @@ class CancellationReasonViewModel extends _$CancellationReasonViewModel {
           ? '$selectedReason | $comment'
           : selectedReason;
 
-      await ref.read(rideActionsViewModelProvider).cancelRide(_rideId, reason);
+      await ref
+          .read(rideActionsViewModelProvider.notifier)
+          .cancelRide(_rideId, reason);
       if (!ref.mounted) return;
       state = state.copyWith(isSubmitting: false, isSubmitted: true);
-    } on Exception catch (_) {
+    } catch (e, st) {
       if (!ref.mounted) return;
       state = state.copyWith(
         isSubmitting: false,
@@ -609,7 +604,7 @@ class DisputeFormViewModel extends _$DisputeFormViewModel {
 
     try {
       await ref
-          .read(disputeViewModelProvider)
+          .read(disputeViewModelProvider.notifier)
           .submitDispute(
             rideId: _rideId,
             userId: userId,
@@ -621,7 +616,7 @@ class DisputeFormViewModel extends _$DisputeFormViewModel {
           );
       if (!ref.mounted) return;
       state = state.copyWith(isSubmitting: false, isSubmitted: true);
-    } on Exception catch (_) {
+    } catch (e, st) {
       if (!ref.mounted) return;
       state = state.copyWith(
         isSubmitting: false,
@@ -640,15 +635,10 @@ Stream<({double latitude, double longitude})?> driverLiveLocation(
   return ref.watch(rideRepositoryProvider).streamLiveLocation(rideId);
 }
 
-/// Streams the driver's current ride phase from the ride Firestore document.
-/// Returns values like 'pickingUp', 'enRoute', 'arriving', 'completed'.
-final StreamProviderFamily<String?, String> ridePhaseStreamProvider =
-    StreamProvider.family<String?, String>((
-      ref,
-      rideId,
-    ) {
-      return ref.watch(rideRepositoryProvider).streamRidePhase(rideId);
-    });
+@riverpod
+Stream<String?> ridePhaseStream(Ref ref, String rideId) {
+  return ref.watch(rideRepositoryProvider).streamRidePhase(rideId);
+}
 
 /// Ride Form View Model
 @Riverpod(keepAlive: true)
@@ -673,7 +663,7 @@ class RideFormViewModel extends _$RideFormViewModel {
   }
 
   void setPrice(double price) {
-    state = state.copyWith(pricePerSeat: price);
+    state = state.copyWith(pricePerSeatInCents: price);
   }
 
   Future<String?> createRide({
@@ -682,8 +672,8 @@ class RideFormViewModel extends _$RideFormViewModel {
     required LocationPoint destination,
     required DateTime departureTime,
     required int availableSeats,
-    required double pricePerSeat,
-    String currency = 'USD',
+    required int pricePerSeatInCents,
+    String currency = 'EUR',
   }) async {
     if (!state.isValid) {
       state = state.copyWith(error: 'Please fill all required fields');
@@ -700,7 +690,10 @@ class RideFormViewModel extends _$RideFormViewModel {
         schedule: RideSchedule(departureTime: departureTime),
         capacity: RideCapacity(available: availableSeats),
         pricing: RidePricing(
-          pricePerSeat: Money(amount: pricePerSeat, currency: currency),
+          pricePerSeatInCents: Money(
+            amountInCents: pricePerSeatInCents,
+            currency: currency,
+          ),
         ),
         preferences: const RidePreferences(),
         status: RideStatus.active,
@@ -713,7 +706,7 @@ class RideFormViewModel extends _$RideFormViewModel {
       if (!ref.mounted) return null;
       state = state.copyWith(isLoading: false);
       return rideId;
-    } on Exception catch (e) {
+    } catch (e, st) {
       if (!ref.mounted) return null;
       state = state.copyWith(isLoading: false, error: e.toString());
       return null;
@@ -731,7 +724,7 @@ class RideFormViewModel extends _$RideFormViewModel {
       if (!ref.mounted) return rideId;
       state = state.copyWith(isLoading: false);
       return rideId;
-    } on Exception catch (e) {
+    } catch (e, st) {
       if (!ref.mounted) return null;
       state = state.copyWith(isLoading: false, error: e.toString());
       return null;
@@ -793,7 +786,7 @@ class RideSearchState {
   final bool hasSearched;
 
   // Draft filter state
-  final double draftMaxPrice;
+  final int draftMaxPrice;
   final bool draftFemaleOnly;
   final bool draftInstantBook;
   final bool draftVerifiedOnly;
@@ -821,7 +814,7 @@ class RideSearchState {
     int? draftSeats,
     int? selectedDateChip,
     bool? hasSearched,
-    double? draftMaxPrice,
+    int? draftMaxPrice,
     bool? draftFemaleOnly,
     bool? draftInstantBook,
     bool? draftVerifiedOnly,
@@ -920,17 +913,22 @@ class RideSearchResultsData {
   final RideSearchResultViewMode viewMode;
 }
 
-final rideSearchResultsProvider = Provider<RideSearchResultsData>((ref) {
+@riverpod
+RideSearchResultsData rideSearchResults(Ref ref) {
+  // 1. Watch the search state (the primary dependency)
   final searchState = ref.watch(rideSearchViewModelProvider);
 
-  RideSearchResultsData buildResults({
+  // Helper to keep the logic DRY - in 3.0, we keep this inside the function
+  // or as a private top-level function if preferred.
+  RideSearchResultsData createData({
     required List<RideModel> source,
-    required bool isLoading,
-    required String? error,
+    bool isLoading = false,
+    String? error,
     required bool hasSearched,
   }) {
     final filtered = _applyRideSearchPresentation(source, searchState);
     final visible = filtered.take(searchState.visibleResultCount).toList();
+
     return RideSearchResultsData(
       allResults: filtered,
       visibleResults: visible,
@@ -943,8 +941,9 @@ final rideSearchResultsProvider = Provider<RideSearchResultsData>((ref) {
     );
   }
 
+  // 2. Logic Branching
   if (searchState.hasSearched) {
-    return buildResults(
+    return createData(
       source: searchState.allSearchResults,
       isLoading: searchState.isLoading,
       error: searchState.error,
@@ -952,28 +951,29 @@ final rideSearchResultsProvider = Provider<RideSearchResultsData>((ref) {
     );
   }
 
-  final activeRides = ref.watch(activeRidesProvider);
-  return activeRides.when(
-    loading: () => buildResults(
-      source: const [],
-      isLoading: true,
-      error: null,
-      hasSearched: false,
-    ),
-    error: (error, _) => buildResults(
-      source: const [],
-      isLoading: false,
-      error: error.toString(),
-      hasSearched: false,
-    ),
-    data: (rides) => buildResults(
+  // 3. Conditional watching
+  // Riverpod 3.0 handles conditional watches perfectly.
+  // activeRidesProvider is only watched if hasSearched is false.
+  final activeRidesAsync = ref.watch(activeRidesProvider);
+
+  return activeRidesAsync.maybeWhen(
+    data: (rides) => createData(
       source: rides,
-      isLoading: false,
-      error: null,
+      hasSearched: false,
+    ),
+    error: (err, _) => createData(
+      source: const [],
+      error: err.toString(),
+      hasSearched: false,
+    ),
+    // Fallback covers loading and any unhandled states
+    orElse: () => createData(
+      source: const [],
+      isLoading: activeRidesAsync.isLoading,
       hasSearched: false,
     ),
   );
-});
+}
 
 List<RideModel> _applyRideSearchPresentation(
   List<RideModel> rides,
@@ -989,7 +989,7 @@ List<RideModel> _applyRideSearchPresentation(
     if (ride.remainingSeats < state.draftSeats) {
       return false;
     }
-    if (ride.pricePerSeat > state.draftMaxPrice) {
+    if (ride.pricePerSeatInCents > state.draftMaxPrice) {
       return false;
     }
     if (state.draftFemaleOnly && !ride.isWomenOnly) {
@@ -1022,9 +1022,13 @@ List<RideModel> _applyRideSearchPresentation(
 
   switch (state.draftSortBy) {
     case 'price_low':
-      filtered.sort((a, b) => a.pricePerSeat.compareTo(b.pricePerSeat));
+      filtered.sort(
+        (a, b) => a.pricePerSeatInCents.compareTo(b.pricePerSeatInCents),
+      );
     case 'price_high':
-      filtered.sort((a, b) => b.pricePerSeat.compareTo(a.pricePerSeat));
+      filtered.sort(
+        (a, b) => b.pricePerSeatInCents.compareTo(a.pricePerSeatInCents),
+      );
     case 'rating':
       filtered.sort((a, b) => b.averageRating.compareTo(a.averageRating));
     case 'duration':
@@ -1109,7 +1113,7 @@ class RideSearchViewModel extends _$RideSearchViewModel {
     state = state.copyWith(selectedDateChip: chip);
   }
 
-  void setDraftMaxPrice(double price) {
+  void setDraftMaxPrice(int price) {
     state = state.copyWith(
       draftMaxPrice: price.clamp(5, 100),
       visibleResultCount: _pageSize,
@@ -1302,7 +1306,7 @@ class RideSearchViewModel extends _$RideSearchViewModel {
         destLng: filters.destination!.longitude,
         date: filters.departureDate ?? DateTime.now(),
         minSeats: filters.minSeats,
-        maxPrice: filters.maxPrice,
+        maxPriceInCents: filters.maxPrice,
       );
 
       // Post-filter by preferences not supported in Firestore query
@@ -1342,8 +1346,9 @@ class RideSearchViewModel extends _$RideSearchViewModel {
       );
 
       return null; // Success
-    } on Exception catch (e, _) {
+    } catch (e, st) {
       if (!ref.mounted || requestId != _latestSearchRequestId) return null;
+      TalkerService.error('Ride search failed', e, st);
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -1504,28 +1509,29 @@ class RideDetailViewModel extends _$RideDetailViewModel {
           await notificationRepo.sendRideBookingRequest(
             toUserId: ride.driverId,
             fromUserId: passengerId,
-            fromUserName: passenger.displayName,
+            fromUserName: passenger.username,
             fromUserPhoto: passenger.photoUrl,
             rideId: ride.id,
             rideName: '$origin → $dest',
           );
         }
-      } on Exception catch (_) {
+      } catch (e, st) {
         // Notification failure is non-fatal
       }
 
       // Award small XP to passenger for booking a ride
+      if (!ref.mounted) return true;
       try {
         final profileRepo = ref.read(profileRepositoryProvider);
         await profileRepo.addXP(passengerId, 5);
-      } on Exception catch (_) {
+      } catch (e, st) {
         // XP failure is non-fatal
       }
 
       if (!ref.mounted) return true;
       state = state.copyWith(isActing: false, actionError: null);
       return true;
-    } on Exception catch (e) {
+    } catch (e, st) {
       if (!ref.mounted) return false;
       state = state.copyWith(isActing: false, actionError: e.toString());
       return false;
@@ -1547,31 +1553,34 @@ class RideDetailViewModel extends _$RideDetailViewModel {
           );
       if (!ref.mounted) return false;
 
-      // 2. If the passenger specified a pickup location, add it as a
-      //    RouteWaypoint so the driver can see the stop on the route card.
+      // 2. Send the passenger notification. Seat reservation, OTP generation,
+      // and pickup waypoint insertion are handled atomically in the repository.
       final idx = state.bookings.indexWhere((b) => b.id == bookingId);
       if (idx >= 0) {
         final booking = state.bookings[idx];
-        if (booking.pickupLocation != null) {
-          final existing = ride.route.waypoints;
-          final nextOrder = existing.isEmpty
-              ? 0
-              : existing.map((w) => w.order).reduce((a, b) => a > b ? a : b) +
-                    1;
-          final updated = [
-            ...existing,
-            RouteWaypoint(location: booking.pickupLocation!, order: nextOrder),
-          ];
-          await ref.read(rideRepositoryProvider).updateRideFields(ride.id, {
-            'route.waypoints': updated.map((w) => w.toJson()).toList(),
-          });
+
+        try {
+          final notificationRepo = ref.read(notificationRepositoryProvider);
+          final driver = ref.read(currentUserProvider).value;
+          final origin = ride.origin.city ?? ride.origin.address;
+          final dest = ride.destination.city ?? ride.destination.address;
+          await notificationRepo.sendRideBookingAccepted(
+            toUserId: booking.passengerId,
+            driverName: driver?.username ?? 'Driver',
+            driverPhoto: driver?.photoUrl,
+            rideId: ride.id,
+            rideName: '$origin → $dest',
+          );
+        } catch (e, st) {
+          // Notification failure is non-fatal.
         }
 
         // 3. Award XP to passenger for confirmed booking
+        if (!ref.mounted) return true;
         try {
           final profileRepo = ref.read(profileRepositoryProvider);
           await profileRepo.addXP(booking.passengerId, 10);
-        } on Exception catch (_) {
+        } catch (e, st) {
           // XP failure is non-fatal
         }
       }
@@ -1579,7 +1588,7 @@ class RideDetailViewModel extends _$RideDetailViewModel {
       if (!ref.mounted) return true;
       state = state.copyWith(isActing: false, actionError: null);
       return true;
-    } on Exception catch (e) {
+    } catch (e, st) {
       if (!ref.mounted) return false;
       state = state.copyWith(isActing: false, actionError: e.toString());
       return false;
@@ -1602,7 +1611,7 @@ class RideDetailViewModel extends _$RideDetailViewModel {
       if (!ref.mounted) return true;
       state = state.copyWith(isActing: false, actionError: null);
       return true;
-    } on Exception catch (e) {
+    } catch (e, st) {
       if (!ref.mounted) return false;
       state = state.copyWith(isActing: false, actionError: e.toString());
       return false;
@@ -1618,7 +1627,7 @@ class RideDetailViewModel extends _$RideDetailViewModel {
       if (!ref.mounted) return true;
       state = state.copyWith(isActing: false, actionError: null);
       return true;
-    } on Exception catch (e) {
+    } catch (e, st) {
       if (!ref.mounted) return false;
       state = state.copyWith(isActing: false, actionError: e.toString());
       return false;
@@ -1634,7 +1643,7 @@ class RideDetailViewModel extends _$RideDetailViewModel {
       if (!ref.mounted) return true;
       state = state.copyWith(isActing: false, actionError: null);
       return true;
-    } on Exception catch (e) {
+    } catch (e, st) {
       if (!ref.mounted) return false;
       state = state.copyWith(isActing: false, actionError: e.toString());
       return false;
@@ -1650,7 +1659,7 @@ class RideDetailViewModel extends _$RideDetailViewModel {
       if (!ref.mounted) return true;
       state = state.copyWith(isActing: false, actionError: null);
       return true;
-    } on Exception catch (e) {
+    } catch (e, st) {
       if (!ref.mounted) return false;
       state = state.copyWith(isActing: false, actionError: e.toString());
       return false;
@@ -2100,11 +2109,11 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
       _startLocationStream();
       _updateDynamicEta(state.currentRide);
       return ActiveRideLocationInitResult.ready;
-    } on Exception catch (e, stackTrace) {
+    } catch (e, st) {
       TalkerService.error(
         'Error initializing active ride location',
         e,
-        stackTrace,
+        st,
       );
       if (!ref.mounted) return ActiveRideLocationInitResult.error;
 
@@ -2149,11 +2158,12 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
               _lastLocationWriteTime = now;
               unawaited(
                 ref
-                    .read(rideActionsViewModelProvider)
+                    .read(rideActionsViewModelProvider.notifier)
                     .updateLiveLocation(
                       rideId,
                       position.latitude,
                       position.longitude,
+                      heading: _sanitizeHeading(position.heading),
                     )
                     .catchError((_) {}),
               );
@@ -2275,7 +2285,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
       _notifyPassengersDriverArrived(ride);
 
       return true;
-    } on Exception catch (e) {
+    } catch (e, st) {
       if (!ref.mounted) return false;
       state = state.copyWith(isProcessing: false, actionError: e.toString());
       return false;
@@ -2286,7 +2296,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
   void _notifyPassengersDriverArrived(RideModel ride) {
     final notificationRepo = ref.read(notificationRepositoryProvider);
     final driver = ref.read(currentUserProvider).value;
-    final driverName = driver?.displayName ?? 'Your driver';
+    final driverName = driver?.username ?? 'Your driver';
     final driverPhoto = driver?.photoUrl;
     final origin = ride.origin.city ?? ride.origin.address;
     final dest = ride.destination.city ?? ride.destination.address;
@@ -2343,7 +2353,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
         phase: ActiveRidePhase.completed,
       );
       return true;
-    } on Exception catch (e) {
+    } catch (e, st) {
       if (!ref.mounted) return false;
       state = state.copyWith(isProcessing: false, actionError: e.toString());
       return false;
@@ -2361,7 +2371,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
 
       state = state.copyWith(isProcessing: false, actionError: null);
       return true;
-    } on Exception catch (e) {
+    } catch (e, st) {
       if (!ref.mounted) return false;
       state = state.copyWith(isProcessing: false, actionError: e.toString());
       return false;
@@ -2511,7 +2521,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
             passengerId: passengerId,
           );
       return true;
-    } on Exception catch (e) {
+    } catch (e, st) {
       if (!ref.mounted) return false;
       state = state.copyWith(actionError: e.toString());
       return false;
@@ -2551,37 +2561,11 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
         pickedUpPassengerIds: nextPickedUp,
       );
       return true;
-    } on Exception catch (e) {
+    } catch (e, st) {
       if (!ref.mounted) return false;
       state = state.copyWith(isProcessing: false, actionError: e.toString());
       return false;
     }
-  }
-
-  // ==================== 7C: EMERGENCY SOS ====================
-
-  /// Trigger SOS — shares ride details + live location with emergency contacts.
-  /// Returns a shareable emergency message with ride context.
-  String generateSosMessage() {
-    final ride = state.currentRide;
-    if (ride == null) return 'Emergency — I need help!';
-
-    final origin = ride.origin.address;
-    final dest = ride.destination.address;
-    final loc = state.driverLiveLocation ?? state.currentLocation;
-    final locStr = loc != null
-        ? (loc is LatLng
-              ? 'https://maps.google.com/?q=${loc.latitude},${loc.longitude}'
-              : 'https://maps.google.com/?q=${(loc as dynamic).latitude},${(loc as dynamic).longitude}')
-        : 'Location unavailable';
-
-    return 'EMERGENCY — I need help!\n\n'
-        'Ride: $origin → $dest\n'
-        'Ride ID: ${ride.id}\n'
-        'Driver: ${ride.driverId}\n'
-        'Current location: $locStr\n'
-        'Time: ${DateTime.now()}\n\n'
-        "Please contact authorities if I don't respond.";
   }
 
   // ==================== 7D: QUICK MESSAGES ====================
@@ -2605,7 +2589,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
           createdAt: DateTime.now(),
         ),
       );
-    } on Exception catch (e) {
+    } catch (e, st) {
       TalkerService.error('Failed to send quick message: $e');
     }
   }
@@ -2658,7 +2642,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
       await ref
           .read(rideRepositoryProvider)
           .recordActualDistance(ride.id, state.actualDistanceKm);
-    } on Exception catch (e) {
+    } catch (e, st) {
       TalkerService.error('Failed to record actual distance: $e');
     }
   }
@@ -2702,7 +2686,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
 
       state = state.copyWith(isProcessing: false);
       return returnRideId;
-    } on Exception catch (e) {
+    } catch (e, st) {
       if (!ref.mounted) return null;
       state = state.copyWith(isProcessing: false, actionError: e.toString());
       return null;
@@ -2788,7 +2772,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
           .read(rideRepositoryProvider)
           .updateLiveLocation(rideId, lat, lng);
       await _clearPersistedLocation();
-    } on Exception catch (_) {
+    } catch (e, st) {
       // Will retry on next GPS update
     }
   }
@@ -2970,11 +2954,11 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
       );
       _updateDynamicEta(ride);
       _updatePassengerRouteTracking(ride, state.driverLiveLocation);
-    } on Exception catch (e, stackTrace) {
+    } catch (e, st) {
       TalkerService.error(
         'Error loading active ride OSRM route',
         e,
-        stackTrace,
+        st,
       );
       if (!ref.mounted || state.loadingRouteKey != routeKey) {
         return;
@@ -3535,12 +3519,10 @@ Stream<List<RideBooking>> bookingsByRide(Ref ref, String rideId) {
       .streamBookingsByRideId(rideId, uid);
 }
 
-/// Real-time stream of passenger IDs the driver has confirmed as picked up.
-final StreamProviderFamily<List<String>, String>
-pickedUpPassengersStreamProvider = StreamProvider.family
-    .autoDispose<List<String>, String>((ref, rideId) {
-      return ref.read(rideRepositoryProvider).streamPickedUpPassengers(rideId);
-    });
+@riverpod
+Stream<List<String>> pickedUpPassengersStream(Ref ref, String rideId) {
+  return ref.watch(rideRepositoryProvider).streamPickedUpPassengers(rideId);
+}
 
 /// Real-time stream of a single booking by ID.
 ///
@@ -3556,24 +3538,24 @@ Stream<RideBooking?> bookingStream(Ref ref, String bookingId) {
 /// Used on the pending-booking screen where the passenger polls for
 /// status changes before being auto-navigated.
 @riverpod
-Stream<List<RideBooking>> bookingsByPassenger(Ref ref, String passengerId) {
-  return ref
-      .read(bookingRepositoryProvider)
+Stream<List<RideBooking>> bookingsByPassenger(Ref ref, String passengerId) async* {
+  // Emit immediately so the provider never stays in pure loading state.
+  yield const <RideBooking>[];
+
+  yield* ref
+      .watch(bookingRepositoryProvider)
       .streamBookingsByPassengerId(passengerId);
 }
-
 /// All Active Rides Stream Provider (for search screen)
 @riverpod
 Stream<List<RideModel>> activeRides(Ref ref) {
-  final repository = ref.read(rideRepositoryProvider);
-  return repository.streamActiveRides();
+  return ref.watch(rideRepositoryProvider).streamActiveRides();
 }
 
 /// Single Ride Stream Provider (for active ride screens)
 @riverpod
 Stream<RideModel?> rideStream(Ref ref, String rideId) {
-  final repository = ref.read(rideRepositoryProvider);
-  return repository.streamRideById(rideId);
+  return ref.watch(rideRepositoryProvider).streamRideById(rideId);
 }
 
 /// Ride reliability stats for a user (cancel & no-show counts).
@@ -3585,8 +3567,7 @@ Stream<({int cancelCount, int noShowCount})> userRideReliability(
   Ref ref,
   String userId,
 ) {
-  final repository = ref.read(rideRepositoryProvider);
-  return repository.getRideHistory(userId).map((rides) {
+  return ref.watch(rideRepositoryProvider).getRideHistory(userId).map((rides) {
     final cancelCount = rides
         .where((r) => r.status == RideStatus.cancelled)
         .length;
@@ -3596,15 +3577,13 @@ Stream<({int cancelCount, int noShowCount})> userRideReliability(
 
 // ─── Dispute ──────────────────────────────────────────────────────────────────
 
-final disputeViewModelProvider = Provider<DisputeViewModel>((ref) {
-  return DisputeViewModel(ref);
-});
-
 /// Delegates dispute submission through [DisputeRepository].
-class DisputeViewModel {
-  DisputeViewModel(this._ref);
-
-  final Ref _ref;
+@riverpod
+class DisputeViewModel extends _$DisputeViewModel {
+  @override
+  void build() {
+    return;
+  }
 
   /// Submits a dispute and optionally uploads file attachments.
   ///
@@ -3618,7 +3597,7 @@ class DisputeViewModel {
     String? rideSummary,
     List<File> attachments = const [],
   }) async {
-    final repo = _ref.read(disputeRepositoryProvider);
+    final repo = ref.read(disputeRepositoryProvider);
     final disputeId = await repo.submitDispute(
       rideId: rideId,
       userId: userId,

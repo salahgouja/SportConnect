@@ -18,7 +18,6 @@
     <!-- Android 13+ (API 33): Granular media access permissions -->
     <!-- READ_MEDIA_IMAGES: used for gallery picks (profile photo, vehicle photos,  -->
     <!-- event covers, dispute evidence, chat & support attachments).               -->
-    <!-- READ_MEDIA_VIDEO is NOT declared — the app never picks video files.        -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
 
     <!-- Required by Firebase Analytics & Crashlytics on Android 13+              -->

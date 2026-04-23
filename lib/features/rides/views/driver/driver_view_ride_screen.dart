@@ -1,7 +1,9 @@
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -9,10 +11,12 @@ import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
-import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
+import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/core/widgets/passenger_info_widget.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/core/widgets/ride_feature_widgets.dart';
@@ -38,42 +42,25 @@ class DriverViewRideScreen extends ConsumerStatefulWidget {
       _DriverViewRideScreenState();
 }
 
-class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen> {
   RideStatus? _lastHandledRideStatus;
 
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 3, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
   void _showInfoSnackBar({
-    required Widget content,
+    required String message,
     Color backgroundColor = AppColors.success,
   }) {
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: content,
-        backgroundColor: backgroundColor,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12.r),
-        ),
-      ),
+    AdaptiveSnackBar.show(
+      context,
+      message: message,
+      type: backgroundColor == AppColors.success
+          ? AdaptiveSnackBarType.success
+          : AdaptiveSnackBarType.error,
     );
   }
 
   void _showErrorMessage(String message) {
-    _showInfoSnackBar(content: Text(message), backgroundColor: AppColors.error);
+    _showInfoSnackBar(message: message, backgroundColor: AppColors.error);
   }
 
   @override
@@ -94,22 +81,18 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
   }
 
   Widget _buildLoadingState() {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.primary,
-        title: Text(AppLocalizations.of(context).yourRide),
+    return AdaptiveScaffold(
+      appBar: AdaptiveAppBar(
+        title: AppLocalizations.of(context).yourRide,
       ),
-      body: const Center(child: CircularProgressIndicator.adaptive()),
+      body: const SkeletonLoader(type: SkeletonType.rideCard, itemCount: 5),
     );
   }
 
   Widget _buildErrorState(String error) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.primary,
-        title: Text(AppLocalizations.of(context).yourRide),
+    return AdaptiveScaffold(
+      appBar: AdaptiveAppBar(
+        title: AppLocalizations.of(context).yourRide,
       ),
       body: Center(
         child: Padding(
@@ -196,8 +179,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
         .where((b) => b.status == BookingStatus.accepted)
         .toList();
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return AdaptiveScaffold(
       body: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) {
           return [
@@ -209,87 +191,19 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
                 confirmedBookings,
               ),
             ),
-            SliverPersistentHeader(
-              pinned: true,
-              delegate: _TabBarDelegate(
-                tabBar: TabBar(
-                  controller: _tabController,
-                  indicatorColor: AppColors.primary,
-                  labelColor: AppColors.primary,
-                  unselectedLabelColor: AppColors.textSecondary,
-                  indicatorSize: TabBarIndicatorSize.label,
-                  tabs: [
-                    Tab(text: AppLocalizations.of(context).details),
-                    Tab(
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(AppLocalizations.of(context).requests),
-                          if (pendingBookings.isNotEmpty) ...[
-                            SizedBox(width: 6.w),
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 6.w,
-                                vertical: 2.h,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.warning,
-                                borderRadius: BorderRadius.circular(10.r),
-                              ),
-                              child: Text(
-                                AppLocalizations.of(
-                                  context,
-                                ).value2(pendingBookings.length),
-                                style: TextStyle(
-                                  fontSize: 12.sp,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                    Tab(
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(AppLocalizations.of(context).passengers),
-                          if (confirmedBookings.isNotEmpty) ...[
-                            SizedBox(width: 6.w),
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 6.w,
-                                vertical: 2.h,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.success,
-                                borderRadius: BorderRadius.circular(10.r),
-                              ),
-                              child: Text(
-                                AppLocalizations.of(
-                                  context,
-                                ).value2(confirmedBookings.length),
-                                style: TextStyle(
-                                  fontSize: 12.sp,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
           ];
         },
-        body: TabBarView(
-          controller: _tabController,
+        body: AdaptiveTabBarView(
+          tabs: [
+            AppLocalizations.of(context).details,
+            pendingBookings.isNotEmpty
+                ? '${AppLocalizations.of(context).requests} (${pendingBookings.length})'
+                : AppLocalizations.of(context).requests,
+            confirmedBookings.isNotEmpty
+                ? '${AppLocalizations.of(context).passengers} (${confirmedBookings.length})'
+                : AppLocalizations.of(context).passengers,
+          ],
+          selectedColor: AppColors.primary,
           children: [
             _buildDetailsTab(ride),
             _buildRequestsTab(ride, pendingBookings),
@@ -366,6 +280,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
                   urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                   userAgentPackageName: 'com.sportconnect.app',
                 ),
+                const CurrentLocationLayer(),
                 PolylineLayer(
                   polylines: [
                     Polyline(
@@ -490,7 +405,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
                             ),
                           ),
                           Text(
-                            '\$${_calculateEarnings(ride, confirmedBookings).toStringAsFixed(0)}',
+                            '€${_calculateEarnings(ride, confirmedBookings).toStringAsFixed(0)}',
                             style: TextStyle(
                               fontSize: 22.sp,
                               fontWeight: FontWeight.bold,
@@ -604,8 +519,8 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
           Container(width: 1.w, height: 40.h, color: Colors.white30),
           Expanded(
             child: _buildStatItem(
-              icon: Icons.attach_money_rounded,
-              value: '\$${ride.pricePerSeat.toStringAsFixed(0)}',
+              icon: Icons.euro_rounded,
+              value: '€${(ride.pricePerSeatInCents / 100).toStringAsFixed(2)}',
               label: AppLocalizations.of(context).perSeat,
             ),
           ),
@@ -1196,7 +1111,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
                   borderRadius: BorderRadius.circular(8.r),
                 ),
                 child: Text(
-                  '\$${(ride.pricePerSeat * booking.seatsBooked).toStringAsFixed(0)}',
+                  '€${((ride.pricePerSeatInCents * booking.seatsBooked) / 100).toStringAsFixed(2)}',
                   style: TextStyle(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.bold,
@@ -1419,7 +1334,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
                     ),
                     SizedBox(width: 8.w),
                     Text(
-                      '\$${(ride.pricePerSeat * booking.seatsBooked).toStringAsFixed(0)}',
+                      '€${((ride.pricePerSeatInCents * booking.seatsBooked) / 100).toStringAsFixed(2)}',
                       style: TextStyle(
                         fontSize: 13.sp,
                         fontWeight: FontWeight.w600,
@@ -1464,13 +1379,11 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
                       context,
                       passengerName: 'Passenger',
                     );
-                    if (confirmed == true && context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            AppLocalizations.of(context).noShowReported,
-                          ),
-                        ),
+                    if (confirmed == true && mounted) {
+                      AdaptiveSnackBar.show(
+                        context,
+                        message: AppLocalizations.of(context).noShowReported,
+                        type: AdaptiveSnackBarType.success,
                       );
                     }
                   },
@@ -1490,61 +1403,63 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
     );
   }
 
-  Widget _buildBottomActions(RideModel ride) {
-    return Container(
-      padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 24.h),
-      decoration: BoxDecoration(
-        color: AppColors.cardBg,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 15,
-            offset: const Offset(0, -5),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        top: false,
-        child: Row(
-          children: [
-            Expanded(
-              child: ride.status == RideStatus.inProgress
-                  ? PremiumButton(
-                      text: AppLocalizations.of(context).activeRide,
-                      onPressed: () => context.push(
-                        '${AppRoutes.driverActiveRide.path}?rideId=${ride.id}',
-                      ),
-                      style: PremiumButtonStyle.success,
-                      icon: Icons.navigation_rounded,
-                    )
-                  : PremiumButton(
-                      text: AppLocalizations.of(context).editRide,
-                      onPressed: () => _editRide(ride),
-                      style: PremiumButtonStyle.secondary,
-                      icon: Icons.edit_rounded,
-                    ),
+  AdaptiveBottomNavigationBar _buildBottomActions(RideModel ride) {
+    return AdaptiveBottomNavigationBar(
+      bottomNavigationBar: Container(
+        padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 24.h),
+        decoration: BoxDecoration(
+          color: AppColors.cardBg,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 15,
+              offset: const Offset(0, -5),
             ),
-            SizedBox(width: 12.w),
-            if (ride.status == RideStatus.active)
-              Expanded(
-                flex: 2,
-                child: PremiumButton(
-                  text: AppLocalizations.of(context).startRide,
-                  onPressed: () => _startRide(ride),
-                  icon: Icons.play_arrow_rounded,
-                ),
-              )
-            else if (ride.status == RideStatus.inProgress)
-              Expanded(
-                flex: 2,
-                child: PremiumButton(
-                  text: AppLocalizations.of(context).completeRide,
-                  onPressed: () => _completeRide(ride),
-                  style: PremiumButtonStyle.success,
-                  icon: Icons.check_circle_rounded,
-                ),
-              ),
           ],
+        ),
+        child: SafeArea(
+          top: false,
+          child: Row(
+            children: [
+              Expanded(
+                child: ride.status == RideStatus.inProgress
+                    ? PremiumButton(
+                        text: AppLocalizations.of(context).activeRide,
+                        onPressed: () => context.push(
+                          '${AppRoutes.driverActiveRide.path}?rideId=${ride.id}',
+                        ),
+                        style: PremiumButtonStyle.success,
+                        icon: Icons.navigation_rounded,
+                      )
+                    : PremiumButton(
+                        text: AppLocalizations.of(context).editRide,
+                        onPressed: () => _editRide(ride),
+                        style: PremiumButtonStyle.secondary,
+                        icon: Icons.edit_rounded,
+                      ),
+              ),
+              SizedBox(width: 12.w),
+              if (ride.status == RideStatus.active)
+                Expanded(
+                  flex: 2,
+                  child: PremiumButton(
+                    text: AppLocalizations.of(context).startRide,
+                    onPressed: () => _startRide(ride),
+                    icon: Icons.play_arrow_rounded,
+                  ),
+                )
+              else if (ride.status == RideStatus.inProgress)
+                Expanded(
+                  flex: 2,
+                  child: PremiumButton(
+                    text: AppLocalizations.of(context).completeRide,
+                    onPressed: () => _completeRide(ride),
+                    style: PremiumButtonStyle.success,
+                    icon: Icons.check_circle_rounded,
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -1554,8 +1469,12 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
 
   double _calculateEarnings(RideModel ride, List<RideBooking> bookings) {
     return bookings
-        .where((b) => b.status == BookingStatus.accepted)
-        .fold(0, (sum, b) => sum + (ride.pricePerSeat * b.seatsBooked));
+            .where((b) => b.status == BookingStatus.accepted)
+            .fold(
+              0,
+              (sum, b) => sum + (ride.pricePerSeatInCents * b.seatsBooked),
+            ) /
+        100;
   }
 
   String _timeAgo(DateTime? date) {
@@ -1567,27 +1486,16 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
   }
 
   void _showRideOptions(RideModel ride) {
-    showModalBottomSheet<void>(
+    AppModalSheet.show<void>(
       context: context,
-      backgroundColor: AppColors.cardBg,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-      ),
-      builder: (context) => Padding(
+      title: AppLocalizations.of(context).rideOptions,
+      maxHeightFactor: 0.55,
+      child: Padding(
         padding: EdgeInsets.all(20.w),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 40.w,
-              height: 4.h,
-              decoration: BoxDecoration(
-                color: AppColors.border,
-                borderRadius: BorderRadius.circular(2.r),
-              ),
-            ),
-            SizedBox(height: 20.h),
-            ListTile(
+            AdaptiveListTile(
               leading: Icon(
                 Icons.adaptive.share_rounded,
                 color: AppColors.primary,
@@ -1598,7 +1506,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
                 _shareRide(ride);
               },
             ),
-            ListTile(
+            AdaptiveListTile(
               leading: const Icon(Icons.copy_rounded, color: AppColors.info),
               title: Text(AppLocalizations.of(context).duplicateRide),
               onTap: () {
@@ -1607,7 +1515,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
               },
             ),
             if (ride.status == RideStatus.inProgress)
-              ListTile(
+              AdaptiveListTile(
                 leading: const Icon(
                   Icons.report_problem_rounded,
                   color: AppColors.warning,
@@ -1619,21 +1527,18 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
                     context,
                     rideId: ride.id,
                     onSubmit: (report) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            AppLocalizations.of(
-                              context,
-                            ).incidentReportSubmitted,
-                          ),
-                        ),
+                      AdaptiveSnackBar.show(
+                        context,
+                        message: AppLocalizations.of(
+                          context,
+                        ).incidentReportSubmitted,
                       );
                     },
                   );
                 },
               ),
             if (ride.status == RideStatus.active)
-              ListTile(
+              AdaptiveListTile(
                 leading: const Icon(
                   Icons.cancel_rounded,
                   color: AppColors.error,
@@ -1655,27 +1560,16 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
   }
 
   void _showPassengerOptions(RideModel ride, RideBooking booking) {
-    showModalBottomSheet<void>(
+    AppModalSheet.show<void>(
       context: context,
-      backgroundColor: AppColors.cardBg,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-      ),
-      builder: (context) => Padding(
+      title: AppLocalizations.of(context).passengerOptions,
+      maxHeightFactor: 0.5,
+      child: Padding(
         padding: EdgeInsets.all(20.w),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 40.w,
-              height: 4.h,
-              decoration: BoxDecoration(
-                color: AppColors.border,
-                borderRadius: BorderRadius.circular(2.r),
-              ),
-            ),
-            SizedBox(height: 20.h),
-            ListTile(
+            AdaptiveListTile(
               leading: const Icon(
                 Icons.person_rounded,
                 color: AppColors.primary,
@@ -1691,7 +1585,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
                 );
               },
             ),
-            ListTile(
+            AdaptiveListTile(
               leading: const Icon(Icons.call_rounded, color: AppColors.success),
               title: Text(AppLocalizations.of(context).callPassenger),
               onTap: () {
@@ -1699,7 +1593,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
                 _callPassenger(booking);
               },
             ),
-            ListTile(
+            AdaptiveListTile(
               leading: const Icon(Icons.cancel_rounded, color: AppColors.error),
               title: Text(
                 AppLocalizations.of(context).removePassenger,
@@ -1726,10 +1620,10 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
         userProfileProvider(booking.passengerId).future,
       );
 
-      if (!context.mounted) return;
+      if (!mounted) return;
 
       // Use fallback if profile is null
-      final passengerName = passengerProfile?.displayName ?? 'Passenger';
+      final passengerName = passengerProfile?.username ?? 'Passenger';
 
       final success = await ref
           .read(rideDetailViewModelProvider(ride.id).notifier)
@@ -1740,20 +1634,13 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
         return;
       }
 
+      if (!mounted) return;
       _showInfoSnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.check_circle_rounded, color: Colors.white),
-            SizedBox(width: 8.w),
-            Text(
-              AppLocalizations.of(
-                context,
-              ).bookingConfirmedForValue(passengerName),
-            ),
-          ],
-        ),
+        message: AppLocalizations.of(
+          context,
+        ).bookingConfirmedForValue(passengerName),
       );
-    } on Exception catch (_) {
+    } catch (e, st) {
       _showErrorMessage('Could not confirm booking. Please try again.');
     }
   }
@@ -1766,10 +1653,10 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
       userProfileProvider(booking.passengerId).future,
     );
 
-    if (!context.mounted) return;
+    if (!mounted) return;
 
     // Use fallback if profile is null
-    final passengerName = passengerProfile?.displayName ?? 'Passenger';
+    final passengerName = passengerProfile?.username ?? 'Passenger';
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -1796,7 +1683,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
       ),
     );
 
-    if (confirmed != true) {
+    if (confirmed != true || !context.mounted) {
       return;
     }
 
@@ -1809,7 +1696,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
       if (!success) {
         _showErrorMessage('Could not decline booking. Please try again.');
       }
-    } on Exception catch (_) {
+    } catch (e, st) {
       _showErrorMessage('Could not decline booking. Please try again.');
     }
   }
@@ -1820,28 +1707,34 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
       final passenger = await ref.read(
         userProfileProvider(booking.passengerId).future,
       );
-      final phoneNumber = passenger?.phoneNumber;
+      if (!mounted) return;
+
+      final phoneNumber = passenger?.asRider?.phoneNumber;
 
       if (phoneNumber == null || phoneNumber.isEmpty) {
         _showInfoSnackBar(
-          content: Text(AppLocalizations.of(context).phoneNumberNotAvailable),
-          backgroundColor: AppColors.textPrimary,
+          message: AppLocalizations.of(context).phoneNumberNotAvailable,
+          backgroundColor: AppColors.success,
         );
         return;
       }
 
       final phoneUri = Uri(scheme: 'tel', path: phoneNumber);
-      if (await canLaunchUrl(phoneUri)) {
+      final canLaunch = await canLaunchUrl(phoneUri);
+      if (!mounted) return;
+
+      if (canLaunch) {
         await launchUrl(phoneUri);
       } else {
         _showInfoSnackBar(
-          content: Text(AppLocalizations.of(context).cannotMakePhoneCalls),
+          message: AppLocalizations.of(context).cannotMakePhoneCalls,
           backgroundColor: AppColors.textPrimary,
         );
       }
     } on Exception {
+      if (!mounted) return;
       _showInfoSnackBar(
-        content: Text(AppLocalizations.of(context).failedToLaunchDialer),
+        message: AppLocalizations.of(context).failedToLaunchDialer,
         backgroundColor: AppColors.textPrimary,
       );
     }
@@ -1853,10 +1746,10 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
       userProfileProvider(booking.passengerId).future,
     );
 
-    if (!context.mounted) return;
+    if (!mounted) return;
 
     // Use fallback if profile is null
-    final passengerName = passengerProfile?.displayName ?? 'Passenger';
+    final passengerName = passengerProfile?.username ?? 'Passenger';
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -1881,17 +1774,17 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
       ),
     );
 
-    if (confirmed != true) return;
+    if (confirmed != true || !context.mounted) return;
 
     try {
       await ref
-          .read(rideActionsViewModelProvider)
+          .read(rideActionsViewModelProvider.notifier)
           .updateBookingStatus(
             rideId: ride.id,
             bookingId: booking.id,
             newStatus: BookingStatus.cancelled,
           );
-    } on Exception catch (_) {
+    } catch (e, st) {
       _showErrorMessage('Could not remove passenger. Please try again.');
     }
   }
@@ -1908,17 +1801,14 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
         userProfileProvider(booking.passengerId).future,
       );
 
-      if (!context.mounted) return;
+      if (!mounted) return;
 
       // If profile doesn't exist, show error and return
       if (passengerProfile == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              AppLocalizations.of(context).passengerProfileNotFound,
-            ),
-            backgroundColor: AppColors.error,
-          ),
+        AdaptiveSnackBar.show(
+          context,
+          message: AppLocalizations.of(context).passengerProfileNotFound,
+          type: AdaptiveSnackBarType.error,
         );
         return;
       }
@@ -1927,19 +1817,19 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
         getOrCreateChatProvider(
           userId1: currentUser.uid,
           userId2: booking.passengerId,
-          userName1: currentUser.displayName,
-          userName2: passengerProfile.displayName,
+          userName1: currentUser.username,
+          userName2: passengerProfile.username,
           userPhoto1: currentUser.photoUrl,
           userPhoto2: passengerProfile.photoUrl,
         ).future,
       );
 
-      if (!context.mounted) return;
+      if (!mounted) return;
 
       final passengerUser = UserModel.rider(
         uid: booking.passengerId,
         email: '',
-        displayName: passengerProfile.displayName,
+        username: passengerProfile.username,
         photoUrl: passengerProfile.photoUrl,
       );
 
@@ -1948,7 +1838,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
         pathParameters: {'id': chat.id},
         extra: passengerUser,
       );
-    } on Exception catch (_) {
+    } catch (e, st) {
       _showErrorMessage('Failed to open chat. Please try again.');
     }
   }
@@ -1974,7 +1864,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
         ride.origin.city ?? ride.origin.address,
         ride.destination.city ?? ride.destination.address,
         DateFormat('MMM d, h:mm a').format(ride.departureTime),
-        ride.pricePerSeat.toStringAsFixed(0),
+        (ride.pricePerSeatInCents / 100).toStringAsFixed(2),
         ride.remainingSeats,
         dynamicLink,
       );
@@ -1994,7 +1884,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
             ride.origin.city ?? ride.origin.address,
             ride.destination.city ?? ride.destination.address,
             DateFormat('MMM d, h:mm a').format(ride.departureTime),
-            ride.pricePerSeat.toStringAsFixed(0),
+            (ride.pricePerSeatInCents / 100).toStringAsFixed(2),
             ride.remainingSeats,
             'https://${AppConstants.hostingDomain}/ride/${ride.id}',
           ),
@@ -2028,7 +1918,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
       ),
     );
 
-    if (confirmed != true) return;
+    if (confirmed != true || !context.mounted) return;
 
     try {
       final success = await ref
@@ -2039,10 +1929,10 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
         return;
       }
       // Navigate directly to the active ride management screen
-      if (context.mounted) {
+      if (mounted) {
         context.push('${AppRoutes.driverActiveRide.path}?rideId=${ride.id}');
       }
-    } on Exception catch (_) {
+    } catch (e, st) {
       _showErrorMessage('Could not start ride. Please try again.');
     }
   }
@@ -2066,7 +1956,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
       ),
     );
 
-    if (confirmed != true) return;
+    if (confirmed != true || !mounted) return;
 
     try {
       final success = await ref
@@ -2076,11 +1966,12 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
         _showErrorMessage('Could not complete ride. Please try again.');
         return;
       }
+      if (!mounted) return;
       _showInfoSnackBar(
-        content: Text(AppLocalizations.of(context).rideCompleted),
+        message: AppLocalizations.of(context).rideCompleted,
         backgroundColor: AppColors.textPrimary,
       );
-    } on Exception catch (_) {
+    } catch (e, st) {
       _showErrorMessage('Could not complete ride. Please try again.');
     }
   }
@@ -2090,31 +1981,5 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen>
       '${AppRoutes.cancellationReason.path.replaceFirst(':id', ride.id)}?isDriver=true',
     );
     if (cancelled == true && mounted) context.pop();
-  }
-}
-
-// Tab bar delegate for sticky tabs
-class _TabBarDelegate extends SliverPersistentHeaderDelegate {
-  _TabBarDelegate({required this.tabBar});
-  final TabBar tabBar;
-
-  @override
-  double get minExtent => tabBar.preferredSize.height;
-
-  @override
-  double get maxExtent => tabBar.preferredSize.height;
-
-  @override
-  Widget build(
-    BuildContext context,
-    double shrinkOffset,
-    bool overlapsContent,
-  ) {
-    return ColoredBox(color: AppColors.background, child: tabBar);
-  }
-
-  @override
-  bool shouldRebuild(covariant _TabBarDelegate oldDelegate) {
-    return tabBar != oldDelegate.tabBar;
   }
 }

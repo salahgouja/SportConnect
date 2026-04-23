@@ -19,7 +19,7 @@ abstract class IRideRepository {
     required double destLng,
     DateTime? date,
     int? minSeats,
-    double? maxPrice,
+    int? maxPriceInCents,
   });
 
   Stream<List<RideModel>> getActiveRides(String userId);
@@ -57,8 +57,9 @@ abstract class IRideRepository {
   Future<void> updateLiveLocation(
     String rideId,
     double latitude,
-    double longitude,
-  );
+    double longitude, {
+    double heading = 0,
+  });
 
   /// Persists the ordered list of passenger pickup IDs to Firestore.
   Future<void> updatePickupOrder(String rideId, List<String> passengerIds);

@@ -24,7 +24,7 @@ class StripeConfig {
   /// Stripe processing fee percentage
   static const double stripeFeePercent = 2.9;
 
-  /// Stripe fixed fee (in cents for USD, eurocents for EUR)
+  /// Stripe fixed fee in euro cents
   static const double stripeFixedFee = 30;
 
   /// Default currency for payments

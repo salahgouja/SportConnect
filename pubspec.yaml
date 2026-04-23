@@ -1,5 +1,5 @@
 name: sport_connect
-description: "SportConnect - Social carpooling app for students and sports enthusiasts"
+description: "SportConnect - Social carpooling app for sports enthusiasts"
 publish_to: "none"
 
 version: 1.0.4
@@ -27,26 +27,28 @@ dependencies:
   riverpod_annotation: ^4.0.0
 
   # Firebase Services
-  firebase_core: ^3.15.2
-  firebase_auth: ^5.7.0
-  cloud_firestore: ^5.6.2
-  firebase_storage: ^12.4.10
-  firebase_messaging: ^15.2.10
-  firebase_analytics: ^11.4.8
-  firebase_crashlytics: ^4.3.8
-  firebase_app_check: ^0.3.2+10
-  firebase_database: ^11.3.5
-  cloud_functions: ^5.6.2
+  firebase_core: ^4.7.0
+  firebase_auth: ^6.4.0
+  cloud_firestore: ^6.3.0
+  firebase_storage: ^13.3.0
+  firebase_messaging: ^16.2.0
+  firebase_analytics: ^12.3.0
+  firebase_crashlytics: ^5.2.0
+  firebase_app_check: ^0.4.3
+  firebase_database: ^12.3.0
+  cloud_functions: ^6.2.0
 
   # Deep Linking & Notifications
   app_links: ^7.0.0
-  flutter_local_notifications: ^20.0.0
+  flutter_local_notifications: ^21.0.0
 
   # Maps & Route Visualization
   flutter_map: ^8.2.2
+  flutter_map_location_marker: ^10.2.0
   latlong2: ^0.9.1
   geolocator: ^14.0.2
   geocoding: ^4.0.0
+  map_launcher: ^4.4.3
   # flutter_map_marker_cluster: ^8.2.2
   # flutter_map_animations: ^0.9.0
   # flutter_map_marker_popup: ^8.1.0
@@ -54,6 +56,7 @@ dependencies:
 
   # Networking & HTTP
   dio: ^5.9.0
+  retrofit: ^4.9.2
 
   # WebView (Stripe onboarding)
   flutter_inappwebview: ^6.1.5
@@ -105,6 +108,12 @@ dependencies:
   # animations: ^2.0.11
 
   # UI Components
+  wolt_modal_sheet: ^0.11.0
+  skeletonizer: ^2.1.3
+  flutter_typeahead: ^6.0.0
+  sliver_tools: ^0.2.12
+  flutter_chat_core: ^2.9.0
+  flutter_chat_ui: ^2.11.1
   # table_calendar: ^3.2.0
   # badges: ^3.1.2
   # percent_indicator: ^4.2.5
@@ -132,6 +141,10 @@ dependencies:
   v_chat_voice_player: ^3.1.4
   v_platform: ^2.1.5
   flutter_secure_storage: ^10.0.0
+  upgrader: ^13.1.0
+  adaptive_platform_ui: ^0.1.104
+  native_geofence: ^1.2.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -143,6 +156,8 @@ dev_dependencies:
   json_serializable: ^6.11.2
   riverpod_generator: ^4.0.0
   riverpod_lint: ^3.1.0
+  go_router_builder: ^4.2.1
+  retrofit_generator: ^10.2.1
   custom_lint: ^0.8.1
 
   # Secrets Management
@@ -156,7 +171,6 @@ dev_dependencies:
   args: ^2.6.0
 
   # Production UI
-  flutter_native_splash: ^2.4.7
   flutter_launcher_icons: ^0.14.4
 
   # Development Tools
@@ -176,22 +190,27 @@ flutter:
 flutter_native_splash:
   color: "#FFFFFF"
   color_dark: "#1A1A1A"
-  image: assets/images/splash_icon.png
-  image_dark: assets/images/splash_icon_dark.png
-  branding: assets/images/branding.png
-  branding_dark: assets/images/branding_dark.png
+  image: assets/images/splash_logo.png
+  image_dark: assets/images/splash_logo_dark.png
   fullscreen: true
   android_12:
-    image: assets/images/splash_icon_android12.png
-    image_dark: assets/images/splash_icon_android12_dark.png
-    icon_background_color: "#FFFFFF"
-    icon_background_color_dark: "#1A1A1A"
+    image: assets/images/splash_logo_android12.png
+    image_dark: assets/images/splash_logo_android12_dark.png
 
 # Flutter Launcher Icons Configuration
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
-  image_path: "assets/icons/app_icon.png"
-  image_path_ios: "assets/icons/app_icon_ios.png"
+  image_path: "assets/icons/app_icon_light.png"
+  image_path_ios: "assets/icons/app_icon_light.png"
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/icons/app_icon_foreground.png"
+  adaptive_icon_foreground_inset: 16
   remove_alpha_ios: true
+  background_color_ios: "#FFFFFF"
   min_sdk_android: 21
+  web:
+    generate: true
+    image_path: "assets/icons/app_icon_light.png"
+    background_color: "#FFFFFF"
+    theme_color: "#FFFFFF"

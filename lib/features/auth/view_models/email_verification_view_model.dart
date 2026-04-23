@@ -57,7 +57,8 @@ class EmailVerificationViewModel extends _$EmailVerificationViewModel {
     _startPolling();
 
     final userEmail =
-        ref.read(authActionsViewModelProvider).currentUser?.email ?? '';
+        ref.read(authActionsViewModelProvider.notifier).currentUser?.email ??
+        '';
     return EmailVerificationState(userEmail: userEmail);
   }
 
@@ -75,7 +76,7 @@ class EmailVerificationViewModel extends _$EmailVerificationViewModel {
     if (!ref.mounted) return;
 
     try {
-      final authActions = ref.read(authActionsViewModelProvider);
+      final authActions = ref.read(authActionsViewModelProvider.notifier);
       final user = authActions.currentUser;
       if (user == null) return;
 
@@ -96,7 +97,7 @@ class EmailVerificationViewModel extends _$EmailVerificationViewModel {
 
         ref.invalidate(authStateProvider);
       }
-    } on Exception catch (e) {
+    } catch (e, st) {
       TalkerService.debug('Email verification poll error: $e');
     }
   }
@@ -109,7 +110,9 @@ class EmailVerificationViewModel extends _$EmailVerificationViewModel {
     state = state.copyWith(isSending: true);
 
     try {
-      await ref.read(authActionsViewModelProvider).sendEmailVerification();
+      await ref
+          .read(authActionsViewModelProvider.notifier)
+          .sendEmailVerification();
       if (!ref.mounted) return;
 
       state = state.copyWith(
@@ -118,14 +121,14 @@ class EmailVerificationViewModel extends _$EmailVerificationViewModel {
         clearError: true,
       );
       _startCooldown();
-    } on Exception catch (e) {
+    } catch (e, st) {
       if (!ref.mounted) return;
       state = state.copyWith(isSending: false, errorMessage: e.toString());
     }
   }
 
   Future<void> signOut() async {
-    await ref.read(authActionsViewModelProvider).signOut();
+    await ref.read(authActionsViewModelProvider.notifier).signOut();
   }
 
   void _startCooldown() {

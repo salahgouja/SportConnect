@@ -71,14 +71,14 @@ abstract class IPaymentRepository {
     required bool chargesEnabled,
     required bool payoutsEnabled,
     required bool detailsSubmitted,
-    double? availableBalance,
-    double? pendingBalance,
+    int? availableBalanceInCents,
+    int? pendingBalanceInCents,
   });
 
   /// Process refund
   Future<void> processRefund({
     required String paymentId,
-    double? amount,
+    int? amountInCents,
     String? reason,
   });
 
@@ -86,7 +86,7 @@ abstract class IPaymentRepository {
   Future<DriverPayout?> getPayoutById(String payoutId);
 
   /// Create driver connected account via Stripe and persist it to Firestore.
-  Future<DriverConnectedAccount?> createConnectedAccount({
+  Future<ConnectedAccountCreationResult?> createConnectedAccount({
     required String userId,
     required String email,
     required String country,
@@ -97,4 +97,11 @@ abstract class IPaymentRepository {
     String? addressLine1,
     String? city,
   });
+
+  Future<DriverConnectedAccount?> refreshConnectedAccountFromServer({
+    required String driverId,
+    required String accountId,
+  });
+
+  Stream<DriverConnectedAccount?> streamConnectedAccount(String driverId);
 }

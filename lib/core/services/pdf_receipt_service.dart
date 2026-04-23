@@ -31,15 +31,17 @@ class PdfReceiptService {
     required DateTime? completedTime,
     required String driverName,
     required String? driverPhone,
-    required double pricePerSeat,
+    required int pricePerSeatInCents,
     required int seatsBooked,
-    required double serviceFee,
+    required int serviceFeeInCents,
     required String? passengerName,
   }) async {
     final pdf = pw.Document();
 
-    final baseFare = pricePerSeat * seatsBooked;
-    final total = baseFare + serviceFee;
+    final baseFare = pricePerSeatInCents * seatsBooked;
+    final total = baseFare + serviceFeeInCents;
+    final baseFareEuros = baseFare / 100;
+    final totalEuros = total / 100;
     final currencyFormat = NumberFormat.currency(symbol: '€', decimalDigits: 2);
     final dateFormat = DateFormat('MMM d, yyyy • h:mm a');
 
@@ -156,12 +158,12 @@ class PdfReceiptService {
                     pw.SizedBox(height: 15),
                     _buildPriceRow(
                       'Base Fare ($seatsBooked seat${seatsBooked > 1 ? 's' : ''})',
-                      currencyFormat.format(baseFare),
+                      currencyFormat.format(baseFareEuros),
                     ),
                     pw.SizedBox(height: 8),
                     _buildPriceRow(
                       'Service Fee',
-                      currencyFormat.format(serviceFee),
+                      currencyFormat.format(serviceFeeInCents / 100),
                     ),
                     pw.Divider(color: lightGray, thickness: 1),
                     pw.SizedBox(height: 8),
@@ -176,7 +178,7 @@ class PdfReceiptService {
                           ),
                         ),
                         pw.Text(
-                          currencyFormat.format(total),
+                          currencyFormat.format(totalEuros),
                           style: pw.TextStyle(
                             fontSize: 18,
                             fontWeight: pw.FontWeight.bold,

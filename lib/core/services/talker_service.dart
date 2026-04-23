@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -14,6 +16,10 @@ import 'package:talker_riverpod_logger/talker_riverpod_logger.dart';
 /// - TalkerScreen for viewing logs in-app (non-web only)
 class TalkerService {
   TalkerService._();
+
+  static const isVerboseLoggingEnabled = bool.fromEnvironment(
+    'SPORT_CONNECT_VERBOSE_LOGS',
+  );
 
   static Talker? _instance;
 
@@ -71,13 +77,24 @@ class TalkerService {
   );
 
   // Convenience logging methods
-  static void log(String message) => instance.log(message);
-  static void debug(String message) => instance.debug(message);
-  static void info(String message) => instance.info(message);
+  static void log(String message) {
+    if (isVerboseLoggingEnabled) instance.log(message);
+  }
+
+  static void debug(String message) {
+    if (isVerboseLoggingEnabled) instance.debug(message);
+  }
+
+  static void info(String message) {
+    if (isVerboseLoggingEnabled) instance.info(message);
+  }
+
   static void warning(String message) => instance.warning(message);
   static void error(String message, [Object? error, StackTrace? stackTrace]) =>
       instance.error(message, error, stackTrace);
-  static void verbose(String message) => instance.verbose(message);
+  static void verbose(String message) {
+    if (isVerboseLoggingEnabled) instance.verbose(message);
+  }
 
   /// Handle and log exceptions with stack traces
   static void handleException(
@@ -99,8 +116,12 @@ class TalkerService {
       debugPrint('[TalkerService] TalkerScreen is not supported on web.');
       return;
     }
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (context) => TalkerScreen(talker: instance)),
+    unawaited(
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (context) => TalkerScreen(talker: instance),
+        ),
+      ),
     );
   }
 
@@ -113,7 +134,7 @@ class TalkerService {
   /// ]
   /// ```
   static TalkerRouteObserver? get routeObserver =>
-      kIsWeb ? null : TalkerRouteObserver(instance);
+      kIsWeb || !isVerboseLoggingEnabled ? null : TalkerRouteObserver(instance);
 
   /// Wrap a widget with TalkerWrapper for error boundary (non-web only)
   ///
@@ -133,6 +154,7 @@ class TalkerService {
 extension DioTalkerExtension on Dio {
   /// Adds TalkerDioLogger interceptor to this Dio instance
   void addTalkerInterceptor() {
+    if (!TalkerService.isVerboseLoggingEnabled) return;
     interceptors.add(TalkerService.dioLogger);
   }
 }

@@ -152,14 +152,14 @@ class VehicleRepository implements IVehicleRepository {
       if (vehicle.imageUrl != null) {
         try {
           await _storage.refFromURL(vehicle.imageUrl!).delete();
-        } on Exception catch (_) {}
+        } catch (e, st) {}
       }
 
       // Delete additional images
       for (final url in vehicle.imageUrls) {
         try {
           await _storage.refFromURL(url).delete();
-        } on Exception catch (_) {}
+        } catch (e, st) {}
       }
     }
 

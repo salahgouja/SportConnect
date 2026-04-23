@@ -11,7 +11,9 @@ _UserPreferences _$UserPreferencesFromJson(Map json) => _UserPreferences(
   emailNotifications: json['emailNotifications'] as bool? ?? true,
   rideReminders: json['rideReminders'] as bool? ?? true,
   chatNotifications: json['chatNotifications'] as bool? ?? true,
-  language: json['language'] as String? ?? 'en',
+  language:
+      $enumDecodeNullable(_$AppLocaleEnumMap, json['language']) ??
+      AppLocale.french,
   maxPickupRadius: (json['maxPickupRadius'] as num?)?.toDouble() ?? 20.0,
   allowMessages: json['allowMessages'] as bool? ?? true,
 );
@@ -22,7 +24,12 @@ Map<String, dynamic> _$UserPreferencesToJson(_UserPreferences instance) =>
       'emailNotifications': instance.emailNotifications,
       'rideReminders': instance.rideReminders,
       'chatNotifications': instance.chatNotifications,
-      'language': instance.language,
+      'language': _$AppLocaleEnumMap[instance.language]!,
       'maxPickupRadius': instance.maxPickupRadius,
       'allowMessages': instance.allowMessages,
     };
+
+const _$AppLocaleEnumMap = {
+  AppLocale.english: 'english',
+  AppLocale.french: 'french',
+};

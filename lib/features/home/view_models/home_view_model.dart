@@ -140,6 +140,7 @@ class HomeViewModel extends _$HomeViewModel {
   /// provider initialization.
   Future<void> initializeLocation() async {
     await getCurrentLocation();
+    if (!ref.mounted) return;
     startLocationTracking();
   }
 
@@ -166,9 +167,11 @@ class HomeViewModel extends _$HomeViewModel {
     final locationService = ref.read(locationServiceProvider);
     try {
       final granted = await locationService.requestPermission();
+      if (!ref.mounted) return;
       if (!granted) {
         final permanentlyDenied = await locationService
             .isPermissionPermanentlyDenied();
+        if (!ref.mounted) return;
         state = state.copyWith(
           isLoadingLocation: false,
           locationError: permanentlyDenied
@@ -179,6 +182,7 @@ class HomeViewModel extends _$HomeViewModel {
       }
 
       final position = await locationService.getCurrentLocation();
+      if (!ref.mounted) return;
       if (position == null) {
         state = state.copyWith(
           isLoadingLocation: false,
@@ -192,8 +196,9 @@ class HomeViewModel extends _$HomeViewModel {
         isLoadingLocation: false,
         userHeading: position.heading,
       );
-    } on Exception catch (e) {
+    } catch (e, st) {
       TalkerService.error('Error getting location: $e');
+      if (!ref.mounted) return;
       state = state.copyWith(
         isLoadingLocation: false,
         locationError: 'Error getting location: $e',

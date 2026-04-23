@@ -7,7 +7,7 @@ import 'package:sport_connect/core/repositories/settings_repository.dart'
 part 'settings_provider.g.dart';
 
 /// Provider for map style preference
-@riverpod
+@Riverpod(name: 'mapStyleProvider')
 class MapStyleProvider extends _$MapStyleProvider {
   @override
   Future<String> build() async {
@@ -19,6 +19,7 @@ class MapStyleProvider extends _$MapStyleProvider {
   Future<void> setMapStyle(String style) async {
     final repository = await ref.read(settingsRepositoryProvider.future);
     await repository.setMapStyle(style);
+    if (!ref.mounted) return;
     state = AsyncValue.data(style);
   }
 }
@@ -27,7 +28,7 @@ class MapStyleProvider extends _$MapStyleProvider {
 ///
 /// Reads from SettingsRepository and provides reactive locale state.
 /// Returns null if user hasn't set a preference (app will use system locale).
-@riverpod
+@Riverpod(name: 'localeProvider')
 class LocaleProvider extends _$LocaleProvider {
   @override
   Future<Locale?> build() async {
@@ -41,6 +42,7 @@ class LocaleProvider extends _$LocaleProvider {
   Future<void> setLanguage(String languageCode) async {
     final repository = await ref.read(settingsRepositoryProvider.future);
     await repository.setLanguage(languageCode);
+    if (!ref.mounted) return;
 
     // Update state to trigger rebuild
     state = AsyncValue.data(Locale(languageCode));
@@ -50,6 +52,7 @@ class LocaleProvider extends _$LocaleProvider {
   Future<void> clearLanguage() async {
     final repository = await ref.read(settingsRepositoryProvider.future);
     await repository.clearLanguage();
+    if (!ref.mounted) return;
 
     // Update state to trigger rebuild
     state = const AsyncValue.data(null);
@@ -57,7 +60,7 @@ class LocaleProvider extends _$LocaleProvider {
 }
 
 /// Provider for push notifications setting
-@riverpod
+@Riverpod(name: 'notificationsEnabledProvider')
 class NotificationsEnabledProvider extends _$NotificationsEnabledProvider {
   @override
   Future<bool> build() async {
@@ -69,12 +72,13 @@ class NotificationsEnabledProvider extends _$NotificationsEnabledProvider {
   Future<void> setEnabled(bool enabled) async {
     final repository = await ref.read(settingsRepositoryProvider.future);
     await repository.setNotificationsEnabled(enabled);
+    if (!ref.mounted) return;
     state = AsyncValue.data(enabled);
   }
 }
 
 /// Provider for ride reminders setting
-@riverpod
+@Riverpod(name: 'rideRemindersProvider')
 class RideRemindersProvider extends _$RideRemindersProvider {
   @override
   Future<bool> build() async {
@@ -86,12 +90,13 @@ class RideRemindersProvider extends _$RideRemindersProvider {
   Future<void> setEnabled(bool enabled) async {
     final repository = await ref.read(settingsRepositoryProvider.future);
     await repository.setRideReminders(enabled);
+    if (!ref.mounted) return;
     state = AsyncValue.data(enabled);
   }
 }
 
 /// Provider for chat notifications setting
-@riverpod
+@Riverpod(name: 'chatNotificationsProvider')
 class ChatNotificationsProvider extends _$ChatNotificationsProvider {
   @override
   Future<bool> build() async {
@@ -103,12 +108,13 @@ class ChatNotificationsProvider extends _$ChatNotificationsProvider {
   Future<void> setEnabled(bool enabled) async {
     final repository = await ref.read(settingsRepositoryProvider.future);
     await repository.setChatNotifications(enabled);
+    if (!ref.mounted) return;
     state = AsyncValue.data(enabled);
   }
 }
 
 /// Provider for show location setting
-@riverpod
+@Riverpod(name: 'showLocationProvider')
 class ShowLocationProvider extends _$ShowLocationProvider {
   @override
   Future<bool> build() async {
@@ -120,12 +126,13 @@ class ShowLocationProvider extends _$ShowLocationProvider {
   Future<void> setEnabled(bool enabled) async {
     final repository = await ref.read(settingsRepositoryProvider.future);
     await repository.setShowLocation(enabled);
+    if (!ref.mounted) return;
     state = AsyncValue.data(enabled);
   }
 }
 
 /// Provider for public profile setting
-@riverpod
+@Riverpod(name: 'publicProfileProvider')
 class PublicProfileProvider extends _$PublicProfileProvider {
   @override
   Future<bool> build() async {
@@ -137,6 +144,7 @@ class PublicProfileProvider extends _$PublicProfileProvider {
   Future<void> setEnabled(bool enabled) async {
     final repository = await ref.read(settingsRepositoryProvider.future);
     await repository.setPublicProfile(enabled);
+    if (!ref.mounted) return;
     state = AsyncValue.data(enabled);
   }
 }
@@ -165,12 +173,14 @@ class SavedCredentialsNotifier extends _$SavedCredentialsNotifier {
   Future<void> save(String email) async {
     final repository = await ref.read(settingsRepositoryProvider.future);
     await repository.saveCredentials(email: email);
+    if (!ref.mounted) return;
     state = AsyncValue.data(SavedCredentials(email: email, rememberMe: true));
   }
 
   Future<void> clear() async {
     final repository = await ref.read(settingsRepositoryProvider.future);
     await repository.clearCredentials();
+    if (!ref.mounted) return;
     state = const AsyncValue.data(SavedCredentials());
   }
 }

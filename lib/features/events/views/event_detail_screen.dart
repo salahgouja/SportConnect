@@ -1,3 +1,4 @@
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -11,6 +12,8 @@ import 'package:sport_connect/core/models/location/location_point.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
+import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
+import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/core/widgets/map_location_picker.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/core/widgets/premium_card.dart';
@@ -50,10 +53,27 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
   Widget build(BuildContext context) {
     final eventAsync = ref.watch(eventByIdProvider(widget.eventId));
     final detailVm = ref.watch(eventDetailViewModelProvider(widget.eventId));
-    final currentUser = ref.watch(currentUserProvider).value;
-    final userId = currentUser?.uid ?? '';
-    final isPremiumSubscriber = currentUser?.isPremium ?? false;
-    final isDriver = currentUser?.role == UserRole.driver;
+    final currentUser = ref.watch(
+      currentUserProvider.select((value) {
+        final user = value.value;
+        if (user == null) {
+          return (uid: '', isPremium: false, isDriver: false);
+        }
+        final isPremium = switch (user) {
+          RiderModel(:final isPremium) => isPremium,
+          DriverModel(:final isPremium) => isPremium,
+          _ => false,
+        };
+        return (
+          uid: user.uid,
+          isPremium: isPremium,
+          isDriver: user.role == UserRole.driver,
+        );
+      }),
+    );
+    final userId = currentUser.uid;
+    final isPremiumSubscriber = currentUser.isPremium;
+    final isDriver = currentUser.isDriver;
     // Listen for success / error messages from the view-model.
     ref.listen<EventDetailState>(eventDetailViewModelProvider(widget.eventId), (
       prev,
@@ -61,30 +81,20 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
     ) {
       if (next.successMessage != null &&
           next.successMessage != prev?.successMessage) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.successMessage!),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12.r),
-            ),
-          ),
+        AdaptiveSnackBar.show(
+          context,
+          message: next.successMessage!,
+          type: AdaptiveSnackBarType.success,
         );
         ref
             .read(eventDetailViewModelProvider(widget.eventId).notifier)
             .clearMessages();
       }
       if (next.error != null && next.error != prev?.error) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.error!),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12.r),
-            ),
-          ),
+        AdaptiveSnackBar.show(
+          context,
+          message: next.error!,
+          type: AdaptiveSnackBarType.error,
         );
         ref
             .read(eventDetailViewModelProvider(widget.eventId).notifier)
@@ -92,11 +102,9 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
       }
     });
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return AdaptiveScaffold(
       body: eventAsync.when(
-        loading: () =>
-            const Center(child: CircularProgressIndicator.adaptive()),
+        loading: () => const SkeletonLoader(type: SkeletonType.rideCard, itemCount: 4),
         error: (e, _) => _ErrorBody(message: e.toString()),
         data: (event) {
           if (event == null) {
@@ -534,11 +542,10 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
           icon: Icons.edit_rounded,
           style: PremiumButtonStyle.secondary,
           fullWidth: true,
-          onPressed: () =>
-              context.pushNamed(
-                AppRoutes.editEvent.name,
-                pathParameters: {'id': event.id},
-              ),
+          onPressed: () => context.pushNamed(
+            AppRoutes.editEvent.name,
+            pathParameters: {'id': event.id},
+          ),
         ),
         SizedBox(height: 12.h),
         PremiumButton(
@@ -572,19 +579,16 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
 
   Future<void> _showCancelSheet(EventModel event) async {
     final reasonController = TextEditingController();
-    final confirmed = await showModalBottomSheet<bool>(
+    final confirmed = await AppModalSheet.show<bool>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColors.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-      ),
-      builder: (ctx) => Padding(
+      title: 'Cancel Event',
+      maxHeightFactor: 0.7,
+      child: Padding(
         padding: EdgeInsets.fromLTRB(
           20.w,
           20.h,
           20.w,
-          MediaQuery.of(ctx).viewInsets.bottom + 24.h,
+          MediaQuery.of(context).viewInsets.bottom + 24.h,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -633,7 +637,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: () => Navigator.of(ctx).pop(false),
+                  onPressed: () => Navigator.of(context).pop(false),
                     child: const Text('Keep Event'),
                   ),
                 ),
@@ -644,7 +648,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                       backgroundColor: AppColors.error,
                       foregroundColor: Colors.white,
                     ),
-                    onPressed: () => Navigator.of(ctx).pop(true),
+                  onPressed: () => Navigator.of(context).pop(true),
                     child: const Text('Cancel Event'),
                   ),
                 ),
@@ -710,17 +714,18 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
   Future<void> _openEventChat(EventModel event, String userId) async {
     if (userId.isEmpty) return;
 
-    final isPremiumSubscriber =
-        ref.read(currentUserProvider).value?.isPremium ?? false;
+    final currentUser = ref.read(currentUserProvider).value;
+    final isPremiumSubscriber = switch (currentUser) {
+      final RiderModel rider => rider.isPremium,
+      final DriverModel driver => driver.isPremium,
+      _ => false,
+    };
     if (!isPremiumSubscriber) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Event group chat is available to Premium subscribers only.',
-          ),
-          backgroundColor: AppColors.warning,
-        ),
+      AdaptiveSnackBar.show(
+        context,
+        message: 'Event group chat is available to Premium subscribers only.',
+        type: AdaptiveSnackBarType.warning,
       );
       return;
     }
@@ -736,7 +741,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
     final receiver = UserModel.rider(
       uid: chatId,
       email: '',
-      displayName: event.title,
+      username: event.title,
       photoUrl: event.imageUrl,
     );
 
@@ -813,35 +818,31 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
           final message = event.isRecurring
               ? 'Opening Google Calendar (recurring: ${event.recurringPattern?.label ?? 'custom'})...'
               : 'Opening Google Calendar...';
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(message),
-              backgroundColor: AppColors.success,
-              duration: const Duration(seconds: 2),
-            ),
+          AdaptiveSnackBar.show(
+            context,
+            message: message,
+            type: AdaptiveSnackBarType.success,
+            duration: const Duration(seconds: 2),
           );
         }
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
+          AdaptiveSnackBar.show(
+            context,
+            message:
                 'Could not open calendar. Please ensure Google Calendar is available.',
-              ),
-              backgroundColor: AppColors.error,
-              duration: Duration(seconds: 3),
-            ),
+            type: AdaptiveSnackBarType.error,
+            duration: Duration(seconds: 3),
           );
         }
       }
-    } on Exception catch (e) {
+    } catch (e, st) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error opening calendar: $e'),
-            backgroundColor: AppColors.error,
-            duration: const Duration(seconds: 3),
-          ),
+        AdaptiveSnackBar.show(
+          context,
+          message: 'Error opening calendar: $e',
+          type: AdaptiveSnackBarType.error,
+          duration: const Duration(seconds: 3),
         );
       }
     }
@@ -923,14 +924,13 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
           .deleteEvent();
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: event.isRecurring
-                ? const Text('Event and all recurring instances deleted')
-                : const Text('Event deleted'),
-            backgroundColor: AppColors.success,
-            duration: const Duration(seconds: 2),
-          ),
+        AdaptiveSnackBar.show(
+          context,
+          message: event.isRecurring
+              ? 'Event and all recurring instances deleted'
+              : 'Event deleted',
+          type: AdaptiveSnackBarType.success,
+          duration: const Duration(seconds: 2),
         );
 
         // Navigate back after deletion
@@ -938,14 +938,13 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
           if (mounted) context.pop();
         });
       }
-    } on Exception catch (e) {
+    } catch (e, st) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error deleting event: $e'),
-            backgroundColor: AppColors.error,
-            duration: const Duration(seconds: 3),
-          ),
+        AdaptiveSnackBar.show(
+          context,
+          message: 'Error deleting event: $e',
+          type: AdaptiveSnackBarType.error,
+          duration: const Duration(seconds: 3),
         );
       }
     }
@@ -1156,7 +1155,7 @@ class _OrganizerRow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final organizerAsync = ref.watch(userProfileProvider(creatorId));
     final organizer = organizerAsync.value;
-    final name = organizer?.displayName ?? 'Organizer';
+    final name = organizer?.username ?? 'Organizer';
 
     return PremiumCard(
       padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
@@ -1249,35 +1248,19 @@ class _ParticipantChip extends StatelessWidget {
   }
 }
 
-class _ParticipantAvatars extends ConsumerWidget {
+class _ParticipantAvatars extends StatelessWidget {
   const _ParticipantAvatars({required this.participantIds});
   final List<String> participantIds;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final displayCount = participantIds.length.clamp(0, 8);
     final overflow = participantIds.length - displayCount;
 
     return Row(
       children: [
         ...List.generate(displayCount, (i) {
-          final userAsync = ref.watch(userProfileProvider(participantIds[i]));
-          final photoUrl = userAsync.value?.photoUrl;
-          return Padding(
-            padding: EdgeInsets.only(right: 4.w),
-            child: CircleAvatar(
-              radius: 18.r,
-              backgroundColor: AppColors.primarySurface,
-              backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
-              child: photoUrl == null
-                  ? Icon(
-                      Icons.person_rounded,
-                      size: 18.sp,
-                      color: AppColors.primary,
-                    )
-                  : null,
-            ),
-          );
+          return _ParticipantAvatar(userId: participantIds[i]);
         }),
         if (overflow > 0)
           CircleAvatar(
@@ -1293,6 +1276,31 @@ class _ParticipantAvatars extends ConsumerWidget {
             ),
           ),
       ],
+    );
+  }
+}
+
+class _ParticipantAvatar extends ConsumerWidget {
+  const _ParticipantAvatar({required this.userId});
+  final String userId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final photoUrl = ref.watch(userProfileProvider(userId)).value?.photoUrl;
+    return Padding(
+      padding: EdgeInsets.only(right: 4.w),
+      child: CircleAvatar(
+        radius: 18.r,
+        backgroundColor: AppColors.primarySurface,
+        backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
+        child: photoUrl == null
+            ? Icon(
+                Icons.person_rounded,
+                size: 18.sp,
+                color: AppColors.primary,
+              )
+            : null,
+      ),
     );
   }
 }

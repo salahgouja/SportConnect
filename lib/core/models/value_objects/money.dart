@@ -8,7 +8,7 @@ part 'money.g.dart';
 @freezed
 abstract class Money with _$Money {
   const factory Money({
-    required double amount,
+    required int amountInCents,
     @Default('EUR') String currency,
   }) = _Money;
   const Money._();
@@ -17,32 +17,36 @@ abstract class Money with _$Money {
 
   /// Create zero money
   factory Money.zero([String currency = 'EUR']) =>
-      Money(amount: 0, currency: currency);
+      Money(amountInCents: 0, currency: currency);
 
   /// Formatted display
   String get formatted {
     final symbol = _getCurrencySymbol(currency);
-    return '$symbol${amount.toStringAsFixed(2)}';
+    return '$symbol${(amountInCents / 100).toStringAsFixed(2)}';
   }
 
   /// Formatted with explicit currency code
-  String get formattedWithCode => '${amount.toStringAsFixed(2)} $currency';
+  String get formattedWithCode =>
+      '${(amountInCents / 100).toStringAsFixed(2)} EUR';
 
   /// Check if zero
-  bool get isZero => amount == 0;
+  bool get isZero => amountInCents == 0;
 
   /// Check if positive
-  bool get isPositive => amount > 0;
+  bool get isPositive => amountInCents > 0;
 
   /// Check if negative
-  bool get isNegative => amount < 0;
+  bool get isNegative => amountInCents < 0;
 
   /// Add money (must be same currency)
   Money operator +(Money other) {
     if (currency != other.currency) {
       throw ArgumentError('Cannot add different currencies');
     }
-    return Money(amount: amount + other.amount, currency: currency);
+    return Money(
+      amountInCents: amountInCents + other.amountInCents,
+      currency: currency,
+    );
   }
 
   /// Subtract money (must be same currency)
@@ -50,39 +54,48 @@ abstract class Money with _$Money {
     if (currency != other.currency) {
       throw ArgumentError('Cannot subtract different currencies');
     }
-    return Money(amount: amount - other.amount, currency: currency);
+    return Money(
+      amountInCents: amountInCents - other.amountInCents,
+      currency: currency,
+    );
   }
 
   /// Multiply by scalar
   Money operator *(num scalar) {
-    return Money(amount: amount * scalar, currency: currency);
+    return Money(
+      amountInCents: (amountInCents * scalar).round(),
+      currency: currency,
+    );
   }
 
   /// Divide by scalar
   Money operator /(num scalar) {
     if (scalar == 0) throw ArgumentError('Cannot divide by zero');
-    return Money(amount: amount / scalar, currency: currency);
+    return Money(
+      amountInCents: (amountInCents / scalar).round(),
+      currency: currency,
+    );
   }
 
   /// Compare amounts
   bool operator >(Money other) {
     _ensureSameCurrency(other);
-    return amount > other.amount;
+    return amountInCents > other.amountInCents;
   }
 
   bool operator <(Money other) {
     _ensureSameCurrency(other);
-    return amount < other.amount;
+    return amountInCents < other.amountInCents;
   }
 
   bool operator >=(Money other) {
     _ensureSameCurrency(other);
-    return amount >= other.amount;
+    return amountInCents >= other.amountInCents;
   }
 
   bool operator <=(Money other) {
     _ensureSameCurrency(other);
-    return amount <= other.amount;
+    return amountInCents <= other.amountInCents;
   }
 
   void _ensureSameCurrency(Money other) {
@@ -91,16 +104,5 @@ abstract class Money with _$Money {
     }
   }
 
-  String _getCurrencySymbol(String currencyCode) {
-    switch (currencyCode.toUpperCase()) {
-      case 'EUR':
-        return '€';
-      case 'USD':
-        return r'$';
-      case 'GBP':
-        return '£';
-      default:
-        return currencyCode;
-    }
-  }
+  String _getCurrencySymbol(String _) => '€';
 }

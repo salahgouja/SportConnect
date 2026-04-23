@@ -65,16 +65,16 @@ class PremiumCheckoutViewModel extends _$PremiumCheckoutViewModel {
     state = state.copyWith(isProcessing: true, clearError: true);
 
     try {
+      final selectedPlan = state.selectedPlan;
       var premiumSource = 'stripe_fallback';
       String? premiumTransactionId;
 
-      final iapService = ref.read(premiumIapServiceProvider);
-      if (iapService.isSupportedPlatform) {
-        final purchaseResult = await iapService.purchasePlan(
-          state.selectedPlan,
-        );
+      final iapService = ref.read(premiumIapServiceProvider.notifier);
+      if (await iapService.isSupported) {
+        if (!ref.mounted) return false;
+        final purchaseResult = await iapService.purchasePlan(selectedPlan);
+        if (!ref.mounted) return false;
         if (!purchaseResult.isSuccess) {
-          if (!ref.mounted) return false;
           state = state.copyWith(
             isProcessing: false,
             errorMessage:
@@ -89,10 +89,11 @@ class PremiumCheckoutViewModel extends _$PremiumCheckoutViewModel {
       }
 
       await _syncStripeCustomer(currentUser);
+      if (!ref.mounted) return false;
 
       await ref.read(profileRepositoryProvider).updateProfile(currentUser.uid, {
         'isPremium': true,
-        'premiumPlan': state.selectedPlan.name,
+        'premiumPlan': selectedPlan.name,
         'premiumSource': premiumSource,
         'premiumUpdatedAt': DateTime.now(),
         if (premiumTransactionId != null && premiumTransactionId.isNotEmpty)
@@ -104,7 +105,7 @@ class PremiumCheckoutViewModel extends _$PremiumCheckoutViewModel {
       ref.invalidate(currentUserProvider);
       state = state.copyWith(isProcessing: false, isCompleted: true);
       return true;
-    } on Exception catch (e, st) {
+    } catch (e, st) {
       TalkerService.error('Premium checkout failed', e, st);
       if (!ref.mounted) return false;
       state = state.copyWith(
@@ -117,7 +118,7 @@ class PremiumCheckoutViewModel extends _$PremiumCheckoutViewModel {
 
   Future<void> _syncStripeCustomer(UserModel currentUser) async {
     try {
-      final existingCustomerId = currentUser is DriverModel
+      final existingCustomerId = currentUser is RiderModel
           ? currentUser.stripeCustomerId
           : null;
 
@@ -126,11 +127,14 @@ class PremiumCheckoutViewModel extends _$PremiumCheckoutViewModel {
           .getOrCreateCustomer(
             userId: currentUser.uid,
             email: currentUser.email,
-            name: currentUser.displayName,
-            phone: currentUser.phoneNumber,
+            name: currentUser.username,
+            phone: switch (currentUser) {
+              RiderModel rider => rider.phoneNumber,
+              _ => null,
+            },
             existingCustomerId: existingCustomerId,
           );
-    } on Exception catch (e, st) {
+    } catch (e, st) {
       // Keep premium activation successful even if Stripe metadata sync fails.
       TalkerService.warning(
         'Premium purchase succeeded but Stripe customer sync failed: $e',
@@ -139,7 +143,3 @@ class PremiumCheckoutViewModel extends _$PremiumCheckoutViewModel {
     }
   }
 }
-
-final premiumIapServiceProvider = Provider<PremiumIapService>(
-  (ref) => PremiumIapService(),
-);

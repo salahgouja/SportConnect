@@ -1,3 +1,4 @@
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +10,7 @@ import 'package:sport_connect/core/models/user/user_model.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
 import 'package:sport_connect/core/theme/platform_adaptive.dart';
+import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/features/messaging/view_models/chat_view_model.dart';
 import 'package:sport_connect/features/notifications/models/notification_model.dart';
@@ -24,41 +26,32 @@ class NotificationsScreen extends ConsumerStatefulWidget {
       _NotificationsScreenState();
 }
 
-class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
   void _showStatusSnackBar(String message, {required Color backgroundColor}) {
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: backgroundColor,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12.r),
-        ),
-      ),
+    AdaptiveSnackBar.show(
+      context,
+      message: message,
+      type: backgroundColor == AppColors.success
+          ? AdaptiveSnackBarType.success
+          : backgroundColor == AppColors.error
+          ? AdaptiveSnackBarType.error
+          : AdaptiveSnackBarType.info,
     );
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
   }
 
   @override
   void dispose() {
     _searchController.dispose();
-    _tabController.dispose();
     super.dispose();
   }
 
   Future<void> _markAllAsRead() async {
     await ref.read(notificationViewModelProvider.notifier).markAllAsRead();
+    if (!mounted) return;
     _showStatusSnackBar(
       AppLocalizations.of(context).allNotificationsMarkedAsRead,
       backgroundColor: AppColors.success,
@@ -71,20 +64,21 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
 
     final scaffoldContext =
         context; // capture outer context to avoid using a deactivated dialog context
+    final l10n = AppLocalizations.of(scaffoldContext);
 
     showDialog<void>(
       context: scaffoldContext,
-      barrierLabel: AppLocalizations.of(context).clearAllNotifications,
+      barrierLabel: l10n.clearAllNotifications,
       builder: (dialogContext) => AlertDialog.adaptive(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
         ),
-        title: Text(AppLocalizations.of(context).clearAllNotifications),
-        content: Text(AppLocalizations.of(context).areYouSureYouWant2),
+        title: Text(l10n.clearAllNotifications),
+        content: Text(l10n.areYouSureYouWant2),
         actions: [
           TextButton(
             onPressed: () => dialogContext.pop(),
-            child: Text(AppLocalizations.of(context).actionCancel),
+            child: Text(l10n.actionCancel),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -94,31 +88,17 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
                     .read(notificationViewModelProvider.notifier)
                     .archiveAll();
                 if (!scaffoldContext.mounted) return;
-                ScaffoldMessenger.of(scaffoldContext).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      AppLocalizations.of(context).allNotificationsCleared,
-                    ),
-                    backgroundColor: AppColors.success,
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12.r),
-                    ),
-                  ),
+                AdaptiveSnackBar.show(
+                  scaffoldContext,
+                  message: l10n.allNotificationsCleared,
+                  type: AdaptiveSnackBarType.success,
                 );
               } on Object catch (_) {
                 if (!scaffoldContext.mounted) return;
-                ScaffoldMessenger.of(scaffoldContext).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      AppLocalizations.of(context).failedToClearNotifications,
-                    ),
-                    backgroundColor: AppColors.error,
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12.r),
-                    ),
-                  ),
+                AdaptiveSnackBar.show(
+                  scaffoldContext,
+                  message: l10n.failedToClearNotifications,
+                  type: AdaptiveSnackBarType.error,
                 );
               }
             },
@@ -138,8 +118,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
     final vmState = ref.watch(notificationViewModelProvider);
 
     if (vmState.userId == null) {
-      return Scaffold(
-        backgroundColor: AppColors.background,
+      return AdaptiveScaffold(
         appBar: _buildAppBar(0),
         body: Center(
           child: Column(
@@ -167,13 +146,11 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
     final userId = vmState.userId!;
     return vmState.notifications.when(
       data: (notifications) => _buildContent(notifications, userId),
-      loading: () => Scaffold(
-        backgroundColor: AppColors.background,
+      loading: () => AdaptiveScaffold(
         appBar: _buildAppBar(0),
         body: _buildLoadingState(),
       ),
-      error: (e, _) => Scaffold(
-        backgroundColor: AppColors.background,
+      error: (e, _) => AdaptiveScaffold(
         appBar: _buildAppBar(0),
         body: _buildErrorState(
           onRetry: () =>
@@ -304,73 +281,10 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
     final allNotifications = filteredAllNotifications;
     final unreadCount = notifications.where((n) => !n.isRead).length;
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return AdaptiveScaffold(
       appBar: _buildAppBar(unreadCount),
       body: Column(
         children: [
-          // Tabs
-          Container(
-            margin: EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.sm,
-            ),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(12.r),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: TabBar(
-              controller: _tabController,
-              labelColor: Colors.white,
-              unselectedLabelColor: AppColors.textSecondary,
-              indicator: BoxDecoration(
-                color: AppColors.primary,
-                borderRadius: BorderRadius.circular(10.r),
-              ),
-              indicatorSize: TabBarIndicatorSize.tab,
-              dividerColor: Colors.transparent,
-              tabs: [
-                Tab(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(AppLocalizations.of(context).unread),
-                      if (unreadCount > 0) ...[
-                        SizedBox(width: 8.w),
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 8.w,
-                            vertical: 2.h,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.error,
-                            borderRadius: BorderRadius.circular(10.r),
-                          ),
-                          child: Text(
-                            unreadCount.toString(),
-                            style: TextStyle(
-                              fontSize: 12.sp,
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                Tab(text: AppLocalizations.of(context).all),
-              ],
-            ),
-          ),
-
           // Search
           Padding(
             padding: EdgeInsets.fromLTRB(
@@ -414,8 +328,14 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
 
           // Notifications list
           Expanded(
-            child: TabBarView(
-              controller: _tabController,
+            child: AdaptiveTabBarView(
+              tabs: [
+                unreadCount > 0
+                    ? '${AppLocalizations.of(context).unread} ($unreadCount)'
+                    : AppLocalizations.of(context).unread,
+                AppLocalizations.of(context).all,
+              ],
+              selectedColor: AppColors.primary,
               children: [
                 _buildNotificationsList(unreadNotifications, userId),
                 _buildNotificationsList(allNotifications, userId),
@@ -427,10 +347,13 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
     );
   }
 
-  PreferredSizeWidget _buildAppBar(int unreadCount) {
-    return AppBar(
-      backgroundColor: AppColors.surface,
-      elevation: 0,
+  AdaptiveAppBar _buildAppBar(int unreadCount) {
+    final title = unreadCount > 0
+        ? '${AppLocalizations.of(context).settingsNotifications} ($unreadCount)'
+        : AppLocalizations.of(context).settingsNotifications;
+
+    return AdaptiveAppBar(
+      title: title,
       leading: IconButton(
         tooltip: AppLocalizations.of(context).goBackTooltip,
         icon: Container(
@@ -447,77 +370,73 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
         ),
         onPressed: () => context.pop(),
       ),
-      title: Row(
-        children: [
-          Text(
-            AppLocalizations.of(context).settingsNotifications,
-            style: TextStyle(
-              fontSize: 20.sp,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
+      appBar: AppBar(
+        title: Text(title),
+        leading: IconButton(
+          icon: Icon(Icons.adaptive.arrow_back),
+          onPressed: () => context.pop(),
+        ),
+        actions: [
+          AdaptivePopupMenuButton.icon<String>(
+            icon: Icons.adaptive.more,
+            items: [
+              AdaptivePopupMenuItem<String>(
+                label: AppLocalizations.of(context).markAllAsRead,
+                icon: Icons.done_all,
+                value: 'mark_read',
+              ),
+              AdaptivePopupMenuItem<String>(
+                label: AppLocalizations.of(context).clearAll2,
+                icon: Icons.delete_outline,
+                value: 'clear',
+              ),
+            ],
+            onSelected: (index, entry) {
+              if (entry.value == 'mark_read')
+                _markAllAsRead();
+              else if (entry.value == 'clear')
+                _clearAll();
+            },
           ),
-          if (unreadCount > 0) ...[
-            SizedBox(width: 8.w),
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-              decoration: BoxDecoration(
-                color: AppColors.error,
-                borderRadius: BorderRadius.circular(12.r),
-              ),
-              child: Text(
-                AppLocalizations.of(context).valueNew(unreadCount),
-                style: TextStyle(
-                  fontSize: 12.sp,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ],
         ],
       ),
       actions: [
-        PopupMenuButton<String>(
-          icon: Icon(Icons.adaptive.more, color: AppColors.textSecondary),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12.r),
-          ),
-          onSelected: (value) {
-            if (value == 'mark_read') {
-              _markAllAsRead();
-            } else if (value == 'clear') {
-              _clearAll();
-            }
-          },
-          itemBuilder: (context) => [
-            PopupMenuItem(
-              value: 'mark_read',
-              child: Row(
-                children: [
-                  Icon(Icons.done_all, color: AppColors.primary, size: 20.sp),
-                  SizedBox(width: 12.w),
-                  Text(AppLocalizations.of(context).markAllAsRead),
-                ],
-              ),
-            ),
-            PopupMenuItem(
-              value: 'clear',
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.delete_outline,
-                    color: AppColors.error,
-                    size: 20.sp,
-                  ),
-                  SizedBox(width: 12.w),
-                  Text(AppLocalizations.of(context).clearAll2),
-                ],
-              ),
-            ),
-          ],
+        AdaptiveAppBarAction(
+          iosSymbol: 'ellipsis.circle',
+          icon: Icons.adaptive.more,
+          onPressed: () => _showOptionsSheet(),
         ),
       ],
+    );
+  }
+
+  void _showOptionsSheet() {
+    AppModalSheet.show<void>(
+      context: context,
+      title: AppLocalizations.of(context).notificationsTooltip,
+      maxHeightFactor: 0.35,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.done_all, color: AppColors.primary),
+            title: Text(AppLocalizations.of(context).markAllAsRead),
+            onTap: () {
+              context.pop();
+              _markAllAsRead();
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.delete_outline, color: AppColors.error),
+            title: Text(AppLocalizations.of(context).clearAll2),
+            onTap: () {
+              context.pop();
+              _clearAll();
+            },
+          ),
+          SizedBox(height: MediaQuery.paddingOf(context).bottom),
+        ],
+      ),
     );
   }
 
@@ -646,10 +565,11 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
     if (userId == null) return;
 
     try {
-      final chatController = ref.read(chatActionsViewModelProvider);
-      final chat = await chatController.getChatById(chatId);
+      final chat = await ref
+          .read(chatActionsViewModelProvider.notifier)
+          .getChatById(chatId);
 
-      if (chat != null && context.mounted) {
+      if (chat != null && mounted) {
         final title = chat.getChatTitle(userId);
         final photoUrl = chat.getChatPhoto(userId);
 
@@ -658,7 +578,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
         final receiverUser = UserModel.rider(
           uid: otherParticipant?.userId ?? chatId,
           email: '',
-          displayName: title,
+          username: title,
           photoUrl: photoUrl,
         );
 
@@ -669,6 +589,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
         );
       }
     } on Exception {
+      if (!mounted) return;
       _showStatusSnackBar(
         AppLocalizations.of(context).couldNotOpenChat,
         backgroundColor: AppColors.error,

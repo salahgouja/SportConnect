@@ -1,6 +1,8 @@
 import 'dart:io';
 
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,6 +13,7 @@ import 'package:intl/intl.dart';
 import 'package:reactive_forms/reactive_forms.dart';
 import 'package:sport_connect/core/models/location/location_point.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/core/widgets/map_location_picker.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/features/events/models/event_model.dart';
@@ -76,8 +79,10 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
       if (next.error != null &&
           next.error != previous?.error &&
           context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_localizedEventError(next.error!))),
+        AdaptiveSnackBar.show(
+          context,
+          message: _localizedEventError(next.error!),
+          type: AdaptiveSnackBarType.error,
         );
       }
     });
@@ -89,13 +94,14 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
       if (next.error != null &&
           next.error != previous?.error &&
           context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_localizedEventError(next.error!))),
+        AdaptiveSnackBar.show(
+          context,
+          message: _localizedEventError(next.error!),
+          type: AdaptiveSnackBarType.error,
         );
       }
       if (next.isSaved && previous?.isSaved != true && context.mounted) {
-        final event =
-            ref.read(eventByIdProvider(widget.eventId)).value;
+        final event = ref.read(eventByIdProvider(widget.eventId)).value;
         final updated = event?.copyWith(
           title: next.title.trim(),
           type: next.type,
@@ -117,11 +123,8 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
       }
     });
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
+    return AdaptiveScaffold(
+      appBar: AdaptiveAppBar(
         leading: IconButton(
           icon: Icon(
             Icons.close_rounded,
@@ -130,15 +133,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
           ),
           onPressed: () => context.pop(),
         ),
-        title: Text(
-          AppLocalizations.of(context).editEventTitle,
-          style: TextStyle(
-            fontSize: 18.sp,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        centerTitle: true,
+        title: AppLocalizations.of(context).editEventTitle,
       ),
       body: ReactiveForm(
         formGroup: _form,
@@ -524,12 +519,11 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
             ),
           ],
         ),
-        Slider.adaptive(
+        AdaptiveSlider(
           value: _formState.maxParticipants.toDouble(),
           max: 100,
           divisions: 20,
           activeColor: AppColors.primary,
-          inactiveColor: AppColors.border,
           label: _formState.maxParticipants == 0
               ? AppLocalizations.of(context).eventUnlimited
               : '${_formState.maxParticipants}',
@@ -658,12 +652,11 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
     final liveState = ref.read(editEventFormViewModelProvider(widget.eventId));
     final patterns = liveState.applicablePatterns;
 
-    await showModalBottomSheet<void>(
+    await AppModalSheet.show<void>(
       context: context,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
-      ),
-      builder: (context) => Container(
+      title: 'Repeat',
+      maxHeightFactor: 0.7,
+      child: Container(
         padding: EdgeInsets.symmetric(vertical: 16.h),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -811,27 +804,27 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
     _form.markAllAsTouched();
     if (!_form.valid) return;
     if (_formState.location == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context).selectLocationError),
-        ),
+      AdaptiveSnackBar.show(
+        context,
+        message: AppLocalizations.of(context).selectLocationError,
+        type: AdaptiveSnackBarType.error,
       );
       return;
     }
     if ((_formState.startsAt ?? DateTime.now()).isBefore(DateTime.now())) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context).eventStartTimeFuture),
-        ),
+      AdaptiveSnackBar.show(
+        context,
+        message: AppLocalizations.of(context).eventStartTimeFuture,
+        type: AdaptiveSnackBarType.error,
       );
       return;
     }
     if (_formState.endsAt != null &&
         !_formState.endsAt!.isAfter(_formState.startsAt!)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context).eventEndTimeAfterStart),
-        ),
+      AdaptiveSnackBar.show(
+        context,
+        message: AppLocalizations.of(context).eventEndTimeAfterStart,
+        type: AdaptiveSnackBarType.error,
       );
       return;
     }

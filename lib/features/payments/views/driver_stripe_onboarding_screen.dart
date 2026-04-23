@@ -1,3 +1,4 @@
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
@@ -32,6 +33,7 @@ class _DriverStripeOnboardingScreenState
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       ref
           .read(driverStripeOnboardingFlowViewModelProvider.notifier)
           .checkExistingAccount(ref.read(currentUserProvider).value);
@@ -44,16 +46,24 @@ class _DriverStripeOnboardingScreenState
       driverStripeOnboardingFlowViewModelProvider,
     );
 
+    ref.listen(currentUserProvider, (previous, next) {
+      final previousUser = previous?.value;
+      final user = next.value;
+      if (user != null && previousUser?.uid != user.uid) {
+        ref
+            .read(driverStripeOnboardingFlowViewModelProvider.notifier)
+            .checkExistingAccount(user);
+      }
+    });
+
     ref.listen(driverStripeOnboardingFlowViewModelProvider, (previous, next) {
       if (next.successMessage != null &&
           next.successMessage != previous?.successMessage &&
           context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.successMessage!),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-          ),
+        AdaptiveSnackBar.show(
+          context,
+          message: next.successMessage!,
+          type: AdaptiveSnackBarType.success,
         );
       }
 
@@ -68,20 +78,9 @@ class _DriverStripeOnboardingScreenState
       return _buildWebView(onboardingState);
     }
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text(
-          AppLocalizations.of(context).setUpPayouts,
-          style: TextStyle(
-            fontSize: 18.sp,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        backgroundColor: AppColors.background,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
+    return AdaptiveScaffold(
+      appBar: AdaptiveAppBar(
+        title: AppLocalizations.of(context).setUpPayouts,
       ),
       body: SafeArea(
         child: Padding(
@@ -340,36 +339,13 @@ class _DriverStripeOnboardingScreenState
 
   /// Build the WebView screen for Stripe onboarding
   Widget _buildWebView(DriverStripeOnboardingFlowState onboardingState) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text(
-          AppLocalizations.of(context).connectStripe,
-          style: TextStyle(
-            fontSize: 18.sp,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        backgroundColor: AppColors.background,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
+    return AdaptiveScaffold(
+      appBar: AdaptiveAppBar(
+        title: AppLocalizations.of(context).connectStripe,
         leading: IconButton(
           icon: const Icon(Icons.close),
           onPressed: _showCancelConfirmation,
         ),
-        bottom: onboardingState.webViewProgress < 1.0
-            ? PreferredSize(
-                preferredSize: Size.fromHeight(3.h),
-                child: LinearProgressIndicator(
-                  value: onboardingState.webViewProgress,
-                  backgroundColor: AppColors.border.withValues(alpha: 0.2),
-                  valueColor: const AlwaysStoppedAnimation<Color>(
-                    AppColors.primary,
-                  ),
-                ),
-              )
-            : null,
       ),
       body: Stack(
         children: [
@@ -491,17 +467,16 @@ class _DriverStripeOnboardingScreenState
 
   /// Handle successful onboarding completion
   Future<void> _handleOnboardingComplete() async {
+    if (!context.mounted) return;
+    final l10n = AppLocalizations.of(context);
+
     await ref
         .read(driverStripeOnboardingFlowViewModelProvider.notifier)
         .handleOnboardingComplete(
           user: ref.read(currentUserProvider).value,
-          successMessage: AppLocalizations.of(
-            context,
-          ).stripeAccountConnectedSuccessfully,
-          additionalInfoMessage: AppLocalizations.of(
-            context,
-          ).stripeAdditionalInfoNeeded,
-          verifyFailedMessage: AppLocalizations.of(context).stripeVerifyFailed,
+          successMessage: l10n.stripeAccountConnectedSuccessfully,
+          additionalInfoMessage: l10n.stripeAdditionalInfoNeeded,
+          verifyFailedMessage: l10n.stripeVerifyFailed,
         );
   }
 

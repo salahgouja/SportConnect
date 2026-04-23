@@ -48,7 +48,7 @@ abstract class IChatRepository {
   Future<void> setTyping({
     required String chatId,
     required String userId,
-    required String displayName,
+    required String username,
     required bool isTyping,
   });
   Stream<List<TypingIndicator>> streamTypingIndicators(String chatId);

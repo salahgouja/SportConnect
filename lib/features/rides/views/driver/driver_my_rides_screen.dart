@@ -1,3 +1,4 @@
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -6,30 +7,18 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
-import 'package:sport_connect/core/providers/repository_providers.dart';
-import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sliver_tools/sliver_tools.dart';
 import 'package:sport_connect/core/widgets/skeleton_loader.dart';
+import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
+import 'package:sport_connect/features/rides/repositories/driver_stats_repository.dart';
+import 'package:sport_connect/features/rides/services/ride_request_service.dart';
+import 'package:sport_connect/features/rides/view_models/driver_requests_view_model.dart';
 import 'package:sport_connect/features/rides/view_models/driver_view_model.dart';
-import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
-
-final _pastDriverRidesProvider = StreamProvider<List<RideModel>>((ref) {
-  final userId = ref.watch(authStateProvider).value?.uid;
-  if (userId == null) return Stream.value([]);
-  return ref.watch(rideRepositoryProvider).streamRidesByDriver(userId).map(
-    (rides) => rides
-        .where(
-          (r) =>
-              r.status == RideStatus.completed ||
-              r.status == RideStatus.cancelled,
-        )
-        .toList(),
-  );
-});
 
 // ─────────────────────────────────────────────────────────────────
 // SCREEN ENTRY POINT
@@ -41,42 +30,52 @@ class DriverMyRidesScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final driverState = ref.watch(driverViewModelProvider);
-    final notifier = ref.read(driverViewModelProvider.notifier);
+    final activeRide = ref.watch(activeDriverRideProvider).value;
+    final pendingRequests = ref.watch(pendingRideRequestsProvider);
+    final upcomingRides = ref.watch(upcomingDriverRidesProvider);
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return AdaptiveScaffold(
       body: RefreshIndicator.adaptive(
         color: AppColors.primary,
-        onRefresh: () async => notifier.refresh(),
+        onRefresh: () async {
+          await Future.wait<Object?>([
+            ref.refresh(activeDriverRideProvider.future),
+            ref.refresh(pendingRideRequestsProvider.future),
+            ref.refresh(upcomingDriverRidesProvider.future),
+            ref.refresh(pastDriverRidesProvider.future),
+          ]);
+        },
         child: CustomScrollView(
           slivers: [
             _DriverSliverAppBar(
               onOfferRide: () => context.push(AppRoutes.driverOfferRide.path),
             ),
-            // Active ride banner
-            if (driverState.hasActiveRide && driverState.activeRide != null)
-              SliverToBoxAdapter(
-                child: _ActiveRideBanner(ride: driverState.activeRide!),
-              ),
-            // Pending booking requests
-            SliverToBoxAdapter(
-              child: _PendingRequestsSection(
-                requestsAsync: driverState.pendingRequests,
-                notifier: notifier,
-              ),
+            // ── Active + pending group ────────────────────────
+            MultiSliver(
+              children: [
+                if (activeRide != null)
+                  SliverToBoxAdapter(
+                    child: _ActiveRideBanner(ride: activeRide),
+                  ),
+                SliverToBoxAdapter(
+                  child: _PendingRequestsSection(
+                    requestsAsync: pendingRequests,
+                  ),
+                ),
+              ],
             ),
-            // Upcoming rides timeline
-            SliverToBoxAdapter(
-              child: _UpcomingRidesSection(
-                ridesAsync: driverState.upcomingRides,
-              ),
-            ),
-            // Past rides history
-            SliverToBoxAdapter(
-              child: _HistorySection(
-                ridesAsync: ref.watch(_pastDriverRidesProvider),
-              ),
+            // ── Rides history group ───────────────────────────
+            MultiSliver(
+              children: [
+                SliverToBoxAdapter(
+                  child: _UpcomingRidesSection(ridesAsync: upcomingRides),
+                ),
+                SliverToBoxAdapter(
+                  child: _HistorySection(
+                    ridesAsync: ref.watch(pastDriverRidesProvider),
+                  ),
+                ),
+              ],
             ),
             SliverToBoxAdapter(child: SizedBox(height: 100.h)),
           ],
@@ -121,26 +120,30 @@ class _DriverSliverAppBar extends StatelessWidget {
       ],
       flexibleSpace: FlexibleSpaceBar(
         titlePadding: EdgeInsets.fromLTRB(20.w, 0, 20.w, 16.h),
-        title: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              l10n.driverMyRidesTitle,
-              style: TextStyle(
-                fontSize: 20.sp,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
+        title: RichText(
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          text: TextSpan(
+            children: [
+              TextSpan(
+                text: '${l10n.driverMyRidesTitle}\n',
+                style: TextStyle(
+                  fontSize: 20.sp,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                  height: 1.0,
+                ),
               ),
-            ),
-            Text(
-              dateStr,
-              style: TextStyle(
-                fontSize: 11.sp,
-                color: Colors.white.withValues(alpha: 0.8),
+              TextSpan(
+                text: dateStr,
+                style: TextStyle(
+                  fontSize: 11.sp,
+                  color: Colors.white.withValues(alpha: 0.8),
+                  height: 1.0,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         background: Container(
           decoration: const BoxDecoration(
@@ -220,7 +223,7 @@ class _ActiveRideBanner extends StatelessWidget {
                     SizedBox(height: 4.h),
                     Text(
                       '${ride.bookedSeats}/${ride.capacity.available} passengers · '
-                      '${AppLocalizations.of(context).value5(ride.pricePerSeat.toStringAsFixed(0))} per seat',
+                      '${AppLocalizations.of(context).value5((ride.pricePerSeatInCents / 100).toStringAsFixed(2))} per seat',
                       style: TextStyle(
                         fontSize: 11.sp,
                         color: Colors.white.withValues(alpha: 0.85),
@@ -277,11 +280,9 @@ class _PulsingDot extends StatelessWidget {
 class _PendingRequestsSection extends ConsumerWidget {
   const _PendingRequestsSection({
     required this.requestsAsync,
-    required this.notifier,
   });
 
   final AsyncValue<List<RideBooking>> requestsAsync;
-  final DriverViewModel notifier;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -334,11 +335,9 @@ class _PendingRequestsSection extends ConsumerWidget {
                 );
               }
               return Column(
-                children: requests.asMap().entries.map((e) {
+                children: requests.map((request) {
                   return _PendingRequestCard(
-                    request: e.value,
-                    index: e.key,
-                    notifier: notifier,
+                    request: request,
                   );
                 }).toList(),
               );
@@ -357,24 +356,20 @@ class _PendingRequestsSection extends ConsumerWidget {
 class _PendingRequestCard extends ConsumerWidget {
   const _PendingRequestCard({
     required this.request,
-    required this.index,
-    required this.notifier,
   });
 
   final RideBooking request;
-  final int index;
-  final DriverViewModel notifier;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final profile = ref.watch(userProfileProvider(request.passengerId)).value;
-    final ride = ref.watch(rideStreamProvider(request.rideId)).value;
+    final ride = ref.watch(requestCardRideProvider(request.rideId)).value;
 
-    final passengerName = profile?.displayName ?? '…';
+    final passengerName = profile?.username ?? '…';
     final passengerPhoto = profile?.photoUrl;
-    final passengerRating = profile?.rating.average ?? 0.0;
-    final pricePerSeat = ride?.pricePerSeat ?? 0.0;
+    final passengerRating = profile?.asRider?.rating.average ?? 0.0;
+    final pricePerSeatInCents = ride?.pricePerSeatInCents ?? 0.0;
     final pickupAddress =
         request.pickupLocation?.address ?? ride?.origin.address ?? '…';
     final dropoffAddress =
@@ -453,7 +448,9 @@ class _PendingRequestCard extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    l10n.value5(pricePerSeat.toStringAsFixed(0)),
+                    l10n.value5(
+                      (pricePerSeatInCents / 100).toStringAsFixed(2),
+                    ),
                     style: TextStyle(
                       fontSize: 15.sp,
                       fontWeight: FontWeight.w800,
@@ -503,7 +500,7 @@ class _PendingRequestCard extends ConsumerWidget {
             children: [
               Expanded(
                 child: OutlinedButton(
-                  onPressed: () => _confirmDecline(context, passengerName),
+                  onPressed: () => _confirmDecline(context, ref, passengerName),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.error,
                     side: const BorderSide(color: AppColors.error),
@@ -525,7 +522,7 @@ class _PendingRequestCard extends ConsumerWidget {
               Expanded(
                 flex: 2,
                 child: ElevatedButton(
-                  onPressed: () => _confirmAccept(context, passengerName),
+                  onPressed: () => _confirmAccept(context, ref, passengerName),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
@@ -548,10 +545,14 @@ class _PendingRequestCard extends ConsumerWidget {
           ),
         ],
       ),
-    ).animate().fadeIn(delay: (index * 60).ms, duration: 350.ms);
+    );
   }
 
-  void _confirmAccept(BuildContext context, String passengerName) {
+  void _confirmAccept(
+    BuildContext context,
+    WidgetRef ref,
+    String passengerName,
+  ) {
     final l10n = AppLocalizations.of(context);
     showDialog<void>(
       context: context,
@@ -567,10 +568,17 @@ class _PendingRequestCard extends ConsumerWidget {
             child: Text(l10n.actionCancel),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               HapticFeedback.mediumImpact();
-              notifier.acceptRideRequest(request.rideId, request.id);
               Navigator.pop(ctx);
+              final result = await ref
+                  .read(rideRequestServiceProvider.notifier)
+                  .acceptRequest(request.id);
+              if (!context.mounted) return;
+              if (result is Success) {
+                ref.invalidate(pendingRideRequestsProvider);
+                ref.invalidate(upcomingDriverRidesProvider);
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
@@ -583,7 +591,11 @@ class _PendingRequestCard extends ConsumerWidget {
     );
   }
 
-  void _confirmDecline(BuildContext context, String passengerName) {
+  void _confirmDecline(
+    BuildContext context,
+    WidgetRef ref,
+    String passengerName,
+  ) {
     final l10n = AppLocalizations.of(context);
     showDialog<void>(
       context: context,
@@ -599,10 +611,16 @@ class _PendingRequestCard extends ConsumerWidget {
             child: Text(l10n.keepButton),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               HapticFeedback.mediumImpact();
-              notifier.declineRideRequest(request.rideId, request.id);
               Navigator.pop(ctx);
+              final result = await ref
+                  .read(rideRequestServiceProvider.notifier)
+                  .rejectRequest(request.id, 'Declined by driver');
+              if (!context.mounted) return;
+              if (result is Success) {
+                ref.invalidate(pendingRideRequestsProvider);
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.error,
@@ -797,7 +815,8 @@ class _HistoryRideCard extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final isCancelled = ride.status == RideStatus.cancelled;
     final date = DateFormat('d MMM · HH:mm').format(ride.departureTime);
-    final earnings = ride.pricing.pricePerSeat.amount * ride.capacity.booked;
+    final earnings =
+        ride.pricing.pricePerSeatInCents.amountInCents * ride.capacity.booked;
 
     return GestureDetector(
       onTap: () => context.pushNamed(
@@ -863,7 +882,7 @@ class _HistoryRideCard extends StatelessWidget {
                 Text(
                   isCancelled
                       ? '—'
-                      : l10n.value5(earnings.toStringAsFixed(0)),
+                      : l10n.value5((earnings / 100).toStringAsFixed(2)),
                   style: TextStyle(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w700,
@@ -1014,7 +1033,11 @@ class _TimelineRideCard extends StatelessWidget {
                             borderRadius: BorderRadius.circular(8.r),
                           ),
                           child: Text(
-                            l10n.value5(ride.pricePerSeat.toStringAsFixed(0)),
+                            l10n.value5(
+                              (ride.pricePerSeatInCents / 100).toStringAsFixed(
+                                2,
+                              ),
+                            ),
                             style: TextStyle(
                               fontSize: 12.sp,
                               fontWeight: FontWeight.w700,

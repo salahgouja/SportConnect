@@ -1,4 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart' show Colors;
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 
 /// SportConnect Premium Color Palette
 /// Modern carpooling app design system - Light Classy Green Theme
@@ -276,4 +278,242 @@ class AppColors {
   static Color withAlpha(Color color, double opacity) {
     return color.withValues(alpha: opacity);
   }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SportConnect · Design Tokens  (app_colors.dart)
+//
+// Every dark-mode token has its contrast ratio verified against
+// all three dark surfaces via WCAG 2.2 relative-luminance formula.
+//
+// Minimum targets
+//   ≥ 4.5:1  normal text and icons
+//   ≥ 3.0:1  large text (≥ 18 pt) and UI component boundaries
+//   ≥ 1.5:1  decorative fills (nav pill, chip bg) — the icon/label is
+//            the accessible signal; the fill adds shape affordance only
+//
+// Dark surface stack
+//   backgroundDark  #0D0D12  [OLED-friendly blue-black]
+//   surfaceDark     #1C1C1E  [iOS systemBackground dark]
+//   cardBgDark      #2C2C2E  [iOS secondarySystemBackground dark]
+//   surfaceElevated #3A3A3C  [iOS tertiarySystemBackground dark]
+//
+// ── Key dark-mode contrast proofs ────────────────────────────────────
+//   primaryDarkMode (#3CC47C) on backgroundDark   = 8.66:1  ✓
+//   primaryDarkMode (#3CC47C) on surfaceDark       = 7.60:1  ✓
+//   primaryDarkMode (#3CC47C) on cardBgDark        = 6.22:1  ✓
+//   primaryContainerDark (#1A4028) — CONTAINER BG:
+//     primaryDarkMode on it                        = 5.19:1  ✓
+//     primaryLightDarkMode (#65D197) on it         = 6.15:1  ✓
+//   errorDarkMode (#FF6B6B) on backgroundDark      = 5.94:1  ✓
+//   textPrimaryDark (#F2F2F7) on backgroundDark    = 14.8:1  ✓
+//   textSecondaryDark (#8E8E93) on surfaceDark      = 4.8:1   ✓
+//
+// ── Why NOT use semi-transparent green fills in dark mode ─────────────
+//   g400 at alpha 0.20 on surfaceDark   → rendered tint vs surface =  1.46:1  ✗
+//   g400 at alpha 0.14 on surfaceDark   → rendered tint vs surface =  1.29:1  ✗
+//   Even alpha 0.50                     → tint vs surface          =  2.86:1  ✗
+//   Alpha must be ≥ 0.55 to reach 3:1 for UI component boundaries (switch track).
+//   For chip/nav fills, use primaryContainerDark (opaque) instead.
+// ─────────────────────────────────────────────────────────────────────────────
+
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // BRAND PRIMITIVES  (never reference these directly in widgets)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  static const Color _green300    = Color(0xFF65D197);
+  static const Color _green400    = Color(0xFF3CC47C);
+  static const Color _green500    = Color(0xFF1AB863); // brand root
+  static const Color _green600    = Color(0xFF14A557);
+  static const Color _green700    = Color(0xFF0C8E47);
+
+  // Dark-mode container: dark enough for g400 (5.19:1) and g300 (6.15:1) on top.
+  // DO NOT use g700 (#0C8E47) as a container in dark mode —
+  // g400 on g700 = 1.88:1. It was the root cause of the contrast failures.
+  static const Color _green900dk  = Color(0xFF1A4028);
+
+  static const Color _blue200     = Color(0xFFB3CAFF);
+  static const Color _blue500     = Color(0xFF3A6FE8);
+  static const Color _amber200    = Color(0xFFFFDC82);
+  static const Color _amber500    = Color(0xFFFFB300);
+
+  static const Color _neutral50   = Color(0xFFF9FAFB);
+  static const Color _neutral100  = Color(0xFFF3F4F6);
+  static const Color _neutral200  = Color(0xFFE5E7EB);
+  static const Color _neutral300  = Color(0xFFD1D5DB);
+  static const Color _neutral400  = Color(0xFF9CA3AF);
+  static const Color _neutral600  = Color(0xFF4B5563);
+  static const Color _neutral700  = Color(0xFF374151);
+  static const Color _neutral900  = Color(0xFF111827);
+
+  static const Color _dark50      = Color(0xFF1C1C1E);
+  static const Color _dark100     = Color(0xFF2C2C2E);
+  static const Color _dark200     = Color(0xFF3A3A3C);
+  static const Color _dark300     = Color(0xFF48484A);
+  static const Color _dark400     = Color(0xFF636366);
+  static const Color _darkBg      = Color(0xFF0D0D12);
+
+  // Error: #FF6B6B on #0D0D12 = 5.94:1 ✓  (lighter than _red500 for dark legibility)
+  static const Color _redDark     = Color(0xFFFF6B6B);
+  static const Color _red500      = Color(0xFFEF4444);
+  static const Color _red100      = Color(0xFFFFE4E4);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SEMANTIC  —  LIGHT
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  // static const Color primary        = _green500;   // on white = 7.46:1 ✓
+  // static const Color primaryLight   = _green300;
+  // static const Color primaryDark    = _green700;
+
+  // static const Color secondary      = _blue500;
+  // static const Color secondaryLight = _blue200;
+  // static const Color accent         = _amber500;
+  // static const Color accentLight    = _amber200;
+
+  // static const Color error          = _red500;
+  // static const Color errorLight     = _red100;
+  // static const Color success        = Color(0xFF16A34A);
+  // static const Color successLight   = Color(0xFFECFDF5);
+  // static const Color warning        = _amber500;
+  // static const Color warningLight   = Color(0xFFFFFBEB);
+
+  // static const Color textPrimary    = _neutral900;  // 15.3:1 ✓
+  // static const Color textSecondary  = _neutral600;  //  7.0:1 ✓
+  // static const Color textTertiary   = _neutral400;  //  3.0:1 large text ✓
+  // static const Color textOnPrimary  = Colors.white;
+  static const Color textDisabled   = _neutral300;
+
+  // static const Color background     = _neutral50;
+  // static const Color surface        = Colors.white;
+  // static const Color surfaceVariant = _neutral100;
+  // static const Color cardBg         = Colors.white;
+  // static const Color border         = _neutral200;
+  // static const Color divider        = _neutral100;
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SEMANTIC  —  DARK
+  //
+  // Naming convention: <role>DarkMode for colors specific to dark contexts.
+  //
+  // DO NOT:
+  //   • Use primaryDark (_green700) as primaryContainer — CR 1.88:1 failure ✗
+  //   • Use semi-transparent green fills < alpha 0.55 on dark surfaces ✗
+  //   • Place green icons on green-tinted container backgrounds ✗
+  //
+  // DO:
+  //   • Use primaryDarkMode (#3CC47C) for all icon/text brand touches ✓
+  //   • Use primaryContainerDark (#1A4028) as opaque filled container ✓
+  //   • Use textPrimaryDark (#F2F2F7) as icon/text on those containers ✓
+  //   • For switch track use alpha ≥ 0.55 + WHITE thumb (not green thumb) ✓
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  // Brand
+  /// Primary action color in dark mode. Contrast: bg 8.66:1 / surf 7.60:1 / card 6.22:1
+  static const Color primaryDarkMode       = _green400;
+
+  /// For gradients and highlight accents only — NOT primary text/icon.
+  static const Color primaryLightDarkMode  = _green300;
+
+  /// Opaque container background for filled chips, nav pills, badges.
+  /// primaryDarkMode sits on top at 5.19:1 ✓  primaryLightDarkMode at 6.15:1 ✓
+  /// Appears subtle vs dark surfaces by design — icon/text carries accessibility.
+  static const Color primaryContainerDark  = _green900dk; // #1A4028
+
+  static const Color secondaryDarkMode     = _blue200;
+  static const Color accentDarkMode        = _amber200;
+
+  /// Error: lighter red for dark bg. On backgroundDark = 5.94:1 ✓
+  static const Color errorDarkMode         = _redDark;
+  static const Color errorLightDarkMode    = Color(0xFF3D1515);
+
+  // Text
+  /// F2F2F7 on backgroundDark = 14.8:1 ✓  on surfaceDark = 13.0:1 ✓
+  static const Color textPrimaryDark       = Color(0xFFF2F2F7);
+
+  /// 8E8E93 on backgroundDark = 5.5:1 ✓  on surfaceDark = 4.8:1 ✓
+  static const Color textSecondaryDark     = Color(0xFF8E8E93);
+
+  /// 636366 ≈ 3.0:1 — large text (≥ 18 pt) and secondary icons only
+  static const Color textTertiaryDark      = Color(0xFF636366);
+  static const Color textDisabledDark      = Color(0xFF3A3A3C);
+
+  // Surfaces
+  static const Color backgroundDark        = _darkBg;   // #0D0D12
+  static const Color surfaceDark           = _dark50;   // #1C1C1E
+  static const Color surfaceVariantDark    = _dark100;  // #2C2C2E
+  static const Color cardBgDark            = _dark100;  // #2C2C2E
+  static const Color surfaceElevatedDark   = _dark200;  // #3A3A3C
+  static const Color borderDark            = _dark300;  // #48484A
+  static const Color dividerDark           = _dark200;  // #3A3A3C
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // CUPERTINO ADAPTIVE COLORS (auto-resolve in CupertinoTheme tree)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  static const CupertinoDynamicColor adaptivePrimary = CupertinoDynamicColor(
+    color:                         primary,
+    darkColor:                     primaryDarkMode,
+    highContrastColor:             primaryDark,
+    darkHighContrastColor:         primaryLightDarkMode,
+    elevatedColor:                 primary,
+    darkElevatedColor:             primaryDarkMode,
+    highContrastElevatedColor:     primaryDark,
+    darkHighContrastElevatedColor: primaryLightDarkMode,
+  );
+
+  static const CupertinoDynamicColor adaptiveTextPrimary = CupertinoDynamicColor(
+    color:                         textPrimary,
+    darkColor:                     textPrimaryDark,
+    highContrastColor:             _neutral900,
+    darkHighContrastColor:         Colors.white,
+    elevatedColor:                 textPrimary,
+    darkElevatedColor:             textPrimaryDark,
+    highContrastElevatedColor:     _neutral900,
+    darkHighContrastElevatedColor: Colors.white,
+  );
+
+  static const CupertinoDynamicColor adaptiveTextSecondary = CupertinoDynamicColor(
+    color:                         textSecondary,
+    darkColor:                     textSecondaryDark,
+    highContrastColor:             _neutral700,
+    darkHighContrastColor:         _neutral300,
+    elevatedColor:                 textSecondary,
+    darkElevatedColor:             textSecondaryDark,
+    highContrastElevatedColor:     _neutral700,
+    darkHighContrastElevatedColor: _neutral300,
+  );
+
+  static const CupertinoDynamicColor adaptiveBackground = CupertinoDynamicColor(
+    color:                         background,
+    darkColor:                     backgroundDark,
+    highContrastColor:             Colors.white,
+    darkHighContrastColor:         Colors.black,
+    elevatedColor:                 background,
+    darkElevatedColor:             surfaceDark,
+    highContrastElevatedColor:     Colors.white,
+    darkHighContrastElevatedColor: _dark50,
+  );
+
+  static const CupertinoDynamicColor adaptiveSurface = CupertinoDynamicColor(
+    color:                         surface,
+    darkColor:                     surfaceDark,
+    highContrastColor:             Colors.white,
+    darkHighContrastColor:         _dark50,
+    elevatedColor:                 surface,
+    darkElevatedColor:             surfaceVariantDark,
+    highContrastElevatedColor:     Colors.white,
+    darkHighContrastElevatedColor: _dark100,
+  );
+
+  static const CupertinoDynamicColor adaptiveError = CupertinoDynamicColor(
+    color:                         error,
+    darkColor:                     errorDarkMode,
+    highContrastColor:             Color(0xFFCC0000),
+    darkHighContrastColor:         Colors.white,
+    elevatedColor:                 error,
+    darkElevatedColor:             errorDarkMode,
+    highContrastElevatedColor:     Color(0xFFCC0000),
+    darkHighContrastElevatedColor: Colors.white,
+  );
 }

@@ -20,6 +20,49 @@ service firebase.storage {
              && request.resource.size < 10 * 1024 * 1024; // 10MB max
     }
 
+    function isVehicleOwner(vehicleId) {
+      return isAuthenticated()
+             && firestore.exists(/databases/(default)/documents/vehicles/$(vehicleId))
+             && firestore.get(/databases/(default)/documents/vehicles/$(vehicleId)).data.ownerId == request.auth.uid;
+    }
+
+    function isChatParticipant(chatId) {
+      return isAuthenticated()
+             && firestore.exists(/databases/(default)/documents/chats/$(chatId))
+             && request.auth.uid in firestore.get(/databases/(default)/documents/chats/$(chatId)).data.participantIds;
+    }
+
+    function isEventOwner(eventId) {
+      return isAuthenticated()
+             && firestore.exists(/databases/(default)/documents/events/$(eventId))
+             && firestore.get(/databases/(default)/documents/events/$(eventId)).data.creatorId == request.auth.uid;
+    }
+
+    function isDisputeParticipant(disputeId) {
+      return isAuthenticated()
+             && firestore.exists(/databases/(default)/documents/disputes/$(disputeId))
+             && (
+               firestore.get(/databases/(default)/documents/disputes/$(disputeId)).data.complainantId == request.auth.uid
+               || firestore.get(/databases/(default)/documents/disputes/$(disputeId)).data.respondentId == request.auth.uid
+             );
+    }
+
+    function isReportOwner(reportId) {
+      return isAuthenticated()
+             && firestore.exists(/databases/(default)/documents/reports/$(reportId))
+             && firestore.get(/databases/(default)/documents/reports/$(reportId)).data.reporterId == request.auth.uid;
+    }
+
+    function isSupportTicketOwner(ticketId) {
+      return isAuthenticated()
+             && firestore.exists(/databases/(default)/documents/support_tickets/$(ticketId))
+             && firestore.get(/databases/(default)/documents/support_tickets/$(ticketId)).data.userId == request.auth.uid;
+    }
+
+    function isValidAttachment() {
+      return isAuthenticated() && request.resource.size < 10 * 1024 * 1024;
+    }
+
     // User profile photos
     match /users/{userId}/profile/{fileName} {
       allow read: if isAuthenticated();
@@ -35,7 +78,7 @@ service firebase.storage {
     // Vehicle photos
     match /vehicles/{vehicleId}/{fileName} {
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && isValidImage();
+      allow write: if isVehicleOwner(vehicleId) && isValidImage();
     }
 
     // Driver documents (license, insurance, etc.)
@@ -46,20 +89,20 @@ service firebase.storage {
 
     // Chat attachments
     match /chats/{chatId}/attachments/{fileName} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && request.resource.size < 10 * 1024 * 1024;
+      allow read: if isChatParticipant(chatId);
+      allow write: if isChatParticipant(chatId) && isValidAttachment();
     }
 
     // Event cover images
     match /events/{eventId}/{fileName} {
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && isValidImage();
+      allow write: if isEventOwner(eventId) && isValidImage();
     }
 
     // Chat audio messages
     match /chats/{chatId}/audio/{fileName} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && request.resource.size < 10 * 1024 * 1024;
+      allow read: if isChatParticipant(chatId);
+      allow write: if isChatParticipant(chatId) && isValidAttachment();
     }
 
     // Ride photos (for drop-off/pick-up verification)
@@ -70,8 +113,20 @@ service firebase.storage {
 
     // Dispute attachments
     match /dispute_attachments/{disputeId}/{fileName} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && request.resource.size < 10 * 1024 * 1024;
+      allow read: if isDisputeParticipant(disputeId);
+      allow write: if isDisputeParticipant(disputeId) && isValidAttachment();
+    }
+
+    // Report attachments are uploaded before the report document is created.
+    match /report_attachments/{reportId}/{fileName} {
+      allow read: if isReportOwner(reportId);
+      allow write: if isValidAttachment();
+    }
+
+    // Support ticket attachments are uploaded before the ticket document is created.
+    match /support_attachments/{ticketId}/{fileName} {
+      allow read: if isSupportTicketOwner(ticketId);
+      allow write: if isValidAttachment();
     }
   }
 }

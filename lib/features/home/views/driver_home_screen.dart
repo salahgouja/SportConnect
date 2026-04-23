@@ -1,14 +1,16 @@
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart' show Position;
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:geolocator/geolocator.dart' show Position;
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:shimmer/shimmer.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/repository_providers.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/services/location_service.dart';
 import 'package:sport_connect/core/services/push_notification_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
@@ -21,9 +23,18 @@ import 'package:sport_connect/features/profile/view_models/profile_view_model.da
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/models/driver_stats.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
+import 'package:sport_connect/features/rides/repositories/driver_stats_repository.dart';
+import 'package:sport_connect/features/rides/services/ride_request_service.dart';
+import 'package:sport_connect/features/rides/view_models/driver_requests_view_model.dart';
 import 'package:sport_connect/features/rides/view_models/driver_view_model.dart';
-import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
+
+Widget _decorateDriverHome(
+  Widget child,
+  Widget Function(Animate animation) builder,
+) {
+  return builder(child.animate());
+}
 
 /// Driver Home Screen - Responsive dashboard with location support.
 class DriverHomeScreen extends ConsumerStatefulWidget {
@@ -56,21 +67,24 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
     try {
       final pns = ref.read(pushNotificationServiceProvider);
       if (await pns.hasPermission()) return;
+      if (!mounted) return;
 
       final settings = await ref.read(settingsRepositoryProvider.future);
+      if (!mounted) return;
       if (settings.notificationDialogShown) return;
 
       await Future<void>.delayed(const Duration(seconds: 1));
-      if (!context.mounted) return;
+      if (!mounted) return;
 
       final accepted = await PermissionDialogHelper.showNotificationRationale(
         context,
       );
+      if (!mounted) return;
       await settings.setNotificationDialogShown();
       if (!accepted) return;
 
       await pns.requestPermission();
-    } on Exception catch (_) {}
+    } catch (e, st) {}
   }
 
   Future<void> _requestLocationPermission() async {
@@ -78,41 +92,41 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
       final accepted = await PermissionDialogHelper.showLocationRationale(
         context,
       );
+      if (!mounted) return;
       if (!accepted) return;
       await ref
           .read(driverLocationViewModelProvider.notifier)
           .requestPermission();
+      if (!mounted) return;
       final locationState = ref.read(driverLocationViewModelProvider);
       if (!locationState.locationGranted) {
         await ref.read(locationServiceProvider).openLocationSettings();
       }
-    } on Exception catch (_) {}
+    } catch (e, st) {}
   }
 
   @override
   Widget build(BuildContext context) {
     final locationState = ref.watch(driverLocationViewModelProvider);
-    final driverState = ref.watch(driverViewModelProvider);
+    final activeRide = ref.watch(activeDriverRideProvider).value;
 
     // ── Global Active Ride Guard ─────────────────────────────
     // On app launch / foreground, auto-navigate to the active ride screen
     // if the driver has an in-progress ride.
     if (!_hasAutoNavigatedToActiveRide) {
-      final ride = driverState.activeRide;
-      if (ride != null && ride.status == RideStatus.inProgress) {
+      if (activeRide != null && activeRide.status == RideStatus.inProgress) {
         _hasAutoNavigatedToActiveRide = true;
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
             context.push(
-              '${AppRoutes.driverActiveRide.path}?rideId=${ride.id}',
+              '${AppRoutes.driverActiveRide.path}?rideId=${activeRide.id}',
             );
           }
         });
       }
     }
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return AdaptiveScaffold(
       body: _DriverDashboard(
         isLoadingLocation: locationState.isLoading,
         locationGranted: locationState.locationGranted,
@@ -123,23 +137,88 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
         onOpenSettings: () =>
             ref.read(locationServiceProvider).openLocationSettings(),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        heroTag: 'driver_home_offer_fab',
-        onPressed: () => context.push(AppRoutes.driverOfferRide.path),
-        backgroundColor: AppColors.primary,
-        elevation: 4,
-        icon: Icon(Icons.add_rounded, size: 22.sp, color: Colors.white),
-        label: Text(
-          AppLocalizations.of(context).offerRide,
-          style: TextStyle(
-            fontSize: 14.sp,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
+      floatingActionButton: _decorateDriverHome(
+        FloatingActionButton.extended(
+          heroTag: 'driver_home_offer_fab',
+          onPressed: () => context.push(AppRoutes.driverOfferRide.path),
+          backgroundColor: AppColors.primary,
+          elevation: 4,
+          icon: Icon(Icons.add_rounded, size: 22.sp, color: Colors.white),
+          label: Text(
+            AppLocalizations.of(context).offerRide,
+            style: TextStyle(
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
           ),
         ),
-      ).animate().fadeIn(duration: 400.ms).scale(begin: const Offset(0.8, 0.8)),
+        (animation) => animation
+            .fadeIn(duration: 400.ms)
+            .scale(begin: const Offset(0.8, 0.8)),
+      ),
     );
   }
+}
+
+class _DriverHomeUserData {
+  const _DriverHomeUserData({
+    required this.username,
+    required this.level,
+    required this.maxXP,
+    required this.totalXP,
+    required this.streak,
+    this.photoUrl,
+  });
+
+  factory _DriverHomeUserData.from(UserModel user) {
+    final level = user.userLevel;
+    final gamification = switch (user) {
+      RiderModel(:final gamification) => gamification,
+      DriverModel(:final gamification) => gamification,
+      _ => null,
+    };
+    final totalXP = gamification?.totalXP ?? 0;
+    final streak = gamification?.currentStreak ?? 0;
+
+    return _DriverHomeUserData(
+      username: user.username,
+      photoUrl: user.photoUrl,
+      level: level.level,
+      maxXP: level.maxXP.isFinite ? level.maxXP.toInt() : totalXP,
+      totalXP: totalXP,
+      streak: streak,
+    );
+  }
+
+  final String username;
+  final String? photoUrl;
+  final int level;
+  final int maxXP;
+  final int totalXP;
+  final int streak;
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        other is _DriverHomeUserData &&
+            other.username == username &&
+            other.photoUrl == photoUrl &&
+            other.level == level &&
+            other.maxXP == maxXP &&
+            other.totalXP == totalXP &&
+            other.streak == streak;
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    username,
+    photoUrl,
+    level,
+    maxXP,
+    totalXP,
+    streak,
+  );
 }
 
 /// Main dashboard widget - adapts to orientation and screen size.
@@ -164,15 +243,29 @@ class _DriverDashboard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final driverState = ref.watch(driverViewModelProvider);
-    final user = driverState.user;
-    final driverStats = driverState.stats;
-    final pendingRequests = driverState.pendingRequests;
-    final upcomingRides = driverState.upcomingRides;
+    final user = ref.watch(
+      currentUserProvider.select(
+        (value) => value.whenData(
+          (user) => user == null ? null : _DriverHomeUserData.from(user),
+        ),
+      ),
+    );
+    final activeRide = ref.watch(activeDriverRideProvider).value;
+    final driverStats = ref.watch(driverStatsProvider);
+    final pendingRequests = ref.watch(pendingRideRequestsProvider);
+    final upcomingRides = ref.watch(upcomingDriverRidesProvider);
     final l10n = AppLocalizations.of(context);
 
     return RefreshIndicator.adaptive(
-      onRefresh: () => ref.read(driverViewModelProvider.notifier).refresh(),
+      onRefresh: () async {
+        await Future.wait<Object?>([
+          ref.refresh(currentUserProvider.future),
+          ref.refresh(activeDriverRideProvider.future),
+          ref.refresh(driverStatsProvider.future),
+          ref.refresh(pendingRideRequestsProvider.future),
+          ref.refresh(upcomingDriverRidesProvider.future),
+        ]);
+      },
       child: OrientationBuilder(
         builder: (context, orientation) {
           return LayoutBuilder(
@@ -187,7 +280,7 @@ class _DriverDashboard extends ConsumerWidget {
                 slivers: [
                   // Header
                   SliverToBoxAdapter(
-                    child: _buildHeader(context, ref, user, l10n, hPad),
+                    child: _buildHeader(context, user, l10n, hPad),
                   ),
 
                   // XP & Streak strip
@@ -216,7 +309,7 @@ class _DriverDashboard extends ConsumerWidget {
                         horizontal: hPad,
                         vertical: 4,
                       ),
-                      child: _ActiveDriverRideBanner(driverState: driverState),
+                      child: _ActiveDriverRideBanner(ride: activeRide),
                     ),
                   ),
 
@@ -287,7 +380,6 @@ class _DriverDashboard extends ConsumerWidget {
                       child: _buildPendingRequests(
                         context,
                         ref,
-                        driverState,
                         l10n,
                         pendingRequests,
                       ),
@@ -300,7 +392,6 @@ class _DriverDashboard extends ConsumerWidget {
                       padding: EdgeInsets.all(hPad),
                       child: _buildUpcomingRides(
                         context,
-                        driverState,
                         l10n,
                         upcomingRides,
                       ),
@@ -320,14 +411,13 @@ class _DriverDashboard extends ConsumerWidget {
 
   Widget _buildHeader(
     BuildContext context,
-    WidgetRef ref,
-    AsyncValue<UserModel?> user,
+    AsyncValue<_DriverHomeUserData?> user,
     AppLocalizations l10n,
     double hPad,
   ) {
     final topPad = MediaQuery.of(context).padding.top;
 
-    return Container(
+    final header = Container(
       padding: EdgeInsets.fromLTRB(hPad, topPad + 16, hPad, 16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -344,7 +434,7 @@ class _DriverDashboard extends ConsumerWidget {
             child: user.when(
               data: (userData) => PremiumAvatar(
                 imageUrl: userData?.photoUrl,
-                name: userData?.displayName ?? l10n.driver,
+                name: userData?.username ?? l10n.driver,
                 size: 52.w,
                 hasBorder: true,
               ),
@@ -369,7 +459,7 @@ class _DriverDashboard extends ConsumerWidget {
                 SizedBox(height: 2.h),
                 user.when(
                   data: (userData) => Text(
-                    userData?.displayName ?? l10n.driver,
+                    userData?.username ?? l10n.driver,
                     style: TextStyle(
                       fontSize: 20.sp,
                       fontWeight: FontWeight.w800,
@@ -412,7 +502,12 @@ class _DriverDashboard extends ConsumerWidget {
           ),
         ],
       ),
-    ).animate().fadeIn(duration: 400.ms);
+    );
+
+    return _decorateDriverHome(
+      header,
+      (animation) => animation.fadeIn(duration: 400.ms),
+    );
   }
 
   String _getGreeting(AppLocalizations l10n) {
@@ -422,19 +517,12 @@ class _DriverDashboard extends ConsumerWidget {
     return l10n.goodEvening;
   }
 
-  Widget _buildGamificationStrip(AsyncValue<UserModel?> user, double hPad) {
-    final userData = user.whenOrNull<UserModel?>(data: (u) => u);
+  Widget _buildGamificationStrip(
+    AsyncValue<_DriverHomeUserData?> user,
+    double hPad,
+  ) {
+    final userData = user.whenOrNull<_DriverHomeUserData?>(data: (u) => u);
     if (userData == null) return const SizedBox.shrink();
-
-    final level = userData.userLevel;
-    final totalXP = userData.totalXP;
-    final int streak;
-    switch (userData) {
-      case RiderModel(:final gamification):
-        streak = gamification.currentStreak;
-      case DriverModel(:final gamification):
-        streak = gamification.currentStreak;
-    }
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: hPad, vertical: 4),
@@ -442,14 +530,14 @@ class _DriverDashboard extends ConsumerWidget {
         children: [
           Expanded(
             child: XPProgressBar(
-              currentXP: totalXP,
-              maxXP: level.maxXP.isFinite ? level.maxXP.toInt() : totalXP,
-              level: level.level,
+              currentXP: userData.totalXP,
+              maxXP: userData.maxXP,
+              level: userData.level,
             ),
           ),
-          if (streak > 0) ...[
+          if (userData.streak > 0) ...[
             SizedBox(width: 12.w),
-            StreakCounter(days: streak),
+            StreakCounter(days: userData.streak),
           ],
         ],
       ),
@@ -459,7 +547,7 @@ class _DriverDashboard extends ConsumerWidget {
   Widget _buildLocationBanner(AppLocalizations l10n) {
     final shouldOpenSettings = locationDeniedForever || servicesDisabled;
 
-    return Container(
+    final banner = Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
         color: AppColors.warning.withAlpha(20),
@@ -523,11 +611,16 @@ class _DriverDashboard extends ConsumerWidget {
             ),
         ],
       ),
-    ).animate().fadeIn(duration: 300.ms).slideY(begin: -0.1);
+    );
+
+    return _decorateDriverHome(
+      banner,
+      (animation) => animation.fadeIn(duration: 300.ms).slideY(begin: -0.1),
+    );
   }
 
   Widget _buildQuickActions(BuildContext context, AppLocalizations l10n) {
-    return Row(
+    final actions = Row(
       children: [
         Expanded(
           child: _QuickActionButton(
@@ -565,7 +658,12 @@ class _DriverDashboard extends ConsumerWidget {
           ),
         ),
       ],
-    ).animate().fadeIn(duration: 400.ms, delay: 200.ms);
+    );
+
+    return _decorateDriverHome(
+      actions,
+      (animation) => animation.fadeIn(duration: 400.ms, delay: 200.ms),
+    );
   }
 
   Widget _buildEarningsSummary(
@@ -574,115 +672,133 @@ class _DriverDashboard extends ConsumerWidget {
     bool isSmall,
   ) {
     return stats.when(
-      data: (driverStats) => Container(
-        padding: EdgeInsets.all(isSmall ? 14.w : 20.w),
-        decoration: BoxDecoration(
-          gradient: AppColors.primaryGradient,
-          borderRadius: BorderRadius.circular(24.r),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primary.withAlpha(50),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Flexible(
-                  child: Text(
-                    l10n.todaySEarnings,
-                    style: TextStyle(
-                      fontSize: isSmall ? 12.sp : 14.sp,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white.withAlpha(200),
+      data: (driverStats) {
+        final card = Container(
+          padding: EdgeInsets.all(isSmall ? 14.w : 20.w),
+          decoration: BoxDecoration(
+            gradient: AppColors.primaryGradient,
+            borderRadius: BorderRadius.circular(24.r),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withAlpha(50),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Flexible(
+                    child: Text(
+                      l10n.todaySEarnings,
+                      style: TextStyle(
+                        fontSize: isSmall ? 12.sp : 14.sp,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white.withAlpha(200),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 10.w,
-                    vertical: 4.h,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withAlpha(40),
-                    borderRadius: BorderRadius.circular(20.r),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.trending_up, size: 14.sp, color: Colors.white),
-                      SizedBox(width: 4.w),
-                      Text(
-                        l10n.live,
-                        style: TextStyle(
-                          fontSize: 11.sp,
-                          fontWeight: FontWeight.w600,
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 10.w,
+                      vertical: 4.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withAlpha(40),
+                      borderRadius: BorderRadius.circular(20.r),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.trending_up,
+                          size: 14.sp,
                           color: Colors.white,
                         ),
+                        SizedBox(width: 4.w),
+                        Text(
+                          l10n.live,
+                          style: TextStyle(
+                            fontSize: 11.sp,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 8.h),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Flexible(
+                    child: Text(
+                      l10n.value6(
+                        (driverStats.earningsTodayInCents / 100)
+                            .toStringAsFixed(2),
                       ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 8.h),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Flexible(
-                  child: Text(
-                    l10n.value6(driverStats.earningsToday.toStringAsFixed(2)),
-                    style: TextStyle(
-                      fontSize: isSmall ? 28.sp : 36.sp,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
-                      letterSpacing: -1,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                SizedBox(width: 12.w),
-                Padding(
-                  padding: EdgeInsets.only(bottom: 6.h),
-                  child: Text(
-                    l10n.valueRides(driverStats.totalRides),
-                    style: TextStyle(
-                      fontSize: isSmall ? 12.sp : 14.sp,
-                      color: Colors.white.withAlpha(200),
+                      style: TextStyle(
+                        fontSize: isSmall ? 28.sp : 36.sp,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                        letterSpacing: -1,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                ),
-              ],
-            ),
-            SizedBox(height: 16.h),
-            Row(
-              children: [
-                _EarningsMetric(
-                  label: l10n.driverThisWeek,
-                  value: l10n.value6(
-                    driverStats.earningsThisWeek.toStringAsFixed(0),
+                  SizedBox(width: 12.w),
+                  Padding(
+                    padding: EdgeInsets.only(bottom: 6.h),
+                    child: Text(
+                      l10n.valueRides(driverStats.totalRides),
+                      style: TextStyle(
+                        fontSize: isSmall ? 12.sp : 14.sp,
+                        color: Colors.white.withAlpha(200),
+                      ),
+                    ),
                   ),
-                ),
-                SizedBox(width: 24.w),
-                _EarningsMetric(
-                  label: l10n.driverThisMonth,
-                  value: l10n.value6(
-                    driverStats.earningsThisMonth.toStringAsFixed(0),
+                ],
+              ),
+              SizedBox(height: 16.h),
+              Row(
+                children: [
+                  _EarningsMetric(
+                    label: l10n.driverThisWeek,
+                    value: l10n.value6(
+                      (driverStats.earningsThisWeekInCents / 100)
+                          .toStringAsFixed(0),
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ).animate().fadeIn(duration: 400.ms, delay: 300.ms).slideY(begin: 0.1),
+                  SizedBox(width: 24.w),
+                  _EarningsMetric(
+                    label: l10n.driverThisMonth,
+                    value: l10n.value6(
+                      (driverStats.earningsThisMonthInCents / 100)
+                          .toStringAsFixed(0),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+
+        return _decorateDriverHome(
+          card,
+          (animation) => animation
+              .fadeIn(duration: 400.ms, delay: 300.ms)
+              .slideY(begin: 0.1),
+        );
+      },
       loading: () => _buildShimmerCard(height: 180),
       error: (_, _) => _buildErrorCard(l10n.failedToLoadEarnings),
     );
@@ -720,7 +836,9 @@ class _DriverDashboard extends ConsumerWidget {
           _StatCard(
             icon: Icons.trending_up_rounded,
             iconColor: AppColors.info,
-            value: driverStats.earningsThisMonth.toStringAsFixed(0),
+            value: (driverStats.earningsThisMonthInCents / 100).toStringAsFixed(
+              0,
+            ),
             label: l10n.driverThisMonth,
           ),
         ];
@@ -771,11 +889,10 @@ class _DriverDashboard extends ConsumerWidget {
   Widget _buildPendingRequests(
     BuildContext context,
     WidgetRef ref,
-    DriverState driverState,
     AppLocalizations l10n,
     AsyncValue<List<RideBooking>> requestsAsync,
   ) {
-    return Column(
+    final section = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
@@ -810,8 +927,9 @@ class _DriverDashboard extends ConsumerWidget {
         ),
         SizedBox(height: 12.h),
         requestsAsync.when(
-          data: (_) {
-            if (driverState.pendingRequestPreview.isEmpty) {
+          data: (requests) {
+            final requestPreview = requests.take(2).toList(growable: false);
+            if (requestPreview.isEmpty) {
               return _buildEmptyState(
                 icon: Icons.inbox_outlined,
                 title: l10n.noPendingRequests,
@@ -819,25 +937,32 @@ class _DriverDashboard extends ConsumerWidget {
               );
             }
             return Column(
-              children: driverState.pendingRequestPreview.map((request) {
+              children: requestPreview.map((request) {
                 return Padding(
                   padding: EdgeInsets.only(bottom: 12.h),
                   child: _RequestCard(
                     request: request,
-                    isProcessing: driverState.isRequestActionInProgress(
-                      request.id,
-                    ),
+                    isProcessing: false,
                     onAccept: () async {
                       HapticFeedback.heavyImpact();
-                      await ref
-                          .read(driverViewModelProvider.notifier)
-                          .acceptRideRequest(request.rideId, request.id);
+                      final result = await ref
+                          .read(rideRequestServiceProvider.notifier)
+                          .acceptRequest(request.id);
+                      if (!context.mounted) return;
+                      if (result is Success) {
+                        ref.invalidate(pendingRideRequestsProvider);
+                        ref.invalidate(upcomingDriverRidesProvider);
+                      }
                     },
                     onDecline: () async {
                       HapticFeedback.lightImpact();
-                      await ref
-                          .read(driverViewModelProvider.notifier)
-                          .declineRideRequest(request.rideId, request.id);
+                      final result = await ref
+                          .read(rideRequestServiceProvider.notifier)
+                          .rejectRequest(request.id, 'Declined by driver');
+                      if (!context.mounted) return;
+                      if (result is Success) {
+                        ref.invalidate(pendingRideRequestsProvider);
+                      }
                     },
                   ),
                 );
@@ -848,16 +973,20 @@ class _DriverDashboard extends ConsumerWidget {
           error: (_, _) => _buildErrorCard(l10n.failedToLoadRequests),
         ),
       ],
-    ).animate().fadeIn(duration: 400.ms, delay: 500.ms);
+    );
+
+    return _decorateDriverHome(
+      section,
+      (animation) => animation.fadeIn(duration: 400.ms, delay: 500.ms),
+    );
   }
 
   Widget _buildUpcomingRides(
     BuildContext context,
-    DriverState driverState,
     AppLocalizations l10n,
     AsyncValue<List<RideModel>> ridesAsync,
   ) {
-    return Column(
+    final section = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
@@ -870,8 +999,8 @@ class _DriverDashboard extends ConsumerWidget {
         ),
         SizedBox(height: 12.h),
         ridesAsync.when(
-          data: (_) {
-            final ridePreview = driverState.upcomingRidePreview;
+          data: (rides) {
+            final ridePreview = rides.take(3).toList(growable: false);
             if (ridePreview.isEmpty) {
               return _buildEmptyState(
                 icon: Icons.event_available_outlined,
@@ -898,20 +1027,27 @@ class _DriverDashboard extends ConsumerWidget {
           error: (_, _) => _buildErrorCard(l10n.failedToLoadRides),
         ),
       ],
-    ).animate().fadeIn(duration: 400.ms, delay: 600.ms);
+    );
+
+    return _decorateDriverHome(
+      section,
+      (animation) => animation.fadeIn(duration: 400.ms, delay: 600.ms),
+    );
   }
 
   Widget _buildShimmerCard({required double height}) {
-    return Shimmer.fromColors(
-      baseColor: AppColors.surface,
-      highlightColor: AppColors.border.withAlpha(100),
-      child: Container(
-        height: height.h,
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(16.r),
-        ),
+    final card = Container(
+      height: height.h,
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16.r),
       ),
+    );
+
+    return Skeletonizer(
+      enabled: true,
+      containersColor: AppColors.surface,
+      child: card,
     );
   }
 
@@ -922,17 +1058,7 @@ class _DriverDashboard extends ConsumerWidget {
         (_) => Expanded(
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 4.w),
-            child: Shimmer.fromColors(
-              baseColor: AppColors.surface,
-              highlightColor: AppColors.border.withAlpha(100),
-              child: Container(
-                height: 90.h,
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(16.r),
-                ),
-              ),
-            ),
+            child: _buildShimmerCard(height: 90),
           ),
         ),
       ),
@@ -1157,11 +1283,15 @@ class _RequestCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(userProfileProvider(request.passengerId)).value;
-    final ride = ref.watch(rideStreamProvider(request.rideId)).value;
-    final passengerName = profile?.displayName ?? '…';
-    final passengerRating = profile?.rating.average ?? 0.0;
-    final pricePerSeat = ride?.pricePerSeat ?? 0.0;
-    final total = pricePerSeat * request.seatsBooked;
+    final ride = ref.watch(requestCardRideProvider(request.rideId)).value;
+    final passengerName = profile?.username ?? '…';
+    final passengerRating = profile?.asRider?.rating.average ?? 0.0;
+    final pricePerSeatInCents = ride?.pricePerSeatInCents ?? 0.0;
+    final total = pricePerSeatInCents * request.seatsBooked;
+    final pickupAddress =
+        request.pickupLocation?.address ?? ride?.origin.address ?? '—';
+    final dropoffAddress =
+        request.dropoffLocation?.address ?? ride?.destination.address ?? '—';
 
     return Container(
       padding: EdgeInsets.all(16.w),
@@ -1246,7 +1376,7 @@ class _RequestCard extends ConsumerWidget {
                   child: Text(
                     AppLocalizations.of(
                       context,
-                    ).value6(total.toStringAsFixed(0)),
+                    ).value6((total / 100).toStringAsFixed(2)),
                     style: TextStyle(
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w700,
@@ -1292,7 +1422,7 @@ class _RequestCard extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        request.pickupLocation?.address ?? '—',
+                        pickupAddress,
                         style: TextStyle(
                           fontSize: 13.sp,
                           fontWeight: FontWeight.w500,
@@ -1303,7 +1433,7 @@ class _RequestCard extends ConsumerWidget {
                       ),
                       SizedBox(height: 8.h),
                       Text(
-                        request.dropoffLocation?.address ?? '—',
+                        dropoffAddress,
                         style: TextStyle(
                           fontSize: 13.sp,
                           fontWeight: FontWeight.w500,
@@ -1522,8 +1652,10 @@ class _UpcomingRideCard extends StatelessWidget {
               children: [
                 Text(
                   AppLocalizations.of(context).value6(
-                    (ride.pricing.pricePerSeat.amount * ride.capacity.booked)
-                        .toStringAsFixed(0),
+                    ((ride.pricing.pricePerSeatInCents.amountInCents *
+                                ride.capacity.booked) /
+                            100)
+                        .toStringAsFixed(2),
                   ),
                   style: TextStyle(
                     fontSize: 16.sp,
@@ -1559,89 +1691,94 @@ class _UpcomingRideCard extends StatelessWidget {
 /// driver has an active (inProgress) ride.  Tapping it jumps straight to the
 /// active-ride management screen.
 class _ActiveDriverRideBanner extends StatelessWidget {
-  const _ActiveDriverRideBanner({required this.driverState});
+  const _ActiveDriverRideBanner({required this.ride});
 
-  final DriverState driverState;
+  final RideModel? ride;
 
   @override
   Widget build(BuildContext context) {
-    final ride = driverState.activeRide;
-    if (ride == null) return const SizedBox.shrink();
+    final activeRide = ride;
+    if (activeRide == null) return const SizedBox.shrink();
 
-    final origin = ride.origin.city ?? ride.origin.address;
-    final dest = ride.destination.city ?? ride.destination.address;
+    final origin = activeRide.origin.city ?? activeRide.origin.address;
+    final dest = activeRide.destination.city ?? activeRide.destination.address;
 
-    return GestureDetector(
+    final banner = GestureDetector(
       onTap: () {
         HapticFeedback.mediumImpact();
-        context.push('${AppRoutes.driverActiveRide.path}?rideId=${ride.id}');
+        context.push(
+          '${AppRoutes.driverActiveRide.path}?rideId=${activeRide.id}',
+        );
       },
-      child:
-          Container(
-                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
-                decoration: BoxDecoration(
-                  color: AppColors.success,
-                  borderRadius: BorderRadius.circular(16.r),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.success.withValues(alpha: 0.40),
-                      blurRadius: 18,
-                      offset: const Offset(0, 5),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: EdgeInsets.all(9.w),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.22),
-                        borderRadius: BorderRadius.circular(11.r),
-                      ),
-                      child: Icon(
-                        Icons.navigation_rounded,
-                        color: Colors.white,
-                        size: 22.sp,
-                      ),
-                    ),
-                    SizedBox(width: 12.w),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'Ride In Progress',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 14.sp,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          SizedBox(height: 2.h),
-                          Text(
-                            '$origin → $dest',
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.87),
-                              fontSize: 12.sp,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ),
-                    Icon(
-                      Icons.chevron_right_rounded,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+        decoration: BoxDecoration(
+          color: AppColors.success,
+          borderRadius: BorderRadius.circular(16.r),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.success.withValues(alpha: 0.40),
+              blurRadius: 18,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: EdgeInsets.all(9.w),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.22),
+                borderRadius: BorderRadius.circular(11.r),
+              ),
+              child: Icon(
+                Icons.navigation_rounded,
+                color: Colors.white,
+                size: 22.sp,
+              ),
+            ),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Ride In Progress',
+                    style: TextStyle(
                       color: Colors.white,
-                      size: 26.sp,
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w700,
                     ),
-                  ],
-                ),
-              )
-              .animate()
-              .fadeIn(delay: 200.ms, duration: 400.ms)
-              .slideY(begin: -0.2, curve: Curves.easeOutCubic),
+                  ),
+                  SizedBox(height: 2.h),
+                  Text(
+                    '$origin → $dest',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.87),
+                      fontSize: 12.sp,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: Colors.white,
+              size: 26.sp,
+            ),
+          ],
+        ),
+      ),
+    );
+
+    return _decorateDriverHome(
+      banner,
+      (animation) => animation
+          .fadeIn(delay: 200.ms, duration: 400.ms)
+          .slideY(begin: -0.2, curve: Curves.easeOutCubic),
     );
   }
 }

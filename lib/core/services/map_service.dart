@@ -5,6 +5,7 @@ import 'package:flutter_map/flutter_map.dart' show LatLngBounds;
 import 'package:latlong2/latlong.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
+import 'package:sport_connect/core/services/clients/nominatim_client.dart';
 import 'package:sport_connect/core/services/http_service.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 
@@ -14,9 +15,14 @@ part 'map_service.g.dart';
 ///
 /// Obtain via [mapServiceProvider] — do not construct directly.
 class MapService {
-  MapService(this._dio);
+  MapService(this._dio)
+    : _nominatimClient = NominatimClient(
+        _dio,
+        baseUrl: AppConstants.nominatimBaseUrl,
+      );
 
   final Dio _dio;
+  final NominatimClient _nominatimClient;
 
   // ═══════════════════════════════════════════════════════════════
   // MAP TILE PROVIDERS
@@ -76,64 +82,37 @@ class MapService {
     int limit = 10,
   }) async {
     try {
-      final params = <String, dynamic>{
-        'q': query,
-        'format': 'json',
-        'addressdetails': 1,
-        'limit': limit,
-        'accept-language': 'en,fr,ar',
-      };
-      if (nearLocation != null) {
-        params['lat'] = nearLocation.latitude;
-        params['lon'] = nearLocation.longitude;
-      }
-      if (countryCode != null) {
-        params['countrycodes'] = countryCode;
-      }
-      final response = await _dio.get<List<dynamic>>(
-        '${AppConstants.nominatimBaseUrl}/search',
-        queryParameters: params,
-        options: Options(
-          headers: {'User-Agent': AppConstants.userAgent},
-        ),
+      final data = await _nominatimClient.searchPlaces(
+        query,
+        'json',
+        1,
+        limit,
+        'en,fr,ar',
+        nearLocation?.latitude,
+        nearLocation?.longitude,
+        countryCode,
+        AppConstants.userAgent,
       );
-      if (response.statusCode == 200) {
-        final data = response.data!;
-        return data
-            .map(
-              (item) =>
-                  SearchResult.fromNominatim(item as Map<String, dynamic>),
-            )
-            .toList();
-      }
-      return [];
-    } on Exception catch (e, stackTrace) {
-      TalkerService.error('Place search failed', e, stackTrace);
+      return data.map((item) => SearchResult.fromNominatim(item.json)).toList();
+    } catch (e, st) {
+      TalkerService.error('Place search failed', e, st);
       return [];
     }
   }
 
   Future<SearchResult?> reverseGeocode(LatLng location) async {
     try {
-      final response = await _dio.get<Map<String, dynamic>>(
-        '${AppConstants.nominatimBaseUrl}/reverse',
-        queryParameters: {
-          'lat': location.latitude,
-          'lon': location.longitude,
-          'format': 'json',
-          'addressdetails': 1,
-          'accept-language': 'en,fr,ar',
-        },
-        options: Options(
-          headers: {'User-Agent': AppConstants.userAgent},
-        ),
+      final data = await _nominatimClient.reverseGeocode(
+        location.latitude,
+        location.longitude,
+        'json',
+        1,
+        'en,fr,ar',
+        AppConstants.userAgent,
       );
-      if (response.statusCode == 200 && response.data != null) {
-        return SearchResult.fromNominatim(response.data!);
-      }
-      return null;
-    } on Exception catch (e, stackTrace) {
-      TalkerService.error('Reverse geocode failed', e, stackTrace);
+      return SearchResult.fromNominatim(data.json);
+    } catch (e, st) {
+      TalkerService.error('Reverse geocode failed', e, st);
       return null;
     }
   }
@@ -163,8 +142,8 @@ class MapService {
             .toList();
       }
       return [];
-    } on Exception catch (e, stackTrace) {
-      TalkerService.error('POI search failed', e, stackTrace);
+    } catch (e, st) {
+      TalkerService.error('POI search failed', e, st);
       return [];
     }
   }

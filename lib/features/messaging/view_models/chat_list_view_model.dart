@@ -118,7 +118,7 @@ class NewChatSearchViewModel extends _$NewChatSearchViewModel {
 
     try {
       final results = await ref
-          .read(profileActionsViewModelProvider)
+          .read(profileActionsViewModelProvider.notifier)
           .searchUsers(query: query);
       if (!ref.mounted) return;
       state = state.copyWith(searchResults: results, isLoading: false);

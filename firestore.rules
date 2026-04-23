@@ -11,6 +11,74 @@ service cloud.firestore {
       return request.auth.uid == userId;
     }
 
+    function changedKeys() {
+      return request.resource.data.diff(resource.data).affectedKeys();
+    }
+
+    function isPassengerBookingCreate() {
+      return isAuthenticated() &&
+        request.resource.data.passengerId == request.auth.uid &&
+        request.resource.data.status == 'pending' &&
+        !('paymentIntentId' in request.resource.data) &&
+        !('paidAt' in request.resource.data);
+    }
+
+    function isPassengerBookingUpdate() {
+      return resource.data.passengerId == request.auth.uid &&
+        changedKeys().hasOnly([
+          'status',
+          'respondedAt',
+          'updatedAt',
+          'cancellationReason',
+          'cancelledAt'
+        ]) &&
+        request.resource.data.status == 'cancelled' &&
+        request.resource.data.rideId == resource.data.rideId &&
+        request.resource.data.passengerId == resource.data.passengerId &&
+        request.resource.data.driverId == resource.data.driverId;
+    }
+
+    function isDriverBookingUpdate(rideId) {
+      return (
+          resource.data.driverId == request.auth.uid ||
+          get(/databases/$(database)/documents/rides/$(rideId)).data.driverId == request.auth.uid
+        ) &&
+        changedKeys().hasOnly([
+          'status',
+          'respondedAt',
+          'updatedAt',
+          'pickupOtp',
+          'cancellationReason',
+          'cancelledAt'
+        ]) &&
+        request.resource.data.rideId == resource.data.rideId &&
+        request.resource.data.passengerId == resource.data.passengerId &&
+        request.resource.data.driverId == resource.data.driverId;
+    }
+
+    function isConnectedAccountCreate(userId) {
+      let user = get(/databases/$(database)/documents/users/$(userId)).data;
+      return isOwner(userId) &&
+        request.resource.data.driverId == request.auth.uid &&
+        request.resource.data.stripeAccountId == user.stripeAccountId &&
+        request.resource.data.id == request.resource.data.stripeAccountId;
+    }
+
+    function isConnectedAccountUpdate(userId) {
+      return isOwner(userId) &&
+        request.resource.data.driverId == resource.data.driverId &&
+        request.resource.data.stripeAccountId == resource.data.stripeAccountId &&
+        request.resource.data.id == resource.data.id &&
+        changedKeys().hasOnly([
+          'email',
+          'country',
+          'defaultCurrency',
+          'accountHolderName',
+          'metadata',
+          'updatedAt'
+        ]);
+    }
+
     function getUserData() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
@@ -67,10 +135,10 @@ service cloud.firestore {
           resource.data.driverId == request.auth.uid ||
           get(/databases/$(database)/documents/rides/$(rideId)).data.driverId == request.auth.uid
         );
-        allow create: if isAuthenticated() && request.resource.data.passengerId == request.auth.uid;
+        allow create: if isPassengerBookingCreate();
         allow update: if isAuthenticated() && (
-          resource.data.passengerId == request.auth.uid ||
-          resource.data.driverId == request.auth.uid
+          isPassengerBookingUpdate() ||
+          isDriverBookingUpdate(rideId)
         );
         allow delete: if isAuthenticated() && resource.data.passengerId == request.auth.uid;
       }
@@ -215,12 +283,12 @@ service cloud.firestore {
     // creates the Stripe account and returns the accountId; the driver may only
     // write their own document.
     match /driver_connected_accounts/{userId} {
-      allow read:   if isAuthenticated() && userId == request.auth.uid;
-      allow create: if isAuthenticated() && userId == request.auth.uid;
-      allow update: if isAuthenticated() && userId == request.auth.uid;
-      allow delete: if isAuthenticated() && userId == request.auth.uid;
-    }
+      allow read: if isAuthenticated() && userId == request.auth.uid;
 
+      // Server-owned Stripe snapshot.
+      // Written only by Cloud Functions / Admin SDK.
+      allow create, update, delete: if false;
+    }
 
     // Support bookings in subcollections as collectionGroup queries
     match /{path=**}/bookings/{bookingId} {
@@ -230,10 +298,10 @@ service cloud.firestore {
         // Allow drivers to read all bookings on their own rides
         get(/databases/$(database)/documents/rides/$(resource.data.rideId)).data.driverId == request.auth.uid
       );
-      allow create: if isAuthenticated() && request.resource.data.passengerId == request.auth.uid;
+      allow create: if isPassengerBookingCreate();
       allow update: if isAuthenticated() && (
-        resource.data.passengerId == request.auth.uid ||
-        resource.data.driverId == request.auth.uid
+        isPassengerBookingUpdate() ||
+        isDriverBookingUpdate(resource.data.rideId)
       );
       allow delete: if isAuthenticated() && resource.data.passengerId == request.auth.uid;
     }

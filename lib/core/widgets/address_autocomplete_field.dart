@@ -1,9 +1,9 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:sport_connect/core/services/map_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
@@ -58,13 +58,8 @@ class AddressAutocompleteFieldState
     extends ConsumerState<AddressAutocompleteField> {
   late final TextEditingController _controller;
   final FocusNode _focusNode = FocusNode();
-  final LayerLink _layerLink = LayerLink();
 
-  List<SearchResult> _suggestions = [];
   bool _isSearching = false;
-  bool _showSuggestions = false;
-  Timer? _debounce;
-  OverlayEntry? _overlayEntry;
   String? _errorText;
   bool _hasInteracted = false;
   LatLng? _selectedLocation;
@@ -90,11 +85,9 @@ class AddressAutocompleteFieldState
 
   @override
   void dispose() {
-    _debounce?.cancel();
     _focusNode.removeListener(_onFocusChange);
     _focusNode.dispose();
     _controller.dispose();
-    _removeOverlay();
     super.dispose();
   }
 
@@ -102,7 +95,6 @@ class AddressAutocompleteFieldState
     if (!_focusNode.hasFocus) {
       Future.delayed(const Duration(milliseconds: 200), () {
         if (mounted && !_focusNode.hasFocus) {
-          _removeOverlay();
           if (_hasInteracted && widget.validator != null) {
             setState(() => _errorText = widget.validator!(_controller.text));
           }
@@ -111,48 +103,44 @@ class AddressAutocompleteFieldState
     }
   }
 
-  void _onSearchChanged(String query) {
+  void _onTextChanged(String query) {
     _hasInteracted = true;
-    if (_debounce?.isActive ?? false) _debounce!.cancel();
-    if (query.length < 2) {
-      _removeOverlay();
-      return;
+    if (_selectedLocation != null) _selectedLocation = null;
+    if (widget.validator != null && _errorText != null) {
+      setState(() => _errorText = widget.validator!(_controller.text));
     }
-    _debounce = Timer(const Duration(milliseconds: 500), () {
-      _searchPlaces(query);
-    });
   }
 
-  Future<void> _searchPlaces(String query) async {
-    if (!mounted) return;
-    setState(() => _isSearching = true);
-    final results = await ref
-        .read(mapServiceProvider)
-        .searchPlaces(
-          query,
-          countryCode: widget.countryCode,
-          limit: 6,
-        );
-    if (!mounted) return;
-    setState(() {
-      _suggestions = results;
-      _isSearching = false;
-      _showSuggestions = results.isNotEmpty;
-    });
-    if (_showSuggestions) {
-      _showOverlay();
-    } else {
-      _removeOverlay();
+  Future<List<SearchResult>> _suggestionsFor(String query) async {
+    if (query.length < 2 || !widget.enabled) return const [];
+
+    if (mounted) setState(() => _isSearching = true);
+    try {
+      return ref
+          .read(mapServiceProvider)
+          .searchPlaces(query, countryCode: widget.countryCode, limit: 6);
+    } finally {
+      if (mounted) setState(() => _isSearching = false);
     }
+  }
+
+  String _firstAddressSegment(String address) {
+    final parts = address
+        .split(',')
+        .map((part) => part.trim())
+        .where((part) => part.isNotEmpty)
+        .toList();
+    return parts.isEmpty ? address.trim() : parts.first;
   }
 
   void _selectSuggestion(SearchResult result) {
     final displayText = widget.cityOnly
-        ? (result.city ?? result.displayName.split(',').first)
+        ? ((result.city?.trim().isNotEmpty ?? false)
+              ? result.city!.trim()
+              : _firstAddressSegment(result.displayName))
         : result.displayName;
     _controller.text = displayText;
     _selectedLocation = result.location;
-    _removeOverlay();
     _focusNode.unfocus();
     widget.onSelected?.call(
       AddressResult(
@@ -169,7 +157,6 @@ class AddressAutocompleteFieldState
   }
 
   Future<void> _openMapPicker() async {
-    _removeOverlay();
     _focusNode.unfocus();
     final result = await MapLocationPicker.show(
       context,
@@ -179,7 +166,7 @@ class AddressAutocompleteFieldState
     );
     if (result != null && mounted) {
       _controller.text = widget.cityOnly
-          ? result.address.split(',').first
+          ? _firstAddressSegment(result.address)
           : result.address;
       _selectedLocation = result.location;
       widget.onSelected?.call(
@@ -195,83 +182,67 @@ class AddressAutocompleteFieldState
     }
   }
 
-  void _showOverlay() {
-    _removeOverlay();
-    _overlayEntry = _buildOverlay();
-    Overlay.of(context).insert(_overlayEntry!);
-  }
-
-  void _removeOverlay() {
-    _overlayEntry?.remove();
-    _overlayEntry = null;
-    _showSuggestions = false;
-  }
-
-  OverlayEntry _buildOverlay() {
-    final renderBox = context.findRenderObject()! as RenderBox;
-    final size = renderBox.size;
-
-    return OverlayEntry(
-      builder: (context) => Positioned(
-        width: size.width,
-        child: CompositedTransformFollower(
-          link: _layerLink,
-          showWhenUnlinked: false,
-          offset: Offset(0, size.height + 4.h),
-          child: Material(
-            elevation: 8,
-            borderRadius: BorderRadius.circular(14.r),
-            color: AppColors.surface,
-            shadowColor: Colors.black26,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(maxHeight: 250.h),
-              child: ListView.builder(
-                padding: EdgeInsets.symmetric(vertical: 4.h),
-                shrinkWrap: true,
-                itemCount: _suggestions.length,
-                itemBuilder: (context, index) {
-                  final result = _suggestions[index];
-                  return _SuggestionTile(
-                    result: result,
-                    cityOnly: widget.cityOnly,
-                    accentColor: widget.accentColor ?? AppColors.primary,
-                    onTap: () => _selectSuggestion(result),
-                  );
-                },
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final accent = widget.accentColor ?? AppColors.primary;
     final fill = widget.fillColor ?? accent.withValues(alpha: 0.06);
     final hasError = _errorText != null;
 
-    return CompositedTransformTarget(
-      link: _layerLink,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (widget.label != null) ...[
-            Text(
-              widget.label!,
-              style: TextStyle(
-                fontSize: 13.sp,
-                fontWeight: FontWeight.w600,
-                color: hasError
-                    ? AppColors.error
-                    : accent.withValues(alpha: 0.8),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (widget.label != null) ...[
+          Text(
+            widget.label!,
+            style: TextStyle(
+              fontSize: 13.sp,
+              fontWeight: FontWeight.w600,
+              color: hasError ? AppColors.error : accent.withValues(alpha: 0.8),
+            ),
+          ),
+          SizedBox(height: 8.h),
+        ],
+        TypeAheadField<SearchResult>(
+          controller: _controller,
+          focusNode: _focusNode,
+          debounceDuration: const Duration(milliseconds: 500),
+          hideOnEmpty: true,
+          hideOnError: true,
+          hideOnLoading: false,
+          retainOnLoading: true,
+          suggestionsCallback: _suggestionsFor,
+          onSelected: _selectSuggestion,
+          itemBuilder: (context, result) => _SuggestionTile(
+            result: result,
+            cityOnly: widget.cityOnly,
+            accentColor: accent,
+          ),
+          loadingBuilder: (context) => Padding(
+            padding: EdgeInsets.all(16.w),
+            child: Center(
+              child: SizedBox(
+                width: 20.w,
+                height: 20.w,
+                child: CircularProgressIndicator.adaptive(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(accent),
+                ),
               ),
             ),
-            SizedBox(height: 8.h),
-          ],
-          Container(
+          ),
+          emptyBuilder: (context) => const SizedBox.shrink(),
+          decorationBuilder: (context, child) => Material(
+            elevation: 8,
+            borderRadius: BorderRadius.circular(14.r),
+            color: AppColors.surface,
+            shadowColor: Colors.black26,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: 250.h),
+              child: child,
+            ),
+          ),
+          builder: (context, controller, focusNode) => Container(
             decoration: BoxDecoration(
               color: fill,
               borderRadius: BorderRadius.circular(14.r),
@@ -298,8 +269,8 @@ class AddressAutocompleteFieldState
                   child: Semantics(
                     label: widget.label ?? 'Address',
                     child: TextField(
-                      controller: _controller,
-                      focusNode: _focusNode,
+                      controller: controller,
+                      focusNode: focusNode,
                       enabled: widget.enabled,
                       style: TextStyle(
                         fontSize: 15.sp,
@@ -322,7 +293,7 @@ class AddressAutocompleteFieldState
                           vertical: 14.h,
                         ),
                       ),
-                      onChanged: _onSearchChanged,
+                      onChanged: _onTextChanged,
                     ),
                   ),
                 ),
@@ -351,16 +322,16 @@ class AddressAutocompleteFieldState
               ],
             ),
           ),
-          if (hasError)
-            Padding(
-              padding: EdgeInsets.only(top: 6.h, left: 12.w),
-              child: Text(
-                _errorText!,
-                style: TextStyle(fontSize: 12.sp, color: AppColors.error),
-              ),
-            ).animate().fadeIn(duration: 200.ms).slideY(begin: -0.3),
-        ],
-      ),
+        ),
+        if (hasError)
+          Padding(
+            padding: EdgeInsets.only(top: 6.h, left: 12.w),
+            child: Text(
+              _errorText!,
+              style: TextStyle(fontSize: 12.sp, color: AppColors.error),
+            ),
+          ).animate().fadeIn(duration: 200.ms).slideY(begin: -0.3),
+      ],
     );
   }
 }
@@ -372,69 +343,73 @@ class _SuggestionTile extends StatelessWidget {
     required this.result,
     required this.cityOnly,
     required this.accentColor,
-    required this.onTap,
   });
   final SearchResult result;
   final bool cityOnly;
   final Color accentColor;
-  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final parts = result.displayName
+        .split(',')
+        .map((part) => part.trim())
+        .where((part) => part.isNotEmpty)
+        .toList();
     final primary = cityOnly
-        ? (result.city ?? result.displayName.split(',').first)
-        : result.displayName.split(',').first;
-    final secondary = result.displayName.split(',').skip(1).join(',').trim();
+        ? ((result.city?.trim().isNotEmpty ?? false)
+              ? result.city!.trim()
+              : (parts.isEmpty ? result.displayName.trim() : parts.first))
+        : (parts.isEmpty ? result.displayName.trim() : parts.first);
+    final secondaryParts = cityOnly
+        ? parts.where((part) => part.toLowerCase() != primary.toLowerCase())
+        : parts.skip(1);
+    final secondary = secondaryParts.join(', ').trim();
 
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(10.r),
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
-        child: Row(
-          children: [
-            Container(
-              padding: EdgeInsets.all(8.w),
-              decoration: BoxDecoration(
-                color: accentColor.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                cityOnly ? Icons.location_city : Icons.place_rounded,
-                color: accentColor,
-                size: 16.sp,
-              ),
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(8.w),
+            decoration: BoxDecoration(
+              color: accentColor.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
             ),
-            SizedBox(width: 12.w),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+            child: Icon(
+              cityOnly ? Icons.location_city : Icons.place_rounded,
+              color: accentColor,
+              size: 16.sp,
+            ),
+          ),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  primary,
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (secondary.isNotEmpty)
                   Text(
-                    primary,
+                    secondary,
                     style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
+                      fontSize: 12.sp,
+                      color: AppColors.textSecondary,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  if (secondary.isNotEmpty)
-                    Text(
-                      secondary,
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        color: AppColors.textSecondary,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                ],
-              ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

@@ -1,3 +1,4 @@
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -18,22 +19,16 @@ class ManagePaymentMethodsScreen extends ConsumerWidget {
     ref.listen(customerSheetViewModelProvider, (prev, next) {
       if (next.errorMessage != null &&
           prev?.errorMessage != next.errorMessage) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.errorMessage!),
-            backgroundColor: AppColors.error,
-          ),
+        AdaptiveSnackBar.show(
+          context,
+          message: next.errorMessage!,
+          type: AdaptiveSnackBarType.error,
         );
       }
     });
 
-    return Scaffold(
-      backgroundColor: AppColors.scaffoldBg,
-      appBar: AppBar(
-        backgroundColor: AppColors.background,
-        elevation: 0,
-        scrolledUnderElevation: 1,
-        shadowColor: AppColors.borderLight,
+    return AdaptiveScaffold(
+      appBar: AdaptiveAppBar(
         leading: IconButton(
           onPressed: () => context.pop(),
           icon: Icon(
@@ -42,14 +37,7 @@ class ManagePaymentMethodsScreen extends ConsumerWidget {
             size: 22.sp,
           ),
         ),
-        title: Text(
-          l10n.settingsPaymentMethods,
-          style: TextStyle(
-            color: AppColors.textPrimary,
-            fontSize: 18.sp,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        title: l10n.settingsPaymentMethods,
       ),
       body: Padding(
         padding: EdgeInsets.all(20.w),

@@ -1,3 +1,5 @@
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +10,7 @@ import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/address_autocomplete_field.dart';
+import 'package:sport_connect/core/widgets/glass_panel.dart';
 import 'package:sport_connect/core/widgets/intl_phone_input.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
@@ -15,10 +18,51 @@ import 'package:sport_connect/features/auth/view_models/onboarding_view_model.da
 import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
-/// Driver Onboarding Screen - Multi-step wizard for new drivers
-/// Step 1: Complete driver profile (name, phone, city, gender, DOB)
-/// Step 2: Add vehicle information
-/// Step 3: Setup Stripe for payouts
+abstract final class _PF {
+  static const name = 'name';
+  static const gender = 'gender';
+  static const dob = 'dob';
+  static const expertise = 'expertise';
+  static const terms = 'terms';
+}
+
+abstract final class _VF {
+  static const make = 'make';
+  static const model = 'model';
+  static const year = 'year';
+  static const color = 'color';
+  static const licensePlate = 'license_plate';
+  static const seats = 'seats';
+  static const fuelType = 'fuel_type';
+}
+
+DateTime _dateOnly(DateTime value) =>
+    DateTime(value.year, value.month, value.day);
+
+DateTime _adultCutoffDate({int years = 18}) {
+  final today = DateTime.now();
+  return DateTime(today.year - years, today.month, today.day);
+}
+
+DateTime _hiddenDatePickerCurrentDate() => DateTime(1900);
+
+bool _isAtLeastAge(DateTime value, {int years = 18}) {
+  final birthDate = _dateOnly(value);
+  final cutoff = _adultCutoffDate(years: years);
+  return !birthDate.isAfter(cutoff);
+}
+
+String? _normalizeGenderValue(String? value) {
+  switch (value?.trim().toLowerCase()) {
+    case 'male':
+      return 'Male';
+    case 'female':
+      return 'Female';
+    default:
+      return null;
+  }
+}
+
 class DriverOnboardingScreen extends ConsumerStatefulWidget {
   const DriverOnboardingScreen({super.key});
 
@@ -29,9 +73,9 @@ class DriverOnboardingScreen extends ConsumerStatefulWidget {
 
 class _DriverOnboardingScreenState
     extends ConsumerState<DriverOnboardingScreen> {
-  // ── Profile form (Step 0) ──────────────────────────────────────────
+  // ── Profile form (Step 0) ────────────────────────────────────────────
   final _profileForm = FormGroup({
-    'name': FormControl<String>(
+    _PF.name: FormControl<String>(
       validators: [
         Validators.required,
         Validators.minLength(2),
@@ -50,36 +94,36 @@ class _DriverOnboardingScreenState
         }),
       ],
     ),
-    'gender': FormControl<String>(validators: [Validators.required]),
-    'dob': FormControl<DateTime>(
+    _PF.gender: FormControl<String>(validators: [Validators.required]),
+    _PF.dob: FormControl<DateTime>(
       validators: [
         Validators.required,
         Validators.delegate((control) {
           final value = control.value as DateTime?;
           if (value == null) return null;
-          final age = DateTime.now().difference(value).inDays ~/ 365;
-          if (age < 18) return {'minAge': true};
+          if (!_isAtLeastAge(value)) return {'minAge': true};
           return null;
         }),
       ],
     ),
-    'expertise': FormControl<Expertise>(
+    _PF.expertise: FormControl<Expertise>(
       value: Expertise.rookie,
       validators: [Validators.required],
     ),
-    'terms': FormControl<bool>(
+    _PF.terms: FormControl<bool>(
       value: false,
       validators: [Validators.requiredTrue],
     ),
   });
+
   final _phoneKey = GlobalKey<IntlPhoneInputState>();
   final _cityKey = GlobalKey<AddressAutocompleteFieldState>();
 
-  // ── Vehicle form (Step 1) ──────────────────────────────────────────────────
+  // ── Vehicle form (Step 1) ───────────────────────────────────────────
   final _vehicleForm = FormGroup({
-    'make': FormControl<String>(validators: [Validators.required]),
-    'model': FormControl<String>(validators: [Validators.required]),
-    'year': FormControl<String>(
+    _VF.make: FormControl<String>(validators: [Validators.required]),
+    _VF.model: FormControl<String>(validators: [Validators.required]),
+    _VF.year: FormControl<String>(
       validators: [
         Validators.required,
         Validators.delegate((control) {
@@ -95,8 +139,8 @@ class _DriverOnboardingScreenState
         }),
       ],
     ),
-    'color': FormControl<String>(validators: [Validators.required]),
-    'license_plate': FormControl<String>(
+    _VF.color: FormControl<String>(validators: [Validators.required]),
+    _VF.licensePlate: FormControl<String>(
       validators: [
         Validators.required,
         Validators.delegate((control) {
@@ -116,7 +160,7 @@ class _DriverOnboardingScreenState
         }),
       ],
     ),
-    'seats': FormControl<String>(
+    _VF.seats: FormControl<String>(
       validators: [
         Validators.required,
         Validators.delegate((control) {
@@ -132,10 +176,10 @@ class _DriverOnboardingScreenState
         }),
       ],
     ),
-    'fuel_type': FormControl<FuelType>(value: FuelType.gasoline),
+    _VF.fuelType: FormControl<FuelType>(value: FuelType.gasoline),
   });
 
-  final List<FuelType> _fuelTypes = [
+  static const List<FuelType> _fuelTypes = [
     FuelType.gasoline,
     FuelType.diesel,
     FuelType.electric,
@@ -145,29 +189,76 @@ class _DriverOnboardingScreenState
     FuelType.other,
   ];
 
-  bool _didScheduleProfilePrefill = false;
-  bool _didScheduleSkipProfileEntry = false;
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
+      final user = ref.read(currentUserProvider).value;
+      if (user == null) return;
+
+      final skipProfileStep = _skipProfileStep(context);
+      final notifier = ref.read(onboardingViewModelProvider.notifier);
+      final state = ref.read(onboardingViewModelProvider);
+
+      if (!state.driverProfilePopulated) {
+        notifier.markDriverProfilePopulated();
+        _populateProfileFields(user);
+      }
+
+      if (skipProfileStep && state.driverCurrentStep == 0) {
+        notifier.setDriverCurrentStep(1);
+      }
+    });
+  }
 
   bool _skipProfileStep(BuildContext context) {
     final state = GoRouterState.of(context);
     return state.uri.queryParameters['skipProfile'] == 'true';
   }
 
-  int _effectiveStep(OnboardingState vmState, bool skipProfileStep) {
+  /// Computes the correct effective step, accounting for:
+  /// - skipProfile flag (profile already filled → skip to vehicle)
+  /// - driver already having vehicles (refresh at stripe step → jump to stripe)
+  int _effectiveStep(
+    OnboardingState vmState,
+    bool skipProfileStep,
+    UserModel? currentUser,
+  ) {
+    final driver = currentUser is DriverModel ? currentUser : null;
+
+    // If driver already has vehicles, they must be on the stripe step.
+    if (driver != null && driver.vehicleIds.isNotEmpty) {
+      // Sync the VM step so back-button logic is also correct.
+      if (vmState.driverCurrentStep < 2) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            ref
+                .read(onboardingViewModelProvider.notifier)
+                .setDriverCurrentStep(2);
+          }
+        });
+        return 2;
+      }
+      return vmState.driverCurrentStep;
+    }
+
+    // Profile already filled but no vehicles yet → vehicle step.
     if (skipProfileStep && vmState.driverCurrentStep == 0) {
       return 1;
     }
+
     return vmState.driverCurrentStep;
   }
 
   // ── Navigation helpers ──────────────────────────────────────────────
 
   void _nextStep(OnboardingState vmState) {
-    // Validate the current step before advancing.
     if (vmState.driverCurrentStep == 0) {
       _profileForm.markAllAsTouched();
       if (!_profileForm.valid) return;
-      // Also validate phone and city widgets
       final phoneError = _phoneKey.currentState?.validate();
       if (phoneError != null) return;
       final cityError = _cityKey.currentState?.validate();
@@ -183,13 +274,15 @@ class _DriverOnboardingScreenState
   }
 
   void _previousStep(OnboardingState vmState, {required bool skipProfileStep}) {
-    final currentStep = _effectiveStep(vmState, skipProfileStep);
-    if (skipProfileStep && currentStep <= 1) {
+    final currentUser = ref.read(currentUserProvider).value;
+    final effectiveStep = _effectiveStep(vmState, skipProfileStep, currentUser);
+
+    if (skipProfileStep && effectiveStep <= 1) {
       context.go(AppRoutes.roleSelection.path);
       return;
     }
 
-    if (currentStep > 0) {
+    if (effectiveStep > 0) {
       ref.read(onboardingViewModelProvider.notifier).retreatDriverStep();
     }
   }
@@ -197,47 +290,60 @@ class _DriverOnboardingScreenState
   // ── Profile helpers (Step 0) ───────────────────────────────────────
 
   void _populateProfileFields(UserModel user) {
+    final existingName = _profileForm.control(_PF.name).value as String?;
+    final existingGender = _profileForm.control(_PF.gender).value as String?;
+    final existingDob = _profileForm.control(_PF.dob).value as DateTime?;
+    final patchedName = (user.username).trim();
+    final patchedGender = switch (user) {
+      DriverModel(:final gender) => _normalizeGenderValue(gender),
+      RiderModel(:final gender) => _normalizeGenderValue(gender),
+      _ => null,
+    };
+    final patchedDob = switch (user) {
+      DriverModel(:final dateOfBirth) => dateOfBirth,
+      RiderModel(:final dateOfBirth) => dateOfBirth,
+      _ => null,
+    };
+
     _profileForm.patchValue({
-      'name': user.displayName,
-      'gender': user.gender,
-      'dob': user.dateOfBirth,
-      'expertise': user.expertise,
+      _PF.name: patchedName.isNotEmpty ? patchedName : existingName,
+      _PF.gender: patchedGender ?? existingGender,
+      _PF.dob: patchedDob ?? existingDob,
+      _PF.expertise: user.expertise,
     });
   }
 
   Future<void> _saveProfileAndContinue() async {
     _profileForm.markAllAsTouched();
     if (!_profileForm.valid) return;
-    final values = _profileForm.value;
 
+    final phoneError = _phoneKey.currentState?.validate();
+    if (phoneError != null) return;
+
+    final cityError = _cityKey.currentState?.validate();
+    if (cityError != null) return;
+
+    final values = _profileForm.value;
     final currentUser = ref.read(currentUserProvider).value;
     if (currentUser == null) return;
 
-    final updatedUser = currentUser.map(
-      rider: (rider) => rider, // Should not reach this in driver flow
-      driver: (driver) => driver.copyWith(
-        displayName: values['name'] as String,
-        phoneNumber:
-            (ref
-                    .read(onboardingViewModelProvider)
-                    .driverPhoneNumber
-                    ?.isNotEmpty ??
-                false)
-            ? ref.read(onboardingViewModelProvider).driverPhoneNumber
-            : null,
-        city:
-            ref.read(onboardingViewModelProvider).driverCity ??
-            _cityKey.currentState?.text ??
-            '',
-        gender: values['gender'] as String?,
-        dateOfBirth: values['dob'] as DateTime?,
-        expertise: (values['expertise'] as Expertise?) ?? Expertise.rookie,
-      ),
-    );
+    final vmState = ref.read(onboardingViewModelProvider);
+    final dateOfBirth = values[_PF.dob] as DateTime?;
+    final profileUpdates = <String, dynamic>{
+      'username': (values[_PF.name] as String? ?? '').trim(),
+      'phoneNumber': (vmState.driverPhoneNumber?.isNotEmpty ?? false)
+          ? vmState.driverPhoneNumber
+          : null,
+      'city': vmState.driverCity ?? _cityKey.currentState?.text ?? '',
+      'gender': values[_PF.gender] as String?,
+      'dateOfBirth': dateOfBirth == null ? null : _dateOnly(dateOfBirth),
+      'expertise':
+          ((values[_PF.expertise] as Expertise?) ?? Expertise.rookie).name,
+    };
 
     await ref
         .read(onboardingViewModelProvider.notifier)
-        .saveDriverProfile(updatedUser.uid, updatedUser.toJson());
+        .saveDriverProfile(currentUser.uid, profileUpdates);
   }
 
   // ── Vehicle + Stripe helpers ───────────────────────────────────────
@@ -250,21 +356,18 @@ class _DriverOnboardingScreenState
     final currentUser = ref.read(currentUserProvider).value;
     if (currentUser == null) return;
 
-    final driver = currentUser.asDriver;
-    if (driver == null) return;
-
     final vehicle = VehicleModel(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
-      ownerId: driver.uid,
-      ownerName: driver.displayName,
-      ownerPhotoUrl: driver.photoUrl,
-      make: values['make'] as String,
-      model: values['model'] as String,
-      year: int.parse(values['year'] as String),
-      color: values['color'] as String,
-      licensePlate: values['license_plate'] as String,
-      capacity: int.parse(values['seats'] as String),
-      fuelType: values['fuel_type'] as FuelType,
+      ownerId: currentUser.uid,
+      ownerName: currentUser.username,
+      ownerPhotoUrl: currentUser.photoUrl,
+      make: (values[_VF.make] as String?)!,
+      model: (values[_VF.model] as String?)!,
+      year: int.parse((values[_VF.year] as String?)!),
+      color: (values[_VF.color] as String?)!,
+      licensePlate: (values[_VF.licensePlate] as String?)!,
+      capacity: int.parse((values[_VF.seats] as String?)!),
+      fuelType: (values[_VF.fuelType] as FuelType?)!,
       isActive: true,
     );
 
@@ -280,74 +383,70 @@ class _DriverOnboardingScreenState
   }
 
   @override
+  void dispose() {
+    _profileForm.dispose();
+    _vehicleForm.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Pre-populate profile fields from the current user (once).
-    final userAsync = ref.watch(currentUserProvider);
-    final user = userAsync.value;
+    final currentUser = ref.watch(currentUserProvider).value;
     final vmState = ref.watch(onboardingViewModelProvider);
     final skipProfileStep = _skipProfileStep(context);
-    final effectiveStep = _effectiveStep(vmState, skipProfileStep);
+    final effectiveStep = _effectiveStep(vmState, skipProfileStep, currentUser);
 
-    if (skipProfileStep &&
-        vmState.driverCurrentStep == 0 &&
-        !_didScheduleSkipProfileEntry) {
-      _didScheduleSkipProfileEntry = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        final notifier = ref.read(onboardingViewModelProvider.notifier);
+    ref.listen(currentUserProvider, (prev, next) {
+      final user = next.value;
+      if (user == null) return;
+
+      final notifier = ref.read(onboardingViewModelProvider.notifier);
+      final state = ref.read(onboardingViewModelProvider);
+
+      if (!state.driverProfilePopulated) {
         notifier.markDriverProfilePopulated();
-        notifier.setDriverCurrentStep(1);
-      });
-    }
-
-    if (!skipProfileStep &&
-        !_didScheduleProfilePrefill &&
-        !vmState.driverProfilePopulated &&
-        user != null) {
-      _didScheduleProfilePrefill = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        ref
-            .read(onboardingViewModelProvider.notifier)
-            .markDriverProfilePopulated();
         _populateProfileFields(user);
-      });
-    }
+      } else {
+        // Keep name/gender/dob in sync if user data arrives slightly later.
+        _populateProfileFields(user);
+      }
 
-    // React to ViewModel completed actions & errors.
+      if (skipProfileStep && state.driverCurrentStep == 0) {
+        notifier.setDriverCurrentStep(1);
+      }
+    });
+
     ref.listen(onboardingViewModelProvider, (prev, next) {
       final action = next.completedAction;
       if (action != null && action != prev?.completedAction) {
         switch (action) {
-          case 'profileSaved':
-          case 'vehicleSaved':
+          case OnboardingAction.profileSaved:
+          case OnboardingAction.vehicleSaved:
             _nextStep(next);
-          case 'finalizedStripe':
+            break;
+          case OnboardingAction.finalizedStripe:
             context.go(AppRoutes.driverStripeOnboarding.path);
-          case 'finalized':
+            break;
+          case OnboardingAction.finalized:
             context.go(AppRoutes.driverHome.path);
+            break;
+          default:
+            break;
         }
       }
+
       if (next.errorMessage != null &&
           next.errorMessage != prev?.errorMessage) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.errorMessage!),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12.r),
-            ),
-          ),
+        AdaptiveSnackBar.show(
+          context,
+          message: next.errorMessage!,
+          type: AdaptiveSnackBarType.error,
         );
       }
     });
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.background,
-        elevation: 0,
+    return AdaptiveScaffold(
+      appBar: AdaptiveAppBar(
         leading: effectiveStep > 0
             ? IconButton(
                 tooltip: AppLocalizations.of(context).previousStepTooltip,
@@ -368,133 +467,161 @@ class _DriverOnboardingScreenState
                   size: 20.sp,
                 ),
               ),
-        title: Text(
-          AppLocalizations.of(context).driverSetup,
-          style: TextStyle(
-            fontSize: 18.sp,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        centerTitle: true,
+        title: AppLocalizations.of(context).driverSetup,
       ),
-      body: Column(
-        children: [
-          // Progress indicator
-          _buildProgressIndicator(
-            vmState,
-            skipProfileStep: skipProfileStep,
-            effectiveStep: effectiveStep,
-          ),
-
-          // Page content
-          Expanded(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 250),
-              child: KeyedSubtree(
-                key: ValueKey(effectiveStep),
-                child: switch (effectiveStep) {
-                  0 => _buildProfileStep(vmState),
-                  1 => _buildVehicleStep(vmState),
-                  _ => _buildStripeStep(),
-                },
+      body: SafeArea(
+        top: false,
+        child: Column(
+          children: [
+            _buildProgressIndicator(
+              vmState,
+              skipProfileStep: skipProfileStep,
+              effectiveStep: effectiveStep,
+            ),
+            Expanded(
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 300),
+                transitionBuilder: (child, animation) => FadeTransition(
+                  opacity: animation,
+                  child: SlideTransition(
+                    position:
+                        Tween<Offset>(
+                          begin: const Offset(0.04, 0),
+                          end: Offset.zero,
+                        ).animate(
+                          CurvedAnimation(
+                            parent: animation,
+                            curve: Curves.easeOut,
+                          ),
+                        ),
+                    child: child,
+                  ),
+                ),
+                child: KeyedSubtree(
+                  key: ValueKey(effectiveStep),
+                  child: switch (effectiveStep) {
+                    0 => _buildProfileStep(vmState, currentUser),
+                    1 => _buildVehicleStep(vmState),
+                    _ => _buildStripeStep(vmState),
+                  },
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
+
+  // ── Step progress bar ──────────────────────────────────────────────
 
   Widget _buildProgressIndicator(
     OnboardingState vmState, {
     required bool skipProfileStep,
     required int effectiveStep,
   }) {
-    if (skipProfileStep) {
-      return Padding(
-        padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
-        child: Row(
-          children: [
-            _buildStepIndicator(
-              1,
+    final steps = skipProfileStep
+        ? [
+            (
               AppLocalizations.of(context).vehicle,
               Icons.directions_car_outlined,
-              effectiveStep,
+              1,
             ),
-            Expanded(
-              child: Container(
-                height: 2,
-                margin: EdgeInsets.symmetric(horizontal: 8.w),
-                decoration: BoxDecoration(
-                  color: effectiveStep >= 2
-                      ? AppColors.primary
-                      : AppColors.border,
-                  borderRadius: BorderRadius.circular(1),
-                ),
-              ),
-            ),
-            _buildStepIndicator(
-              2,
+            (
               AppLocalizations.of(context).payouts,
               Icons.account_balance_outlined,
-              effectiveStep,
+              2,
             ),
-          ],
-        ),
-      );
-    }
+          ]
+        : [
+            (
+              AppLocalizations.of(context).navProfile,
+              Icons.person_outline_rounded,
+              0,
+            ),
+            (
+              AppLocalizations.of(context).vehicle,
+              Icons.directions_car_outlined,
+              1,
+            ),
+            (
+              AppLocalizations.of(context).payouts,
+              Icons.account_balance_outlined,
+              2,
+            ),
+          ];
 
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
-      child: Row(
+      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+      child: Column(
         children: [
-          _buildStepIndicator(
-            0,
-            AppLocalizations.of(context).navProfile,
-            Icons.person_outline_rounded,
-            effectiveStep,
+          Row(
+            children: [
+              for (int i = 0; i < steps.length; i++) ...[
+                _buildStepIndicator(
+                  steps[i].$3,
+                  steps[i].$1,
+                  steps[i].$2,
+                  effectiveStep,
+                ),
+                if (i < steps.length - 1)
+                  Expanded(
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 400),
+                      height: 2,
+                      margin: EdgeInsets.symmetric(horizontal: 6.w),
+                      decoration: BoxDecoration(
+                        gradient: effectiveStep > steps[i].$3
+                            ? const LinearGradient(
+                                colors: [
+                                  AppColors.primary,
+                                  AppColors.primaryLight,
+                                ],
+                              )
+                            : null,
+                        color: effectiveStep > steps[i].$3
+                            ? null
+                            : AppColors.border,
+                        borderRadius: BorderRadius.circular(1),
+                      ),
+                    ),
+                  ),
+              ],
+            ],
           ),
-          Expanded(
-            child: Container(
-              height: 2,
-              margin: EdgeInsets.symmetric(horizontal: 8.w),
-              decoration: BoxDecoration(
-                color: effectiveStep >= 1
-                    ? AppColors.primary
-                    : AppColors.border,
-                borderRadius: BorderRadius.circular(1),
+          SizedBox(height: 8.h),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                _stepSubtitle(effectiveStep),
+                style: TextStyle(
+                  fontSize: 11.sp,
+                  color: AppColors.textSecondary,
+                ),
               ),
-            ),
-          ),
-          _buildStepIndicator(
-            1,
-            AppLocalizations.of(context).vehicle,
-            Icons.directions_car_outlined,
-            effectiveStep,
-          ),
-          Expanded(
-            child: Container(
-              height: 2,
-              margin: EdgeInsets.symmetric(horizontal: 8.w),
-              decoration: BoxDecoration(
-                color: effectiveStep >= 2
-                    ? AppColors.primary
-                    : AppColors.border,
-                borderRadius: BorderRadius.circular(1),
+              Text(
+                skipProfileStep
+                    ? 'Step ${effectiveStep - 1 + 1} of 2'
+                    : 'Step ${effectiveStep + 1} of 3',
+                style: TextStyle(
+                  fontSize: 11.sp,
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ),
-          ),
-          _buildStepIndicator(
-            2,
-            AppLocalizations.of(context).payouts,
-            Icons.account_balance_outlined,
-            effectiveStep,
+            ],
           ),
         ],
       ),
     );
   }
+
+  String _stepSubtitle(int step) => switch (step) {
+    0 => 'Tell us about yourself',
+    1 => 'Add your vehicle details',
+    _ => 'Connect your payout account',
+  };
 
   Widget _buildStepIndicator(
     int step,
@@ -502,33 +629,52 @@ class _DriverOnboardingScreenState
     IconData icon,
     int currentStep,
   ) {
+    final isCompleted = currentStep > step;
     final isActive = currentStep >= step;
     final isCurrent = currentStep == step;
 
     return Column(
       children: [
         AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: EdgeInsets.all(12.w),
+          duration: const Duration(milliseconds: 300),
+          width: isCurrent ? 44.w : 40.w,
+          height: isCurrent ? 44.w : 40.w,
           decoration: BoxDecoration(
-            color: isActive ? AppColors.primary : AppColors.surfaceVariant,
+            gradient: isActive
+                ? const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [AppColors.primaryLight, AppColors.primary],
+                  )
+                : null,
+            color: isActive ? null : AppColors.surfaceVariant,
             shape: BoxShape.circle,
-            border: isCurrent
-                ? Border.all(color: AppColors.primaryLight, width: 2)
+            boxShadow: isCurrent
+                ? [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
                 : null,
           ),
-          child: Icon(
-            icon,
-            color: isActive ? Colors.white : AppColors.textTertiary,
-            size: 20.sp,
+          child: Center(
+            child: isCompleted
+                ? Icon(Icons.check_rounded, color: Colors.white, size: 18.sp)
+                : Icon(
+                    icon,
+                    color: isActive ? Colors.white : AppColors.textTertiary,
+                    size: 18.sp,
+                  ),
           ),
         ),
-        SizedBox(height: 6.h),
+        SizedBox(height: 5.h),
         Text(
           label,
           style: TextStyle(
-            fontSize: 12.sp,
-            fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+            fontSize: 10.sp,
+            fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w400,
             color: isActive ? AppColors.textPrimary : AppColors.textTertiary,
           ),
         ),
@@ -536,180 +682,403 @@ class _DriverOnboardingScreenState
     );
   }
 
-  // ── Step 0: Profile ─────────────────────────────────────────────────
+  // ── Section label helper ──────────────────────────────────────────
 
-  Widget _buildProfileStep(OnboardingState vmState) {
+  Widget _sectionLabel(String text) => Padding(
+    padding: EdgeInsets.only(bottom: 10.h, top: 4.h),
+    child: Text(
+      text.toUpperCase(),
+      style: TextStyle(
+        fontSize: 11.sp,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 1.1,
+        color: AppColors.textSecondary,
+      ),
+    ),
+  );
+
+  // ── Step 0: Profile ────────────────────────────────────────────────
+
+  Widget _buildProfileStep(OnboardingState vmState, UserModel? currentUser) {
     final l10n = AppLocalizations.of(context);
+    final displayName = (currentUser?.username ?? '').trim();
+    final photoUrl = currentUser?.photoUrl;
+    final hasPhoto = photoUrl != null && photoUrl.isNotEmpty;
+    final needsManualName = displayName.isEmpty;
 
     return SingleChildScrollView(
-      padding: EdgeInsets.all(24.w),
+      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
       child: ReactiveForm(
         formGroup: _profileForm,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
-            _buildStepHeader(
-              icon: Icons.person_add_alt_1_rounded,
-              title: l10n.driverProfileTitle,
-              subtitle: l10n.driverProfileSubtitle,
+            // ── Header panel ─────────────────────────────────────────────
+            GlassPanel(
+              padding: EdgeInsets.all(16.w),
+              color: AppColors.surface.withValues(alpha: 0.62),
+              borderColor: AppColors.primary.withValues(alpha: 0.2),
+              child: Row(
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(12.w),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(14.r),
+                    ),
+                    child: Icon(
+                      Icons.drive_eta_rounded,
+                      color: AppColors.primary,
+                      size: 28.sp,
+                    ),
+                  ),
+                  SizedBox(width: 16.w),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          l10n.driverProfileTitle,
+                          style: TextStyle(
+                            fontSize: 18.sp,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        SizedBox(height: 4.h),
+                        Text(
+                          l10n.driverProfileSubtitle,
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            height: 1.4,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ).animate().fadeIn(duration: 400.ms),
 
             SizedBox(height: 24.h),
 
-            // Full name
-            ReactiveTextField<String>(
-              formControlName: 'name',
-              decoration: InputDecoration(
-                labelText: l10n.authFullName,
-                hintText: l10n.authFullNameHint,
-                prefixIcon: const Icon(Icons.person_rounded),
-              ),
-              textInputAction: TextInputAction.next,
-              validationMessages: {
-                ValidationMessage.required: (_) =>
-                    AppLocalizations.of(context).nameRequiredError,
-                ValidationMessage.minLength: (_) =>
-                    AppLocalizations.of(context).nameMinLengthError,
-                ValidationMessage.maxLength: (_) => 'Name is too long',
-                'name': (error) => error as String,
-              },
-            ).animate().fadeIn(duration: 400.ms, delay: 50.ms),
+            // ── Section: Identity ────────────────────────────────────────
+            _sectionLabel('Your Identity'),
 
-            SizedBox(height: 16.h),
-
-            // Phone (optional) — International phone input
-            IntlPhoneInput(
-              key: _phoneKey,
-              label: l10n.authPhoneOptional,
-              hint: l10n.authPhoneHint,
-              accentColor: AppColors.primary,
-              fillColor: AppColors.primary.withValues(alpha: 0.06),
-              onChanged: (phone) => ref
-                  .read(onboardingViewModelProvider.notifier)
-                  .setDriverDraftContact(
-                    phoneNumber: phone.isValid ? phone.fullNumber : null,
+            if (!needsManualName) ...[
+              _buildNameDisplay(displayName, hasPhoto, photoUrl),
+            ] else ...[
+              ReactiveTextField<String>(
+                    formControlName: _PF.name,
+                    textInputAction: TextInputAction.next,
+                    decoration: InputDecoration(
+                      labelText: l10n.authFullName,
+                      hintText: 'Enter your full name',
+                      prefixIcon: const Icon(Icons.person_outline_rounded),
+                      helperText: 'We could not read your name from sign-in.',
+                    ),
+                    validationMessages: {
+                      ValidationMessage.required: (_) =>
+                          'Please enter your name',
+                      ValidationMessage.minLength: (_) =>
+                          'Name must be at least 2 characters',
+                      ValidationMessage.maxLength: (_) =>
+                          'Name must be at most 60 characters',
+                      'name': (error) => error as String,
+                    },
+                  )
+                  .animate()
+                  .fadeIn(duration: 300.ms, delay: 30.ms)
+                  .slideY(
+                    begin: 0.04,
+                    end: 0,
                   ),
-            ).animate().fadeIn(duration: 400.ms, delay: 100.ms),
+            ],
 
-            SizedBox(height: 16.h),
+            SizedBox(height: 20.h),
 
-            // City — Autocomplete with Nominatim
-            AddressAutocompleteField(
-              key: _cityKey,
-              label: l10n.driverCityLabel,
-              hint: l10n.driverCityHint,
-              cityOnly: true,
-              accentColor: AppColors.primary,
-              onSelected: (result) => ref
-                  .read(onboardingViewModelProvider.notifier)
-                  .setDriverDraftContact(city: result.address),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return l10n.driverCityLabel;
-                }
-                return null;
-              },
-            ).animate().fadeIn(duration: 400.ms, delay: 150.ms),
+            // ── Section: Personal Details ────────────────────────────────
+            _sectionLabel('Personal Details'),
 
-            SizedBox(height: 16.h),
-
-            // Gender dropdown
-            ReactiveDropdownField<String>(
-              formControlName: 'gender',
-              decoration: InputDecoration(labelText: l10n.gender),
-              items: [
-                DropdownMenuItem(
-                  value: 'Male',
-                  child: Text(AppLocalizations.of(context).genderMale),
+            Row(
+              children: [
+                Expanded(
+                  child:
+                      ReactiveDropdownField<String>(
+                            formControlName: _PF.gender,
+                            decoration: InputDecoration(labelText: l10n.gender),
+                            items: [
+                              DropdownMenuItem(
+                                value: 'Male',
+                                child: Text(l10n.genderMale),
+                              ),
+                              DropdownMenuItem(
+                                value: 'Female',
+                                child: Text(l10n.genderFemale),
+                              ),
+                            ],
+                            validationMessages: {
+                              ValidationMessage.required: (_) =>
+                                  l10n.driverGenderRequired,
+                            },
+                          )
+                          .animate()
+                          .fadeIn(duration: 300.ms, delay: 60.ms)
+                          .slideY(begin: 0.04, end: 0),
                 ),
-                DropdownMenuItem(
-                  value: 'Female',
-                  child: Text(AppLocalizations.of(context).genderFemale),
+                SizedBox(width: 12.w),
+                Expanded(
+                  child:
+                      ReactiveDatePicker<DateTime>(
+                            formControlName: _PF.dob,
+                            firstDate: DateTime(1950),
+                            lastDate: _adultCutoffDate(),
+                            currentDate: _hiddenDatePickerCurrentDate(),
+                            builder: (context, picker, child) {
+                              final value = picker.value;
+                              final control = picker.control;
+                              final showError =
+                                  control.touched && control.invalid;
+                              String? errorText;
+
+                              if (showError) {
+                                if (control.hasError(
+                                  ValidationMessage.required,
+                                )) {
+                                  errorText = l10n.authDobError;
+                                } else if (control.hasError('minAge')) {
+                                  errorText = l10n.authDobMinAge;
+                                }
+                              }
+
+                              return InkWell(
+                                onTap: picker.showPicker,
+                                child: InputDecorator(
+                                  decoration: InputDecoration(
+                                    labelText: l10n.authDateOfBirth,
+                                    prefixIcon: const Icon(
+                                      Icons.calendar_month_rounded,
+                                    ),
+                                    suffixIcon: const Icon(
+                                      Icons.arrow_drop_down_rounded,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                    errorText: errorText,
+                                  ),
+                                  child: Text(
+                                    value != null
+                                        ? '${value.day}/${value.month}/${value.year}'
+                                        : 'DD/MM/YYYY',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    softWrap: false,
+                                    style: TextStyle(
+                                      color: value != null
+                                          ? AppColors.textPrimary
+                                          : AppColors.textSecondary,
+                                      fontSize: 14.sp,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          )
+                          .animate()
+                          .fadeIn(duration: 300.ms, delay: 120.ms)
+                          .slideY(begin: 0.04, end: 0),
                 ),
               ],
-              validationMessages: {
-                ValidationMessage.required: (_) => l10n.driverGenderRequired,
-              },
             ),
+
+            SizedBox(height: 20.h),
+
+            // ── Section: Contact & Location ──────────────────────────────
+            _sectionLabel('Contact & Location'),
+
+            IntlPhoneInput(
+                  key: _phoneKey,
+                  label: l10n.authPhoneOptional,
+                  hint: l10n.authPhoneHint,
+                  accentColor: AppColors.primary,
+                  fillColor: AppColors.background,
+                  onChanged: (phone) => ref
+                      .read(onboardingViewModelProvider.notifier)
+                      .setDriverDraftContact(
+                        phoneNumber: phone.isValid ? phone.fullNumber : null,
+                      ),
+                )
+                .animate()
+                .fadeIn(duration: 300.ms, delay: 180.ms)
+                .slideY(
+                  begin: 0.04,
+                  end: 0,
+                ),
+
             SizedBox(height: 16.h),
 
-            // Date of birth
-            ReactiveDatePicker<DateTime>(
-              formControlName: 'dob',
-              firstDate: DateTime(1950),
-              lastDate: DateTime(
-                DateTime.now().year - 18,
-                DateTime.now().month,
-                DateTime.now().day,
+            AddressAutocompleteField(
+                  key: _cityKey,
+                  label: l10n.driverCityLabel,
+                  hint: l10n.driverCityHint,
+                  cityOnly: true,
+                  accentColor: AppColors.primary,
+                  fillColor: AppColors.background,
+                  onSelected: (result) => ref
+                      .read(onboardingViewModelProvider.notifier)
+                      .setDriverDraftContact(
+                        city: (result.city?.trim().isNotEmpty ?? false)
+                            ? result.city!.trim()
+                            : result.address,
+                      ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return l10n.driverCityRequired;
+                    }
+                    return null;
+                  },
+                )
+                .animate()
+                .fadeIn(duration: 300.ms, delay: 240.ms)
+                .slideY(
+                  begin: 0.04,
+                  end: 0,
+                ),
+
+            SizedBox(height: 20.h),
+
+            // ── Section: Driving Details ─────────────────────────────────
+            _sectionLabel('Driving Details'),
+
+            ReactiveDropdownField<Expertise>(
+                  formControlName: _PF.expertise,
+                  decoration: InputDecoration(
+                    labelText: l10n.expertiseLevel,
+                    prefixIcon: const Icon(Icons.workspace_premium_rounded),
+                  ),
+                  items: Expertise.values
+                      .map(
+                        (e) => DropdownMenuItem(
+                          value: e,
+                          child: Text(e.displayName),
+                        ),
+                      )
+                      .toList(),
+                  validationMessages: {
+                    ValidationMessage.required: (_) =>
+                        l10n.expertiseLevelRequired,
+                  },
+                )
+                .animate()
+                .fadeIn(duration: 300.ms, delay: 300.ms)
+                .slideY(
+                  begin: 0.04,
+                  end: 0,
+                ),
+
+            SizedBox(height: 20.h),
+
+            // ── Terms ────────────────────────────────────────────────────
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.surface.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(12.r),
+                border: Border.all(
+                  color: AppColors.primary.withValues(alpha: 0.2),
+                ),
               ),
-              builder: (context, picker, child) {
-                final value = picker.value;
-                final control = picker.control;
-                final showError = control.touched && control.invalid;
-                String? errorText;
-                if (showError) {
-                  if (control.hasError(ValidationMessage.required)) {
-                    errorText = l10n.authDobError;
-                  } else if (control.hasError('minAge')) {
-                    errorText = l10n.authDobMinAge;
-                  }
-                }
-                return InkWell(
-                  onTap: picker.showPicker,
-                  child: InputDecorator(
-                    decoration: InputDecoration(
-                      labelText: l10n.authDateOfBirth,
-                      errorText: errorText,
+              child: ReactiveCheckboxListTile(
+                formControlName: _PF.terms,
+                controlAffinity: ListTileControlAffinity.leading,
+                activeColor: AppColors.primary,
+                title: Text.rich(
+                  TextSpan(
+                    text: 'I agree to the ',
+                    style: TextStyle(
+                      fontSize: 13.sp,
+                      color: AppColors.textSecondary,
                     ),
-                    child: Text(
-                      value != null
-                          ? '${value.day}/${value.month}/${value.year}'
-                          : l10n.authDobPrompt,
+                    children: [
+                      TextSpan(
+                        text: 'Terms & Conditions',
+                        recognizer: TapGestureRecognizer()
+                          ..onTap = () => context.push(AppRoutes.terms.path),
+                        style: TextStyle(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w600,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ).animate().fadeIn(duration: 300.ms, delay: 360.ms),
+
+            ReactiveFormConsumer(
+              builder: (context, form, _) {
+                final ctrl = form.control(_PF.terms);
+                final showError = ctrl.touched && ctrl.invalid;
+
+                return AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  child: showError
+                      ? Padding(
+                          key: const ValueKey('terms-error'),
+                          padding: EdgeInsets.only(top: 6.h, left: 14.w),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.error_outline_rounded,
+                                size: 14.sp,
+                                color: AppColors.error,
+                              ),
+                              SizedBox(width: 6.w),
+                              Text(
+                                'You must accept the terms to continue.',
+                                style: TextStyle(
+                                  fontSize: 12.sp,
+                                  color: AppColors.error,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : const SizedBox.shrink(key: ValueKey('terms-ok')),
+                );
+              },
+            ),
+
+            SizedBox(height: 28.h),
+
+            ReactiveFormConsumer(
+              builder: (context, form, _) {
+                final isFormReady = form.valid;
+                final currentVmState = ref.watch(onboardingViewModelProvider);
+
+                return AnimatedOpacity(
+                  duration: const Duration(milliseconds: 250),
+                  opacity: isFormReady ? 1.0 : 0.55,
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: PremiumButton(
+                      text: currentVmState.isLoading
+                          ? 'Saving...'
+                          : l10n.driverSaveAndContinue,
+                      onPressed: currentVmState.isLoading
+                          ? null
+                          : _saveProfileAndContinue,
+                      isLoading: currentVmState.isLoading,
+                      size: PremiumButtonSize.large,
+                      style: isFormReady
+                          ? PremiumButtonStyle.success
+                          : PremiumButtonStyle.primary,
+                      trailingIcon: Icons.adaptive.arrow_forward_rounded,
                     ),
                   ),
                 );
               },
-            ),
-            SizedBox(height: 16.h),
-
-            // Expertise level
-            ReactiveDropdownField<Expertise>(
-              formControlName: 'expertise',
-              decoration: InputDecoration(
-                labelText: l10n.expertiseLevel,
-                prefixIcon: const Icon(Icons.workspace_premium_rounded),
-              ),
-              items: Expertise.values
-                  .map(
-                    (e) =>
-                        DropdownMenuItem(value: e, child: Text(e.displayName)),
-                  )
-                  .toList(),
-              validationMessages: {
-                ValidationMessage.required: (_) => l10n.expertiseLevelRequired,
-              },
-            ),
-            SizedBox(height: 20.h),
-
-            // Terms checkbox
-            ReactiveCheckboxListTile(
-              formControlName: 'terms',
-              title: Text(l10n.driverTermsLabel),
-            ),
-            SizedBox(height: 28.h),
-
-            // Save & Continue
-            SizedBox(
-              width: double.infinity,
-              child: PremiumButton(
-                text: l10n.driverSaveAndContinue,
-                onPressed: vmState.isLoading ? null : _saveProfileAndContinue,
-                isLoading: vmState.isLoading,
-                size: PremiumButtonSize.large,
-                trailingIcon: Icons.adaptive.arrow_forward_rounded,
-              ),
-            ).animate().fadeIn(duration: 400.ms, delay: 450.ms),
+            ).animate().fadeIn(duration: 300.ms, delay: 420.ms),
 
             SizedBox(height: 24.h),
           ],
@@ -718,160 +1087,376 @@ class _DriverOnboardingScreenState
     );
   }
 
-  // ── Step 1: Vehicle ────────────────────────────────────────────────
+  /// Displays the user's name from Google/Apple sign-in as a read-only card.
+  Widget _buildNameDisplay(String name, bool hasPhoto, String? photoUrl) {
+    return Container(
+          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(14.r),
+            border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+          ),
+          child: Row(
+            children: [
+              if (hasPhoto)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(22.r),
+                  child: Image.network(
+                    photoUrl!,
+                    width: 44.w,
+                    height: 44.w,
+                    fit: BoxFit.cover,
+                    errorBuilder: (ctx, err, st) => _defaultAvatar(name),
+                  ),
+                )
+              else
+                _defaultAvatar(name),
+              SizedBox(width: 14.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name.isNotEmpty ? name : 'Your Name',
+                      style: TextStyle(
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    SizedBox(height: 2.h),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.verified_rounded,
+                          size: 12.sp,
+                          color: AppColors.primary,
+                        ),
+                        SizedBox(width: 4.w),
+                        Text(
+                          'From your sign-in account',
+                          style: TextStyle(
+                            fontSize: 11.sp,
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.lock_outline_rounded,
+                size: 16.sp,
+                color: AppColors.textTertiary,
+              ),
+            ],
+          ),
+        )
+        .animate()
+        .fadeIn(duration: 300.ms, delay: 30.ms)
+        .slideY(
+          begin: 0.04,
+          end: 0,
+        );
+  }
+
+  Widget _defaultAvatar(String name) {
+    final initials = name.trim().isNotEmpty
+        ? name
+              .trim()
+              .split(' ')
+              .map((w) => w.isNotEmpty ? w[0] : '')
+              .take(2)
+              .join()
+              .toUpperCase()
+        : '?';
+
+    return Container(
+      width: 44.w,
+      height: 44.w,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppColors.primaryLight, AppColors.primary],
+        ),
+        borderRadius: BorderRadius.circular(22.r),
+      ),
+      child: Center(
+        child: Text(
+          initials,
+          style: TextStyle(
+            fontSize: 15.sp,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Step 1: Vehicle ─────────────────────────────────────────────────
 
   Widget _buildVehicleStep(OnboardingState vmState) {
+    final l10n = AppLocalizations.of(context);
+
     return SingleChildScrollView(
-      padding: EdgeInsets.all(24.w),
+      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
       child: ReactiveForm(
         formGroup: _vehicleForm,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
-            _buildStepHeader(
-              icon: Icons.directions_car_rounded,
-              title: AppLocalizations.of(context).addYourVehicle,
-              subtitle: AppLocalizations.of(context).driverVehicleStepSubtitle,
+            // ── Header panel ──────────────────────────────────────────────
+            GlassPanel(
+              padding: EdgeInsets.all(16.w),
+              color: AppColors.surface.withValues(alpha: 0.62),
+              borderColor: AppColors.primary.withValues(alpha: 0.2),
+              child: Row(
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(12.w),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(14.r),
+                    ),
+                    child: Icon(
+                      Icons.directions_car_rounded,
+                      color: AppColors.primary,
+                      size: 28.sp,
+                    ),
+                  ),
+                  SizedBox(width: 16.w),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          l10n.addYourVehicle,
+                          style: TextStyle(
+                            fontSize: 18.sp,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        SizedBox(height: 4.h),
+                        Text(
+                          l10n.driverVehicleStepSubtitle,
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            height: 1.4,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ).animate().fadeIn(duration: 400.ms),
 
             SizedBox(height: 24.h),
 
-            // Vehicle Make
+            // ── Section: Vehicle Identity ────────────────────────────────
+            _sectionLabel('Vehicle Identity'),
+
             ReactiveTextField<String>(
-              formControlName: 'make',
-              decoration: InputDecoration(
-                labelText: AppLocalizations.of(context).make,
-                hintText: AppLocalizations.of(context).vehicleMakeHint,
-                prefixIcon: const Icon(Icons.business_rounded),
-              ),
-              validationMessages: {
-                ValidationMessage.required: (_) =>
-                    AppLocalizations.of(context).pleaseEnterVehicleMake,
-              },
-            ).animate().fadeIn(duration: 400.ms, delay: 100.ms),
+                  formControlName: _VF.make,
+                  decoration: InputDecoration(
+                    labelText: l10n.make,
+                    hintText: l10n.vehicleMakeHint,
+                    prefixIcon: const Icon(Icons.business_rounded),
+                  ),
+                  validationMessages: {
+                    ValidationMessage.required: (_) =>
+                        l10n.pleaseEnterVehicleMake,
+                  },
+                )
+                .animate()
+                .fadeIn(duration: 300.ms, delay: 60.ms)
+                .slideY(
+                  begin: 0.04,
+                  end: 0,
+                ),
 
             SizedBox(height: 16.h),
 
-            // Vehicle Model
             ReactiveTextField<String>(
-              formControlName: 'model',
-              decoration: InputDecoration(
-                labelText: AppLocalizations.of(context).model,
-                hintText: AppLocalizations.of(context).vehicleModelHint,
-                prefixIcon: const Icon(Icons.directions_car_outlined),
-              ),
-              validationMessages: {
-                ValidationMessage.required: (_) =>
-                    AppLocalizations.of(context).pleaseEnterVehicleModel,
-              },
-            ).animate().fadeIn(duration: 400.ms, delay: 150.ms),
+                  formControlName: _VF.model,
+                  decoration: InputDecoration(
+                    labelText: l10n.model,
+                    hintText: l10n.vehicleModelHint,
+                    prefixIcon: const Icon(Icons.directions_car_outlined),
+                  ),
+                  validationMessages: {
+                    ValidationMessage.required: (_) =>
+                        l10n.pleaseEnterVehicleModel,
+                  },
+                )
+                .animate()
+                .fadeIn(duration: 300.ms, delay: 120.ms)
+                .slideY(
+                  begin: 0.04,
+                  end: 0,
+                ),
 
             SizedBox(height: 16.h),
 
-            // Year and Color row
             Row(
-              children: [
-                Expanded(
-                  child: ReactiveTextField<String>(
-                    formControlName: 'year',
-                    decoration: InputDecoration(
-                      labelText: AppLocalizations.of(context).year,
-                      hintText: AppLocalizations.of(context).vehicleYearHint,
-                      prefixIcon: const Icon(Icons.calendar_today_outlined),
+                  children: [
+                    Expanded(
+                      child: ReactiveTextField<String>(
+                        formControlName: _VF.year,
+                        decoration: InputDecoration(
+                          labelText: l10n.year,
+                          hintText: l10n.vehicleYearHint,
+                          prefixIcon: const Icon(Icons.calendar_today_outlined),
+                        ),
+                        keyboardType: TextInputType.number,
+                        textInputAction: TextInputAction.next,
+                        validationMessages: {
+                          ValidationMessage.required: (_) => l10n.requiredField,
+                          'vehicleYear': (error) => error as String,
+                        },
+                      ),
                     ),
-                    keyboardType: TextInputType.number,
-                    textInputAction: TextInputAction.next,
-                    validationMessages: {
-                      ValidationMessage.required: (_) =>
-                          AppLocalizations.of(context).requiredField,
-                      'vehicleYear': (error) => error as String,
-                    },
-                  ),
-                ),
-                SizedBox(width: 12.w),
-                Expanded(
-                  child: ReactiveTextField<String>(
-                    formControlName: 'color',
-                    decoration: InputDecoration(
-                      labelText: AppLocalizations.of(context).color,
-                      hintText: AppLocalizations.of(context).vehicleColorHint,
-                      prefixIcon: const Icon(Icons.palette_outlined),
+                    SizedBox(width: 12.w),
+                    Expanded(
+                      child: ReactiveTextField<String>(
+                        formControlName: _VF.color,
+                        decoration: InputDecoration(
+                          labelText: l10n.color,
+                          hintText: l10n.vehicleColorHint,
+                          prefixIcon: const Icon(Icons.palette_outlined),
+                        ),
+                        validationMessages: {
+                          ValidationMessage.required: (_) => l10n.requiredField,
+                        },
+                      ),
                     ),
-                    validationMessages: {
-                      ValidationMessage.required: (_) =>
-                          AppLocalizations.of(context).requiredField,
-                    },
-                  ),
+                  ],
+                )
+                .animate()
+                .fadeIn(duration: 300.ms, delay: 180.ms)
+                .slideY(
+                  begin: 0.04,
+                  end: 0,
                 ),
-              ],
-            ).animate().fadeIn(duration: 400.ms, delay: 200.ms),
 
-            SizedBox(height: 16.h),
+            SizedBox(height: 20.h),
 
-            // License Plate
+            // ── Section: Registration ────────────────────────────────────
+            _sectionLabel('Registration'),
+
             ReactiveTextField<String>(
-              formControlName: 'license_plate',
-              decoration: InputDecoration(
-                labelText: AppLocalizations.of(context).licensePlate,
-                hintText: AppLocalizations.of(context).licensePlateHint,
-                prefixIcon: const Icon(Icons.credit_card_rounded),
-                helperText: AppLocalizations.of(context).licensePlateHelperText,
-              ),
-              textCapitalization: TextCapitalization.characters,
-              validationMessages: {
-                ValidationMessage.required: (_) =>
-                    AppLocalizations.of(context).pleaseEnterLicensePlate,
-                'licensePlate': (error) => error as String,
-              },
-            ).animate().fadeIn(duration: 400.ms, delay: 250.ms),
+                  formControlName: _VF.licensePlate,
+                  decoration: InputDecoration(
+                    labelText: l10n.licensePlate,
+                    hintText: l10n.licensePlateHint,
+                    prefixIcon: const Icon(Icons.credit_card_rounded),
+                    helperText: l10n.licensePlateHelperText,
+                  ),
+                  textCapitalization: TextCapitalization.characters,
+                  validationMessages: {
+                    ValidationMessage.required: (_) =>
+                        l10n.pleaseEnterLicensePlate,
+                    'licensePlate': (error) => error as String,
+                  },
+                )
+                .animate()
+                .fadeIn(duration: 300.ms, delay: 240.ms)
+                .slideY(
+                  begin: 0.04,
+                  end: 0,
+                ),
 
-            SizedBox(height: 16.h),
+            SizedBox(height: 20.h),
 
-            // Seats
+            // ── Section: Capacity ────────────────────────────────────────
+            _sectionLabel('Capacity & Fuel'),
+
             ReactiveTextField<String>(
-              formControlName: 'seats',
-              decoration: InputDecoration(
-                labelText: AppLocalizations.of(context).availableSeats,
-                hintText: '4',
-                prefixIcon: const Icon(Icons.event_seat_rounded),
-              ),
-              keyboardType: TextInputType.number,
-              validationMessages: {
-                ValidationMessage.required: (_) =>
-                    AppLocalizations.of(context).pleaseEnterNumberOfSeats,
-                'seats': (error) => error as String,
-              },
-            ).animate().fadeIn(duration: 400.ms, delay: 300.ms),
+                  formControlName: _VF.seats,
+                  decoration: InputDecoration(
+                    labelText: l10n.availableSeats,
+                    hintText: '4',
+                    prefixIcon: const Icon(Icons.event_seat_rounded),
+                  ),
+                  keyboardType: TextInputType.number,
+                  validationMessages: {
+                    ValidationMessage.required: (_) =>
+                        l10n.pleaseEnterNumberOfSeats,
+                    'seats': (error) => error as String,
+                  },
+                )
+                .animate()
+                .fadeIn(duration: 300.ms, delay: 300.ms)
+                .slideY(
+                  begin: 0.04,
+                  end: 0,
+                ),
 
             SizedBox(height: 16.h),
 
-            // Fuel Type dropdown
             ReactiveDropdownField<FuelType>(
-              formControlName: 'fuel_type',
-              decoration: InputDecoration(
-                labelText: AppLocalizations.of(context).fuelType,
-              ),
-              items: _fuelTypes
-                  .map(
-                    (fuel) =>
-                        DropdownMenuItem(value: fuel, child: Text(fuel.name)),
-                  )
-                  .toList(),
-            ),
+                  formControlName: _VF.fuelType,
+                  isExpanded: true,
+                  decoration: InputDecoration(
+                    labelText: l10n.fuelType,
+                    prefixIcon: const Icon(Icons.local_gas_station_rounded),
+                  ),
+                  items: _fuelTypes
+                      .map(
+                        (fuel) => DropdownMenuItem(
+                          value: fuel,
+                          child: Text(
+                            fuel.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      )
+                      .toList(),
+                )
+                .animate()
+                .fadeIn(duration: 300.ms, delay: 340.ms)
+                .slideY(
+                  begin: 0.04,
+                  end: 0,
+                ),
+
             SizedBox(height: 32.h),
 
-            // Continue button
-            SizedBox(
-              width: double.infinity,
-              child: PremiumButton(
-                text: AppLocalizations.of(context).driverSaveAndContinue,
-                onPressed: vmState.isLoading ? null : _saveVehicleAndContinue,
-                isLoading: vmState.isLoading,
-                size: PremiumButtonSize.large,
-                trailingIcon: Icons.adaptive.arrow_forward_rounded,
-              ),
-            ).animate().fadeIn(duration: 400.ms, delay: 400.ms),
+            ReactiveFormConsumer(
+              builder: (context, form, _) {
+                final isFormReady = form.valid;
+                final currentVmState = ref.watch(onboardingViewModelProvider);
+
+                return AnimatedOpacity(
+                  duration: const Duration(milliseconds: 250),
+                  opacity: isFormReady ? 1.0 : 0.55,
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: PremiumButton(
+                      text: currentVmState.isLoading
+                          ? 'Saving...'
+                          : l10n.driverSaveAndContinue,
+                      onPressed: currentVmState.isLoading
+                          ? null
+                          : _saveVehicleAndContinue,
+                      isLoading: currentVmState.isLoading,
+                      size: PremiumButtonSize.large,
+                      style: isFormReady
+                          ? PremiumButtonStyle.success
+                          : PremiumButtonStyle.primary,
+                      trailingIcon: Icons.adaptive.arrow_forward_rounded,
+                    ),
+                  ),
+                );
+              },
+            ).animate().fadeIn(duration: 300.ms, delay: 400.ms),
 
             SizedBox(height: 24.h),
           ],
@@ -880,58 +1465,104 @@ class _DriverOnboardingScreenState
     );
   }
 
-  Widget _buildStripeStep() {
+  // ── Step 2: Stripe payouts ─────────────────────────────────────────
+
+  Widget _buildStripeStep(OnboardingState vmState) {
+    final l10n = AppLocalizations.of(context);
+
     return SingleChildScrollView(
-      padding: EdgeInsets.all(24.w),
+      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
-          _buildStepHeader(
-            icon: Icons.account_balance_rounded,
-            title: AppLocalizations.of(context).setupPayouts,
-            subtitle: AppLocalizations.of(context).driverStripeStepSubtitle,
+          // ── Header panel ───────────────────────────────────────────────
+          GlassPanel(
+            padding: EdgeInsets.all(16.w),
+            color: AppColors.surface.withValues(alpha: 0.62),
+            borderColor: AppColors.primary.withValues(alpha: 0.2),
+            child: Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(12.w),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(14.r),
+                  ),
+                  child: Icon(
+                    Icons.account_balance_rounded,
+                    color: AppColors.primary,
+                    size: 28.sp,
+                  ),
+                ),
+                SizedBox(width: 16.w),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.setupPayouts,
+                        style: TextStyle(
+                          fontSize: 18.sp,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      SizedBox(height: 4.h),
+                      Text(
+                        l10n.driverStripeStepSubtitle,
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          height: 1.4,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ).animate().fadeIn(duration: 400.ms),
 
-          SizedBox(height: 32.h),
+          SizedBox(height: 24.h),
 
-          // Stripe benefits card
+          _sectionLabel('Why connect payouts?'),
+
           Container(
-            padding: EdgeInsets.all(20.w),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  AppColors.primary.withAlpha(15),
-                  AppColors.secondary.withAlpha(10),
+                  AppColors.primary.withValues(alpha: 0.06),
+                  AppColors.secondary.withValues(alpha: 0.04),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(16.r),
-              border: Border.all(color: AppColors.primary.withAlpha(30)),
+              border: Border.all(
+                color: AppColors.primary.withValues(alpha: 0.15),
+              ),
             ),
             child: Column(
               children: [
                 _buildBenefitItem(
                   icon: Icons.security_rounded,
-                  title: AppLocalizations.of(context).securePayments,
-                  description: AppLocalizations.of(
-                    context,
-                  ).stripePoweredByMillions,
+                  title: l10n.securePayments,
+                  description: l10n.stripePoweredByMillions,
+                  delay: 60,
                 ),
-                SizedBox(height: 16.h),
+                Divider(height: 1, color: AppColors.divider),
                 _buildBenefitItem(
                   icon: Icons.flash_on_rounded,
-                  title: AppLocalizations.of(context).fastTransfers,
-                  description: AppLocalizations.of(
-                    context,
-                  ).stripeFastTransfersDesc,
+                  title: l10n.fastTransfers,
+                  description: l10n.stripeFastTransfersDesc,
+                  delay: 120,
                 ),
-                SizedBox(height: 16.h),
+                Divider(height: 1, color: AppColors.divider),
                 _buildBenefitItem(
                   icon: Icons.receipt_long_rounded,
-                  title: AppLocalizations.of(context).easyTracking,
-                  description: AppLocalizations.of(context).stripeEarningsDesc,
+                  title: l10n.easyTracking,
+                  description: l10n.stripeEarningsDesc,
+                  delay: 180,
                 ),
               ],
             ),
@@ -939,13 +1570,14 @@ class _DriverOnboardingScreenState
 
           SizedBox(height: 32.h),
 
-          // Setup Stripe button
           SizedBox(
             width: double.infinity,
             child: PremiumButton(
-              text: AppLocalizations.of(context).connectWithStripe,
-              onPressed: _setupStripe,
+              text: l10n.connectWithStripe,
+              onPressed: vmState.isLoading ? null : _setupStripe,
+              isLoading: vmState.isLoading,
               size: PremiumButtonSize.large,
+              style: PremiumButtonStyle.success,
               icon: Icons.link_rounded,
             ),
           ).animate().fadeIn(duration: 400.ms, delay: 200.ms),
@@ -956,85 +1588,51 @@ class _DriverOnboardingScreenState
     );
   }
 
-  Widget _buildStepHeader({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          padding: EdgeInsets.all(16.w),
-          decoration: BoxDecoration(
-            color: AppColors.primary.withAlpha(15),
-            borderRadius: BorderRadius.circular(16.r),
-          ),
-          child: Icon(icon, color: AppColors.primary, size: 32.sp),
-        ),
-        SizedBox(height: 16.h),
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: 24.sp,
-            fontWeight: FontWeight.w800,
-            color: AppColors.textPrimary,
-            letterSpacing: -0.5,
-          ),
-        ),
-        SizedBox(height: 8.h),
-        Text(
-          subtitle,
-          style: TextStyle(
-            fontSize: 14.sp,
-            color: AppColors.textSecondary,
-            height: 1.5,
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildBenefitItem({
     required IconData icon,
     required String title,
     required String description,
+    int delay = 0,
   }) {
-    return Row(
-      children: [
-        Container(
-          padding: EdgeInsets.all(10.w),
-          decoration: BoxDecoration(
-            color: AppColors.primary.withAlpha(20),
-            borderRadius: BorderRadius.circular(10.r),
+    return Padding(
+      padding: EdgeInsets.all(16.w),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(10.w),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10.r),
+            ),
+            child: Icon(icon, color: AppColors.primary, size: 20.sp),
           ),
-          child: Icon(icon, color: AppColors.primary, size: 20.sp),
-        ),
-        SizedBox(width: 14.w),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 15.sp,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
+          SizedBox(width: 14.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
-              ),
-              SizedBox(height: 2.h),
-              Text(
-                description,
-                style: TextStyle(
-                  fontSize: 13.sp,
-                  color: AppColors.textSecondary,
+                SizedBox(height: 2.h),
+                Text(
+                  description,
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: AppColors.textSecondary,
+                    height: 1.4,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

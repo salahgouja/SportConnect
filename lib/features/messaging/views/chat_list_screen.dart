@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,7 +9,6 @@ import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
-import 'package:sport_connect/core/theme/app_spacing.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/core/widgets/premium_text_field.dart';
 import 'package:sport_connect/core/widgets/skeleton_loader.dart';
@@ -26,29 +26,61 @@ class ChatListScreen extends ConsumerStatefulWidget {
   ConsumerState<ChatListScreen> createState() => _ChatListScreenState();
 }
 
-class _ChatListScreenState extends ConsumerState<ChatListScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _ChatUserData {
+  _ChatUserData({
+    required this.uid,
+    required this.username,
+    required this.blockedIds,
+    this.photoUrl,
+  });
+
+  factory _ChatUserData.from(UserModel user) {
+    final blockedUsers = switch (user) {
+      RiderModel(:final blockedUsers) => blockedUsers,
+      DriverModel(:final blockedUsers) => blockedUsers,
+      _ => const <String>[],
+    };
+
+    return _ChatUserData(
+      uid: user.uid,
+      username: user.username,
+      photoUrl: user.photoUrl,
+      blockedIds: Set.unmodifiable(blockedUsers),
+    );
+  }
+
+  final String uid;
+  final String username;
+  final String? photoUrl;
+  final Set<String> blockedIds;
 
   @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        other is _ChatUserData &&
+            other.uid == uid &&
+            other.username == username &&
+            other.photoUrl == photoUrl &&
+            other.blockedIds.length == blockedIds.length &&
+            other.blockedIds.containsAll(blockedIds);
   }
 
   @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
+  int get hashCode => Object.hash(
+    uid,
+    username,
+    photoUrl,
+    Object.hashAllUnordered(blockedIds),
+  );
+}
 
+class _ChatListScreenState extends ConsumerState<ChatListScreen> {
   // ── Build ────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return AdaptiveScaffold(
       body: SafeArea(
         child: Column(
           children: [
@@ -62,12 +94,12 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
                     .setSearchQuery(value),
               ),
             ),
-            _buildTabs(),
             // FIX: searchQuery no longer passed as param — all tabs read from
             // provider internally, making them consistent with _buildDirectChats.
             Expanded(
-              child: TabBarView(
-                controller: _tabController,
+              child: AdaptiveTabBarView(
+                tabs: [l10n.direct, l10n.groups, l10n.rides],
+                selectedColor: AppColors.primary,
                 children: [
                   _buildDirectChats(),
                   _buildGroupChats(),
@@ -131,47 +163,21 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
     );
   }
 
-  Widget _buildTabs() {
-    final l10n = AppLocalizations.of(context);
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 20.w),
-      padding: EdgeInsets.all(4.w),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceVariant.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(12.r),
-      ),
-      child: TabBar(
-        controller: _tabController,
-        indicator: BoxDecoration(
-          color: AppColors.cardBg,
-          borderRadius: BorderRadius.circular(10.r),
-          boxShadow: AppSpacing.shadowSm,
-        ),
-        indicatorSize: TabBarIndicatorSize.tab,
-        dividerColor: Colors.transparent,
-        labelColor: AppColors.primary,
-        unselectedLabelColor: AppColors.textSecondary,
-        labelStyle: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600),
-        unselectedLabelStyle: TextStyle(
-          fontSize: 14.sp,
-          fontWeight: FontWeight.w500,
-        ),
-        tabs: [
-          Tab(text: l10n.direct),
-          Tab(text: l10n.groups),
-          Tab(text: l10n.rides),
-        ],
-      ),
-    );
-  }
-
   // ── Tab: Direct ──────────────────────────────────────────────────────────
 
   Widget _buildDirectChats() {
     // FIX: Read searchQuery from provider internally — consistent with the
     // other two tabs rather than relying on the outer build's uiState snapshot.
-    final searchQuery = ref.watch(chatListUiViewModelProvider).searchQuery;
-    final currentUserAsync = ref.watch(currentUserProvider);
+    final searchQuery = ref.watch(
+      chatListUiViewModelProvider.select((state) => state.searchQuery),
+    );
+    final currentUserAsync = ref.watch(
+      currentUserProvider.select(
+        (value) => value.whenData(
+          (user) => user == null ? null : _ChatUserData.from(user),
+        ),
+      ),
+    );
 
     return currentUserAsync.when(
       loading: () =>
@@ -214,21 +220,19 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
             ),
           ),
           data: (chats) {
-            final blockedIds = currentUser.blockedUsers.toSet();
-
             // FIX: _filterDirectChats extracts the logic that was inline
             // inside build, making it independently readable and testable.
             final directChats = _filterDirectChats(
               chats: chats,
               currentUserId: currentUser.uid,
-              blockedIds: blockedIds,
+              blockedIds: currentUser.blockedIds,
               searchQuery: searchQuery,
             );
 
             final peopleMatches = _filterPeopleResults(
               people: peopleAsync.value ?? const [],
               currentUserId: currentUser.uid,
-              blockedIds: blockedIds,
+              blockedIds: currentUser.blockedIds,
               searchQuery: searchQuery,
             );
 
@@ -265,10 +269,11 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
                     );
                   }
                   final chatIndex = showPeopleBlock ? index - 1 : index;
-                  return _buildSwipeableChatTile(
-                        directChats[chatIndex],
-                        currentUser.uid,
-                      )
+                  final tile = _buildSwipeableChatTile(
+                    directChats[chatIndex],
+                    currentUser.uid,
+                  );
+                  return tile
                       .animate()
                       .fadeIn(
                         duration: 300.ms,
@@ -324,7 +329,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
         .where((user) {
           if (user.uid == currentUserId) return false;
           if (blockedIds.contains(user.uid)) return false;
-          final name = user.displayName.toLowerCase();
+          final name = user.username.toLowerCase();
           final email = user.email.toLowerCase();
           return name.contains(searchQuery) || email.contains(searchQuery);
         })
@@ -336,27 +341,33 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
   // FIX: No longer takes searchQuery as a param — reads from provider,
   // consistent with _buildDirectChats and _buildRideChats.
   Widget _buildGroupChats() {
-    final searchQuery = ref.watch(chatListUiViewModelProvider).searchQuery;
-    final currentUserAsync = ref.watch(currentUserProvider);
+    final searchQuery = ref.watch(
+      chatListUiViewModelProvider.select((state) => state.searchQuery),
+    );
+    final currentUserAsync = ref.watch(
+      currentUserProvider.select(
+        (value) => value.whenData((user) => user?.uid),
+      ),
+    );
 
     return currentUserAsync.when(
       loading: () => const SkeletonLoader(type: SkeletonType.chatTile),
       error: (_, _) => Center(
         child: Text(AppLocalizations.of(context).pleaseLoginToViewChats),
       ),
-      data: (currentUser) {
-        if (currentUser == null) {
+      data: (currentUserId) {
+        if (currentUserId == null) {
           return Center(
             child: Text(AppLocalizations.of(context).pleaseLoginToViewChats),
           );
         }
 
-        final chatsAsync = ref.watch(userChatsProvider(currentUser.uid));
+        final chatsAsync = ref.watch(userChatsProvider(currentUserId));
 
         return chatsAsync.when(
           loading: () => const SkeletonLoader(type: SkeletonType.chatTile),
           error: (_, _) => _buildChatErrorState(
-            onRetry: () => ref.invalidate(userChatsProvider(currentUser.uid)),
+            onRetry: () => ref.invalidate(userChatsProvider(currentUserId)),
           ),
           data: (chats) {
             // FIX: Simplified filter — removed `c.groupName != null` which
@@ -369,14 +380,16 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
               }
               if (searchQuery.isEmpty) return true;
               return c
-                  .getChatTitle(currentUser.uid)
+                  .getChatTitle(currentUserId)
                   .toLowerCase()
-                  .contains(searchQuery);
+                  .contains(
+                    searchQuery,
+                  );
             }).toList();
 
             if (groupChats.isEmpty) {
               return _withChatPullToRefresh(
-                userId: currentUser.uid,
+                userId: currentUserId,
                 child: _buildEmptyState(
                   icon: Icons.group_outlined,
                   title: AppLocalizations.of(context).noGroupChats,
@@ -386,8 +399,8 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
             }
 
             return _withChatPullToRefresh(
-              userId: currentUser.uid,
-              child: _buildChatList(groupChats, currentUser.uid),
+              userId: currentUserId,
+              child: _buildChatList(groupChats, currentUserId),
             );
           },
         );
@@ -398,41 +411,49 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
   // ── Tab: Rides ───────────────────────────────────────────────────────────
 
   Widget _buildRideChats() {
-    final searchQuery = ref.watch(chatListUiViewModelProvider).searchQuery;
-    final currentUserAsync = ref.watch(currentUserProvider);
+    final searchQuery = ref.watch(
+      chatListUiViewModelProvider.select((state) => state.searchQuery),
+    );
+    final currentUserAsync = ref.watch(
+      currentUserProvider.select(
+        (value) => value.whenData((user) => user?.uid),
+      ),
+    );
 
     return currentUserAsync.when(
       loading: () => const SkeletonLoader(type: SkeletonType.chatTile),
       error: (_, _) => Center(
         child: Text(AppLocalizations.of(context).pleaseLoginToViewChats),
       ),
-      data: (currentUser) {
-        if (currentUser == null) {
+      data: (currentUserId) {
+        if (currentUserId == null) {
           return Center(
             child: Text(AppLocalizations.of(context).pleaseLoginToViewChats),
           );
         }
 
-        final chatsAsync = ref.watch(userChatsProvider(currentUser.uid));
+        final chatsAsync = ref.watch(userChatsProvider(currentUserId));
 
         return chatsAsync.when(
           loading: () => const SkeletonLoader(type: SkeletonType.chatTile),
           error: (_, _) => _buildChatErrorState(
-            onRetry: () => ref.invalidate(userChatsProvider(currentUser.uid)),
+            onRetry: () => ref.invalidate(userChatsProvider(currentUserId)),
           ),
           data: (chats) {
             final rideChats = chats.where((c) {
               if (c.type != ChatType.rideGroup) return false;
               if (searchQuery.isEmpty) return true;
               return c
-                  .getChatTitle(currentUser.uid)
+                  .getChatTitle(currentUserId)
                   .toLowerCase()
-                  .contains(searchQuery);
+                  .contains(
+                    searchQuery,
+                  );
             }).toList();
 
             if (rideChats.isEmpty) {
               return _withChatPullToRefresh(
-                userId: currentUser.uid,
+                userId: currentUserId,
                 child: _buildEmptyState(
                   icon: Icons.directions_car_outlined,
                   title: AppLocalizations.of(context).noRideChats,
@@ -442,8 +463,8 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
             }
 
             return _withChatPullToRefresh(
-              userId: currentUser.uid,
-              child: _buildChatList(rideChats, currentUser.uid),
+              userId: currentUserId,
+              child: _buildChatList(rideChats, currentUserId),
             );
           },
         );
@@ -470,7 +491,10 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
 
   // ── Open chat with user ──────────────────────────────────────────────────
 
-  Future<void> _openChatWithUser(UserModel currentUser, UserModel user) async {
+  Future<void> _openChatWithUser(
+    _ChatUserData currentUser,
+    UserModel user,
+  ) async {
     // Show spinner without awaiting — closed programmatically after async work.
     unawaited(
       showDialog<void>(
@@ -487,8 +511,8 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
         getOrCreateChatProvider(
           userId1: currentUser.uid,
           userId2: user.uid,
-          userName1: currentUser.displayName,
-          userName2: user.displayName,
+          userName1: currentUser.username,
+          userName2: user.username,
           userPhoto1: currentUser.photoUrl,
           userPhoto2: user.photoUrl,
         ).future,
@@ -501,7 +525,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
         pathParameters: {'id': chatModel.id},
         queryParameters: {
           'receiverId': user.uid,
-          'receiverName': user.displayName,
+          'receiverName': user.username,
           if (user.photoUrl != null) 'receiverPhotoUrl': user.photoUrl,
         },
         extra: user,
@@ -509,17 +533,10 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
     } on Exception {
       if (!mounted) return;
       context.pop(); // Close spinner.
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            AppLocalizations.of(context).failedToCreateChatTryAgain,
-          ),
-          backgroundColor: AppColors.error,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12.r),
-          ),
-        ),
+      AdaptiveSnackBar.show(
+        context,
+        message: AppLocalizations.of(context).failedToCreateChatTryAgain,
+        type: AdaptiveSnackBarType.error,
       );
     }
   }
@@ -529,7 +546,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
   Widget _buildPeopleSearchSection({
     required AsyncValue<List<UserModel>> peopleAsync,
     required List<UserModel> peopleMatches,
-    required UserModel currentUser,
+    required _ChatUserData currentUser,
   }) {
     if (peopleAsync.isLoading) {
       return Padding(
@@ -609,17 +626,16 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
                   color: AppColors.border.withValues(alpha: 0.4),
                 ),
               ),
-              child: ListTile(
-                dense: true,
-                contentPadding: EdgeInsets.symmetric(horizontal: 10.w),
+              child: AdaptiveListTile(
+                padding: EdgeInsets.symmetric(horizontal: 10.w),
                 leading: user.photoUrl != null
                     ? CircleAvatar(
                         radius: 18.r,
                         backgroundImage: NetworkImage(user.photoUrl!),
                       )
-                    : PremiumAvatar(name: user.displayName, size: 36),
+                    : PremiumAvatar(name: user.username, size: 36),
                 title: Text(
-                  user.displayName,
+                  user.username,
                   style: TextStyle(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w600,
@@ -792,44 +808,32 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
   }) async {
     if (direction == DismissDirection.startToEnd) {
       // Mute / unmute — tile stays in place regardless of outcome.
-      final messenger = ScaffoldMessenger.of(context);
       try {
         await ref
-            .read(chatActionsViewModelProvider)
+            .read(chatActionsViewModelProvider.notifier)
             .toggleMute(
               chatId: chat.id,
               userId: currentUserId,
               mute: !isMuted,
             );
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text(
-              isMuted
-                  ? AppLocalizations.of(context).chatUnmuted
-                  : AppLocalizations.of(context).chatMuted,
-              style: const TextStyle(color: Colors.white),
-            ),
-            backgroundColor: isMuted ? AppColors.warning : AppColors.success,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12.r),
-            ),
-            duration: 2.seconds,
-          ),
+        if (!mounted) return false;
+        AdaptiveSnackBar.show(
+          context,
+          message: isMuted
+              ? AppLocalizations.of(context).chatUnmuted
+              : AppLocalizations.of(context).chatMuted,
+          type: isMuted
+              ? AdaptiveSnackBarType.warning
+              : AdaptiveSnackBarType.success,
+          duration: const Duration(seconds: 2),
         );
       } on Exception {
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text(
-              AppLocalizations.of(context).couldNotClearChatTryAgain,
-            ),
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: AppColors.error,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12.r),
-            ),
-            duration: 2.seconds,
-          ),
+        if (!mounted) return false;
+        AdaptiveSnackBar.show(
+          context,
+          message: AppLocalizations.of(context).couldNotClearChatTryAgain,
+          type: AdaptiveSnackBarType.error,
+          duration: const Duration(seconds: 2),
         );
       }
       return false; // Always keep tile in place for mute.
@@ -863,36 +867,26 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
 
     try {
       await ref
-          .read(chatActionsViewModelProvider)
+          .read(chatActionsViewModelProvider.notifier)
           .clearChat(
             chatId: chat.id,
             userId: currentUserId,
           );
       if (!mounted) return false;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context).conversationRemoved),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: AppColors.success,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12.r),
-          ),
-          duration: 2.seconds,
-        ),
+      AdaptiveSnackBar.show(
+        context,
+        message: AppLocalizations.of(context).conversationRemoved,
+        type: AdaptiveSnackBarType.success,
+        duration: const Duration(seconds: 2),
       );
       return true;
     } on Exception {
       if (!mounted) return false;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context).couldNotClearChatTryAgain),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: AppColors.error,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12.r),
-          ),
-          duration: 2.seconds,
-        ),
+      AdaptiveSnackBar.show(
+        context,
+        message: AppLocalizations.of(context).couldNotClearChatTryAgain,
+        type: AdaptiveSnackBarType.error,
+        duration: const Duration(seconds: 2),
       );
       return false;
     }
@@ -919,7 +913,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
         final receiverUser = UserModel.rider(
           uid: otherParticipant?.userId ?? fallbackId,
           email: '',
-          displayName: title,
+          username: title,
           photoUrl: photoUrl,
         );
         final routeName = switch (chat.type) {
@@ -931,7 +925,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
           pathParameters: {'id': chat.id},
           queryParameters: {
             'receiverId': receiverUser.uid,
-            'receiverName': receiverUser.displayName,
+            'receiverName': receiverUser.username,
             if (receiverUser.photoUrl != null)
               'receiverPhotoUrl': receiverUser.photoUrl,
           },

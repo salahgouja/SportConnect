@@ -34,9 +34,13 @@ class DriverInfoWidget extends ConsumerWidget {
               Text(AppLocalizations.of(context).unknownDriver);
         }
 
-        final displayName = user.displayName;
+        final displayName = user.username;
         final photoUrl = user.photoUrl;
-        final rating = user.rating;
+        final rating = switch (user) {
+          final RiderModel rider => rider.rating,
+          final DriverModel driver => driver.rating,
+          _ => const RatingBreakdown(),
+        };
 
         if (builder != null) {
           return builder!(context, displayName, photoUrl, rating);

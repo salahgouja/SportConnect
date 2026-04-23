@@ -1,3 +1,4 @@
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -8,6 +9,7 @@ import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/custom_button.dart';
+import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/core/widgets/gamification_widgets.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/core/widgets/rating_and_profile_widgets.dart';
@@ -15,6 +17,7 @@ import 'package:sport_connect/core/widgets/safety_widgets.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
+import 'package:sport_connect/features/rides/repositories/driver_stats_repository.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
@@ -22,14 +25,12 @@ import 'package:sport_connect/l10n/generated/app_localizations.dart';
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key, this.userId});
   final String? userId;
-
   bool get _isOwnProfile => userId == null;
 
   int _calculateCompletionFields(UserModel user) {
     var count = 0;
-    if (user.displayName.isNotEmpty) count++;
+    if (user.username.isNotEmpty) count++;
     if (user.photoUrl != null && user.photoUrl!.isNotEmpty) count++;
-    if (user.isPhoneVerified) count++;
     if (user.isEmailVerified) count++;
     return count;
   }
@@ -39,16 +40,18 @@ class ProfileScreen extends ConsumerWidget {
     final userAsync = userId != null
         ? ref.watch(currentUserProfileProvider(userId!))
         : ref.watch(currentUserProvider);
-
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    final totalEarningsInCents = _isOwnProfile
+        ? ref.watch(driverStatsProvider).value?.totalEarningsInCents ?? 0
+        : 0;
+    return AdaptiveScaffold(
       body: userAsync.when(
-        data: (user) => _buildContent(context, ref, user),
-        loading: () => const Center(
-          child: CircularProgressIndicator.adaptive(
-            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-          ),
+        data: (user) => _buildContent(
+          context,
+          ref,
+          user,
+          totalEarningsInCents,
         ),
+        loading: () => const SkeletonLoader(type: SkeletonType.profileCard),
         error: (e, _) => _buildErrorState(context, ref),
       ),
     );
@@ -114,7 +117,12 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildContent(BuildContext context, WidgetRef ref, UserModel? user) {
+  Widget _buildContent(
+    BuildContext context,
+    WidgetRef ref,
+    UserModel? user,
+    int totalEarningsInCents,
+  ) {
     if (user == null) {
       return _buildUserNotFoundState(context, ref);
     }
@@ -170,14 +178,22 @@ class ProfileScreen extends ConsumerWidget {
               ),
             ],
             if (!_isOwnProfile)
-              PopupMenuButton<String>(
-                icon: Icon(
-                  Icons.adaptive.more_rounded,
-                  color: AppColors.textPrimary,
-                  size: 24.sp,
-                ),
-                onSelected: (value) async {
-                  if (value == 'report') {
+              AdaptivePopupMenuButton.icon<String>(
+                icon: Icons.adaptive.more_rounded,
+                items: [
+                  AdaptivePopupMenuItem<String>(
+                    label: AppLocalizations.of(context).reportUser,
+                    icon: Icons.flag_outlined,
+                    value: 'report',
+                  ),
+                  AdaptivePopupMenuItem<String>(
+                    label: AppLocalizations.of(context).blockUser,
+                    icon: Icons.block_outlined,
+                    value: 'block',
+                  ),
+                ],
+                onSelected: (index, entry) async {
+                  if (entry.value == 'report') {
                     await context.push<void>(
                       AppRoutes.reportIssue.path,
                       extra: {
@@ -185,40 +201,10 @@ class ProfileScreen extends ConsumerWidget {
                         'reason': 'User profile report',
                       },
                     );
-                  } else if (value == 'block') {
+                  } else if (entry.value == 'block') {
                     _showBlockUserDialog(context, ref);
                   }
                 },
-                itemBuilder: (context) => [
-                  PopupMenuItem(
-                    value: 'report',
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.flag_outlined,
-                          size: 20.sp,
-                          color: AppColors.warning,
-                        ),
-                        SizedBox(width: 12.w),
-                        Text(AppLocalizations.of(context).reportUser),
-                      ],
-                    ),
-                  ),
-                  PopupMenuItem(
-                    value: 'block',
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.block_outlined,
-                          size: 20.sp,
-                          color: AppColors.error,
-                        ),
-                        SizedBox(width: 12.w),
-                        Text(AppLocalizations.of(context).blockUser),
-                      ],
-                    ),
-                  ),
-                ],
               ),
           ],
         ),
@@ -266,7 +252,7 @@ class ProfileScreen extends ConsumerWidget {
 
         // Ride statistics
         SliverToBoxAdapter(
-          child: _buildRideStats(context, user)
+          child: _buildRideStats(context, user, totalEarningsInCents)
               .animate()
               .fadeIn(duration: 400.ms, delay: 200.ms)
               .slideY(begin: 0.1, curve: Curves.easeOutCubic),
@@ -284,13 +270,19 @@ class ProfileScreen extends ConsumerWidget {
                         final reliability = ref.watch(
                           userRideReliabilityProvider(userId!),
                         );
+                        final rating = switch (user) {
+                          final RiderModel rider =>
+                            rider.asRider?.rating ?? const RatingBreakdown(),
+                          final DriverModel driver =>
+                            driver.asDriver?.rating ?? const RatingBreakdown(),
+                          _ => const RatingBreakdown(),
+                        };
                         return DriveHistoryCard(
-                          totalRides: user.totalRides,
-                          averageRating: user.rating.average,
+                          totalRides: user.asDriver!.gamification.totalRides,
+                          averageRating: rating.average,
                           cancelCount: reliability.value?.cancelCount ?? 0,
                           noShowCount: reliability.value?.noShowCount ?? 0,
                           memberSince: user.createdAt ?? DateTime.now(),
-                          isVerified: user.isIdVerified,
                         );
                       }(),
                     )
@@ -319,7 +311,13 @@ class ProfileScreen extends ConsumerWidget {
 
   /// Profile header with avatar, name, rating, and member since
   Widget _buildProfileHeader(BuildContext context, UserModel user) {
-    final rating = user.rating;
+    final rating = switch (user) {
+      final RiderModel rider =>
+        rider.asRider?.rating ?? const RatingBreakdown(),
+      final DriverModel driver =>
+        driver.asDriver?.rating ?? const RatingBreakdown(),
+      _ => const RatingBreakdown(),
+    };
     final memberSince = user.createdAt;
 
     return Padding(
@@ -331,7 +329,7 @@ class ProfileScreen extends ConsumerWidget {
             alignment: Alignment.bottomRight,
             children: [
               LevelAvatar(
-                name: user.displayName,
+                name: user.username,
                 level: user.userLevel.level,
                 size: 100,
                 imageUrl: user.photoUrl,
@@ -363,7 +361,7 @@ class ProfileScreen extends ConsumerWidget {
 
           // Name
           Text(
-            user.displayName,
+            user.username,
             style: TextStyle(
               fontSize: 24.sp,
               fontWeight: FontWeight.w800,
@@ -382,38 +380,38 @@ class ProfileScreen extends ConsumerWidget {
                 GestureDetector(
                   onTap: () => context.push(
                     '${AppRoutes.reviewsList.path.replaceFirst(':userId', user.uid)}'
-                    '?userName=${Uri.encodeComponent(user.displayName)}'
+                    '?userName=${Uri.encodeComponent(user.username)}'
                     '${user.photoUrl != null ? '&userPhotoUrl=${Uri.encodeComponent(user.photoUrl!)}' : ''}',
                   ),
                   child: Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 10.w,
-                    vertical: 4.h,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.xpGold.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.star_rounded,
-                        color: AppColors.xpGold,
-                        size: 16.sp,
-                      ),
-                      SizedBox(width: 4.w),
-                      Text(
-                        rating.average.toStringAsFixed(1),
-                        style: TextStyle(
-                          fontSize: 14.sp,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 10.w,
+                      vertical: 4.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.xpGold.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.star_rounded,
+                          color: AppColors.xpGold,
+                          size: 16.sp,
                         ),
-                      ),
-                    ],
+                        SizedBox(width: 4.w),
+                        Text(
+                          rating.average.toStringAsFixed(1),
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
                 ),
                 SizedBox(width: 12.w),
               ],
@@ -438,7 +436,18 @@ class ProfileScreen extends ConsumerWidget {
           ),
 
           // Location
-          if (user.city != null || user.country != null) ...[
+          if (switch (user) {
+                    final RiderModel rider => rider.asRider?.city,
+                    final DriverModel driver => driver.asDriver?.city,
+                    _ => null,
+                  } !=
+                  null ||
+              switch (user) {
+                    final RiderModel rider => rider.asRider?.country,
+                    final DriverModel driver => driver.asDriver?.country,
+                    _ => null,
+                  } !=
+                  null) ...[
             SizedBox(height: 8.h),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -451,8 +460,16 @@ class ProfileScreen extends ConsumerWidget {
                 SizedBox(width: 4.w),
                 Text(
                   [
-                    user.city,
-                    user.country,
+                    switch (user) {
+                      final RiderModel rider => rider.asRider?.city,
+                      final DriverModel driver => driver.asDriver?.city,
+                      _ => null,
+                    },
+                    switch (user) {
+                      final RiderModel rider => rider.asRider?.country,
+                      final DriverModel driver => driver.asDriver?.country,
+                      _ => null,
+                    },
                   ].where((e) => e != null && e.isNotEmpty).join(', '),
                   style: TextStyle(
                     fontSize: 14.sp,
@@ -517,9 +534,17 @@ class ProfileScreen extends ConsumerWidget {
   }
 
   /// Ride statistics section
-  Widget _buildRideStats(BuildContext context, UserModel user) {
+  Widget _buildRideStats(
+    BuildContext context,
+    UserModel user,
+    int totalEarningsInCents,
+  ) {
     // Get gamification stats based on user type
-    final totalRides = user.totalRides;
+    final totalRides = switch (user) {
+      final RiderModel rider => rider.asRider?.gamification.totalRides ?? 0,
+      final DriverModel driver => driver.asDriver?.gamification.totalRides ?? 0,
+      _ => 0,
+    };
     final double totalDistance;
     final int currentStreak;
 
@@ -530,20 +555,19 @@ class ProfileScreen extends ConsumerWidget {
       case DriverModel(:final gamification):
         totalDistance = gamification.totalDistance;
         currentStreak = gamification.currentStreak;
+      case _:
+        totalDistance = 0;
+        currentStreak = 0;
     }
 
-    final String moneyStatValue;
-    final String moneyStatLabel;
-    final IconData moneyStatIcon;
+    late final String moneyStatValue;
+    late final String moneyStatLabel;
+    late final IconData moneyStatIcon;
 
-    if (user.isRider) {
-      moneyStatValue = '€${user.asRider!.moneySaved.toStringAsFixed(0)}';
-      moneyStatLabel = AppLocalizations.of(context).saved;
-      moneyStatIcon = Icons.savings_rounded;
-    } else {
-      moneyStatValue = '€${user.asDriver!.totalEarnings.toStringAsFixed(0)}';
+    if (user.isDriver) {
+      moneyStatValue = '€${(totalEarningsInCents / 100).toStringAsFixed(0)}';
       moneyStatLabel = AppLocalizations.of(context).earned2;
-      moneyStatIcon = Icons.attach_money_rounded;
+      moneyStatIcon = Icons.euro_rounded;
     }
 
     return Padding(
@@ -610,14 +634,15 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                 ),
                 SizedBox(width: 12.w),
-                Expanded(
-                  child: _buildStatCard(
-                    icon: moneyStatIcon,
-                    value: moneyStatValue,
-                    label: moneyStatLabel,
-                    color: AppColors.info,
+                if (user.isDriver)
+                  Expanded(
+                    child: _buildStatCard(
+                      icon: moneyStatIcon,
+                      value: moneyStatValue,
+                      label: moneyStatLabel,
+                      color: AppColors.info,
+                    ),
                   ),
-                ),
               ],
             ),
           ],
@@ -629,13 +654,19 @@ class ProfileScreen extends ConsumerWidget {
   /// XP & Level section with progress bar and streak
   Widget _buildXPSection(BuildContext context, UserModel user) {
     final level = user.userLevel;
-    final totalXP = user.totalXP;
+    final totalXP = switch (user) {
+      final RiderModel rider => rider.asRider?.gamification.totalXP ?? 0,
+      final DriverModel driver => driver.asDriver?.gamification.totalXP ?? 0,
+      _ => 0,
+    };
     final int currentStreak;
     switch (user) {
       case RiderModel(:final gamification):
         currentStreak = gamification.currentStreak;
       case DriverModel(:final gamification):
         currentStreak = gamification.currentStreak;
+      case _:
+        currentStreak = 0;
     }
 
     return Padding(
@@ -950,23 +981,19 @@ class ProfileScreen extends ConsumerWidget {
                     )
                     .toggleBlock();
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(AppLocalizations.of(context).userBlocked),
-                      backgroundColor: AppColors.primary,
-                    ),
+                  AdaptiveSnackBar.show(
+                    context,
+                    message: AppLocalizations.of(context).userBlocked,
+                    type: AdaptiveSnackBarType.success,
                   );
                   context.pop();
                 }
               } on Exception {
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        AppLocalizations.of(context).somethingWentWrong,
-                      ),
-                      backgroundColor: AppColors.error,
-                    ),
+                  AdaptiveSnackBar.show(
+                    context,
+                    message: AppLocalizations.of(context).somethingWentWrong,
+                    type: AdaptiveSnackBarType.error,
                   );
                 }
               }
@@ -1018,11 +1045,13 @@ class ProfileScreen extends ConsumerWidget {
               text: AppLocalizations.of(context).syncProfile,
               icon: Icons.refresh_rounded,
               onPressed: () async {
-                final authActions = ref.read(authActionsViewModelProvider);
+                final authActions = ref.read(
+                  authActionsViewModelProvider.notifier,
+                );
                 final currentUser = authActions.currentUser;
                 if (currentUser != null) {
                   final profileActions = ref.read(
-                    profileActionsViewModelProvider,
+                    profileActionsViewModelProvider.notifier,
                   );
                   final existingUser = await profileActions.getUserById(
                     currentUser.uid,
@@ -1033,13 +1062,13 @@ class ProfileScreen extends ConsumerWidget {
                       UserModel.rider(
                         uid: currentUser.uid,
                         email: currentUser.email ?? '',
-                        displayName: currentUser.displayName ?? 'User',
+                        username: currentUser.displayName ?? 'User',
                         photoUrl: currentUser.photoURL,
                         createdAt: DateTime.now(),
-                        lastSeenAt: DateTime.now(),
                       ),
                     );
                   }
+                  if (!context.mounted) return;
                   ref.invalidate(currentUserProvider);
                 }
               },
@@ -1048,10 +1077,7 @@ class ProfileScreen extends ConsumerWidget {
             SizedBox(height: 16.h),
             TextButton(
               onPressed: () async {
-                await ref.read(authActionsViewModelProvider).signOut();
-                if (context.mounted) {
-                  context.go(AppRoutes.login.path);
-                }
+                await ref.read(authActionsViewModelProvider.notifier).signOut();
               },
               child: Text(
                 AppLocalizations.of(context).signOutTryAgain,

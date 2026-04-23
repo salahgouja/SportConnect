@@ -72,35 +72,52 @@ class GlassCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(borderRadius.r),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.18),
-            borderRadius: BorderRadius.circular(borderRadius.r),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.22),
-              width: 0.8,
-            ),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.white.withValues(alpha: 0.22),
-                Colors.white.withValues(alpha: 0),
-                Colors.white.withValues(alpha: 0),
-                Colors.white.withValues(alpha: 0.08),
-              ],
-              stops: const [0.0, 0.3, 0.7, 1.0],
-            ),
-          ),
-          child: Padding(
-            padding: padding ?? EdgeInsets.all(AppSpacing.cardPadding),
-            child: child,
-          ),
+    final cardRadius = BorderRadius.circular(borderRadius.r);
+    final shouldBlur = PlatformAdaptive.useBackdropBlur;
+    final card = Container(
+      decoration: BoxDecoration(
+        color: shouldBlur
+            ? Colors.white.withValues(alpha: 0.18)
+            : AppColors.cardBg,
+        borderRadius: cardRadius,
+        border: Border.all(
+          color: shouldBlur
+              ? Colors.white.withValues(alpha: 0.22)
+              : AppColors.border,
+          width: 0.8,
         ),
+        gradient: shouldBlur
+            ? LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white.withValues(alpha: 0.22),
+                  Colors.white.withValues(alpha: 0),
+                  Colors.white.withValues(alpha: 0),
+                  Colors.white.withValues(alpha: 0.08),
+                ],
+                stops: const [0.0, 0.3, 0.7, 1.0],
+              )
+            : null,
+      ),
+      child: Padding(
+        padding: padding ?? EdgeInsets.all(AppSpacing.cardPadding),
+        child: child,
+      ),
+    );
+
+    if (!shouldBlur) {
+      return ClipRRect(borderRadius: cardRadius, child: card);
+    }
+
+    return ClipRRect(
+      borderRadius: cardRadius,
+      child: BackdropFilter(
+        filter: ImageFilter.blur(
+          sigmaX: PlatformAdaptive.cardBlurSigma,
+          sigmaY: PlatformAdaptive.cardBlurSigma,
+        ),
+        child: card,
       ),
     );
   }

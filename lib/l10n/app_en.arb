@@ -4078,7 +4078,7 @@
   "availableSeatsLabel": "Available Seats",
   "totalCapacityLabel": "Total Capacity:",
   "pricePerSeatLabel": "Price per Seat",
-  "minimumPriceError": "Minimum $1",
+  "minimumPriceError": "Minimum €1",
   "priceNegotiableToggle": "Price Negotiable",
   "acceptOnlinePaymentToggle": "Accept Online Payment",
   "preferencesRulesTitle": "Preferences & Rules",
@@ -4130,7 +4130,7 @@
       "count": { "type": "int" }
     }
   },
-  "totalPriceForSeats": "Total: ${price} for {seats} seats",
+  "totalPriceForSeats": "Total: €{price} for {seats} seats",
   "@totalPriceForSeats": {
     "placeholders": {
       "price": { "type": "String" },
@@ -4161,13 +4161,13 @@
     }
   },
   "priceSummaryLabel": "Price",
-  "pricePerSeatSummary": "${price} per seat",
+  "pricePerSeatSummary": "€{price} per seat",
   "@pricePerSeatSummary": {
     "placeholders": {
       "price": { "type": "String" }
     }
   },
-  "pricePerSeatNegotiableSummary": "${price} per seat (negotiable)",
+  "pricePerSeatNegotiableSummary": "€{price} per seat (negotiable)",
   "@pricePerSeatNegotiableSummary": {
     "placeholders": {
       "price": { "type": "String" }

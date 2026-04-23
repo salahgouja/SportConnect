@@ -11,34 +11,11 @@ part of 'gamification_stats.dart';
 
 // dart format off
 T _$identity<T>(T value) => value;
-GamificationStats _$GamificationStatsFromJson(
-  Map<String, dynamic> json
-) {
-        switch (json['type']) {
-                  case 'rider':
-          return RiderGamificationStats.fromJson(
-            json
-          );
-                case 'driver':
-          return DriverGamificationStats.fromJson(
-            json
-          );
-        
-          default:
-            throw CheckedFromJsonException(
-  json,
-  'type',
-  'GamificationStats',
-  'Invalid union type "${json['type']}"!'
-);
-        }
-      
-}
 
 /// @nodoc
 mixin _$GamificationStats {
 
- int get totalXP; int get level; int get currentLevelXP; int get xpToNextLevel; int get totalRides; int get currentStreak; int get longestStreak; double get totalDistance; List<String> get unlockedBadges; List<Achievement> get achievements;@TimestampConverter() DateTime? get lastRideDate;
+ int get totalXP; int get totalRides; int get currentStreak; int get longestStreak; double get totalDistance; List<String> get unlockedBadges; List<Achievement> get achievements;
 /// Create a copy of GamificationStats
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -51,16 +28,16 @@ $GamificationStatsCopyWith<GamificationStats> get copyWith => _$GamificationStat
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is GamificationStats&&(identical(other.totalXP, totalXP) || other.totalXP == totalXP)&&(identical(other.level, level) || other.level == level)&&(identical(other.currentLevelXP, currentLevelXP) || other.currentLevelXP == currentLevelXP)&&(identical(other.xpToNextLevel, xpToNextLevel) || other.xpToNextLevel == xpToNextLevel)&&(identical(other.totalRides, totalRides) || other.totalRides == totalRides)&&(identical(other.currentStreak, currentStreak) || other.currentStreak == currentStreak)&&(identical(other.longestStreak, longestStreak) || other.longestStreak == longestStreak)&&(identical(other.totalDistance, totalDistance) || other.totalDistance == totalDistance)&&const DeepCollectionEquality().equals(other.unlockedBadges, unlockedBadges)&&const DeepCollectionEquality().equals(other.achievements, achievements)&&(identical(other.lastRideDate, lastRideDate) || other.lastRideDate == lastRideDate));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is GamificationStats&&(identical(other.totalXP, totalXP) || other.totalXP == totalXP)&&(identical(other.totalRides, totalRides) || other.totalRides == totalRides)&&(identical(other.currentStreak, currentStreak) || other.currentStreak == currentStreak)&&(identical(other.longestStreak, longestStreak) || other.longestStreak == longestStreak)&&(identical(other.totalDistance, totalDistance) || other.totalDistance == totalDistance)&&const DeepCollectionEquality().equals(other.unlockedBadges, unlockedBadges)&&const DeepCollectionEquality().equals(other.achievements, achievements));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,totalXP,level,currentLevelXP,xpToNextLevel,totalRides,currentStreak,longestStreak,totalDistance,const DeepCollectionEquality().hash(unlockedBadges),const DeepCollectionEquality().hash(achievements),lastRideDate);
+int get hashCode => Object.hash(runtimeType,totalXP,totalRides,currentStreak,longestStreak,totalDistance,const DeepCollectionEquality().hash(unlockedBadges),const DeepCollectionEquality().hash(achievements));
 
 @override
 String toString() {
-  return 'GamificationStats(totalXP: $totalXP, level: $level, currentLevelXP: $currentLevelXP, xpToNextLevel: $xpToNextLevel, totalRides: $totalRides, currentStreak: $currentStreak, longestStreak: $longestStreak, totalDistance: $totalDistance, unlockedBadges: $unlockedBadges, achievements: $achievements, lastRideDate: $lastRideDate)';
+  return 'GamificationStats(totalXP: $totalXP, totalRides: $totalRides, currentStreak: $currentStreak, longestStreak: $longestStreak, totalDistance: $totalDistance, unlockedBadges: $unlockedBadges, achievements: $achievements)';
 }
 
 
@@ -71,7 +48,7 @@ abstract mixin class $GamificationStatsCopyWith<$Res>  {
   factory $GamificationStatsCopyWith(GamificationStats value, $Res Function(GamificationStats) _then) = _$GamificationStatsCopyWithImpl;
 @useResult
 $Res call({
- int totalXP, int level, int currentLevelXP, int xpToNextLevel, int totalRides, int currentStreak, int longestStreak, double totalDistance, List<String> unlockedBadges, List<Achievement> achievements,@TimestampConverter() DateTime? lastRideDate
+ int totalXP, int totalRides, int currentStreak, int longestStreak, double totalDistance, List<String> unlockedBadges, List<Achievement> achievements
 });
 
 
@@ -88,20 +65,16 @@ class _$GamificationStatsCopyWithImpl<$Res>
 
 /// Create a copy of GamificationStats
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? totalXP = null,Object? level = null,Object? currentLevelXP = null,Object? xpToNextLevel = null,Object? totalRides = null,Object? currentStreak = null,Object? longestStreak = null,Object? totalDistance = null,Object? unlockedBadges = null,Object? achievements = null,Object? lastRideDate = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? totalXP = null,Object? totalRides = null,Object? currentStreak = null,Object? longestStreak = null,Object? totalDistance = null,Object? unlockedBadges = null,Object? achievements = null,}) {
   return _then(_self.copyWith(
 totalXP: null == totalXP ? _self.totalXP : totalXP // ignore: cast_nullable_to_non_nullable
-as int,level: null == level ? _self.level : level // ignore: cast_nullable_to_non_nullable
-as int,currentLevelXP: null == currentLevelXP ? _self.currentLevelXP : currentLevelXP // ignore: cast_nullable_to_non_nullable
-as int,xpToNextLevel: null == xpToNextLevel ? _self.xpToNextLevel : xpToNextLevel // ignore: cast_nullable_to_non_nullable
 as int,totalRides: null == totalRides ? _self.totalRides : totalRides // ignore: cast_nullable_to_non_nullable
 as int,currentStreak: null == currentStreak ? _self.currentStreak : currentStreak // ignore: cast_nullable_to_non_nullable
 as int,longestStreak: null == longestStreak ? _self.longestStreak : longestStreak // ignore: cast_nullable_to_non_nullable
 as int,totalDistance: null == totalDistance ? _self.totalDistance : totalDistance // ignore: cast_nullable_to_non_nullable
 as double,unlockedBadges: null == unlockedBadges ? _self.unlockedBadges : unlockedBadges // ignore: cast_nullable_to_non_nullable
 as List<String>,achievements: null == achievements ? _self.achievements : achievements // ignore: cast_nullable_to_non_nullable
-as List<Achievement>,lastRideDate: freezed == lastRideDate ? _self.lastRideDate : lastRideDate // ignore: cast_nullable_to_non_nullable
-as DateTime?,
+as List<Achievement>,
   ));
 }
 
@@ -122,12 +95,11 @@ extension GamificationStatsPatterns on GamificationStats {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( RiderGamificationStats value)?  rider,TResult Function( DriverGamificationStats value)?  driver,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _GamificationStats value)?  $default,{required TResult orElse(),}){
 final _that = this;
 switch (_that) {
-case RiderGamificationStats() when rider != null:
-return rider(_that);case DriverGamificationStats() when driver != null:
-return driver(_that);case _:
+case _GamificationStats() when $default != null:
+return $default(_that);case _:
   return orElse();
 
 }
@@ -145,12 +117,14 @@ return driver(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( RiderGamificationStats value)  rider,required TResult Function( DriverGamificationStats value)  driver,}){
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _GamificationStats value)  $default,){
 final _that = this;
 switch (_that) {
-case RiderGamificationStats():
-return rider(_that);case DriverGamificationStats():
-return driver(_that);}
+case _GamificationStats():
+return $default(_that);case _:
+  throw StateError('Unexpected subclass');
+
+}
 }
 /// A variant of `map` that fallback to returning `null`.
 ///
@@ -164,12 +138,11 @@ return driver(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( RiderGamificationStats value)?  rider,TResult? Function( DriverGamificationStats value)?  driver,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _GamificationStats value)?  $default,){
 final _that = this;
 switch (_that) {
-case RiderGamificationStats() when rider != null:
-return rider(_that);case DriverGamificationStats() when driver != null:
-return driver(_that);case _:
+case _GamificationStats() when $default != null:
+return $default(_that);case _:
   return null;
 
 }
@@ -186,11 +159,10 @@ return driver(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( int totalXP,  int level,  int currentLevelXP,  int xpToNextLevel,  int totalRides,  int currentStreak,  int longestStreak,  double totalDistance,  List<String> unlockedBadges,  List<Achievement> achievements, @TimestampConverter()  DateTime? lastRideDate,  double moneySaved)?  rider,TResult Function( int totalXP,  int level,  int currentLevelXP,  int xpToNextLevel,  int totalRides,  int currentStreak,  int longestStreak,  double totalDistance,  List<String> unlockedBadges,  List<Achievement> achievements, @TimestampConverter()  DateTime? lastRideDate,  double totalEarnings)?  driver,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int totalXP,  int totalRides,  int currentStreak,  int longestStreak,  double totalDistance,  List<String> unlockedBadges,  List<Achievement> achievements)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
-case RiderGamificationStats() when rider != null:
-return rider(_that.totalXP,_that.level,_that.currentLevelXP,_that.xpToNextLevel,_that.totalRides,_that.currentStreak,_that.longestStreak,_that.totalDistance,_that.unlockedBadges,_that.achievements,_that.lastRideDate,_that.moneySaved);case DriverGamificationStats() when driver != null:
-return driver(_that.totalXP,_that.level,_that.currentLevelXP,_that.xpToNextLevel,_that.totalRides,_that.currentStreak,_that.longestStreak,_that.totalDistance,_that.unlockedBadges,_that.achievements,_that.lastRideDate,_that.totalEarnings);case _:
+case _GamificationStats() when $default != null:
+return $default(_that.totalXP,_that.totalRides,_that.currentStreak,_that.longestStreak,_that.totalDistance,_that.unlockedBadges,_that.achievements);case _:
   return orElse();
 
 }
@@ -208,11 +180,13 @@ return driver(_that.totalXP,_that.level,_that.currentLevelXP,_that.xpToNextLevel
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( int totalXP,  int level,  int currentLevelXP,  int xpToNextLevel,  int totalRides,  int currentStreak,  int longestStreak,  double totalDistance,  List<String> unlockedBadges,  List<Achievement> achievements, @TimestampConverter()  DateTime? lastRideDate,  double moneySaved)  rider,required TResult Function( int totalXP,  int level,  int currentLevelXP,  int xpToNextLevel,  int totalRides,  int currentStreak,  int longestStreak,  double totalDistance,  List<String> unlockedBadges,  List<Achievement> achievements, @TimestampConverter()  DateTime? lastRideDate,  double totalEarnings)  driver,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int totalXP,  int totalRides,  int currentStreak,  int longestStreak,  double totalDistance,  List<String> unlockedBadges,  List<Achievement> achievements)  $default,) {final _that = this;
 switch (_that) {
-case RiderGamificationStats():
-return rider(_that.totalXP,_that.level,_that.currentLevelXP,_that.xpToNextLevel,_that.totalRides,_that.currentStreak,_that.longestStreak,_that.totalDistance,_that.unlockedBadges,_that.achievements,_that.lastRideDate,_that.moneySaved);case DriverGamificationStats():
-return driver(_that.totalXP,_that.level,_that.currentLevelXP,_that.xpToNextLevel,_that.totalRides,_that.currentStreak,_that.longestStreak,_that.totalDistance,_that.unlockedBadges,_that.achievements,_that.lastRideDate,_that.totalEarnings);}
+case _GamificationStats():
+return $default(_that.totalXP,_that.totalRides,_that.currentStreak,_that.longestStreak,_that.totalDistance,_that.unlockedBadges,_that.achievements);case _:
+  throw StateError('Unexpected subclass');
+
+}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -226,11 +200,10 @@ return driver(_that.totalXP,_that.level,_that.currentLevelXP,_that.xpToNextLevel
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( int totalXP,  int level,  int currentLevelXP,  int xpToNextLevel,  int totalRides,  int currentStreak,  int longestStreak,  double totalDistance,  List<String> unlockedBadges,  List<Achievement> achievements, @TimestampConverter()  DateTime? lastRideDate,  double moneySaved)?  rider,TResult? Function( int totalXP,  int level,  int currentLevelXP,  int xpToNextLevel,  int totalRides,  int currentStreak,  int longestStreak,  double totalDistance,  List<String> unlockedBadges,  List<Achievement> achievements, @TimestampConverter()  DateTime? lastRideDate,  double totalEarnings)?  driver,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int totalXP,  int totalRides,  int currentStreak,  int longestStreak,  double totalDistance,  List<String> unlockedBadges,  List<Achievement> achievements)?  $default,) {final _that = this;
 switch (_that) {
-case RiderGamificationStats() when rider != null:
-return rider(_that.totalXP,_that.level,_that.currentLevelXP,_that.xpToNextLevel,_that.totalRides,_that.currentStreak,_that.longestStreak,_that.totalDistance,_that.unlockedBadges,_that.achievements,_that.lastRideDate,_that.moneySaved);case DriverGamificationStats() when driver != null:
-return driver(_that.totalXP,_that.level,_that.currentLevelXP,_that.xpToNextLevel,_that.totalRides,_that.currentStreak,_that.longestStreak,_that.totalDistance,_that.unlockedBadges,_that.achievements,_that.lastRideDate,_that.totalEarnings);case _:
+case _GamificationStats() when $default != null:
+return $default(_that.totalXP,_that.totalRides,_that.currentStreak,_that.longestStreak,_that.totalDistance,_that.unlockedBadges,_that.achievements);case _:
   return null;
 
 }
@@ -241,14 +214,11 @@ return driver(_that.totalXP,_that.level,_that.currentLevelXP,_that.xpToNextLevel
 /// @nodoc
 @JsonSerializable()
 
-class RiderGamificationStats extends GamificationStats {
-  const RiderGamificationStats({this.totalXP = 0, this.level = 1, this.currentLevelXP = 0, this.xpToNextLevel = 1000, this.totalRides = 0, this.currentStreak = 0, this.longestStreak = 0, this.totalDistance = 0.0, final  List<String> unlockedBadges = const [], final  List<Achievement> achievements = const [], @TimestampConverter() this.lastRideDate, this.moneySaved = 0.0, final  String? $type}): _unlockedBadges = unlockedBadges,_achievements = achievements,$type = $type ?? 'rider',super._();
-  factory RiderGamificationStats.fromJson(Map<String, dynamic> json) => _$RiderGamificationStatsFromJson(json);
+class _GamificationStats extends GamificationStats {
+  const _GamificationStats({this.totalXP = 0, this.totalRides = 0, this.currentStreak = 0, this.longestStreak = 0, this.totalDistance = 0.0, final  List<String> unlockedBadges = const [], final  List<Achievement> achievements = const []}): _unlockedBadges = unlockedBadges,_achievements = achievements,super._();
+  factory _GamificationStats.fromJson(Map<String, dynamic> json) => _$GamificationStatsFromJson(json);
 
 @override@JsonKey() final  int totalXP;
-@override@JsonKey() final  int level;
-@override@JsonKey() final  int currentLevelXP;
-@override@JsonKey() final  int xpToNextLevel;
 @override@JsonKey() final  int totalRides;
 @override@JsonKey() final  int currentStreak;
 @override@JsonKey() final  int longestStreak;
@@ -267,48 +237,41 @@ class RiderGamificationStats extends GamificationStats {
   return EqualUnmodifiableListView(_achievements);
 }
 
-@override@TimestampConverter() final  DateTime? lastRideDate;
-// RIDER SPECIFIC
-@JsonKey() final  double moneySaved;
-
-@JsonKey(name: 'type')
-final String $type;
-
 
 /// Create a copy of GamificationStats
 /// with the given fields replaced by the non-null parameter values.
 @override @JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
-$RiderGamificationStatsCopyWith<RiderGamificationStats> get copyWith => _$RiderGamificationStatsCopyWithImpl<RiderGamificationStats>(this, _$identity);
+_$GamificationStatsCopyWith<_GamificationStats> get copyWith => __$GamificationStatsCopyWithImpl<_GamificationStats>(this, _$identity);
 
 @override
 Map<String, dynamic> toJson() {
-  return _$RiderGamificationStatsToJson(this, );
+  return _$GamificationStatsToJson(this, );
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is RiderGamificationStats&&(identical(other.totalXP, totalXP) || other.totalXP == totalXP)&&(identical(other.level, level) || other.level == level)&&(identical(other.currentLevelXP, currentLevelXP) || other.currentLevelXP == currentLevelXP)&&(identical(other.xpToNextLevel, xpToNextLevel) || other.xpToNextLevel == xpToNextLevel)&&(identical(other.totalRides, totalRides) || other.totalRides == totalRides)&&(identical(other.currentStreak, currentStreak) || other.currentStreak == currentStreak)&&(identical(other.longestStreak, longestStreak) || other.longestStreak == longestStreak)&&(identical(other.totalDistance, totalDistance) || other.totalDistance == totalDistance)&&const DeepCollectionEquality().equals(other._unlockedBadges, _unlockedBadges)&&const DeepCollectionEquality().equals(other._achievements, _achievements)&&(identical(other.lastRideDate, lastRideDate) || other.lastRideDate == lastRideDate)&&(identical(other.moneySaved, moneySaved) || other.moneySaved == moneySaved));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _GamificationStats&&(identical(other.totalXP, totalXP) || other.totalXP == totalXP)&&(identical(other.totalRides, totalRides) || other.totalRides == totalRides)&&(identical(other.currentStreak, currentStreak) || other.currentStreak == currentStreak)&&(identical(other.longestStreak, longestStreak) || other.longestStreak == longestStreak)&&(identical(other.totalDistance, totalDistance) || other.totalDistance == totalDistance)&&const DeepCollectionEquality().equals(other._unlockedBadges, _unlockedBadges)&&const DeepCollectionEquality().equals(other._achievements, _achievements));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,totalXP,level,currentLevelXP,xpToNextLevel,totalRides,currentStreak,longestStreak,totalDistance,const DeepCollectionEquality().hash(_unlockedBadges),const DeepCollectionEquality().hash(_achievements),lastRideDate,moneySaved);
+int get hashCode => Object.hash(runtimeType,totalXP,totalRides,currentStreak,longestStreak,totalDistance,const DeepCollectionEquality().hash(_unlockedBadges),const DeepCollectionEquality().hash(_achievements));
 
 @override
 String toString() {
-  return 'GamificationStats.rider(totalXP: $totalXP, level: $level, currentLevelXP: $currentLevelXP, xpToNextLevel: $xpToNextLevel, totalRides: $totalRides, currentStreak: $currentStreak, longestStreak: $longestStreak, totalDistance: $totalDistance, unlockedBadges: $unlockedBadges, achievements: $achievements, lastRideDate: $lastRideDate, moneySaved: $moneySaved)';
+  return 'GamificationStats(totalXP: $totalXP, totalRides: $totalRides, currentStreak: $currentStreak, longestStreak: $longestStreak, totalDistance: $totalDistance, unlockedBadges: $unlockedBadges, achievements: $achievements)';
 }
 
 
 }
 
 /// @nodoc
-abstract mixin class $RiderGamificationStatsCopyWith<$Res> implements $GamificationStatsCopyWith<$Res> {
-  factory $RiderGamificationStatsCopyWith(RiderGamificationStats value, $Res Function(RiderGamificationStats) _then) = _$RiderGamificationStatsCopyWithImpl;
+abstract mixin class _$GamificationStatsCopyWith<$Res> implements $GamificationStatsCopyWith<$Res> {
+  factory _$GamificationStatsCopyWith(_GamificationStats value, $Res Function(_GamificationStats) _then) = __$GamificationStatsCopyWithImpl;
 @override @useResult
 $Res call({
- int totalXP, int level, int currentLevelXP, int xpToNextLevel, int totalRides, int currentStreak, int longestStreak, double totalDistance, List<String> unlockedBadges, List<Achievement> achievements,@TimestampConverter() DateTime? lastRideDate, double moneySaved
+ int totalXP, int totalRides, int currentStreak, int longestStreak, double totalDistance, List<String> unlockedBadges, List<Achievement> achievements
 });
 
 
@@ -316,138 +279,25 @@ $Res call({
 
 }
 /// @nodoc
-class _$RiderGamificationStatsCopyWithImpl<$Res>
-    implements $RiderGamificationStatsCopyWith<$Res> {
-  _$RiderGamificationStatsCopyWithImpl(this._self, this._then);
+class __$GamificationStatsCopyWithImpl<$Res>
+    implements _$GamificationStatsCopyWith<$Res> {
+  __$GamificationStatsCopyWithImpl(this._self, this._then);
 
-  final RiderGamificationStats _self;
-  final $Res Function(RiderGamificationStats) _then;
+  final _GamificationStats _self;
+  final $Res Function(_GamificationStats) _then;
 
 /// Create a copy of GamificationStats
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? totalXP = null,Object? level = null,Object? currentLevelXP = null,Object? xpToNextLevel = null,Object? totalRides = null,Object? currentStreak = null,Object? longestStreak = null,Object? totalDistance = null,Object? unlockedBadges = null,Object? achievements = null,Object? lastRideDate = freezed,Object? moneySaved = null,}) {
-  return _then(RiderGamificationStats(
+@override @pragma('vm:prefer-inline') $Res call({Object? totalXP = null,Object? totalRides = null,Object? currentStreak = null,Object? longestStreak = null,Object? totalDistance = null,Object? unlockedBadges = null,Object? achievements = null,}) {
+  return _then(_GamificationStats(
 totalXP: null == totalXP ? _self.totalXP : totalXP // ignore: cast_nullable_to_non_nullable
-as int,level: null == level ? _self.level : level // ignore: cast_nullable_to_non_nullable
-as int,currentLevelXP: null == currentLevelXP ? _self.currentLevelXP : currentLevelXP // ignore: cast_nullable_to_non_nullable
-as int,xpToNextLevel: null == xpToNextLevel ? _self.xpToNextLevel : xpToNextLevel // ignore: cast_nullable_to_non_nullable
 as int,totalRides: null == totalRides ? _self.totalRides : totalRides // ignore: cast_nullable_to_non_nullable
 as int,currentStreak: null == currentStreak ? _self.currentStreak : currentStreak // ignore: cast_nullable_to_non_nullable
 as int,longestStreak: null == longestStreak ? _self.longestStreak : longestStreak // ignore: cast_nullable_to_non_nullable
 as int,totalDistance: null == totalDistance ? _self.totalDistance : totalDistance // ignore: cast_nullable_to_non_nullable
 as double,unlockedBadges: null == unlockedBadges ? _self._unlockedBadges : unlockedBadges // ignore: cast_nullable_to_non_nullable
 as List<String>,achievements: null == achievements ? _self._achievements : achievements // ignore: cast_nullable_to_non_nullable
-as List<Achievement>,lastRideDate: freezed == lastRideDate ? _self.lastRideDate : lastRideDate // ignore: cast_nullable_to_non_nullable
-as DateTime?,moneySaved: null == moneySaved ? _self.moneySaved : moneySaved // ignore: cast_nullable_to_non_nullable
-as double,
-  ));
-}
-
-
-}
-
-/// @nodoc
-@JsonSerializable()
-
-class DriverGamificationStats extends GamificationStats {
-  const DriverGamificationStats({this.totalXP = 0, this.level = 1, this.currentLevelXP = 0, this.xpToNextLevel = 1000, this.totalRides = 0, this.currentStreak = 0, this.longestStreak = 0, this.totalDistance = 0.0, final  List<String> unlockedBadges = const [], final  List<Achievement> achievements = const [], @TimestampConverter() this.lastRideDate, this.totalEarnings = 0.0, final  String? $type}): _unlockedBadges = unlockedBadges,_achievements = achievements,$type = $type ?? 'driver',super._();
-  factory DriverGamificationStats.fromJson(Map<String, dynamic> json) => _$DriverGamificationStatsFromJson(json);
-
-@override@JsonKey() final  int totalXP;
-@override@JsonKey() final  int level;
-@override@JsonKey() final  int currentLevelXP;
-@override@JsonKey() final  int xpToNextLevel;
-@override@JsonKey() final  int totalRides;
-@override@JsonKey() final  int currentStreak;
-@override@JsonKey() final  int longestStreak;
-@override@JsonKey() final  double totalDistance;
- final  List<String> _unlockedBadges;
-@override@JsonKey() List<String> get unlockedBadges {
-  if (_unlockedBadges is EqualUnmodifiableListView) return _unlockedBadges;
-  // ignore: implicit_dynamic_type
-  return EqualUnmodifiableListView(_unlockedBadges);
-}
-
- final  List<Achievement> _achievements;
-@override@JsonKey() List<Achievement> get achievements {
-  if (_achievements is EqualUnmodifiableListView) return _achievements;
-  // ignore: implicit_dynamic_type
-  return EqualUnmodifiableListView(_achievements);
-}
-
-@override@TimestampConverter() final  DateTime? lastRideDate;
-// DRIVER SPECIFIC
-@JsonKey() final  double totalEarnings;
-
-@JsonKey(name: 'type')
-final String $type;
-
-
-/// Create a copy of GamificationStats
-/// with the given fields replaced by the non-null parameter values.
-@override @JsonKey(includeFromJson: false, includeToJson: false)
-@pragma('vm:prefer-inline')
-$DriverGamificationStatsCopyWith<DriverGamificationStats> get copyWith => _$DriverGamificationStatsCopyWithImpl<DriverGamificationStats>(this, _$identity);
-
-@override
-Map<String, dynamic> toJson() {
-  return _$DriverGamificationStatsToJson(this, );
-}
-
-@override
-bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is DriverGamificationStats&&(identical(other.totalXP, totalXP) || other.totalXP == totalXP)&&(identical(other.level, level) || other.level == level)&&(identical(other.currentLevelXP, currentLevelXP) || other.currentLevelXP == currentLevelXP)&&(identical(other.xpToNextLevel, xpToNextLevel) || other.xpToNextLevel == xpToNextLevel)&&(identical(other.totalRides, totalRides) || other.totalRides == totalRides)&&(identical(other.currentStreak, currentStreak) || other.currentStreak == currentStreak)&&(identical(other.longestStreak, longestStreak) || other.longestStreak == longestStreak)&&(identical(other.totalDistance, totalDistance) || other.totalDistance == totalDistance)&&const DeepCollectionEquality().equals(other._unlockedBadges, _unlockedBadges)&&const DeepCollectionEquality().equals(other._achievements, _achievements)&&(identical(other.lastRideDate, lastRideDate) || other.lastRideDate == lastRideDate)&&(identical(other.totalEarnings, totalEarnings) || other.totalEarnings == totalEarnings));
-}
-
-@JsonKey(includeFromJson: false, includeToJson: false)
-@override
-int get hashCode => Object.hash(runtimeType,totalXP,level,currentLevelXP,xpToNextLevel,totalRides,currentStreak,longestStreak,totalDistance,const DeepCollectionEquality().hash(_unlockedBadges),const DeepCollectionEquality().hash(_achievements),lastRideDate,totalEarnings);
-
-@override
-String toString() {
-  return 'GamificationStats.driver(totalXP: $totalXP, level: $level, currentLevelXP: $currentLevelXP, xpToNextLevel: $xpToNextLevel, totalRides: $totalRides, currentStreak: $currentStreak, longestStreak: $longestStreak, totalDistance: $totalDistance, unlockedBadges: $unlockedBadges, achievements: $achievements, lastRideDate: $lastRideDate, totalEarnings: $totalEarnings)';
-}
-
-
-}
-
-/// @nodoc
-abstract mixin class $DriverGamificationStatsCopyWith<$Res> implements $GamificationStatsCopyWith<$Res> {
-  factory $DriverGamificationStatsCopyWith(DriverGamificationStats value, $Res Function(DriverGamificationStats) _then) = _$DriverGamificationStatsCopyWithImpl;
-@override @useResult
-$Res call({
- int totalXP, int level, int currentLevelXP, int xpToNextLevel, int totalRides, int currentStreak, int longestStreak, double totalDistance, List<String> unlockedBadges, List<Achievement> achievements,@TimestampConverter() DateTime? lastRideDate, double totalEarnings
-});
-
-
-
-
-}
-/// @nodoc
-class _$DriverGamificationStatsCopyWithImpl<$Res>
-    implements $DriverGamificationStatsCopyWith<$Res> {
-  _$DriverGamificationStatsCopyWithImpl(this._self, this._then);
-
-  final DriverGamificationStats _self;
-  final $Res Function(DriverGamificationStats) _then;
-
-/// Create a copy of GamificationStats
-/// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? totalXP = null,Object? level = null,Object? currentLevelXP = null,Object? xpToNextLevel = null,Object? totalRides = null,Object? currentStreak = null,Object? longestStreak = null,Object? totalDistance = null,Object? unlockedBadges = null,Object? achievements = null,Object? lastRideDate = freezed,Object? totalEarnings = null,}) {
-  return _then(DriverGamificationStats(
-totalXP: null == totalXP ? _self.totalXP : totalXP // ignore: cast_nullable_to_non_nullable
-as int,level: null == level ? _self.level : level // ignore: cast_nullable_to_non_nullable
-as int,currentLevelXP: null == currentLevelXP ? _self.currentLevelXP : currentLevelXP // ignore: cast_nullable_to_non_nullable
-as int,xpToNextLevel: null == xpToNextLevel ? _self.xpToNextLevel : xpToNextLevel // ignore: cast_nullable_to_non_nullable
-as int,totalRides: null == totalRides ? _self.totalRides : totalRides // ignore: cast_nullable_to_non_nullable
-as int,currentStreak: null == currentStreak ? _self.currentStreak : currentStreak // ignore: cast_nullable_to_non_nullable
-as int,longestStreak: null == longestStreak ? _self.longestStreak : longestStreak // ignore: cast_nullable_to_non_nullable
-as int,totalDistance: null == totalDistance ? _self.totalDistance : totalDistance // ignore: cast_nullable_to_non_nullable
-as double,unlockedBadges: null == unlockedBadges ? _self._unlockedBadges : unlockedBadges // ignore: cast_nullable_to_non_nullable
-as List<String>,achievements: null == achievements ? _self._achievements : achievements // ignore: cast_nullable_to_non_nullable
-as List<Achievement>,lastRideDate: freezed == lastRideDate ? _self.lastRideDate : lastRideDate // ignore: cast_nullable_to_non_nullable
-as DateTime?,totalEarnings: null == totalEarnings ? _self.totalEarnings : totalEarnings // ignore: cast_nullable_to_non_nullable
-as double,
+as List<Achievement>,
   ));
 }
 

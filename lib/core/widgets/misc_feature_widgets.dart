@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
@@ -439,7 +440,7 @@ class SmartReminderCard extends StatelessWidget {
               ],
             ),
           ),
-          Switch.adaptive(
+          AdaptiveSwitch(
             value: isEnabled,
             onChanged: onToggle,
             activeColor: AppColors.primary,

@@ -15,7 +15,7 @@ abstract class RideSearchFilters with _$RideSearchFilters {
     @TimestampConverter() DateTime? departureTimeFrom,
     @TimestampConverter() DateTime? departureTimeTo,
     @Default(1) int minSeats,
-    double? maxPrice,
+    int? maxPrice,
     double? maxRadiusKm,
     @Default(false) bool allowPets,
     @Default(false) bool allowSmoking,

@@ -6,6 +6,96 @@ part of 'payment_model.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
+_StripeCapabilities _$StripeCapabilitiesFromJson(Map json) =>
+    _StripeCapabilities(
+      transfers:
+          $enumDecodeNullable(
+            _$StripeCapabilityStatusEnumMap,
+            json['transfers'],
+          ) ??
+          StripeCapabilityStatus.inactive,
+      cardPayments:
+          $enumDecodeNullable(
+            _$StripeCapabilityStatusEnumMap,
+            json['cardPayments'],
+          ) ??
+          StripeCapabilityStatus.inactive,
+    );
+
+Map<String, dynamic> _$StripeCapabilitiesToJson(_StripeCapabilities instance) =>
+    <String, dynamic>{
+      'transfers': _$StripeCapabilityStatusEnumMap[instance.transfers]!,
+      'cardPayments': _$StripeCapabilityStatusEnumMap[instance.cardPayments]!,
+    };
+
+const _$StripeCapabilityStatusEnumMap = {
+  StripeCapabilityStatus.active: 'active',
+  StripeCapabilityStatus.inactive: 'inactive',
+  StripeCapabilityStatus.pending: 'pending',
+};
+
+_StripeRequirements _$StripeRequirementsFromJson(
+  Map json,
+) => _StripeRequirements(
+  currentlyDue:
+      (json['currentlyDue'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList() ??
+      const [],
+  eventuallyDue:
+      (json['eventuallyDue'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList() ??
+      const [],
+  pastDue:
+      (json['pastDue'] as List<dynamic>?)?.map((e) => e as String).toList() ??
+      const [],
+  pendingVerification:
+      (json['pendingVerification'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList() ??
+      const [],
+  currentDeadline: const TimestampConverter().fromJson(json['currentDeadline']),
+  disabledReason: $enumDecodeNullable(
+    _$StripeDisabledReasonEnumMap,
+    json['disabledReason'],
+  ),
+);
+
+Map<String, dynamic> _$StripeRequirementsToJson(_StripeRequirements instance) =>
+    <String, dynamic>{
+      'currentlyDue': instance.currentlyDue,
+      'eventuallyDue': instance.eventuallyDue,
+      'pastDue': instance.pastDue,
+      'pendingVerification': instance.pendingVerification,
+      'currentDeadline': const TimestampConverter().toJson(
+        instance.currentDeadline,
+      ),
+      'disabledReason': _$StripeDisabledReasonEnumMap[instance.disabledReason],
+    };
+
+const _$StripeDisabledReasonEnumMap = {
+  StripeDisabledReason.actionRequiredRequestedCapabilities:
+      'actionRequiredRequestedCapabilities',
+  StripeDisabledReason.listed: 'listed',
+  StripeDisabledReason.other: 'other',
+  StripeDisabledReason.platformPaused: 'platformPaused',
+  StripeDisabledReason.rejectedFraud: 'rejectedFraud',
+  StripeDisabledReason.rejectedIncompleteVerification:
+      'rejectedIncompleteVerification',
+  StripeDisabledReason.rejectedListed: 'rejectedListed',
+  StripeDisabledReason.rejectedOther: 'rejectedOther',
+  StripeDisabledReason.rejectedPlatformFraud: 'rejectedPlatformFraud',
+  StripeDisabledReason.rejectedPlatformOther: 'rejectedPlatformOther',
+  StripeDisabledReason.rejectedPlatformTermsOfService:
+      'rejectedPlatformTermsOfService',
+  StripeDisabledReason.rejectedTermsOfService: 'rejectedTermsOfService',
+  StripeDisabledReason.requirementsPastDue: 'requirementsPastDue',
+  StripeDisabledReason.requirementsPendingVerification:
+      'requirementsPendingVerification',
+  StripeDisabledReason.underReview: 'underReview',
+};
+
 _PaymentTransaction _$PaymentTransactionFromJson(Map json) =>
     _PaymentTransaction(
       id: json['id'] as String,
@@ -14,11 +104,12 @@ _PaymentTransaction _$PaymentTransactionFromJson(Map json) =>
       riderName: json['riderName'] as String,
       driverId: json['driverId'] as String,
       driverName: json['driverName'] as String,
-      amount: (json['amount'] as num).toDouble(),
+      amountInCents: (json['amountInCents'] as num).toInt(),
       currency: json['currency'] as String,
       status: $enumDecode(_$PaymentStatusEnumMap, json['status']),
-      platformFee: (json['platformFee'] as num).toDouble(),
-      driverEarnings: (json['driverEarnings'] as num).toDouble(),
+      platformFeeInCents: (json['platformFeeInCents'] as num).toInt(),
+      driverEarningsInCents: (json['driverEarningsInCents'] as num).toInt(),
+      stripeFeeInCents: (json['stripeFeeInCents'] as num?)?.toInt() ?? 0,
       paymentMethodType: $enumDecodeNullable(
         _$PaymentMethodTypeEnumMap,
         json['paymentMethodType'],
@@ -27,7 +118,9 @@ _PaymentTransaction _$PaymentTransactionFromJson(Map json) =>
       stripePaymentIntentId: json['stripePaymentIntentId'] as String?,
       stripeCustomerId: json['stripeCustomerId'] as String?,
       stripeChargeId: json['stripeChargeId'] as String?,
-      stripeFee: (json['stripeFee'] as num?)?.toDouble() ?? 0,
+      stripeTransferId: json['stripeTransferId'] as String?,
+      stripeBalanceTransactionId: json['stripeBalanceTransactionId'] as String?,
+      stripeRefundId: json['stripeRefundId'] as String?,
       seatsBooked: (json['seatsBooked'] as num?)?.toInt(),
       createdAt: const TimestampConverter().fromJson(json['createdAt']),
       updatedAt: const TimestampConverter().fromJson(json['updatedAt']),
@@ -49,17 +142,20 @@ Map<String, dynamic> _$PaymentTransactionToJson(
   'riderName': instance.riderName,
   'driverId': instance.driverId,
   'driverName': instance.driverName,
-  'amount': instance.amount,
+  'amountInCents': instance.amountInCents,
   'currency': instance.currency,
   'status': _$PaymentStatusEnumMap[instance.status]!,
-  'platformFee': instance.platformFee,
-  'driverEarnings': instance.driverEarnings,
+  'platformFeeInCents': instance.platformFeeInCents,
+  'driverEarningsInCents': instance.driverEarningsInCents,
+  'stripeFeeInCents': instance.stripeFeeInCents,
   'paymentMethodType': _$PaymentMethodTypeEnumMap[instance.paymentMethodType],
   'paymentMethodLast4': instance.paymentMethodLast4,
   'stripePaymentIntentId': instance.stripePaymentIntentId,
   'stripeCustomerId': instance.stripeCustomerId,
   'stripeChargeId': instance.stripeChargeId,
-  'stripeFee': instance.stripeFee,
+  'stripeTransferId': instance.stripeTransferId,
+  'stripeBalanceTransactionId': instance.stripeBalanceTransactionId,
+  'stripeRefundId': instance.stripeRefundId,
   'seatsBooked': instance.seatsBooked,
   'createdAt': const TimestampConverter().toJson(instance.createdAt),
   'updatedAt': const TimestampConverter().toJson(instance.updatedAt),
@@ -76,6 +172,7 @@ const _$PaymentStatusEnumMap = {
   PaymentStatus.succeeded: 'succeeded',
   PaymentStatus.failed: 'failed',
   PaymentStatus.cancelled: 'cancelled',
+  PaymentStatus.refunding: 'refunding',
   PaymentStatus.refunded: 'refunded',
   PaymentStatus.partiallyRefunded: 'partiallyRefunded',
 };
@@ -92,11 +189,19 @@ _DriverPayout _$DriverPayoutFromJson(Map json) => _DriverPayout(
   driverId: json['driverId'] as String,
   driverName: json['driverName'] as String,
   connectedAccountId: json['connectedAccountId'] as String,
-  amount: (json['amount'] as num).toDouble(),
+  amountInCents: (json['amountInCents'] as num).toInt(),
   currency: json['currency'] as String,
   status: $enumDecode(_$PayoutStatusEnumMap, json['status']),
+  method:
+      $enumDecodeNullable(_$PayoutMethodEnumMap, json['method']) ??
+      PayoutMethod.standard,
+  type:
+      $enumDecodeNullable(_$PayoutTypeEnumMap, json['type']) ??
+      PayoutType.bankAccount,
+  destination: json['destination'] as String?,
   stripePayoutId: json['stripePayoutId'] as String?,
   stripeTransferId: json['stripeTransferId'] as String?,
+  stripeBalanceTransactionId: json['stripeBalanceTransactionId'] as String?,
   transactionIds:
       (json['transactionIds'] as List<dynamic>?)
           ?.map((e) => e as String)
@@ -108,7 +213,7 @@ _DriverPayout _$DriverPayoutFromJson(Map json) => _DriverPayout(
   ),
   arrivedAt: const TimestampConverter().fromJson(json['arrivedAt']),
   failureReason: json['failureReason'] as String?,
-  isInstantPayout: json['isInstantPayout'] as bool?,
+  failureCode: json['failureCode'] as String?,
   metadata:
       (json['metadata'] as Map?)?.map((k, e) => MapEntry(k as String, e)) ??
       const {},
@@ -120,11 +225,15 @@ Map<String, dynamic> _$DriverPayoutToJson(_DriverPayout instance) =>
       'driverId': instance.driverId,
       'driverName': instance.driverName,
       'connectedAccountId': instance.connectedAccountId,
-      'amount': instance.amount,
+      'amountInCents': instance.amountInCents,
       'currency': instance.currency,
       'status': _$PayoutStatusEnumMap[instance.status]!,
+      'method': _$PayoutMethodEnumMap[instance.method]!,
+      'type': _$PayoutTypeEnumMap[instance.type]!,
+      'destination': instance.destination,
       'stripePayoutId': instance.stripePayoutId,
       'stripeTransferId': instance.stripeTransferId,
+      'stripeBalanceTransactionId': instance.stripeBalanceTransactionId,
       'transactionIds': instance.transactionIds,
       'createdAt': const TimestampConverter().toJson(instance.createdAt),
       'expectedArrivalDate': const TimestampConverter().toJson(
@@ -132,7 +241,7 @@ Map<String, dynamic> _$DriverPayoutToJson(_DriverPayout instance) =>
       ),
       'arrivedAt': const TimestampConverter().toJson(instance.arrivedAt),
       'failureReason': instance.failureReason,
-      'isInstantPayout': instance.isInstantPayout,
+      'failureCode': instance.failureCode,
       'metadata': instance.metadata,
     };
 
@@ -144,37 +253,59 @@ const _$PayoutStatusEnumMap = {
   PayoutStatus.cancelled: 'cancelled',
 };
 
-_DriverConnectedAccount _$DriverConnectedAccountFromJson(Map json) =>
-    _DriverConnectedAccount(
-      id: json['id'] as String,
-      driverId: json['driverId'] as String,
-      stripeAccountId: json['stripeAccountId'] as String,
-      email: json['email'] as String,
-      country: json['country'] as String,
-      chargesEnabled: json['chargesEnabled'] as bool,
-      payoutsEnabled: json['payoutsEnabled'] as bool,
-      detailsSubmitted: json['detailsSubmitted'] as bool,
-      onboardingCompleted: json['onboardingCompleted'] as bool?,
-      onboardingCompletedAt: const TimestampConverter().fromJson(
-        json['onboardingCompletedAt'],
-      ),
-      onboardingUrl: json['onboardingUrl'] as String?,
-      accountHolderName: json['accountHolderName'] as String?,
-      totalEarnings: (json['totalEarnings'] as num?)?.toDouble() ?? 0.0,
-      availableBalance: (json['availableBalance'] as num?)?.toDouble() ?? 0.0,
-      pendingBalance: (json['pendingBalance'] as num?)?.toDouble() ?? 0.0,
-      createdAt: const TimestampConverter().fromJson(json['createdAt']),
-      updatedAt: const TimestampConverter().fromJson(json['updatedAt']),
-      lastPayoutAt: const TimestampConverter().fromJson(json['lastPayoutAt']),
-      requirements:
-          (json['requirements'] as Map?)?.map(
-            (k, e) => MapEntry(k as String, e),
-          ) ??
-          const {},
-      metadata:
-          (json['metadata'] as Map?)?.map((k, e) => MapEntry(k as String, e)) ??
-          const {},
-    );
+const _$PayoutMethodEnumMap = {
+  PayoutMethod.standard: 'standard',
+  PayoutMethod.instant: 'instant',
+};
+
+const _$PayoutTypeEnumMap = {
+  PayoutType.bankAccount: 'bankAccount',
+  PayoutType.card: 'card',
+};
+
+_DriverConnectedAccount _$DriverConnectedAccountFromJson(
+  Map json,
+) => _DriverConnectedAccount(
+  id: json['id'] as String,
+  driverId: json['driverId'] as String,
+  stripeAccountId: json['stripeAccountId'] as String,
+  email: json['email'] as String,
+  country: json['country'] as String,
+  defaultCurrency: json['defaultCurrency'] as String,
+  chargesEnabled: json['chargesEnabled'] as bool,
+  payoutsEnabled: json['payoutsEnabled'] as bool,
+  detailsSubmitted: json['detailsSubmitted'] as bool,
+  capabilities: json['capabilities'] == null
+      ? const StripeCapabilities()
+      : StripeCapabilities.fromJson(
+          Map<String, dynamic>.from(json['capabilities'] as Map),
+        ),
+  requirements: json['requirements'] == null
+      ? const StripeRequirements()
+      : StripeRequirements.fromJson(
+          Map<String, dynamic>.from(json['requirements'] as Map),
+        ),
+  futureRequirements: json['futureRequirements'] == null
+      ? const StripeRequirements()
+      : StripeRequirements.fromJson(
+          Map<String, dynamic>.from(json['futureRequirements'] as Map),
+        ),
+  onboardingCompleted: json['onboardingCompleted'] as bool?,
+  onboardingCompletedAt: const TimestampConverter().fromJson(
+    json['onboardingCompletedAt'],
+  ),
+  accountHolderName: json['accountHolderName'] as String?,
+  totalEarningsInCents: (json['totalEarningsInCents'] as num?)?.toInt() ?? 0,
+  availableBalanceInCents:
+      (json['availableBalanceInCents'] as num?)?.toInt() ?? 0,
+  pendingBalanceInCents: (json['pendingBalanceInCents'] as num?)?.toInt() ?? 0,
+  createdAt: const TimestampConverter().fromJson(json['createdAt']),
+  updatedAt: const TimestampConverter().fromJson(json['updatedAt']),
+  lastPayoutAt: const TimestampConverter().fromJson(json['lastPayoutAt']),
+  metadata:
+      (json['metadata'] as Map?)?.map((k, e) => MapEntry(k as String, e)) ??
+      const {},
+);
 
 Map<String, dynamic> _$DriverConnectedAccountToJson(
   _DriverConnectedAccount instance,
@@ -184,22 +315,24 @@ Map<String, dynamic> _$DriverConnectedAccountToJson(
   'stripeAccountId': instance.stripeAccountId,
   'email': instance.email,
   'country': instance.country,
+  'defaultCurrency': instance.defaultCurrency,
   'chargesEnabled': instance.chargesEnabled,
   'payoutsEnabled': instance.payoutsEnabled,
   'detailsSubmitted': instance.detailsSubmitted,
+  'capabilities': instance.capabilities.toJson(),
+  'requirements': instance.requirements.toJson(),
+  'futureRequirements': instance.futureRequirements.toJson(),
   'onboardingCompleted': instance.onboardingCompleted,
   'onboardingCompletedAt': const TimestampConverter().toJson(
     instance.onboardingCompletedAt,
   ),
-  'onboardingUrl': instance.onboardingUrl,
   'accountHolderName': instance.accountHolderName,
-  'totalEarnings': instance.totalEarnings,
-  'availableBalance': instance.availableBalance,
-  'pendingBalance': instance.pendingBalance,
+  'totalEarningsInCents': instance.totalEarningsInCents,
+  'availableBalanceInCents': instance.availableBalanceInCents,
+  'pendingBalanceInCents': instance.pendingBalanceInCents,
   'createdAt': const TimestampConverter().toJson(instance.createdAt),
   'updatedAt': const TimestampConverter().toJson(instance.updatedAt),
   'lastPayoutAt': const TimestampConverter().toJson(instance.lastPayoutAt),
-  'requirements': instance.requirements,
   'metadata': instance.metadata,
 };
 
@@ -213,6 +346,9 @@ _RiderPaymentMethod _$RiderPaymentMethodFromJson(Map json) =>
       last4: json['last4'] as String,
       exMonth: (json['exMonth'] as num).toInt(),
       exYear: (json['exYear'] as num).toInt(),
+      fingerprint: json['fingerprint'] as String?,
+      funding: json['funding'] as String?,
+      cardCountry: json['cardCountry'] as String?,
       isDefault: json['isDefault'] as bool? ?? false,
       createdAt: const TimestampConverter().fromJson(json['createdAt']),
       updatedAt: const TimestampConverter().fromJson(json['updatedAt']),
@@ -228,6 +364,9 @@ Map<String, dynamic> _$RiderPaymentMethodToJson(_RiderPaymentMethod instance) =>
       'last4': instance.last4,
       'exMonth': instance.exMonth,
       'exYear': instance.exYear,
+      'fingerprint': instance.fingerprint,
+      'funding': instance.funding,
+      'cardCountry': instance.cardCountry,
       'isDefault': instance.isDefault,
       'createdAt': const TimestampConverter().toJson(instance.createdAt),
       'updatedAt': const TimestampConverter().toJson(instance.updatedAt),
@@ -235,21 +374,27 @@ Map<String, dynamic> _$RiderPaymentMethodToJson(_RiderPaymentMethod instance) =>
 
 _EarningsSummary _$EarningsSummaryFromJson(Map json) => _EarningsSummary(
   driverId: json['driverId'] as String,
-  totalEarnings: (json['totalEarnings'] as num?)?.toDouble() ?? 0.0,
-  totalPlatformFees: (json['totalPlatformFees'] as num?)?.toDouble() ?? 0.0,
-  totalStripeFees: (json['totalStripeFees'] as num?)?.toDouble() ?? 0.0,
-  earningsToday: (json['earningsToday'] as num?)?.toDouble() ?? 0.0,
-  earningsThisWeek: (json['earningsThisWeek'] as num?)?.toDouble() ?? 0.0,
-  earningsThisMonth: (json['earningsThisMonth'] as num?)?.toDouble() ?? 0.0,
-  earningsThisYear: (json['earningsThisYear'] as num?)?.toDouble() ?? 0.0,
+  totalEarningsInCents: (json['totalEarningsInCents'] as num?)?.toInt() ?? 0,
+  totalPlatformFeesInCents:
+      (json['totalPlatformFeesInCents'] as num?)?.toInt() ?? 0,
+  totalStripeFeesInCents:
+      (json['totalStripeFeesInCents'] as num?)?.toInt() ?? 0,
+  earningsTodayInCents: (json['earningsTodayInCents'] as num?)?.toInt() ?? 0,
+  earningsThisWeekInCents:
+      (json['earningsThisWeekInCents'] as num?)?.toInt() ?? 0,
+  earningsThisMonthInCents:
+      (json['earningsThisMonthInCents'] as num?)?.toInt() ?? 0,
+  earningsThisYearInCents:
+      (json['earningsThisYearInCents'] as num?)?.toInt() ?? 0,
   totalRidesCompleted: (json['totalRidesCompleted'] as num?)?.toInt() ?? 0,
   ridesCompletedToday: (json['ridesCompletedToday'] as num?)?.toInt() ?? 0,
   ridesCompletedThisWeek:
       (json['ridesCompletedThisWeek'] as num?)?.toInt() ?? 0,
   ridesCompletedThisMonth:
       (json['ridesCompletedThisMonth'] as num?)?.toInt() ?? 0,
-  availableBalance: (json['availableBalance'] as num?)?.toDouble() ?? 0.0,
-  pendingBalance: (json['pendingBalance'] as num?)?.toDouble() ?? 0.0,
+  availableBalanceInCents:
+      (json['availableBalanceInCents'] as num?)?.toInt() ?? 0,
+  pendingBalanceInCents: (json['pendingBalanceInCents'] as num?)?.toInt() ?? 0,
   lastUpdated: const TimestampConverter().fromJson(json['lastUpdated']),
   lastPayoutDate: const TimestampConverter().fromJson(json['lastPayoutDate']),
 );
@@ -258,19 +403,19 @@ Map<String, dynamic> _$EarningsSummaryToJson(
   _EarningsSummary instance,
 ) => <String, dynamic>{
   'driverId': instance.driverId,
-  'totalEarnings': instance.totalEarnings,
-  'totalPlatformFees': instance.totalPlatformFees,
-  'totalStripeFees': instance.totalStripeFees,
-  'earningsToday': instance.earningsToday,
-  'earningsThisWeek': instance.earningsThisWeek,
-  'earningsThisMonth': instance.earningsThisMonth,
-  'earningsThisYear': instance.earningsThisYear,
+  'totalEarningsInCents': instance.totalEarningsInCents,
+  'totalPlatformFeesInCents': instance.totalPlatformFeesInCents,
+  'totalStripeFeesInCents': instance.totalStripeFeesInCents,
+  'earningsTodayInCents': instance.earningsTodayInCents,
+  'earningsThisWeekInCents': instance.earningsThisWeekInCents,
+  'earningsThisMonthInCents': instance.earningsThisMonthInCents,
+  'earningsThisYearInCents': instance.earningsThisYearInCents,
   'totalRidesCompleted': instance.totalRidesCompleted,
   'ridesCompletedToday': instance.ridesCompletedToday,
   'ridesCompletedThisWeek': instance.ridesCompletedThisWeek,
   'ridesCompletedThisMonth': instance.ridesCompletedThisMonth,
-  'availableBalance': instance.availableBalance,
-  'pendingBalance': instance.pendingBalance,
+  'availableBalanceInCents': instance.availableBalanceInCents,
+  'pendingBalanceInCents': instance.pendingBalanceInCents,
   'lastUpdated': const TimestampConverter().toJson(instance.lastUpdated),
   'lastPayoutDate': const TimestampConverter().toJson(instance.lastPayoutDate),
 };

@@ -8,7 +8,7 @@ part of 'leaderboard_entry.dart';
 
 _LeaderboardEntry _$LeaderboardEntryFromJson(Map json) => _LeaderboardEntry(
   userId: json['userId'] as String,
-  displayName: json['displayName'] as String,
+  username: json['username'] as String,
   totalXP: (json['totalXP'] as num).toInt(),
   level: (json['level'] as num).toInt(),
   rank: (json['rank'] as num).toInt(),
@@ -19,7 +19,7 @@ _LeaderboardEntry _$LeaderboardEntryFromJson(Map json) => _LeaderboardEntry(
 Map<String, dynamic> _$LeaderboardEntryToJson(_LeaderboardEntry instance) =>
     <String, dynamic>{
       'userId': instance.userId,
-      'displayName': instance.displayName,
+      'username': instance.username,
       'totalXP': instance.totalXP,
       'level': instance.level,
       'rank': instance.rank,

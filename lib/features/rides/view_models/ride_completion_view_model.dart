@@ -3,6 +3,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:printing/printing.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:sport_connect/core/models/user/user_model.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/services/pdf_receipt_service.dart';
 import 'package:sport_connect/core/services/routing_service.dart';
@@ -94,7 +95,7 @@ class RideCompletionUiViewModel extends _$RideCompletionUiViewModel {
         osrmRoutePoints: routeInfo?.coordinates,
         isLoadingOsrmRoute: false,
       );
-    } on Exception catch (_) {
+    } catch (e, st) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoadingOsrmRoute: false);
     }
@@ -109,12 +110,11 @@ class RideCompletionUiViewModel extends _$RideCompletionUiViewModel {
         userProfileProvider(ride.driverId).future,
       );
       if (!ref.mounted) return;
-      final driverName = driverProfile?.displayName ?? 'Driver';
-      final driverPhone = driverProfile?.phoneNumber;
+      final driverName = driverProfile?.username ?? 'Driver';
+      final driverPhone = driverProfile?.asDriver?.phoneNumber;
       final currentUser = ref.read(currentUserProvider).value;
-      final passengerName = currentUser?.displayName;
-      final baseFare = ride.pricePerSeat;
-      final serviceFee = (baseFare * 0.10).roundToDouble();
+      final passengerName = currentUser?.username;
+      final baseFare = ride.pricePerSeatInCents;
       final allBookings = ref.read(bookingsByRideProvider(ride.id)).value ?? [];
       final seatsBooked =
           allBookings
@@ -122,6 +122,7 @@ class RideCompletionUiViewModel extends _$RideCompletionUiViewModel {
               .firstOrNull
               ?.seatsBooked ??
           1;
+      final serviceFee = (baseFare * seatsBooked * 0.10).round();
 
       final pdfBytes = await PdfReceiptService.instance.generateRideReceipt(
         rideId: ride.id,
@@ -131,9 +132,9 @@ class RideCompletionUiViewModel extends _$RideCompletionUiViewModel {
         completedTime: DateTime.now(),
         driverName: driverName,
         driverPhone: driverPhone,
-        pricePerSeat: ride.pricePerSeat,
+        pricePerSeatInCents: ride.pricePerSeatInCents,
         seatsBooked: seatsBooked,
-        serviceFee: serviceFee,
+        serviceFeeInCents: serviceFee,
         passengerName: passengerName,
       );
 
@@ -144,15 +145,15 @@ class RideCompletionUiViewModel extends _$RideCompletionUiViewModel {
       );
       if (!ref.mounted) return;
       state = state.copyWith(isGeneratingPdf: false);
-    } on Exception catch (_) {
+    } catch (e, st) {
       try {
         final driverProfile = await ref.read(
           userProfileProvider(ride.driverId).future,
         );
         if (!ref.mounted) return;
-        final driverName = driverProfile?.displayName ?? 'Driver';
-        final baseFare = ride.pricePerSeat;
-        final serviceFee = (baseFare * 0.10).roundToDouble();
+        final driverName = driverProfile?.username ?? 'Driver';
+        final baseFare = ride.pricePerSeatInCents;
+        final serviceFee = (baseFare * 0.10).round();
         final total = baseFare + serviceFee;
 
         final receipt =
@@ -163,16 +164,16 @@ To: ${ride.destination.address}
 Date: ${DateFormat('MMM d, yyyy h:mm a').format(ride.departureTime)}
 Driver: $driverName
 
-Base Fare: ${baseFare.toStringAsFixed(2)} ${ride.currency ?? 'EUR'}
-Service Fee: ${serviceFee.toStringAsFixed(2)} ${ride.currency ?? 'EUR'}
-Total: ${total.toStringAsFixed(2)} ${ride.currency ?? 'EUR'}
+Base Fare: €${(baseFare / 100).toStringAsFixed(2)}
+Service Fee: €${(serviceFee / 100).toStringAsFixed(2)}
+Total: €${(total / 100).toStringAsFixed(2)}
 ${'=' * 30}
 Ride ID: ${ride.id}''';
 
         await SharePlus.instance.share(ShareParams(text: receipt));
         if (!ref.mounted) return;
         state = state.copyWith(isGeneratingPdf: false);
-      } on Exception catch (e) {
+      } catch (e, st) {
         if (!ref.mounted) return;
         state = state.copyWith(
           isGeneratingPdf: false,

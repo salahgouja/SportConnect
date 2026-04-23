@@ -1,3 +1,4 @@
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -111,6 +112,7 @@ class CancellationReasonScreen extends ConsumerWidget {
     if (confirmed != true) {
       return;
     }
+    if (!context.mounted) return;
     await ref
         .read(cancellationReasonViewModelProvider(rideId).notifier)
         .submit();
@@ -204,59 +206,37 @@ class CancellationReasonScreen extends ConsumerWidget {
       (previous, next) {
         if (next.validationMessage != null &&
             next.validationMessage != previous?.validationMessage) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(next.validationMessage!),
-              backgroundColor: AppColors.warning,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12.r),
-              ),
-            ),
+          AdaptiveSnackBar.show(
+            context,
+            message: next.validationMessage!,
+            type: AdaptiveSnackBarType.warning,
           );
         }
 
         if (next.errorMessage != null &&
             next.errorMessage != previous?.errorMessage) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(next.errorMessage!),
-              backgroundColor: AppColors.error,
-              behavior: SnackBarBehavior.floating,
-            ),
+          AdaptiveSnackBar.show(
+            context,
+            message: next.errorMessage!,
+            type: AdaptiveSnackBarType.error,
           );
         }
 
         if (next.isSubmitted && previous?.isSubmitted != true) {
           HapticFeedback.mediumImpact();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(l10n.rideCancelledSuccessfully),
-              backgroundColor: AppColors.success,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12.r),
-              ),
-            ),
+          AdaptiveSnackBar.show(
+            context,
+            message: l10n.rideCancelledSuccessfully,
+            type: AdaptiveSnackBarType.success,
           );
           context.pop(true);
         }
       },
     );
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text(
-          l10n.cancelRide2,
-          style: TextStyle(
-            fontSize: 18.sp,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          ),
-        ),
+    return AdaptiveScaffold(
+      appBar: AdaptiveAppBar(
+        title: l10n.cancelRide2,
         leading: IconButton(
           tooltip: AppLocalizations.of(context).goBackTooltip,
           icon: Icon(Icons.adaptive.arrow_back_rounded),

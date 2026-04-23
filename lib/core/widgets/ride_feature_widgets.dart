@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Walking distance and directions to pickup point (#19, #45)
@@ -294,13 +296,11 @@ class VehicleQuickSwitchSheet extends StatelessWidget {
     required ValueChanged<String> onSelect,
     String? currentVehicleId,
   }) {
-    return showModalBottomSheet<void>(
+    return AppModalSheet.show<void>(
       context: context,
-      barrierLabel: AppLocalizations.of(context).switchVehicle,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-      ),
-      builder: (_) => VehicleQuickSwitchSheet(
+      title: AppLocalizations.of(context).switchVehicle,
+      maxHeightFactor: 0.65,
+      child: VehicleQuickSwitchSheet(
         vehicles: vehicles,
         currentVehicleId: currentVehicleId,
         onSelect: onSelect,
@@ -343,7 +343,7 @@ class VehicleQuickSwitchSheet extends StatelessWidget {
   Widget _buildVehicleTile(BuildContext context, VehicleOption vehicle) {
     final isSelected = vehicle.id == currentVehicleId;
     final theme = Theme.of(context);
-    return ListTile(
+    return AdaptiveListTile(
       onTap: () {
         HapticFeedback.selectionClick();
         Navigator.pop(context);
@@ -372,7 +372,6 @@ class VehicleQuickSwitchSheet extends StatelessWidget {
       trailing: isSelected
           ? const Icon(Icons.check_circle_rounded, color: AppColors.primary)
           : null,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
     );
   }
 }

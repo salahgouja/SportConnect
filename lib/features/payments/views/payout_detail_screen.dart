@@ -1,14 +1,16 @@
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/features/payments/models/payment_model.dart';
 import 'package:sport_connect/features/payments/view_models/payment_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
-/// Detailed view of a single driver payout with status, amount, and timeline.
+/// Detailed view of a single driver payout with status, amountInCents, and timeline.
 class PayoutDetailScreen extends ConsumerWidget {
   const PayoutDetailScreen({required this.payoutId, super.key});
 
@@ -19,19 +21,9 @@ class PayoutDetailScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final payoutAsync = ref.watch(payoutDetailProvider(payoutId));
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text(
-          l10n.payoutDetails,
-          style: TextStyle(
-            fontSize: 18.sp,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          ),
-        ),
+    return AdaptiveScaffold(
+      appBar: AdaptiveAppBar(
+        title: l10n.payoutDetails,
         leading: IconButton(
           icon: Icon(Icons.adaptive.arrow_back_rounded),
           onPressed: () => context.pop(),
@@ -39,7 +31,7 @@ class PayoutDetailScreen extends ConsumerWidget {
       ),
       body: payoutAsync.when(
         loading: () =>
-            const Center(child: CircularProgressIndicator.adaptive()),
+            const SkeletonLoader(type: SkeletonType.compactTile, itemCount: 4),
         error: (_, _) => _buildErrorView(context, l10n, ref),
         data: (payout) => payout == null
             ? _buildNotFoundView(context, l10n)
@@ -114,7 +106,7 @@ class PayoutDetailScreen extends ConsumerWidget {
           ),
           SizedBox(height: 8.h),
           Text(
-            '${payout.amount.toStringAsFixed(2)} ${payout.currency.toUpperCase()}',
+            '€${(payout.amountInCents / 100).toStringAsFixed(2)}',
             style: TextStyle(
               fontSize: 36.sp,
               fontWeight: FontWeight.w800,
@@ -322,6 +314,7 @@ class PayoutDetailScreen extends ConsumerWidget {
     );
 
     if (confirmed != true) return;
+    if (!context.mounted) return;
 
     final success = await ref
         .read(driverPayoutViewModelProvider.notifier)
@@ -331,18 +324,16 @@ class PayoutDetailScreen extends ConsumerWidget {
 
     if (success) {
       ref.invalidate(payoutDetailProvider(payoutId));
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.payoutCancelled),
-          backgroundColor: AppColors.success,
-        ),
+      AdaptiveSnackBar.show(
+        context,
+        message: l10n.payoutCancelled,
+        type: AdaptiveSnackBarType.success,
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.payoutCancelFailed),
-          backgroundColor: AppColors.error,
-        ),
+      AdaptiveSnackBar.show(
+        context,
+        message: l10n.payoutCancelFailed,
+        type: AdaptiveSnackBarType.error,
       );
     }
   }

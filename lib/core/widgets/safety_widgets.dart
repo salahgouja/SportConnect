@@ -1,9 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Incident report flow (#70)
@@ -21,14 +23,11 @@ class IncidentReportSheet extends StatefulWidget {
     required String rideId,
     required ValueChanged<IncidentReport> onSubmit,
   }) {
-    return showModalBottomSheet<void>(
+    return AppModalSheet.show<void>(
       context: context,
-      isScrollControlled: true,
-      barrierLabel: AppLocalizations.of(context).reportIncident,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-      ),
-      builder: (_) => Padding(
+      title: AppLocalizations.of(context).reportIncident,
+      maxHeightFactor: 0.86,
+      child: Padding(
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).viewInsets.bottom,
         ),

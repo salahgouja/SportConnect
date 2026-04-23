@@ -380,11 +380,7 @@ as DateTime?,
 /// @nodoc
 mixin _$ChatParticipant {
 
-// FIX: Dart field renamed odid → userId for clarity, but the Firestore
-// document field is kept as 'odid' via @JsonKey for backward compatibility
-// with existing participant arrays already written to Firestore.
-// Removing @JsonKey(name: 'odid') would require a Firestore data migration.
-@JsonKey(name: 'odid') String get userId; String get displayName; String? get photoUrl; bool get isAdmin; bool get isMuted;@TimestampConverter() DateTime? get lastSeenAt;@TimestampConverter() DateTime? get joinedAt;
+@JsonKey(name: 'uid') String get userId; String get username; String? get photoUrl; bool get isAdmin; bool get isMuted;@TimestampConverter() DateTime? get lastSeenAt;@TimestampConverter() DateTime? get joinedAt;
 /// Create a copy of ChatParticipant
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -397,16 +393,16 @@ $ChatParticipantCopyWith<ChatParticipant> get copyWith => _$ChatParticipantCopyW
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ChatParticipant&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.photoUrl, photoUrl) || other.photoUrl == photoUrl)&&(identical(other.isAdmin, isAdmin) || other.isAdmin == isAdmin)&&(identical(other.isMuted, isMuted) || other.isMuted == isMuted)&&(identical(other.lastSeenAt, lastSeenAt) || other.lastSeenAt == lastSeenAt)&&(identical(other.joinedAt, joinedAt) || other.joinedAt == joinedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ChatParticipant&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.username, username) || other.username == username)&&(identical(other.photoUrl, photoUrl) || other.photoUrl == photoUrl)&&(identical(other.isAdmin, isAdmin) || other.isAdmin == isAdmin)&&(identical(other.isMuted, isMuted) || other.isMuted == isMuted)&&(identical(other.lastSeenAt, lastSeenAt) || other.lastSeenAt == lastSeenAt)&&(identical(other.joinedAt, joinedAt) || other.joinedAt == joinedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,userId,displayName,photoUrl,isAdmin,isMuted,lastSeenAt,joinedAt);
+int get hashCode => Object.hash(runtimeType,userId,username,photoUrl,isAdmin,isMuted,lastSeenAt,joinedAt);
 
 @override
 String toString() {
-  return 'ChatParticipant(userId: $userId, displayName: $displayName, photoUrl: $photoUrl, isAdmin: $isAdmin, isMuted: $isMuted, lastSeenAt: $lastSeenAt, joinedAt: $joinedAt)';
+  return 'ChatParticipant(userId: $userId, username: $username, photoUrl: $photoUrl, isAdmin: $isAdmin, isMuted: $isMuted, lastSeenAt: $lastSeenAt, joinedAt: $joinedAt)';
 }
 
 
@@ -417,7 +413,7 @@ abstract mixin class $ChatParticipantCopyWith<$Res>  {
   factory $ChatParticipantCopyWith(ChatParticipant value, $Res Function(ChatParticipant) _then) = _$ChatParticipantCopyWithImpl;
 @useResult
 $Res call({
-@JsonKey(name: 'odid') String userId, String displayName, String? photoUrl, bool isAdmin, bool isMuted,@TimestampConverter() DateTime? lastSeenAt,@TimestampConverter() DateTime? joinedAt
+@JsonKey(name: 'uid') String userId, String username, String? photoUrl, bool isAdmin, bool isMuted,@TimestampConverter() DateTime? lastSeenAt,@TimestampConverter() DateTime? joinedAt
 });
 
 
@@ -434,10 +430,10 @@ class _$ChatParticipantCopyWithImpl<$Res>
 
 /// Create a copy of ChatParticipant
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? userId = null,Object? displayName = null,Object? photoUrl = freezed,Object? isAdmin = null,Object? isMuted = null,Object? lastSeenAt = freezed,Object? joinedAt = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? userId = null,Object? username = null,Object? photoUrl = freezed,Object? isAdmin = null,Object? isMuted = null,Object? lastSeenAt = freezed,Object? joinedAt = freezed,}) {
   return _then(_self.copyWith(
 userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
-as String,displayName: null == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
+as String,username: null == username ? _self.username : username // ignore: cast_nullable_to_non_nullable
 as String,photoUrl: freezed == photoUrl ? _self.photoUrl : photoUrl // ignore: cast_nullable_to_non_nullable
 as String?,isAdmin: null == isAdmin ? _self.isAdmin : isAdmin // ignore: cast_nullable_to_non_nullable
 as bool,isMuted: null == isMuted ? _self.isMuted : isMuted // ignore: cast_nullable_to_non_nullable
@@ -528,10 +524,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(name: 'odid')  String userId,  String displayName,  String? photoUrl,  bool isAdmin,  bool isMuted, @TimestampConverter()  DateTime? lastSeenAt, @TimestampConverter()  DateTime? joinedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(name: 'uid')  String userId,  String username,  String? photoUrl,  bool isAdmin,  bool isMuted, @TimestampConverter()  DateTime? lastSeenAt, @TimestampConverter()  DateTime? joinedAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ChatParticipant() when $default != null:
-return $default(_that.userId,_that.displayName,_that.photoUrl,_that.isAdmin,_that.isMuted,_that.lastSeenAt,_that.joinedAt);case _:
+return $default(_that.userId,_that.username,_that.photoUrl,_that.isAdmin,_that.isMuted,_that.lastSeenAt,_that.joinedAt);case _:
   return orElse();
 
 }
@@ -549,10 +545,10 @@ return $default(_that.userId,_that.displayName,_that.photoUrl,_that.isAdmin,_tha
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(name: 'odid')  String userId,  String displayName,  String? photoUrl,  bool isAdmin,  bool isMuted, @TimestampConverter()  DateTime? lastSeenAt, @TimestampConverter()  DateTime? joinedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(name: 'uid')  String userId,  String username,  String? photoUrl,  bool isAdmin,  bool isMuted, @TimestampConverter()  DateTime? lastSeenAt, @TimestampConverter()  DateTime? joinedAt)  $default,) {final _that = this;
 switch (_that) {
 case _ChatParticipant():
-return $default(_that.userId,_that.displayName,_that.photoUrl,_that.isAdmin,_that.isMuted,_that.lastSeenAt,_that.joinedAt);case _:
+return $default(_that.userId,_that.username,_that.photoUrl,_that.isAdmin,_that.isMuted,_that.lastSeenAt,_that.joinedAt);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -569,10 +565,10 @@ return $default(_that.userId,_that.displayName,_that.photoUrl,_that.isAdmin,_tha
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(name: 'odid')  String userId,  String displayName,  String? photoUrl,  bool isAdmin,  bool isMuted, @TimestampConverter()  DateTime? lastSeenAt, @TimestampConverter()  DateTime? joinedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(name: 'uid')  String userId,  String username,  String? photoUrl,  bool isAdmin,  bool isMuted, @TimestampConverter()  DateTime? lastSeenAt, @TimestampConverter()  DateTime? joinedAt)?  $default,) {final _that = this;
 switch (_that) {
 case _ChatParticipant() when $default != null:
-return $default(_that.userId,_that.displayName,_that.photoUrl,_that.isAdmin,_that.isMuted,_that.lastSeenAt,_that.joinedAt);case _:
+return $default(_that.userId,_that.username,_that.photoUrl,_that.isAdmin,_that.isMuted,_that.lastSeenAt,_that.joinedAt);case _:
   return null;
 
 }
@@ -584,15 +580,11 @@ return $default(_that.userId,_that.displayName,_that.photoUrl,_that.isAdmin,_tha
 @JsonSerializable()
 
 class _ChatParticipant implements ChatParticipant {
-  const _ChatParticipant({@JsonKey(name: 'odid') required this.userId, required this.displayName, this.photoUrl, this.isAdmin = false, this.isMuted = false, @TimestampConverter() this.lastSeenAt, @TimestampConverter() this.joinedAt});
+  const _ChatParticipant({@JsonKey(name: 'uid') required this.userId, required this.username, this.photoUrl, this.isAdmin = false, this.isMuted = false, @TimestampConverter() this.lastSeenAt, @TimestampConverter() this.joinedAt});
   factory _ChatParticipant.fromJson(Map<String, dynamic> json) => _$ChatParticipantFromJson(json);
 
-// FIX: Dart field renamed odid → userId for clarity, but the Firestore
-// document field is kept as 'odid' via @JsonKey for backward compatibility
-// with existing participant arrays already written to Firestore.
-// Removing @JsonKey(name: 'odid') would require a Firestore data migration.
-@override@JsonKey(name: 'odid') final  String userId;
-@override final  String displayName;
+@override@JsonKey(name: 'uid') final  String userId;
+@override final  String username;
 @override final  String? photoUrl;
 @override@JsonKey() final  bool isAdmin;
 @override@JsonKey() final  bool isMuted;
@@ -612,16 +604,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ChatParticipant&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.photoUrl, photoUrl) || other.photoUrl == photoUrl)&&(identical(other.isAdmin, isAdmin) || other.isAdmin == isAdmin)&&(identical(other.isMuted, isMuted) || other.isMuted == isMuted)&&(identical(other.lastSeenAt, lastSeenAt) || other.lastSeenAt == lastSeenAt)&&(identical(other.joinedAt, joinedAt) || other.joinedAt == joinedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ChatParticipant&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.username, username) || other.username == username)&&(identical(other.photoUrl, photoUrl) || other.photoUrl == photoUrl)&&(identical(other.isAdmin, isAdmin) || other.isAdmin == isAdmin)&&(identical(other.isMuted, isMuted) || other.isMuted == isMuted)&&(identical(other.lastSeenAt, lastSeenAt) || other.lastSeenAt == lastSeenAt)&&(identical(other.joinedAt, joinedAt) || other.joinedAt == joinedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,userId,displayName,photoUrl,isAdmin,isMuted,lastSeenAt,joinedAt);
+int get hashCode => Object.hash(runtimeType,userId,username,photoUrl,isAdmin,isMuted,lastSeenAt,joinedAt);
 
 @override
 String toString() {
-  return 'ChatParticipant(userId: $userId, displayName: $displayName, photoUrl: $photoUrl, isAdmin: $isAdmin, isMuted: $isMuted, lastSeenAt: $lastSeenAt, joinedAt: $joinedAt)';
+  return 'ChatParticipant(userId: $userId, username: $username, photoUrl: $photoUrl, isAdmin: $isAdmin, isMuted: $isMuted, lastSeenAt: $lastSeenAt, joinedAt: $joinedAt)';
 }
 
 
@@ -632,7 +624,7 @@ abstract mixin class _$ChatParticipantCopyWith<$Res> implements $ChatParticipant
   factory _$ChatParticipantCopyWith(_ChatParticipant value, $Res Function(_ChatParticipant) _then) = __$ChatParticipantCopyWithImpl;
 @override @useResult
 $Res call({
-@JsonKey(name: 'odid') String userId, String displayName, String? photoUrl, bool isAdmin, bool isMuted,@TimestampConverter() DateTime? lastSeenAt,@TimestampConverter() DateTime? joinedAt
+@JsonKey(name: 'uid') String userId, String username, String? photoUrl, bool isAdmin, bool isMuted,@TimestampConverter() DateTime? lastSeenAt,@TimestampConverter() DateTime? joinedAt
 });
 
 
@@ -649,10 +641,10 @@ class __$ChatParticipantCopyWithImpl<$Res>
 
 /// Create a copy of ChatParticipant
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? userId = null,Object? displayName = null,Object? photoUrl = freezed,Object? isAdmin = null,Object? isMuted = null,Object? lastSeenAt = freezed,Object? joinedAt = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? userId = null,Object? username = null,Object? photoUrl = freezed,Object? isAdmin = null,Object? isMuted = null,Object? lastSeenAt = freezed,Object? joinedAt = freezed,}) {
   return _then(_ChatParticipant(
 userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
-as String,displayName: null == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
+as String,username: null == username ? _self.username : username // ignore: cast_nullable_to_non_nullable
 as String,photoUrl: freezed == photoUrl ? _self.photoUrl : photoUrl // ignore: cast_nullable_to_non_nullable
 as String?,isAdmin: null == isAdmin ? _self.isAdmin : isAdmin // ignore: cast_nullable_to_non_nullable
 as bool,isMuted: null == isMuted ? _self.isMuted : isMuted // ignore: cast_nullable_to_non_nullable
@@ -1046,10 +1038,7 @@ as DateTime?,
 /// @nodoc
 mixin _$TypingIndicator {
 
-// No @JsonKey here: new Firestore writes use 'userId' (written by
-// setTyping in the repository). Existing indicators expire in ≤30 s
-// so backward-compat with the old 'odid' field is not needed.
- String get userId; String get displayName; String get chatId;@TimestampConverter() DateTime? get startedAt;
+ String get userId; String get username; String get chatId;@TimestampConverter() DateTime? get startedAt;
 /// Create a copy of TypingIndicator
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1062,16 +1051,16 @@ $TypingIndicatorCopyWith<TypingIndicator> get copyWith => _$TypingIndicatorCopyW
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is TypingIndicator&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.chatId, chatId) || other.chatId == chatId)&&(identical(other.startedAt, startedAt) || other.startedAt == startedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is TypingIndicator&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.username, username) || other.username == username)&&(identical(other.chatId, chatId) || other.chatId == chatId)&&(identical(other.startedAt, startedAt) || other.startedAt == startedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,userId,displayName,chatId,startedAt);
+int get hashCode => Object.hash(runtimeType,userId,username,chatId,startedAt);
 
 @override
 String toString() {
-  return 'TypingIndicator(userId: $userId, displayName: $displayName, chatId: $chatId, startedAt: $startedAt)';
+  return 'TypingIndicator(userId: $userId, username: $username, chatId: $chatId, startedAt: $startedAt)';
 }
 
 
@@ -1082,7 +1071,7 @@ abstract mixin class $TypingIndicatorCopyWith<$Res>  {
   factory $TypingIndicatorCopyWith(TypingIndicator value, $Res Function(TypingIndicator) _then) = _$TypingIndicatorCopyWithImpl;
 @useResult
 $Res call({
- String userId, String displayName, String chatId,@TimestampConverter() DateTime? startedAt
+ String userId, String username, String chatId,@TimestampConverter() DateTime? startedAt
 });
 
 
@@ -1099,10 +1088,10 @@ class _$TypingIndicatorCopyWithImpl<$Res>
 
 /// Create a copy of TypingIndicator
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? userId = null,Object? displayName = null,Object? chatId = null,Object? startedAt = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? userId = null,Object? username = null,Object? chatId = null,Object? startedAt = freezed,}) {
   return _then(_self.copyWith(
 userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
-as String,displayName: null == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
+as String,username: null == username ? _self.username : username // ignore: cast_nullable_to_non_nullable
 as String,chatId: null == chatId ? _self.chatId : chatId // ignore: cast_nullable_to_non_nullable
 as String,startedAt: freezed == startedAt ? _self.startedAt : startedAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,
@@ -1190,10 +1179,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String userId,  String displayName,  String chatId, @TimestampConverter()  DateTime? startedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String userId,  String username,  String chatId, @TimestampConverter()  DateTime? startedAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _TypingIndicator() when $default != null:
-return $default(_that.userId,_that.displayName,_that.chatId,_that.startedAt);case _:
+return $default(_that.userId,_that.username,_that.chatId,_that.startedAt);case _:
   return orElse();
 
 }
@@ -1211,10 +1200,10 @@ return $default(_that.userId,_that.displayName,_that.chatId,_that.startedAt);cas
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String userId,  String displayName,  String chatId, @TimestampConverter()  DateTime? startedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String userId,  String username,  String chatId, @TimestampConverter()  DateTime? startedAt)  $default,) {final _that = this;
 switch (_that) {
 case _TypingIndicator():
-return $default(_that.userId,_that.displayName,_that.chatId,_that.startedAt);case _:
+return $default(_that.userId,_that.username,_that.chatId,_that.startedAt);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -1231,10 +1220,10 @@ return $default(_that.userId,_that.displayName,_that.chatId,_that.startedAt);cas
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String userId,  String displayName,  String chatId, @TimestampConverter()  DateTime? startedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String userId,  String username,  String chatId, @TimestampConverter()  DateTime? startedAt)?  $default,) {final _that = this;
 switch (_that) {
 case _TypingIndicator() when $default != null:
-return $default(_that.userId,_that.displayName,_that.chatId,_that.startedAt);case _:
+return $default(_that.userId,_that.username,_that.chatId,_that.startedAt);case _:
   return null;
 
 }
@@ -1246,14 +1235,11 @@ return $default(_that.userId,_that.displayName,_that.chatId,_that.startedAt);cas
 @JsonSerializable()
 
 class _TypingIndicator implements TypingIndicator {
-  const _TypingIndicator({required this.userId, required this.displayName, required this.chatId, @TimestampConverter() this.startedAt});
+  const _TypingIndicator({required this.userId, required this.username, required this.chatId, @TimestampConverter() this.startedAt});
   factory _TypingIndicator.fromJson(Map<String, dynamic> json) => _$TypingIndicatorFromJson(json);
 
-// No @JsonKey here: new Firestore writes use 'userId' (written by
-// setTyping in the repository). Existing indicators expire in ≤30 s
-// so backward-compat with the old 'odid' field is not needed.
 @override final  String userId;
-@override final  String displayName;
+@override final  String username;
 @override final  String chatId;
 @override@TimestampConverter() final  DateTime? startedAt;
 
@@ -1270,16 +1256,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _TypingIndicator&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.chatId, chatId) || other.chatId == chatId)&&(identical(other.startedAt, startedAt) || other.startedAt == startedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _TypingIndicator&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.username, username) || other.username == username)&&(identical(other.chatId, chatId) || other.chatId == chatId)&&(identical(other.startedAt, startedAt) || other.startedAt == startedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,userId,displayName,chatId,startedAt);
+int get hashCode => Object.hash(runtimeType,userId,username,chatId,startedAt);
 
 @override
 String toString() {
-  return 'TypingIndicator(userId: $userId, displayName: $displayName, chatId: $chatId, startedAt: $startedAt)';
+  return 'TypingIndicator(userId: $userId, username: $username, chatId: $chatId, startedAt: $startedAt)';
 }
 
 
@@ -1290,7 +1276,7 @@ abstract mixin class _$TypingIndicatorCopyWith<$Res> implements $TypingIndicator
   factory _$TypingIndicatorCopyWith(_TypingIndicator value, $Res Function(_TypingIndicator) _then) = __$TypingIndicatorCopyWithImpl;
 @override @useResult
 $Res call({
- String userId, String displayName, String chatId,@TimestampConverter() DateTime? startedAt
+ String userId, String username, String chatId,@TimestampConverter() DateTime? startedAt
 });
 
 
@@ -1307,10 +1293,10 @@ class __$TypingIndicatorCopyWithImpl<$Res>
 
 /// Create a copy of TypingIndicator
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? userId = null,Object? displayName = null,Object? chatId = null,Object? startedAt = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? userId = null,Object? username = null,Object? chatId = null,Object? startedAt = freezed,}) {
   return _then(_TypingIndicator(
 userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
-as String,displayName: null == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
+as String,username: null == username ? _self.username : username // ignore: cast_nullable_to_non_nullable
 as String,chatId: null == chatId ? _self.chatId : chatId // ignore: cast_nullable_to_non_nullable
 as String,startedAt: freezed == startedAt ? _self.startedAt : startedAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,

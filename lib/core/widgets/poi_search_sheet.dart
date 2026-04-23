@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import 'package:sport_connect/core/services/map_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// POI (Points of Interest) Search Widget
@@ -38,11 +41,12 @@ class POISearchSheet extends ConsumerStatefulWidget {
     required Function(PointOfInterest poi) onPOISelected,
     double initialRadius = 2000,
   }) {
-    return showModalBottomSheet<void>(
+    return AppModalSheet.show<void>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => POISearchSheet(
+      title: AppLocalizations.of(context).nearbyPlaces,
+      forceMaxHeight: true,
+      maxHeightFactor: 0.85,
+      child: POISearchSheet(
         currentLocation: currentLocation,
         onPOISelected: onPOISelected,
         initialRadius: initialRadius,
@@ -149,99 +153,78 @@ class _POISearchSheetState extends ConsumerState<POISearchSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return DraggableScrollableSheet(
-      initialChildSize: 0.6,
-      minChildSize: 0.3,
-      maxChildSize: 0.9,
-      builder: (context, scrollController) {
-        return Container(
-          decoration: BoxDecoration(
-            color: AppColors.background,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28.r)),
-          ),
-          child: Column(
-            children: [
-              _buildHandle(),
-              _buildHeader(),
-              _buildRadiusSlider(),
-              _buildCategories(),
-              const Divider(height: 1),
-              Expanded(child: _buildResults(scrollController)),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildHandle() {
-    return Container(
-      margin: EdgeInsets.only(top: 12.h),
-      width: 40.w,
-      height: 4.h,
-      decoration: BoxDecoration(
-        color: AppColors.border,
-        borderRadius: BorderRadius.circular(2.r),
+    return ColoredBox(
+      color: AppColors.background,
+      child: Column(
+        children: [
+          _buildIntro(),
+          _buildRadiusSlider(),
+          _buildCategories(),
+          const Divider(height: 1),
+          Expanded(child: _buildResults()),
+        ],
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildIntro() {
     return Padding(
-      padding: EdgeInsets.all(16.w),
-      child: Row(
-        children: [
-          Container(
-            padding: EdgeInsets.all(10.w),
-            decoration: BoxDecoration(
-              gradient: AppColors.primaryGradient,
-              borderRadius: BorderRadius.circular(12.r),
-            ),
-            child: Icon(
-              Icons.explore_rounded,
-              color: Colors.white,
-              size: 24.sp,
-            ),
+      padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 8.h),
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.all(16.w),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppColors.primary.withValues(alpha: 0.12),
+              AppColors.secondary.withValues(alpha: 0.1),
+            ],
           ),
-          SizedBox(width: 14.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  AppLocalizations.of(context).nearbyPlaces,
-                  style: TextStyle(
-                    fontSize: 20.sp,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                Text(
-                  AppLocalizations.of(context).findUsefulSpotsAlongYour,
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          GestureDetector(
-            onTap: () => context.pop(),
-            child: Container(
-              padding: EdgeInsets.all(8.w),
+          borderRadius: BorderRadius.circular(20.r),
+          border: Border.all(color: AppColors.border.withValues(alpha: 0.7)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: EdgeInsets.all(10.w),
               decoration: BoxDecoration(
-                color: AppColors.surfaceVariant,
-                borderRadius: BorderRadius.circular(10.r),
+                gradient: AppColors.primaryGradient,
+                borderRadius: BorderRadius.circular(14.r),
               ),
               child: Icon(
-                Icons.close_rounded,
-                color: AppColors.textSecondary,
-                size: 22.sp,
+                Icons.explore_rounded,
+                color: Colors.white,
+                size: 24.sp,
               ),
             ),
-          ),
-        ],
+            SizedBox(width: 14.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Explore nearby stops',
+                    style: TextStyle(
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  SizedBox(height: 4.h),
+                  Text(
+                    AppLocalizations.of(context).findUsefulSpotsAlongYour,
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     ).animate().fadeIn(duration: 300.ms);
   }
@@ -289,7 +272,7 @@ class _POISearchSheetState extends ConsumerState<POISearchSheet> {
               trackHeight: 4.h,
               thumbShape: RoundSliderThumbShape(enabledThumbRadius: 8.r),
             ),
-            child: Slider.adaptive(
+            child: AdaptiveSlider(
               value: _searchRadius,
               min: 500,
               max: 10000,
@@ -382,17 +365,18 @@ class _POISearchSheetState extends ConsumerState<POISearchSheet> {
     );
   }
 
-  Widget _buildResults(ScrollController scrollController) {
+  Widget _buildResults() {
     if (_isLoading) {
       return ListView.separated(
-        controller: scrollController,
         padding: EdgeInsets.all(16.w),
         itemCount: 5,
         separatorBuilder: (_, _) => SizedBox(height: 12.h),
         itemBuilder: (context, index) {
-          return _buildSkeletonCard()
-              .animate(onPlay: (c) => c.repeat())
-              .shimmer(duration: 1500.ms, delay: (index * 100).ms);
+          return Skeletonizer(
+            enabled: true,
+            containersColor: AppColors.surfaceVariant,
+            child: _buildSkeletonCard(),
+          );
         },
       );
     }
@@ -477,7 +461,6 @@ class _POISearchSheetState extends ConsumerState<POISearchSheet> {
     }
 
     return ListView.separated(
-      controller: scrollController,
       padding: EdgeInsets.all(16.w),
       itemCount: _results.length,
       separatorBuilder: (_, _) => SizedBox(height: 12.h),

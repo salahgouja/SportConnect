@@ -1,3 +1,4 @@
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,6 +12,7 @@ import 'package:sport_connect/core/theme/app_spacing.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/core/widgets/premium_card.dart';
 import 'package:sport_connect/features/events/models/event_model.dart';
+import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/features/events/view_models/event_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
@@ -22,33 +24,22 @@ class MyEventsScreen extends ConsumerStatefulWidget {
   ConsumerState<MyEventsScreen> createState() => _MyEventsScreenState();
 }
 
-class _MyEventsScreenState extends ConsumerState<MyEventsScreen>
-    with SingleTickerProviderStateMixin {
-  late final TabController _tabCtrl;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabCtrl = TabController(length: 2, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabCtrl.dispose();
-    super.dispose();
-  }
-
+class _MyEventsScreenState extends ConsumerState<MyEventsScreen> {
   @override
   Widget build(BuildContext context) {
-    final userId = ref.watch(currentUserProvider).value?.uid ?? '';
+    final userId = ref.watch(
+      currentUserProvider.select((value) => value.value?.uid ?? ''),
+    );
     final l10n = AppLocalizations.of(context);
+    final actionButton = AdaptiveFloatingActionButton(
+      heroTag: null,
+      onPressed: () => context.push(AppRoutes.createEvent.path),
+      backgroundColor: AppColors.primary,
+      child: Icon(Icons.add_rounded, size: 24.sp),
+    );
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.background,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
+    return AdaptiveScaffold(
+      appBar: AdaptiveAppBar(
         leading: IconButton(
           icon: Icon(
             Icons.adaptive.arrow_back_rounded,
@@ -57,50 +48,21 @@ class _MyEventsScreenState extends ConsumerState<MyEventsScreen>
           ),
           onPressed: () => context.pop(),
         ),
-        title: Text(
-          l10n.myEventsTitle,
-          style: TextStyle(
-            fontSize: 20.sp,
-            fontWeight: FontWeight.w800,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        centerTitle: false,
-        bottom: TabBar(
-          controller: _tabCtrl,
-          labelColor: AppColors.primary,
-          unselectedLabelColor: AppColors.textTertiary,
-          indicatorColor: AppColors.primary,
-          indicatorSize: TabBarIndicatorSize.label,
-          labelStyle: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w700),
-          unselectedLabelStyle: TextStyle(
-            fontSize: 14.sp,
-            fontWeight: FontWeight.w500,
-          ),
-          tabs: [
-            Tab(text: l10n.myEventsCreatedTab),
-            Tab(text: l10n.myEventsJoinedTab),
-          ],
-        ),
+        title: l10n.myEventsTitle,
       ),
-      body: TabBarView(
-        controller: _tabCtrl,
+      body: AdaptiveTabBarView(
+        tabs: [l10n.myEventsCreatedTab, l10n.myEventsJoinedTab],
+        selectedColor: AppColors.primary,
         children: [
           _CreatedTab(userId: userId),
           _JoinedTab(userId: userId),
         ],
       ),
-      floatingActionButton:
-          FloatingActionButton(
-            heroTag: null,
-            onPressed: () => context.push(AppRoutes.createEvent.path),
-            backgroundColor: AppColors.primary,
-            child: Icon(Icons.add_rounded, size: 24.sp),
-          ).animate().scale(
-            delay: 300.ms,
-            duration: 400.ms,
-            curve: Curves.easeOutBack,
-          ),
+      floatingActionButton: actionButton.animate().scale(
+        delay: 300.ms,
+        duration: 400.ms,
+        curve: Curves.easeOutBack,
+      ),
     );
   }
 }
@@ -119,7 +81,7 @@ class _CreatedTab extends ConsumerWidget {
     final stream = ref.watch(eventsByCreatorStreamProvider(userId));
 
     return stream.when(
-      loading: () => const Center(child: CircularProgressIndicator.adaptive()),
+      loading: () => const SkeletonLoader(type: SkeletonType.eventCard, itemCount: 3),
       error: (_, _) => _EmptyTab(message: l10n.unableToLoadEvents),
       data: (events) {
         if (events.isEmpty) {
@@ -145,7 +107,7 @@ class _JoinedTab extends ConsumerWidget {
     final stream = ref.watch(joinedEventsStreamProvider(userId));
 
     return stream.when(
-      loading: () => const Center(child: CircularProgressIndicator.adaptive()),
+      loading: () => const SkeletonLoader(type: SkeletonType.eventCard, itemCount: 3),
       error: (_, _) => _EmptyTab(message: l10n.unableToLoadEvents),
       data: (events) {
         if (events.isEmpty) {

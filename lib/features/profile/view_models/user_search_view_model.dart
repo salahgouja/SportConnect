@@ -17,7 +17,7 @@ final FutureProviderFamily<List<UserModel>, String> searchResultsProvider =
     ) async {
       if (query.isEmpty || query.length < 2) return [];
 
-      final vm = ref.watch(profileActionsViewModelProvider);
+      final vm = ref.watch(profileActionsViewModelProvider.notifier);
       return vm.searchUsers(query: query);
     });
 

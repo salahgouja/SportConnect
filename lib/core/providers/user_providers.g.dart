@@ -25,7 +25,7 @@ final class AuthStateProvider
         argument: null,
         retry: null,
         name: r'authStateProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -44,7 +44,7 @@ final class AuthStateProvider
   }
 }
 
-String _$authStateHash() => r'758ae4e4e34de70fe2d743034d78a541d9de3f05';
+String _$authStateHash() => r'3b4effbdb6e6e6fa30bc2685b825b567c0a41b7b';
 
 /// Current user data provider (Firestore User Model)
 ///
@@ -83,7 +83,7 @@ final class CurrentUserProvider
         argument: null,
         retry: null,
         name: r'currentUserProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -102,4 +102,53 @@ final class CurrentUserProvider
   }
 }
 
-String _$currentUserHash() => r'944e96fa81934d7d72369555d4aace751b1e6ebd';
+String _$currentUserHash() => r'c506edc63c12df0dd555224781026d46219f2817';
+
+/// Pending user's selected role intent during onboarding setup.
+///
+/// This is stored on the user document as `selectedRoleIntent` so refresh/restart
+/// can resume onboarding on the correct screen before role finalization.
+
+@ProviderFor(selectedRoleIntent)
+final selectedRoleIntentProvider = SelectedRoleIntentProvider._();
+
+/// Pending user's selected role intent during onboarding setup.
+///
+/// This is stored on the user document as `selectedRoleIntent` so refresh/restart
+/// can resume onboarding on the correct screen before role finalization.
+
+final class SelectedRoleIntentProvider
+    extends
+        $FunctionalProvider<AsyncValue<UserRole?>, UserRole?, Stream<UserRole?>>
+    with $FutureModifier<UserRole?>, $StreamProvider<UserRole?> {
+  /// Pending user's selected role intent during onboarding setup.
+  ///
+  /// This is stored on the user document as `selectedRoleIntent` so refresh/restart
+  /// can resume onboarding on the correct screen before role finalization.
+  SelectedRoleIntentProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'selectedRoleIntentProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$selectedRoleIntentHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<UserRole?> $createElement($ProviderPointer pointer) =>
+      $StreamProviderElement(pointer);
+
+  @override
+  Stream<UserRole?> create(Ref ref) {
+    return selectedRoleIntent(ref);
+  }
+}
+
+String _$selectedRoleIntentHash() =>
+    r'61ccbef58015d90eca5b5d2f1563c1472e198d5d';

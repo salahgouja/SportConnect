@@ -1,3 +1,4 @@
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -241,7 +242,9 @@ class _PremiumButtonState extends State<PremiumButton>
       ),
     );
 
-    if (widget.showShimmer && !widget.isDisabled && !widget.isLoading) {
+    if (widget.showShimmer &&
+        !widget.isDisabled &&
+        !widget.isLoading) {
       button = button
           .animate(onPlay: (controller) => controller.repeat(reverse: true))
           .shimmer(
@@ -485,7 +488,7 @@ class _PremiumIconButtonState extends State<PremiumIconButton>
     );
 
     if (widget.tooltip != null) {
-      button = Tooltip(message: widget.tooltip, child: button);
+      button = AdaptiveTooltip(message: widget.tooltip ?? '', child: button);
     }
 
     return button;

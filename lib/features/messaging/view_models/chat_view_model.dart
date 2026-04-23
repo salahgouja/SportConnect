@@ -7,7 +7,6 @@ import 'dart:io';
 // exported by flutter_riverpod.
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:riverpod/src/providers/stream_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/features/messaging/models/message_model.dart';
@@ -62,22 +61,20 @@ class ChatListState {
 
 // ── ChatActionsViewModel ──────────────────────────────────────────────────────
 
-final chatActionsViewModelProvider = Provider<ChatActionsViewModel>((ref) {
-  return ChatActionsViewModel(ref);
-});
-
 /// Plain-class wrapper for one-shot chat operations (upload, mute, block, etc.)
 /// that don't require reactive state of their own.
-class ChatActionsViewModel {
-  ChatActionsViewModel(this._ref);
-
-  final Ref _ref;
+@Riverpod(keepAlive: true)
+class ChatActionsViewModel extends _$ChatActionsViewModel {
+  @override
+  void build() {
+    return;
+  }
 
   Future<String> uploadChatImage({
     required String chatId,
     required File imageFile,
     required String fileName,
-  }) => _ref
+  }) => ref
       .read(chatRepositoryProvider)
       .uploadChatImage(
         chatId: chatId,
@@ -89,7 +86,7 @@ class ChatActionsViewModel {
     required String chatId,
     required File audioFile,
     required String fileName,
-  }) => _ref
+  }) => ref
       .read(chatRepositoryProvider)
       .uploadAudioMessage(
         chatId: chatId,
@@ -101,7 +98,7 @@ class ChatActionsViewModel {
     required String chatId,
     required String userId,
     required bool mute,
-  }) => _ref
+  }) => ref
       .read(chatRepositoryProvider)
       .toggleMute(
         chatId: chatId,
@@ -110,7 +107,7 @@ class ChatActionsViewModel {
       );
 
   Future<ChatModel?> getChatById(String chatId) =>
-      _ref.read(chatRepositoryProvider).getChatById(chatId);
+      ref.read(chatRepositoryProvider).getChatById(chatId);
 
   Future<ChatModel> getOrCreatePrivateChat({
     required String userId1,
@@ -119,7 +116,7 @@ class ChatActionsViewModel {
     required String userName2,
     String? userPhoto1,
     String? userPhoto2,
-  }) => _ref
+  }) => ref
       .read(chatRepositoryProvider)
       .getOrCreatePrivateChat(
         userId1: userId1,
@@ -133,7 +130,7 @@ class ChatActionsViewModel {
   Future<void> clearChat({
     required String chatId,
     required String userId,
-  }) => _ref
+  }) => ref
       .read(chatRepositoryProvider)
       .clearChat(
         chatId: chatId,
@@ -145,9 +142,9 @@ class ChatActionsViewModel {
     required String blockedUserId,
     String? chatId,
   }) async {
-    await _ref.read(profileRepositoryProvider).blockUser(userId, blockedUserId);
+    await ref.read(profileRepositoryProvider).blockUser(userId, blockedUserId);
     if (chatId != null && chatId.isNotEmpty) {
-      await _ref
+      await ref
           .read(chatRepositoryProvider)
           .toggleMute(chatId: chatId, userId: userId, mute: true);
     }
@@ -158,11 +155,11 @@ class ChatActionsViewModel {
     required String blockedUserId,
     String? chatId,
   }) async {
-    await _ref
+    await ref
         .read(profileRepositoryProvider)
         .unblockUser(userId, blockedUserId);
     if (chatId != null && chatId.isNotEmpty) {
-      await _ref
+      await ref
           .read(chatRepositoryProvider)
           .toggleMute(chatId: chatId, userId: userId, mute: false);
     }
@@ -176,16 +173,12 @@ class ChatActionsViewModel {
 Stream<List<ChatModel>> userChats(Ref ref, String userId) =>
     ref.watch(chatRepositoryProvider).streamUserChats(userId);
 
-/// Live stream of blocked user IDs for [userId].
-// FIX: Removed verbose explicit type annotation `StreamProviderFamily<...>`.
-// Let Dart infer the type. The old annotation required importing Riverpod's
-// private `src` directory, which is what caused the bad internal import above.
-final StreamProviderFamily<List<String>, String> blockedUserIdsProvider =
-    StreamProvider.family<List<String>, String>(
-      (ref, userId) =>
-          ref.watch(profileRepositoryProvider).streamBlockedUserIds(userId),
-    );
-
+@riverpod
+Stream<List<String>> blockedUserIds(Ref ref, String userId) {
+  return ref
+      .watch(profileRepositoryProvider)
+      .streamBlockedUserIds(userId);
+}
 /// Messages stream for a single chat, filtered to non-deleted only.
 @riverpod
 Stream<List<MessageModel>> chatMessages(Ref ref, String chatId) =>
@@ -313,7 +306,7 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
       );
 
       return true;
-    } on Exception catch (e) {
+    } catch (e, st) {
       if (!ref.mounted) return false;
       state = state.copyWith(isSending: false, error: e.toString());
       return false;
@@ -381,7 +374,7 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
         replyToMessageId: state.replyToMessage?.id,
         replyToContent: state.replyToMessage?.content,
       );
-    } on Exception catch (e) {
+    } catch (e, st) {
       if (!ref.mounted) return false;
       state = state.copyWith(isSending: false, error: e.toString());
       return false;
@@ -417,7 +410,7 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
         replyToMessageId: state.replyToMessage?.id,
         replyToContent: state.replyToMessage?.content,
       );
-    } on Exception catch (e) {
+    } catch (e, st) {
       if (!ref.mounted) return false;
       state = state.copyWith(isSending: false, error: e.toString());
       return false;
@@ -460,7 +453,7 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
         isLoadingMore: false,
         hasMoreMessages: olderMessages.length >= 20,
       );
-    } on Exception catch (e) {
+    } catch (e, st) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoadingMore: false, error: e.toString());
     }
@@ -470,7 +463,7 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
 
   // FIX: Simplified from two symmetric if/else branches with duplicated
   // mounted checks and repository reads into a single linear flow.
-  Future<void> setTyping(bool isTyping, String displayName) async {
+  Future<void> setTyping(bool isTyping, String username) async {
     if (isDraftChatId(chatId)) return;
     _typingTimer?.cancel();
     if (!ref.mounted) return;
@@ -480,23 +473,23 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
         .setTyping(
           chatId: chatId,
           userId: currentUserId,
-          displayName: displayName,
+          username: username,
           isTyping: isTyping,
         );
 
     if (isTyping) {
       _typingTimer = Timer(const Duration(seconds: 5), () {
-        if (ref.mounted) setTyping(false, displayName);
+        if (ref.mounted) setTyping(false, username);
       });
     }
   }
 
-  void handleComposerTextChanged(String text, String displayName) {
+  void handleComposerTextChanged(String text, String username) {
     final trimmed = text.trim();
 
     if (trimmed.isNotEmpty && !state.isLocallyTyping) {
       state = state.copyWith(isLocallyTyping: true);
-      unawaited(setTyping(true, displayName));
+      unawaited(setTyping(true, username));
     }
 
     _typingTimer?.cancel();
@@ -504,7 +497,7 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
     if (trimmed.isEmpty) {
       if (state.isLocallyTyping) {
         state = state.copyWith(isLocallyTyping: false);
-        unawaited(setTyping(false, displayName));
+        unawaited(setTyping(false, username));
       }
       return;
     }
@@ -512,7 +505,7 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
     _typingTimer = Timer(const Duration(seconds: 2), () {
       if (!ref.mounted) return;
       state = state.copyWith(isLocallyTyping: false);
-      unawaited(setTyping(false, displayName));
+      unawaited(setTyping(false, username));
     });
   }
 
@@ -640,12 +633,12 @@ Future<ChatModel> getOrCreateChat(
     participants: [
       ChatParticipant(
         userId: userId1,
-        displayName: userName1,
+        username: userName1,
         photoUrl: userPhoto1,
       ),
       ChatParticipant(
         userId: userId2,
-        displayName: userName2,
+        username: userName2,
         photoUrl: userPhoto2,
       ),
     ],

@@ -1,4 +1,6 @@
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -90,44 +92,33 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
         final errorText = next.errorMessage == 'weak-password'
             ? l10n.changePasswordWeakError
             : l10n.changePasswordGenericError;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorText),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12.r),
-            ),
-          ),
+        AdaptiveSnackBar.show(
+          context,
+          message: errorText,
+          type: AdaptiveSnackBarType.error,
         );
       }
     });
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
+    return AdaptiveScaffold(
+      appBar: AdaptiveAppBar(
         leading: IconButton(
           tooltip: l10n.goBack,
           icon: Icon(Icons.adaptive.arrow_back_rounded),
           onPressed: () => context.pop(),
         ),
-        title: Text(
-          l10n.changePasswordTitle,
-          style: TextStyle(
-            fontSize: 18.sp,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          ),
-        ),
+        title: l10n.changePasswordTitle,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: EdgeInsets.symmetric(horizontal: 24.w),
-          child: vmState.isSuccess
-              ? _buildSuccessState()
-              : _buildFormState(l10n, vmState),
+          child: Column(
+            children: [
+              vmState.isSuccess
+                  ? _buildSuccessState()
+                  : _buildFormState(l10n, vmState),
+            ],
+          ),
         ),
       ),
     );

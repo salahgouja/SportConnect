@@ -8255,7 +8255,7 @@ abstract class AppLocalizations {
   /// No description provided for @minimumPriceError.
   ///
   /// In en, this message translates to:
-  /// **'Minimum \$1'**
+  /// **'Minimum €1'**
   String get minimumPriceError;
 
   /// No description provided for @priceNegotiableToggle.
@@ -8447,7 +8447,7 @@ abstract class AppLocalizations {
   /// No description provided for @totalPriceForSeats.
   ///
   /// In en, this message translates to:
-  /// **'Total: \${price} for {seats} seats'**
+  /// **'Total: €{price} for {seats} seats'**
   String totalPriceForSeats(String price, int seats);
 
   /// No description provided for @decreasePriceTooltip.
@@ -8537,13 +8537,13 @@ abstract class AppLocalizations {
   /// No description provided for @pricePerSeatSummary.
   ///
   /// In en, this message translates to:
-  /// **'\${price} per seat'**
+  /// **'€{price} per seat'**
   String pricePerSeatSummary(String price);
 
   /// No description provided for @pricePerSeatNegotiableSummary.
   ///
   /// In en, this message translates to:
-  /// **'\${price} per seat (negotiable)'**
+  /// **'€{price} per seat (negotiable)'**
   String pricePerSeatNegotiableSummary(String price);
 
   /// No description provided for @eventSummaryLabel.

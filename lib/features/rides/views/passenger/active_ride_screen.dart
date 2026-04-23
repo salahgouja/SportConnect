@@ -1,3 +1,4 @@
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -11,12 +12,12 @@ import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/services/location_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/core/widgets/custom_button.dart';
 import 'package:sport_connect/core/widgets/misc_feature_widgets.dart';
 import 'package:sport_connect/core/widgets/ride_feature_widgets.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/messaging/view_models/chat_view_model.dart';
-import 'package:sport_connect/features/payments/view_models/payment_view_model.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
@@ -75,11 +76,9 @@ class _PassengerActiveRideScreenState
 
     final granted = await svc.requestPermission();
     if (!granted) {
+      final deniedForever = await svc.isPermissionPermanentlyDenied();
       if (mounted) {
-        setState(() async {
-          _locationPermissionDeniedForever = await svc
-              .isPermissionPermanentlyDenied();
-        });
+        setState(() => _locationPermissionDeniedForever = deniedForever);
       }
       return;
     }
@@ -94,7 +93,7 @@ class _PassengerActiveRideScreenState
           ),
         );
       }
-    } on Exception catch (_) {
+    } catch (e, st) {
       // Location not available — pin simply won't show
     }
   }
@@ -112,7 +111,7 @@ class _PassengerActiveRideScreenState
     final currentUser = ref.read(currentUserProvider).value;
     final l10n = AppLocalizations.of(context);
 
-    final userName = currentUser?.displayName ?? 'A passenger';
+    final userName = currentUser?.username ?? 'A passenger';
     final origin = ride.origin.address;
     final destination = ride.destination.address;
     final status = ride.status == RideStatus.inProgress
@@ -200,19 +199,15 @@ class _PassengerActiveRideScreenState
                       chatId: ride.id,
                       message: messages[index],
                       senderId: user.uid,
-                      senderName: user.displayName,
+                      senderName: user.username,
                     );
                     HapticFeedback.lightImpact();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          AppLocalizations.of(
-                            context,
-                          ).sentMessage(messages[index]),
-                        ),
-                        duration: const Duration(seconds: 1),
-                        behavior: SnackBarBehavior.floating,
-                      ),
+                    AdaptiveSnackBar.show(
+                      context,
+                      message: AppLocalizations.of(
+                        context,
+                      ).sentMessage(messages[index]),
+                      type: AdaptiveSnackBarType.success,
                     );
                   },
                   visualDensity: VisualDensity.compact,
@@ -292,14 +287,13 @@ class _PassengerActiveRideScreenState
       },
     );
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return AdaptiveScaffold(
       body: rideAsync.when(
         data: (ride) => ride == null
             ? _buildRideNotFound()
             : _buildActiveRideContent(context, ride),
         loading: () =>
-            const Center(child: CircularProgressIndicator.adaptive()),
+            const SkeletonLoader(type: SkeletonType.rideCard, itemCount: 5),
         error: (e, _) => Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -385,10 +379,10 @@ class _PassengerActiveRideScreenState
       _hasNavigatedOnCancel = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(AppLocalizations.of(context).rideHasBeenCancelled),
-            ),
+          AdaptiveSnackBar.show(
+            context,
+            message: AppLocalizations.of(context).rideHasBeenCancelled,
+            type: AdaptiveSnackBarType.error,
           );
           context.goNamed(AppRoutes.riderMyRides.name);
         }
@@ -441,12 +435,7 @@ class _PassengerActiveRideScreenState
               child: driverAsync
                   .when(
                     data: (driver) => _buildDriverInfo(context, driver, ride),
-                    loading: () => const Padding(
-                      padding: EdgeInsets.all(20),
-                      child: Center(
-                        child: CircularProgressIndicator.adaptive(),
-                      ),
-                    ),
+                    loading: () => const SkeletonLoader(type: SkeletonType.profileCard, itemCount: 1),
                     error: (_, _) => const SizedBox.shrink(),
                   )
                   .animate()
@@ -530,8 +519,7 @@ class _PassengerActiveRideScreenState
                             vertical: 8.h,
                           ),
                           child: PostRideReviewPrompt(
-                            driverName:
-                                driverAsync.value?.displayName ?? 'Driver',
+                            driverName: driverAsync.value?.username ?? 'Driver',
                             onRate: (rating) =>
                                 _showRatingDialog(context, ride),
                             onSkip: () => ref
@@ -1576,7 +1564,7 @@ class _PassengerActiveRideScreenState
                         : null,
                     child: driver.photoUrl == null
                         ? Text(
-                            driver.displayName[0].toUpperCase(),
+                            driver.username[0].toUpperCase(),
                             style: TextStyle(
                               fontSize: 16.sp,
                               fontWeight: FontWeight.bold,
@@ -1593,7 +1581,7 @@ class _PassengerActiveRideScreenState
                           children: [
                             Flexible(
                               child: Text(
-                                driver.displayName,
+                                driver.username,
                                 style: TextStyle(
                                   fontSize: 16.sp,
                                   fontWeight: FontWeight.w600,
@@ -1602,7 +1590,7 @@ class _PassengerActiveRideScreenState
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            if (driver.isIdVerified) ...[
+                            if (driver.isEmailVerified) ...[
                               SizedBox(width: 6.w),
                               Icon(
                                 Icons.verified,
@@ -1618,25 +1606,30 @@ class _PassengerActiveRideScreenState
                             Icon(Icons.star, size: 14.sp, color: Colors.amber),
                             SizedBox(width: 4.w),
                             Text(
-                              driver.rating.average.toStringAsFixed(1),
+                              driver.asDriver?.rating.average.toStringAsFixed(
+                                    1,
+                                  ) ??
+                                  '0.0',
                               style: TextStyle(
                                 fontSize: 13.sp,
                                 fontWeight: FontWeight.w600,
                                 color: AppColors.textPrimary,
                               ),
                             ),
-                            if (driver.rating.total > 0) ...[
+                            if ((driver.asDriver?.rating.total ?? 0) > 0) ...[
                               Text(
-                                ' (${driver.rating.total})',
+                                ' (${driver.asDriver?.rating.total ?? 0})',
                                 style: TextStyle(
                                   fontSize: 12.sp,
                                   color: AppColors.textSecondary,
                                 ),
                               ),
                             ],
-                            if (driver.totalRides > 0) ...[
+                            if ((driver.asDriver?.gamification.totalRides ??
+                                    0) >
+                                0) ...[
                               Text(
-                                ' · ${driver.totalRides} trips',
+                                ' · ${driver.asDriver?.gamification.totalRides ?? 0} trips',
                                 style: TextStyle(
                                   fontSize: 12.sp,
                                   color: AppColors.textSecondary,
@@ -1651,7 +1644,7 @@ class _PassengerActiveRideScreenState
                   // Call button
                   _buildMapCircleButton(
                     Icons.phone,
-                    () => _callDriver(driver.phoneNumber),
+                    () => _callDriver(driver.asDriver?.phoneNumber),
                   ),
                   SizedBox(width: 10.w),
                   // Message button
@@ -2422,7 +2415,7 @@ class _PassengerActiveRideScreenState
                 : null,
             child: driver.photoUrl == null
                 ? Text(
-                    driver.displayName[0].toUpperCase(),
+                    driver.username[0].toUpperCase(),
                     style: TextStyle(
                       fontSize: 18.sp,
                       fontWeight: FontWeight.bold,
@@ -2438,7 +2431,7 @@ class _PassengerActiveRideScreenState
                 Row(
                   children: [
                     Text(
-                      driver.displayName,
+                      driver.username,
                       style: TextStyle(
                         fontSize: 16.sp,
                         fontWeight: FontWeight.w600,
@@ -2446,7 +2439,7 @@ class _PassengerActiveRideScreenState
                       ),
                     ),
                     SizedBox(width: 8.w),
-                    if (driver.isIdVerified)
+                    if (driver.isEmailVerified)
                       Icon(Icons.verified, size: 16.sp, color: Colors.blue),
                   ],
                 ),
@@ -2456,7 +2449,8 @@ class _PassengerActiveRideScreenState
                     Icon(Icons.star, size: 16.sp, color: Colors.amber),
                     SizedBox(width: 4.w),
                     Text(
-                      driver.rating.average.toStringAsFixed(1),
+                      driver.asDriver?.rating.average.toStringAsFixed(1) ??
+                          '0.0',
                       style: TextStyle(
                         fontSize: 14.sp,
                         fontWeight: FontWeight.w500,
@@ -2467,7 +2461,7 @@ class _PassengerActiveRideScreenState
                     Text(
                       AppLocalizations.of(
                         context,
-                      ).valueRides2(driver.rating.total),
+                      ).valueRides2(driver.asDriver?.rating.total ?? 0),
                       style: TextStyle(
                         fontSize: 14.sp,
                         color: AppColors.textTertiary,
@@ -2498,14 +2492,14 @@ class _PassengerActiveRideScreenState
               ),
               IconButton(
                 tooltip: AppLocalizations.of(context).callDriver,
-                onPressed: driver.phoneNumber != null
-                    ? () => _callDriver(driver.phoneNumber)
+                onPressed: driver.asDriver?.phoneNumber != null
+                    ? () => _callDriver(driver.asDriver!.phoneNumber)
                     : null,
                 icon: Container(
                   padding: EdgeInsets.all(10.w),
                   decoration: BoxDecoration(
                     color:
-                        (driver.phoneNumber != null
+                        (driver.asDriver?.phoneNumber != null
                                 ? Colors.green
                                 : Colors.grey)
                             .withValues(alpha: 0.1),
@@ -2513,7 +2507,7 @@ class _PassengerActiveRideScreenState
                   ),
                   child: Icon(
                     Icons.phone,
-                    color: driver.phoneNumber != null
+                    color: driver.asDriver?.phoneNumber != null
                         ? Colors.green
                         : Colors.grey,
                     size: 20.sp,
@@ -2806,10 +2800,10 @@ class _PassengerActiveRideScreenState
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               InfoItem(
-                icon: Icons.attach_money,
+                icon: Icons.euro_symbol,
                 value: AppLocalizations.of(
                   context,
-                ).value5(ride.pricePerSeat.toStringAsFixed(0)),
+                ).value5((ride.pricePerSeatInCents / 100).toStringAsFixed(2)),
                 label: AppLocalizations.of(context).perSeat2,
               ),
               InfoItem(
@@ -2902,7 +2896,7 @@ class _PassengerActiveRideScreenState
                     ? NetworkImage(passenger.photoUrl!)
                     : null,
                 child: passenger.photoUrl == null
-                    ? Text(passenger.displayName[0].toUpperCase())
+                    ? Text(passenger.username[0].toUpperCase())
                     : null,
               ),
               SizedBox(width: 12.w),
@@ -2911,7 +2905,7 @@ class _PassengerActiveRideScreenState
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      passenger.displayName,
+                      passenger.username,
                       style: TextStyle(
                         fontSize: 14.sp,
                         fontWeight: FontWeight.w500,
@@ -2923,7 +2917,10 @@ class _PassengerActiveRideScreenState
                         Icon(Icons.star, size: 14.sp, color: Colors.amber),
                         SizedBox(width: 4.w),
                         Text(
-                          passenger.rating.average.toStringAsFixed(1),
+                          passenger.asRider?.rating.average.toStringAsFixed(
+                                1,
+                              ) ??
+                              '0.0',
                           style: TextStyle(
                             fontSize: 12.sp,
                             color: AppColors.textSecondary,
@@ -3085,14 +3082,15 @@ class _PassengerActiveRideScreenState
       final recipientProfile = await ref.read(
         userProfileProvider(recipientId).future,
       );
-      final recipientName = recipientProfile?.displayName ?? 'User';
+      if (!mounted) return;
+      final recipientName = recipientProfile?.username ?? 'User';
       final recipientPhotoUrl = recipientProfile?.photoUrl;
 
       final chat = await ref.read(
         getOrCreateChatProvider(
           userId1: currentUser.uid,
           userId2: recipientId,
-          userName1: currentUser.displayName,
+          userName1: currentUser.username,
           userName2: recipientName,
         ).future,
       );
@@ -3105,7 +3103,7 @@ class _PassengerActiveRideScreenState
           UserModel.rider(
             uid: recipientId,
             email: '',
-            displayName: recipientName,
+            username: recipientName,
             photoUrl: recipientPhotoUrl,
           );
 
@@ -3116,21 +3114,20 @@ class _PassengerActiveRideScreenState
       );
     } on Exception {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context).failedToOpenChatTryAgain),
-          backgroundColor: AppColors.error,
-        ),
+      AdaptiveSnackBar.show(
+        context,
+        message: AppLocalizations.of(context).failedToOpenChatTryAgain,
+        type: AdaptiveSnackBarType.error,
       );
     }
   }
 
   Future<void> _callDriver(String? phoneNumber) async {
     if (phoneNumber == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context).phoneNumberNotAvailable),
-        ),
+      AdaptiveSnackBar.show(
+        context,
+        message: AppLocalizations.of(context).phoneNumberNotAvailable,
+        type: AdaptiveSnackBarType.error,
       );
       return;
     }
@@ -3141,19 +3138,18 @@ class _PassengerActiveRideScreenState
         await launchUrl(phoneUri);
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(AppLocalizations.of(context).cannotMakePhoneCalls),
-            ),
+          AdaptiveSnackBar.show(
+            context,
+            message: AppLocalizations.of(context).cannotMakePhoneCalls,
           );
         }
       }
     } on Exception {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context).failedToLaunchDialer),
-          ),
+        AdaptiveSnackBar.show(
+          context,
+          message: AppLocalizations.of(context).failedToLaunchDialer,
+          type: AdaptiveSnackBarType.error,
         );
       }
     }
@@ -3197,56 +3193,38 @@ class _PassengerActiveRideScreenState
           .where((b) => b.rideId == ride.id)
           .firstOrNull;
 
+      if (!mounted) return;
       if (myBooking == null) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                AppLocalizations.of(context).bookingNotFoundTryAgain,
-              ),
-              backgroundColor: AppColors.error,
-            ),
-          );
-        }
+        AdaptiveSnackBar.show(
+          context,
+          message: AppLocalizations.of(context).bookingNotFoundTryAgain,
+          type: AdaptiveSnackBarType.error,
+        );
         return;
       }
 
       await ref
-          .read(rideActionsViewModelProvider)
+          .read(rideActionsViewModelProvider.notifier)
           .cancelBooking(rideId: ride.id, bookingId: myBooking.id);
 
-      // Auto-refund if payment was made and intent ID exists
-      if (myBooking.paymentIntentId != null) {
-        try {
-          await ref
-              .read(paymentViewModelProvider.notifier)
-              .refundBookingPayment(
-                paymentId: myBooking.paymentIntentId!,
-                reason: 'User cancelled ride',
-              );
-        } on Exception catch (e) {
-          debugPrint('Failed to refund: $e');
-        }
-      }
+      // Refunds are handled by the booking cancellation Cloud Function.
+      // Calling the refund endpoint here races that trigger and can issue a
+      // duplicate Stripe refund.
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              AppLocalizations.of(context).rideCancelledSuccessfully,
-            ),
-          ),
+        AdaptiveSnackBar.show(
+          context,
+          message: AppLocalizations.of(context).rideCancelledSuccessfully,
+          type: AdaptiveSnackBarType.success,
         );
         context.pop();
       }
-    } on Exception catch (e) {
+    } catch (e, st) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              AppLocalizations.of(context).failedToCancelRideValue(e),
-            ),
-          ),
+        AdaptiveSnackBar.show(
+          context,
+          message: AppLocalizations.of(context).failedToCancelRideValue(e),
+          type: AdaptiveSnackBarType.error,
         );
       }
     }
@@ -3265,7 +3243,7 @@ class _PassengerActiveRideScreenState
       '${AppRoutes.submitReview.path}'
       '?rideId=${ride.id}'
       '&revieweeId=${ride.driverId}'
-      '&revieweeName=${Uri.encodeComponent(driverProfile?.displayName ?? 'Driver')}'
+      '&revieweeName=${Uri.encodeComponent(driverProfile?.username ?? 'Driver')}'
       '&reviewType=driverReview',
     );
   }

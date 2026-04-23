@@ -15,9 +15,9 @@ extension PremiumPlanX on PremiumPlan {
   String get priceLabel {
     switch (this) {
       case PremiumPlan.monthly:
-        return r'$4.99 / month';
+        return '€4.99 / month';
       case PremiumPlan.yearly:
-        return r'$49.99 / year';
+        return '€49.99 / year';
     }
   }
 

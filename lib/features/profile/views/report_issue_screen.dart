@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +10,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
@@ -41,42 +43,34 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
 
   void _showFloatingMessage(String message, {required Color backgroundColor}) {
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: backgroundColor,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12.r),
-        ),
-      ),
+    AdaptiveSnackBar.show(
+      context,
+      message: message,
+      type: AdaptiveSnackBarType.error,
     );
   }
 
   Future<void> _pickFiles() async {
     final l10n = AppLocalizations.of(context);
-    final source = await showModalBottomSheet<ImageSource>(
+    final source = await AppModalSheet.show<ImageSource>(
       context: context,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Column(
+      title: 'Attach evidence',
+      maxHeightFactor: 0.45,
+      child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ListTile(
+            AdaptiveListTile(
               leading: const Icon(Icons.photo_library_rounded),
               title: Text(l10n.chooseFromGallery),
-              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
             ),
-            ListTile(
+            AdaptiveListTile(
               leading: const Icon(Icons.camera_alt_rounded),
               title: Text(l10n.takeAPhoto),
-              onTap: () => Navigator.pop(ctx, ImageSource.camera),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
             ),
           ],
         ),
-      ),
     );
 
     if (source == null) return;
@@ -142,19 +136,9 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
       }
     });
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text(
-          AppLocalizations.of(context).reportIssueTitle,
-          style: TextStyle(
-            fontSize: 18.sp,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          ),
-        ),
+    return AdaptiveScaffold(
+      appBar: AdaptiveAppBar(
+        title: AppLocalizations.of(context).reportIssueTitle,
         leading: IconButton(
           tooltip: AppLocalizations.of(context).goBackTooltip,
           icon: Icon(Icons.adaptive.arrow_back_rounded),

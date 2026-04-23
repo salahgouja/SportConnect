@@ -1,7 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
@@ -37,6 +39,10 @@ class FirebaseService implements IFirebaseService {
   @override
   FirebaseMessaging get messaging => FirebaseMessaging.instance;
 
+  FirebaseDatabase get database => FirebaseDatabase.instance;
+
+  FirebaseFunctions get functions => FirebaseFunctions.instance;
+
   @override
   User? get currentUser => auth.currentUser;
 
@@ -63,12 +69,12 @@ class FirebaseService implements IFirebaseService {
         options: DefaultFirebaseOptions.currentPlatform,
       );
       await FirebaseAppCheck.instance.activate(
-        androidProvider: kDebugMode
-            ? AndroidProvider.debug
-            : AndroidProvider.playIntegrity,
-        appleProvider: kDebugMode
-            ? AppleProvider.debug
-            : AppleProvider.appAttest,
+        providerAndroid: kDebugMode
+            ? const AndroidDebugProvider()
+            : const AndroidPlayIntegrityProvider(),
+        providerApple: kDebugMode
+            ? const AppleDebugProvider()
+            : const AppleDeviceCheckProvider(),
       );
       TalkerService.info('Firebase initialized successfully');
       TalkerService.info('Environment: ${AppConfig.environmentStatus}');
@@ -84,8 +90,8 @@ class FirebaseService implements IFirebaseService {
 
       // Notification permissions are now requested from the UI layer
       // after showing a rationale dialog (2025 store compliance).
-    } on Exception catch (e, stackTrace) {
-      TalkerService.error('Firebase initialization failed', e, stackTrace);
+    } catch (e, st) {
+      TalkerService.error('Firebase initialization failed', e, st);
       rethrow;
     }
   }
@@ -110,10 +116,24 @@ class FirebaseService implements IFirebaseService {
         'Connected to Storage emulator at $host:${AppConfig.storageEmulatorPort}',
       );
 
+      database.useDatabaseEmulator(host, AppConfig.databaseEmulatorPort);
+      TalkerService.info(
+        'Connected to Realtime Database emulator at $host:${AppConfig.databaseEmulatorPort}',
+      );
+
+      functions.useFunctionsEmulator(host, AppConfig.functionsEmulatorPort);
+      TalkerService.info(
+        'Connected to Functions emulator at $host:${AppConfig.functionsEmulatorPort}',
+      );
+
       TalkerService.info('🔧 All Firebase emulators connected successfully!');
-    } on Exception catch (e) {
-      TalkerService.error('Failed to connect to emulators', e);
-      TalkerService.warning('Falling back to production Firebase services');
+    } catch (e, st) {
+      TalkerService.error('Failed to connect to emulators', e, st);
+      TalkerService.warning(
+        'Emulator connection failed on host $host. Ensure Firebase emulators are running and ports match firebase.json. '
+        'For physical devices use --dart-define=FIREBASE_EMULATOR_HOST=<LAN_IP>. '
+        'For Android emulator use --dart-define=FIREBASE_USE_ANDROID_EMULATOR_HOST=true.',
+      );
     }
   }
 }

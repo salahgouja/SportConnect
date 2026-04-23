@@ -338,11 +338,11 @@ class PendingBookingViewModel extends _$PendingBookingViewModel {
         loadingRouteKey: null,
         isLoadingOsrmRoute: false,
       );
-    } on Exception catch (error, stackTrace) {
+    } catch (e, st) {
       TalkerService.error(
         'Error loading pending booking OSRM route',
-        error,
-        stackTrace,
+        e,
+        st,
       );
       if (!ref.mounted) {
         return;
@@ -411,22 +411,26 @@ class PendingBookingViewModel extends _$PendingBookingViewModel {
       final customerId = await paymentViewModel.getOrCreateCustomer(
         userId: user.uid,
         email: user.email,
-        name: user.displayName,
-        phone: user.phoneNumber,
+        name: user.username,
+        phone: switch (user) {
+          final RiderModel rider => rider.asRider?.phoneNumber,
+          final DriverModel driver => driver.asDriver?.phoneNumber,
+          _ => null,
+        },
       );
       if (!ref.mounted) {
         return;
       }
 
-      final totalAmount = ride.pricePerSeat * booking.seatsBooked;
+      final totalAmount = ride.pricePerSeatInCents * booking.seatsBooked;
       final paymentData = await stripeService.createPaymentIntent(
         rideId: ride.id,
         riderId: user.uid,
-        riderName: user.displayName,
+        riderName: user.username,
         driverId: ride.driverId,
-        driverName: driverProfile.displayName,
-        amount: totalAmount,
-        currency: _currencyIsoCode(ride.currency ?? 'eur'),
+        driverName: driverProfile.username,
+        amountInCents: totalAmount,
+        currency: 'eur',
         customerId: customerId,
         driverStripeAccountId: driverStripeAccountId,
         description: '${ride.origin.address} → ${ride.destination.address}',
@@ -439,7 +443,7 @@ class PendingBookingViewModel extends _$PendingBookingViewModel {
         paymentIntentClientSecret: paymentData['clientSecret'] as String,
         customerId: customerId,
         ephemeralKeySecret: paymentData['ephemeralKey'] as String?,
-        currency: _currencyIsoCode(ride.currency ?? 'eur'),
+        currency: 'eur',
       );
       if (!ref.mounted) {
         return;
@@ -466,12 +470,12 @@ class PendingBookingViewModel extends _$PendingBookingViewModel {
         }
 
         await ref
-            .read(rideActionsViewModelProvider)
+            .read(rideActionsViewModelProvider.notifier)
             .markBookingPaid(
               bookingId: booking.id,
               paymentIntentId: paymentIntentId,
             );
-      } on Exception catch (_) {
+      } catch (e, st) {
         // Best effort only.
       }
 
@@ -505,8 +509,8 @@ class PendingBookingViewModel extends _$PendingBookingViewModel {
       _enqueueEffect(
         PendingBookingEffect.snackbar('Payment failed: ${error.message}'),
       );
-    } on Exception catch (error, stackTrace) {
-      TalkerService.error('Pending booking payment failed', error, stackTrace);
+    } catch (e, st) {
+      TalkerService.error('Pending booking payment failed', e, st);
       if (!ref.mounted) {
         return;
       }
@@ -514,9 +518,9 @@ class PendingBookingViewModel extends _$PendingBookingViewModel {
       state = state.copyWith(
         isProcessingPayment: false,
         paymentFailed: true,
-        lastError: error.toString(),
+        lastError: e.toString(),
       );
-      _enqueueEffect(PendingBookingEffect.snackbar('Payment error: $error'));
+      _enqueueEffect(PendingBookingEffect.snackbar('Payment error: $e'));
     }
   }
 
@@ -534,9 +538,10 @@ class PendingBookingViewModel extends _$PendingBookingViewModel {
 
     try {
       await ref
-          .read(rideActionsViewModelProvider)
+          .read(rideActionsViewModelProvider.notifier)
           .cancelBooking(rideId: state.rideId, bookingId: booking.id);
 
+      if (!ref.mounted) return;
       _lastLifecycleEffectKey =
           '${booking.id}|${BookingStatus.cancelled.name}|${booking.paymentIntentId ?? ''}';
       state = state.copyWith(
@@ -544,13 +549,14 @@ class PendingBookingViewModel extends _$PendingBookingViewModel {
         isCancelling: false,
       );
       _enqueueEffect(const PendingBookingEffect.navigateMyRides());
-    } on Exception catch (error, stackTrace) {
+    } catch (e, st) {
+      if (!ref.mounted) return;
       TalkerService.error(
         'Pending booking cancellation failed',
-        error,
-        stackTrace,
+        e,
+        st,
       );
-      state = state.copyWith(isCancelling: false, lastError: error.toString());
+      state = state.copyWith(isCancelling: false, lastError: e.toString());
       _enqueueEffect(
         const PendingBookingEffect.snackbar(
           'Failed to cancel. Please try again.',
@@ -681,46 +687,5 @@ class PendingBookingViewModel extends _$PendingBookingViewModel {
     }
 
     return buffer.toString();
-  }
-
-  String _currencyIsoCode(String currency) {
-    const currencyMap = <String, String>{
-      '€': 'eur',
-      r'$': 'usd',
-      '£': 'gbp',
-      '¥': 'jpy',
-      '₹': 'inr',
-      'CHF': 'chf',
-      r'A$': 'aud',
-      r'C$': 'cad',
-      'kr': 'sek',
-      '₽': 'rub',
-      '₩': 'krw',
-      '฿': 'thb',
-      '₪': 'ils',
-      'R': 'zar',
-      '₱': 'php',
-      'RM': 'myr',
-      'Rp': 'idr',
-      '₫': 'vnd',
-      '₺': 'try',
-      'zł': 'pln',
-      'Kč': 'czk',
-      'Ft': 'huf',
-      'lei': 'ron',
-      'лв': 'bgn',
-      'din': 'rsd',
-      'DKK': 'dkk',
-      'NOK': 'nok',
-      r'NZ$': 'nzd',
-      r'S$': 'sgd',
-      r'HK$': 'hkd',
-    };
-
-    final normalized = currency.toLowerCase();
-    if (normalized.length == 3 && RegExp(r'^[a-z]{3}$').hasMatch(normalized)) {
-      return normalized;
-    }
-    return currencyMap[currency] ?? 'eur';
   }
 }

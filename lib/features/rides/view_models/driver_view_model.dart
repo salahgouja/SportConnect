@@ -1,4 +1,3 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
@@ -11,38 +10,60 @@ import 'package:sport_connect/features/rides/services/ride_request_service.dart'
 
 part 'driver_view_model.g.dart';
 
-final activeDriverRideProvider = StreamProvider<RideModel?>((ref) {
+@riverpod
+Stream<RideModel?> activeDriverRide(Ref ref) {
+  // 1. Watch the auth state. Using valueOrNull is cleaner in 3.0.
   final userId = ref.watch(authStateProvider).value?.uid;
+
   if (userId == null) {
     return Stream.value(null);
   }
 
+  // 2. Watch the repository to ensure we react to any config changes.
   final repository = ref.watch(rideRepositoryProvider);
+
   return repository.streamRidesByDriver(userId).map((rides) {
-    RideModel? activeRide;
+    // 3. Use 'where' and 'fold' for a more declarative approach.
+    return rides
+        .where((ride) => ride.status == RideStatus.inProgress)
+        .fold<RideModel?>(null, (active, ride) {
+          if (active == null) return ride;
 
-    for (final ride in rides) {
-      if (ride.status != RideStatus.inProgress) {
-        continue;
-      }
+          final currentTs =
+              active.updatedAt ?? active.createdAt ?? active.departureTime;
+          final nextTs = ride.updatedAt ?? ride.createdAt ?? ride.departureTime;
 
-      if (activeRide == null) {
-        activeRide = ride;
-        continue;
-      }
-
-      final currentUpdatedAt = activeRide.updatedAt ?? activeRide.createdAt;
-      final nextUpdatedAt = ride.updatedAt ?? ride.createdAt;
-      if ((nextUpdatedAt ?? ride.departureTime).isAfter(
-        currentUpdatedAt ?? activeRide.departureTime,
-      )) {
-        activeRide = ride;
-      }
-    }
-
-    return activeRide;
+          return nextTs.isAfter(currentTs) ? ride : active;
+        });
   });
-});
+}
+
+@riverpod
+Stream<List<RideModel>> pastDriverRides(Ref ref) {
+  final authState = ref.watch(authStateProvider);
+
+  return authState.when(
+    data: (user) {
+      final userId = user?.uid;
+      if (userId == null) return Stream.value([]);
+
+      return ref
+          .watch(rideRepositoryProvider)
+          .streamRidesByDriver(userId)
+          .map(
+            (rides) => rides
+                .where(
+                  (r) =>
+                      r.status == RideStatus.completed ||
+                      r.status == RideStatus.cancelled,
+                )
+                .toList(),
+          );
+    },
+    loading: () => const Stream.empty(),
+    error: (_, __) => const Stream.empty(),
+  );
+}
 
 /// Aggregated dashboard state owned entirely by [DriverViewModel].
 class DriverState {
@@ -255,7 +276,7 @@ class DriverViewModel extends _$DriverViewModel {
         isRefreshing: false,
         lastRefreshAt: DateTime.now(),
       );
-    } on Exception catch (e) {
+    } catch (e, st) {
       if (!ref.mounted) return;
       state = state.copyWith(
         isRefreshing: false,
@@ -298,7 +319,7 @@ class DriverViewModel extends _$DriverViewModel {
         Success() => true,
         Failure(:final message) => throw Exception(message),
       };
-    } on Exception catch (e) {
+    } catch (e, st) {
       if (!ref.mounted) return false;
       state = state.copyWith(
         isLoading: false,
@@ -343,7 +364,7 @@ class DriverViewModel extends _$DriverViewModel {
         Success() => true,
         Failure(:final message) => throw Exception(message),
       };
-    } on Exception catch (e) {
+    } catch (e, st) {
       if (!ref.mounted) return false;
       state = state.copyWith(
         isLoading: false,

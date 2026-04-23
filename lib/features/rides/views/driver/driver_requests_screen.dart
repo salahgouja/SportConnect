@@ -1,6 +1,6 @@
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -8,15 +8,18 @@ import 'package:intl/intl.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
 import 'package:sport_connect/core/theme/platform_adaptive.dart';
+import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
+import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/messaging/view_models/chat_view_model.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
+import 'package:sport_connect/features/rides/repositories/driver_stats_repository.dart';
+import 'package:sport_connect/features/rides/services/ride_request_service.dart';
 import 'package:sport_connect/features/rides/view_models/driver_requests_view_model.dart';
-import 'package:sport_connect/features/rides/view_models/driver_view_model.dart';
-import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Driver Requests Screen — shows pending/accepted/declined bookings.
@@ -28,103 +31,30 @@ class DriverRequestsScreen extends ConsumerStatefulWidget {
       _DriverRequestsScreenState();
 }
 
-class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 3, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
+class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen> {
+  final Set<String> _requestActionIds = {};
 
   @override
   Widget build(BuildContext context) {
-    final driverState = ref.watch(driverViewModelProvider);
-    final pendingCount =
-        driverState.pendingRequests.whenOrNull(data: (list) => list.length) ??
-        0;
-
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.surface,
-        elevation: 0,
-        title: Text(
-          AppLocalizations.of(context).rideRequests,
-          style: TextStyle(
-            fontSize: 20.sp,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        bottom: PreferredSize(
-          preferredSize: Size.fromHeight(52.h),
-          child: Container(
-            margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
-            decoration: BoxDecoration(
-              color: AppColors.background,
-              borderRadius: BorderRadius.circular(12.r),
-            ),
-            child: TabBar(
-              controller: _tabController,
-              indicator: BoxDecoration(
-                color: AppColors.primary,
-                borderRadius: BorderRadius.circular(10.r),
-              ),
-              indicatorSize: TabBarIndicatorSize.tab,
-              dividerColor: Colors.transparent,
-              labelColor: Colors.white,
-              unselectedLabelColor: AppColors.textSecondary,
-              labelStyle: TextStyle(
-                fontSize: 13.sp,
-                fontWeight: FontWeight.w600,
-              ),
-              tabs: [
-                Tab(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(AppLocalizations.of(context).pending),
-                      if (pendingCount > 0) ...[
-                        SizedBox(width: 6.w),
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 6.w,
-                            vertical: 2.h,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.warning,
-                            borderRadius: BorderRadius.circular(8.r),
-                          ),
-                          child: Text(
-                            '$pendingCount',
-                            style: TextStyle(
-                              fontSize: 12.sp,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                Tab(text: AppLocalizations.of(context).accepted),
-                Tab(text: AppLocalizations.of(context).declined),
-              ],
-            ),
-          ),
-        ),
+    final pendingCount = ref.watch(
+      pendingRideRequestsProvider.select(
+        (requests) => requests.whenOrNull(data: (list) => list.length) ?? 0,
       ),
-      body: TabBarView(
-        controller: _tabController,
+    );
+
+    return AdaptiveScaffold(
+      appBar: AdaptiveAppBar(
+        title: AppLocalizations.of(context).rideRequests,
+      ),
+      body: AdaptiveTabBarView(
+        tabs: [
+          pendingCount > 0
+              ? '${AppLocalizations.of(context).pending} ($pendingCount)'
+              : AppLocalizations.of(context).pending,
+          AppLocalizations.of(context).accepted,
+          AppLocalizations.of(context).declined,
+        ],
+        selectedColor: AppColors.primary,
         children: [
           _buildPendingBookings(),
           _buildAcceptedBookings(),
@@ -135,7 +65,7 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen>
   }
 
   Widget _buildPendingBookings() {
-    final pendingAsync = ref.watch(driverViewModelProvider).pendingRequests;
+    final pendingAsync = ref.watch(pendingRideRequestsProvider);
     return pendingAsync.when(
       data: (bookings) {
         if (bookings.isEmpty) {
@@ -241,25 +171,18 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen>
                   ],
                 ),
               ),
-              child:
-                  _PendingBookingCard(
-                        booking: booking,
-                        onAccept: () => _handleAccept(booking),
-                        onDecline: () => _handleDecline(booking),
-                        onViewProfile: () => _handleViewProfile(booking),
-                      )
-                      .animate(delay: Duration(milliseconds: 100 * index))
-                      .fadeIn()
-                      .slideY(begin: 0.1),
+              child: _PendingBookingCard(
+                booking: booking,
+                onAccept: () => _handleAccept(booking),
+                onDecline: () => _handleDecline(booking),
+                onViewProfile: () => _handleViewProfile(booking),
+              ),
             );
           },
         );
       },
-      loading: () => const Center(
-        child: CircularProgressIndicator.adaptive(
-          valueColor: AlwaysStoppedAnimation(AppColors.primary),
-        ),
-      ),
+      loading: () =>
+          const SkeletonLoader(type: SkeletonType.rideCard, itemCount: 4),
       error: (_, _) => Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -276,8 +199,7 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen>
             ),
             SizedBox(height: 16.h),
             TextButton.icon(
-              onPressed: () =>
-                  ref.read(driverViewModelProvider.notifier).refresh(),
+              onPressed: () => ref.invalidate(pendingRideRequestsProvider),
               icon: const Icon(Icons.refresh),
               label: Text(AppLocalizations.of(context).retry),
             ),
@@ -288,7 +210,7 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen>
   }
 
   Widget _buildAcceptedBookings() {
-    final acceptedAsync = ref.watch(driverViewModelProvider).acceptedRequests;
+    final acceptedAsync = ref.watch(acceptedRideRequestsProvider);
     return acceptedAsync.when(
       data: (bookings) {
         if (bookings.isEmpty) {
@@ -328,21 +250,15 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen>
           itemBuilder: (context, index) {
             final booking = bookings[index];
             return _AcceptedBookingCard(
-                  booking: booking,
-                  onMessage: () => _handleMessagePassenger(booking),
-                  onViewDetails: () => _handleViewRideDetails(booking),
-                )
-                .animate(delay: Duration(milliseconds: 100 * index))
-                .fadeIn()
-                .slideY(begin: 0.1);
+              booking: booking,
+              onMessage: () => _handleMessagePassenger(booking),
+              onViewDetails: () => _handleViewRideDetails(booking),
+            );
           },
         );
       },
-      loading: () => const Center(
-        child: CircularProgressIndicator.adaptive(
-          valueColor: AlwaysStoppedAnimation(AppColors.primary),
-        ),
-      ),
+      loading: () =>
+          const SkeletonLoader(type: SkeletonType.rideCard, itemCount: 4),
       error: (_, _) => Center(
         child: Icon(Icons.error_outline, size: 64.sp, color: AppColors.error),
       ),
@@ -350,7 +266,7 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen>
   }
 
   Widget _buildDeclinedBookings() {
-    final rejectedAsync = ref.watch(driverViewModelProvider).rejectedRequests;
+    final rejectedAsync = ref.watch(rejectedRideRequestsProvider);
     return rejectedAsync.when(
       data: (bookings) {
         if (bookings.isEmpty) {
@@ -391,25 +307,79 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen>
               _DeclinedBookingCard(booking: bookings[index]),
         );
       },
-      loading: () => const Center(
-        child: CircularProgressIndicator.adaptive(
-          valueColor: AlwaysStoppedAnimation(AppColors.primary),
-        ),
-      ),
+      loading: () =>
+          const SkeletonLoader(type: SkeletonType.rideCard, itemCount: 4),
       error: (_, _) => Center(
         child: Icon(Icons.error_outline, size: 64.sp, color: AppColors.error),
       ),
     );
   }
 
+  bool _beginRequestAction(String bookingId) {
+    if (_requestActionIds.contains(bookingId)) return false;
+    setState(() => _requestActionIds.add(bookingId));
+    return true;
+  }
+
+  void _endRequestAction(String bookingId) {
+    if (!mounted) return;
+    setState(() => _requestActionIds.remove(bookingId));
+  }
+
+  Future<bool> _acceptRideRequest(RideBooking booking) async {
+    if (!_beginRequestAction(booking.id)) return false;
+    try {
+      final result = await ref
+          .read(rideRequestServiceProvider.notifier)
+          .acceptRequest(booking.id);
+      if (!mounted) return false;
+      return switch (result) {
+        Success() => _refreshAfterAccept(),
+        Failure() => false,
+      };
+    } finally {
+      _endRequestAction(booking.id);
+    }
+  }
+
+  Future<bool> _declineRideRequest(RideBooking booking, String reason) async {
+    if (!_beginRequestAction(booking.id)) return false;
+    try {
+      final result = await ref
+          .read(rideRequestServiceProvider.notifier)
+          .rejectRequest(booking.id, reason);
+      if (!mounted) return false;
+      return switch (result) {
+        Success() => _refreshAfterDecline(),
+        Failure() => false,
+      };
+    } finally {
+      _endRequestAction(booking.id);
+    }
+  }
+
+  bool _refreshAfterAccept() {
+    ref.invalidate(pendingRideRequestsProvider);
+    ref.invalidate(acceptedRideRequestsProvider);
+    ref.invalidate(upcomingDriverRidesProvider);
+    return true;
+  }
+
+  bool _refreshAfterDecline() {
+    ref.invalidate(pendingRideRequestsProvider);
+    ref.invalidate(rejectedRideRequestsProvider);
+    return true;
+  }
+
   void _handleAccept(RideBooking booking) {
     HapticFeedback.heavyImpact();
+    final scaffoldContext = context;
     final formattedDate = DateFormat(
       'EEE, MMM d',
     ).format(booking.createdAt ?? DateTime.now());
     showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog.adaptive(
+      context: scaffoldContext,
+      builder: (dialogContext) => AlertDialog.adaptive(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
         ),
@@ -424,11 +394,11 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen>
               child: const Icon(Icons.check_rounded, color: AppColors.success),
             ),
             SizedBox(width: 12.w),
-            Text(AppLocalizations.of(context).acceptRequest),
+            Text(AppLocalizations.of(dialogContext).acceptRequest),
           ],
         ),
         content: Text(
-          AppLocalizations.of(context).youAreAboutToAccept(
+          AppLocalizations.of(dialogContext).youAreAboutToAccept(
             'this passenger',
             formattedDate,
             DateFormat('HH:mm').format(booking.createdAt ?? DateTime.now()),
@@ -436,33 +406,27 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen>
         ),
         actions: [
           TextButton(
-            onPressed: () => context.pop(),
-            child: Text(AppLocalizations.of(context).actionCancel),
+            onPressed: () => dialogContext.pop(),
+            child: Text(AppLocalizations.of(dialogContext).actionCancel),
           ),
           ElevatedButton(
             onPressed: () async {
-              context.pop();
-              final accepted = await ref
-                  .read(driverViewModelProvider.notifier)
-                  .acceptRideRequest(booking.rideId, booking.id);
-              if (!mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    accepted
-                        ? AppLocalizations.of(
-                            context,
-                          ).requestAcceptedValueHasBeen('Passenger')
-                        : AppLocalizations.of(context).failedToAcceptRequest,
-                  ),
-                  backgroundColor: accepted
-                      ? AppColors.success
-                      : AppColors.error,
-                ),
+              dialogContext.pop();
+              final accepted = await _acceptRideRequest(booking);
+              if (!mounted || !scaffoldContext.mounted) return;
+              final l10n = AppLocalizations.of(scaffoldContext);
+              AdaptiveSnackBar.show(
+                scaffoldContext,
+                message: accepted
+                    ? l10n.requestAcceptedValueHasBeen('Passenger')
+                    : l10n.failedToAcceptRequest,
+                type: accepted
+                    ? AdaptiveSnackBarType.success
+                    : AdaptiveSnackBarType.error,
               );
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.success),
-            child: Text(AppLocalizations.of(context).accept),
+            child: Text(AppLocalizations.of(dialogContext).accept),
           ),
         ],
       ),
@@ -471,29 +435,26 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen>
 
   void _handleDecline(RideBooking booking) {
     HapticFeedback.lightImpact();
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => _DeclineReasonSheet(
+    final scaffoldContext = context;
+    AppModalSheet.show<void>(
+      context: scaffoldContext,
+      title: AppLocalizations.of(scaffoldContext).declineRequest,
+      maxHeightFactor: 0.7,
+      child: _DeclineReasonSheet(
         bookingId: booking.id,
         onDecline: (reason) async {
-          context.pop();
-          final declined = await ref
-              .read(driverViewModelProvider.notifier)
-              .declineRideRequest(booking.rideId, booking.id);
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                declined
-                    ? AppLocalizations.of(context).requestDeclined
-                    : AppLocalizations.of(context).failedToDeclineRequest,
-              ),
-              backgroundColor: declined
-                  ? AppColors.textSecondary
-                  : AppColors.error,
-            ),
+          scaffoldContext.pop();
+          final declined = await _declineRideRequest(booking, reason);
+          if (!mounted || !scaffoldContext.mounted) return;
+          final l10n = AppLocalizations.of(scaffoldContext);
+          AdaptiveSnackBar.show(
+            scaffoldContext,
+            message: declined
+                ? l10n.requestDeclined
+                : l10n.failedToDeclineRequest,
+            type: declined
+                ? AdaptiveSnackBarType.success
+                : AdaptiveSnackBarType.error,
           );
         },
       ),
@@ -526,7 +487,7 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen>
           userId1: currentUser.uid,
           userId2: booking.passengerId,
           userName1: currentUser.displayName ?? '',
-          userName2: passengerProfile.displayName,
+          userName2: passengerProfile.username,
           userPhoto1: currentUser.photoURL,
           userPhoto2: passengerProfile.photoUrl,
         ).future,
@@ -540,11 +501,10 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen>
       );
     } on Exception {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context).failedToLaunchDialer),
-          backgroundColor: AppColors.error,
-        ),
+      AdaptiveSnackBar.show(
+        context,
+        message: AppLocalizations.of(context).failedToLaunchDialer,
+        type: AdaptiveSnackBarType.error,
       );
     }
   }
@@ -569,14 +529,18 @@ class _PendingBookingCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profileAsync = ref.watch(userProfileProvider(booking.passengerId));
-    final rideAsync = ref.watch(rideStreamProvider(booking.rideId));
+    final rideAsync = ref.watch(requestCardRideProvider(booking.rideId));
 
     final profile = profileAsync.value;
     final ride = rideAsync.value;
-    final passengerName = profile?.displayName ?? '…';
+    final pickupAddress =
+        booking.pickupLocation?.address ?? ride?.origin.address ?? '—';
+    final dropoffAddress =
+        booking.dropoffLocation?.address ?? ride?.destination.address ?? '—';
+    final passengerName = profile?.username ?? '…';
     final passengerPhoto = profile?.photoUrl;
-    final passengerRating = profile?.rating.average ?? 0.0;
-    final pricePerSeat = ride?.pricePerSeat ?? 0.0;
+    final passengerRating = profile?.asRider?.rating.average ?? 0.0;
+    final pricePerSeatInCents = ride?.pricePerSeatInCents ?? 0.0;
     final formattedDate = DateFormat(
       'EEE, MMM d',
     ).format(booking.createdAt ?? DateTime.now());
@@ -621,7 +585,7 @@ class _PendingBookingCard extends ConsumerWidget {
                   ),
                 ),
                 const Spacer(),
-                if (pricePerSeat > 0)
+                if (pricePerSeatInCents > 0)
                   Container(
                     padding: EdgeInsets.symmetric(
                       horizontal: 10.w,
@@ -632,7 +596,7 @@ class _PendingBookingCard extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(12.r),
                     ),
                     child: Text(
-                      '€${(pricePerSeat * booking.seatsBooked).toStringAsFixed(0)}',
+                      '€${((pricePerSeatInCents * booking.seatsBooked) / 100).toStringAsFixed(2)}',
                       style: TextStyle(
                         fontSize: 14.sp,
                         fontWeight: FontWeight.w700,
@@ -747,7 +711,7 @@ class _PendingBookingCard extends ConsumerWidget {
                           SizedBox(width: 12.w),
                           Expanded(
                             child: Text(
-                              booking.pickupLocation?.address ?? '—',
+                              pickupAddress,
                               style: TextStyle(
                                 fontSize: 14.sp,
                                 fontWeight: FontWeight.w500,
@@ -792,7 +756,7 @@ class _PendingBookingCard extends ConsumerWidget {
                           SizedBox(width: 10.w),
                           Expanded(
                             child: Text(
-                              booking.dropoffLocation?.address ?? '—',
+                              dropoffAddress,
                               style: TextStyle(
                                 fontSize: 14.sp,
                                 fontWeight: FontWeight.w500,
@@ -925,9 +889,14 @@ class _AcceptedBookingCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profileAsync = ref.watch(userProfileProvider(booking.passengerId));
-    final rideAsync = ref.watch(rideStreamProvider(booking.rideId));
-    final passengerName = profileAsync.value?.displayName ?? '…';
-    final pricePerSeat = rideAsync.value?.pricePerSeat ?? 0.0;
+    final rideAsync = ref.watch(requestCardRideProvider(booking.rideId));
+    final ride = rideAsync.value;
+    final pickupAddress =
+        booking.pickupLocation?.address ?? ride?.origin.address ?? '—';
+    final dropoffAddress =
+        booking.dropoffLocation?.address ?? ride?.destination.address ?? '—';
+    final passengerName = profileAsync.value?.username ?? '…';
+    final pricePerSeatInCents = rideAsync.value?.pricePerSeatInCents ?? 0.0;
     final formattedDate = DateFormat(
       'EEE, MMM d',
     ).format(booking.createdAt ?? DateTime.now());
@@ -984,9 +953,9 @@ class _AcceptedBookingCard extends ConsumerWidget {
                   ],
                 ),
               ),
-              if (pricePerSeat > 0)
+              if (pricePerSeatInCents > 0)
                 Text(
-                  '€${(pricePerSeat * booking.seatsBooked).toStringAsFixed(0)}',
+                  '€${((pricePerSeatInCents * booking.seatsBooked) / 100).toStringAsFixed(2)}',
                   style: TextStyle(
                     fontSize: 18.sp,
                     fontWeight: FontWeight.w700,
@@ -997,7 +966,7 @@ class _AcceptedBookingCard extends ConsumerWidget {
           ),
           SizedBox(height: 12.h),
           Text(
-            '${booking.pickupLocation?.address ?? '—'} → ${booking.dropoffLocation?.address ?? '—'}',
+            '$pickupAddress → $dropoffAddress',
             style: TextStyle(fontSize: 13.sp, color: AppColors.textSecondary),
           ),
           SizedBox(height: 8.h),
@@ -1080,12 +1049,14 @@ class _DeclinedBookingCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final passengerName =
-        ref
-            .watch(userProfileProvider(booking.passengerId))
-            .value
-            ?.displayName ??
+        ref.watch(userProfileProvider(booking.passengerId)).value?.username ??
         '…';
-
+    final rideAsync = ref.watch(requestCardRideProvider(booking.rideId));
+    final ride = rideAsync.value;
+    final pickupAddress =
+        booking.pickupLocation?.address ?? ride?.origin.address ?? '—';
+    final dropoffAddress =
+        booking.dropoffLocation?.address ?? ride?.destination.address ?? '—';
     return Container(
       margin: EdgeInsets.only(bottom: 12.h),
       padding: EdgeInsets.all(16.w),
@@ -1130,7 +1101,7 @@ class _DeclinedBookingCard extends ConsumerWidget {
                   ),
                 SizedBox(height: 4.h),
                 Text(
-                  '${booking.pickupLocation?.address ?? '—'} → ${booking.dropoffLocation?.address ?? '—'}',
+                  '$pickupAddress → $dropoffAddress',
                   style: TextStyle(
                     fontSize: 12.sp,
                     color: AppColors.textSecondary,

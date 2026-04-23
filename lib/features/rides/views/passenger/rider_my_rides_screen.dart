@@ -1,3 +1,4 @@
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -25,43 +26,31 @@ class RiderMyRidesScreen extends ConsumerStatefulWidget {
   ConsumerState<RiderMyRidesScreen> createState() => _RiderMyRidesScreenState();
 }
 
-class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 3, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
+class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen> {
   @override
   Widget build(BuildContext context) {
-    final userAsync = ref.watch(currentUserProvider);
+    final userIdAsync = ref.watch(
+      currentUserProvider.select(
+        (value) => value.whenData((user) => user?.uid),
+      ),
+    );
 
-    return userAsync.when(
+    return userIdAsync.when(
       loading: () => const _RidesLoadingShell(),
       error: (e, _) => _RidesErrorShell(message: e.toString()),
-      data: (user) {
-        if (user == null) return const _SignInPromptShell();
+      data: (userId) {
+        if (userId == null) return const _SignInPromptShell();
         final ridesAsync = ref.watch(
-          myRidesAsPassengerStreamProvider(user.uid),
+          myRidesAsPassengerStreamProvider(userId),
         );
         return ridesAsync.when(
           loading: () => const _RidesLoadingShell(),
           error: (e, _) => _RidesErrorShell(message: e.toString()),
           data: (rides) => _RidesContent(
             rides: rides,
-            userId: user.uid,
-            tabController: _tabController,
+            userId: userId,
             onRefresh: () async =>
-                ref.invalidate(myRidesAsPassengerStreamProvider(user.uid)),
+                ref.invalidate(myRidesAsPassengerStreamProvider(userId)),
           ),
         );
       },
@@ -77,13 +66,11 @@ class _RidesContent extends StatelessWidget {
   const _RidesContent({
     required this.rides,
     required this.userId,
-    required this.tabController,
     required this.onRefresh,
   });
 
   final List<RideModel> rides;
   final String userId;
-  final TabController tabController;
   final Future<void> Function() onRefresh;
 
   @override
@@ -112,8 +99,7 @@ class _RidesContent extends StatelessWidget {
             .toList()
           ..sort((a, b) => b.departureTime.compareTo(a.departureTime));
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return AdaptiveScaffold(
       body: RefreshIndicator.adaptive(
         color: AppColors.primary,
         onRefresh: onRefresh,
@@ -121,11 +107,9 @@ class _RidesContent extends StatelessWidget {
           slivers: [
             _SliverHeader(
               rideCount: rides.length,
-              tabController: tabController,
             ),
             if (active.isNotEmpty) _ActiveSection(rides: active),
             _TabBody(
-              tabController: tabController,
               active: active,
               upcoming: upcoming,
               history: history,
@@ -149,10 +133,9 @@ class _RidesContent extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────
 
 class _SliverHeader extends StatelessWidget {
-  const _SliverHeader({required this.rideCount, required this.tabController});
+  const _SliverHeader({required this.rideCount});
 
   final int rideCount;
-  final TabController tabController;
 
   @override
   Widget build(BuildContext context) {
@@ -213,25 +196,6 @@ class _SliverHeader extends StatelessWidget {
           ),
         ),
       ),
-      bottom: PreferredSize(
-        preferredSize: Size.fromHeight(48.h),
-        child: ColoredBox(
-          color: AppColors.primary,
-          child: TabBar(
-            controller: tabController,
-            indicatorColor: Colors.white,
-            indicatorWeight: 3,
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white.withValues(alpha: 0.6),
-            labelStyle: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600),
-            tabs: [
-              Tab(text: l10n.activeRide),
-              Tab(text: l10n.upcoming),
-              Tab(text: l10n.history),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }
@@ -242,13 +206,11 @@ class _SliverHeader extends StatelessWidget {
 
 class _TabBody extends StatelessWidget {
   const _TabBody({
-    required this.tabController,
     required this.active,
     required this.upcoming,
     required this.history,
   });
 
-  final TabController tabController;
   final List<RideModel> active;
   final List<RideModel> upcoming;
   final List<RideModel> history;
@@ -256,8 +218,14 @@ class _TabBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SliverFillRemaining(
-      child: TabBarView(
-        controller: tabController,
+      child: AdaptiveTabBarView(
+        tabs: [
+          AppLocalizations.of(context).activeRide,
+          AppLocalizations.of(context).upcoming,
+          AppLocalizations.of(context).history,
+        ],
+        selectedColor: Colors.white,
+        backgroundColor: AppColors.primary,
         children: [
           _ActiveTab(rides: active),
           _UpcomingTab(rides: upcoming),
@@ -348,7 +316,9 @@ class _ActiveRideCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(20.r),
                   ),
                   child: Text(
-                    l10n.value5(ride.pricePerSeat.toStringAsFixed(0)),
+                    l10n.value5(
+                      (ride.pricePerSeatInCents / 100).toStringAsFixed(2),
+                    ),
                     style: TextStyle(
                       fontSize: 12.sp,
                       fontWeight: FontWeight.w700,
@@ -607,7 +577,10 @@ class _UpcomingRideCard extends StatelessWidget {
                               borderRadius: BorderRadius.circular(8.r),
                             ),
                             child: Text(
-                              l10n.value5(ride.pricePerSeat.toStringAsFixed(0)),
+                              l10n.value5(
+                                (ride.pricePerSeatInCents / 100)
+                                    .toStringAsFixed(2),
+                              ),
                               style: TextStyle(
                                 fontSize: 12.sp,
                                 fontWeight: FontWeight.w700,
@@ -772,7 +745,9 @@ class _HistoryTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  l10n.value5(ride.pricePerSeat.toStringAsFixed(0)),
+                  l10n.value5(
+                    (ride.pricePerSeatInCents / 100).toStringAsFixed(2),
+                  ),
                   style: TextStyle(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w700,
@@ -953,12 +928,9 @@ class _RidesLoadingShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text(l10n.myTrips),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
+    return AdaptiveScaffold(
+      appBar: AdaptiveAppBar(
+        title: l10n.myTrips,
       ),
       body: Padding(
         padding: EdgeInsets.all(16.w),
@@ -981,12 +953,9 @@ class _RidesErrorShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text(l10n.myTrips),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
+    return AdaptiveScaffold(
+      appBar: AdaptiveAppBar(
+        title: l10n.myTrips,
       ),
       body: Center(
         child: Padding(
@@ -1031,12 +1000,9 @@ class _SignInPromptShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text(l10n.myTrips),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
+    return AdaptiveScaffold(
+      appBar: AdaptiveAppBar(
+        title: l10n.myTrips,
       ),
       body: Center(
         child: Padding(

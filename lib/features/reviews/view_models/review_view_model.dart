@@ -161,10 +161,11 @@ class ReviewFormViewModel extends _$ReviewFormViewModel {
       );
 
       // Award XP for submitting a review
+      if (!ref.mounted) return true;
       try {
         final profileRepo = ref.read(profileRepositoryProvider);
         await profileRepo.addXP(currentUser.uid, 15);
-      } on Exception catch (_) {
+      } catch (e, st) {
         // XP failure is non-fatal
       }
 
@@ -172,7 +173,7 @@ class ReviewFormViewModel extends _$ReviewFormViewModel {
       // Reset form after successful submission
       state = const ReviewFormState();
       return true;
-    } on Exception catch (e) {
+    } catch (e, st) {
       if (!ref.mounted) return false;
       state = state.copyWith(
         isSubmitting: false,
@@ -204,7 +205,7 @@ class ReviewsListViewModel extends _$ReviewsListViewModel {
         stats: stats,
         hasMore: reviews.length >= _pageSize,
       );
-    } on Exception catch (e) {
+    } catch (e, st) {
       return ReviewsListState(
         error: 'Failed to load reviews: $e',
       );
@@ -220,7 +221,9 @@ class ReviewsListViewModel extends _$ReviewsListViewModel {
 
   Future<void> refresh() async {
     state = const AsyncValue.loading();
-    state = AsyncValue.data(await _loadReviews());
+    final reviews = await _loadReviews();
+    if (!ref.mounted) return;
+    state = AsyncValue.data(reviews);
   }
 
   /// Load next page of reviews using cursor-based pagination.
@@ -250,7 +253,7 @@ class ReviewsListViewModel extends _$ReviewsListViewModel {
           hasMore: more.length >= _pageSize,
         ),
       );
-    } on Exception catch (e) {
+    } catch (e, st) {
       if (!ref.mounted) return;
       state = AsyncValue.data(
         current.copyWith(
@@ -284,7 +287,7 @@ class ReviewResponseViewModel extends _$ReviewResponseViewModel {
       if (!ref.mounted) return true;
       state = const AsyncValue.data(null);
       return true;
-    } on Exception catch (e, st) {
+    } catch (e, st) {
       if (!ref.mounted) return false;
       state = AsyncValue.error(e, st);
       return false;

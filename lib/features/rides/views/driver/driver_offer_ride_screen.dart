@@ -1,7 +1,11 @@
+import 'dart:async';
+
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -11,8 +15,10 @@ import 'package:sport_connect/core/animations/feedback_animations.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/models/location/location_point.dart';
 import 'package:sport_connect/core/models/user/user_model.dart';
+import 'package:sport_connect/core/models/user/user_enums.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/core/widgets/map_location_picker.dart';
 import 'package:sport_connect/core/widgets/ride_feature_widgets.dart';
 import 'package:sport_connect/features/events/models/event_model.dart';
@@ -50,7 +56,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
 
   // Shorthand accessor for form state
   DriverOfferRideFormState get _formState =>
-      ref.watch(driverOfferRideViewModelProvider);
+      ref.read(driverOfferRideViewModelProvider);
 
   // Computed accessors for readability
   int get _currentStep => _formState.currentStep;
@@ -62,7 +68,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
   TimeOfDay? get _departureTime => _formState.departureTime;
   List<LocationPoint> get _waypoints => _formState.waypoints;
   int get _availableSeats => _formState.availableSeats;
-  double get _pricePerSeat => _formState.pricePerSeat;
+  int get _pricePerSeatInCents => _formState.pricePerSeatInCents;
   bool get _isRecurring => _formState.isRecurring;
   List<int> get _recurringDays => _formState.recurringDays;
   bool get _allowPets => _formState.allowPets;
@@ -73,17 +79,14 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
   EventModel? get _selectedEvent => _formState.selectedEvent;
   List<LatLng>? get _osrmRoutePoints => _formState.osrmRoutePoints;
   bool get _isLoadingOsrmRoute => _formState.isLoadingRoute;
-  LocationPoint? get _lastFromForRoute => null; // Removed from state
-  LocationPoint? get _lastToForRoute => null; // Removed from state
 
   VehicleModel? _selectedVehicle(List<VehicleModel> vehicles) {
     final id = _formState.selectedVehicleId;
     if (id == null) return null;
-    try {
-      return vehicles.firstWhere((v) => v.id == id);
-    } on Exception catch (_) {
-      return null;
+    for (final vehicle in vehicles) {
+      if (vehicle.id == id) return vehicle;
     }
+    return null;
   }
 
   @override
@@ -97,28 +100,32 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
             .read(driverOfferRideViewModelProvider.notifier)
             .initializeFromExistingRide(widget.existingRide!);
         if (widget.existingRide!.eventId != null) {
-          ref
-              .read(driverOfferRideViewModelProvider.notifier)
-              .loadSelectedEvent(widget.existingRide!.eventId!);
+          unawaited(
+            ref
+                .read(driverOfferRideViewModelProvider.notifier)
+                .loadSelectedEvent(widget.existingRide!.eventId!),
+          );
         }
       });
     } else if (widget.existingRideId != null) {
       // Route-based edit: fetch ride from Firestore
-      Future.microtask(() async {
-        final ride = await ref
-            .read(rideActionsViewModelProvider)
-            .getRideById(widget.existingRideId!);
-        if (ride != null && mounted) {
-          ref
-              .read(driverOfferRideViewModelProvider.notifier)
-              .initializeFromExistingRide(ride);
-          if (ride.eventId != null) {
+      unawaited(
+        Future<void>.microtask(() async {
+          final ride = await ref
+              .read(rideActionsViewModelProvider.notifier)
+              .getRideById(widget.existingRideId!);
+          if (ride != null && mounted) {
             ref
                 .read(driverOfferRideViewModelProvider.notifier)
-                .loadSelectedEvent(ride.eventId!);
+                .initializeFromExistingRide(ride);
+            if (ride.eventId != null) {
+              await ref
+                  .read(driverOfferRideViewModelProvider.notifier)
+                  .loadSelectedEvent(ride.eventId!);
+            }
           }
-        }
-      });
+        }),
+      );
     }
   }
 
@@ -131,8 +138,15 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final userAsync = ref.watch(currentUserProvider);
-    final vehiclesAsync = ref.watch(vehicleViewModelProvider).vehicles;
+    ref.watch(driverOfferRideViewModelProvider);
+    final roleAsync = ref.watch(
+      currentUserProvider.select(
+        (value) => value.whenData((user) => user?.role),
+      ),
+    );
+    final vehiclesAsync = ref.watch(
+      vehicleViewModelProvider.select((state) => state.vehicles),
+    );
 
     // Listen for submission errors to show feedback
     ref.listen(
@@ -182,34 +196,30 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
       });
     }
 
-    return Scaffold(
-      backgroundColor: AppColors.scaffoldBg,
-      body: userAsync.when(
-        data: (user) {
-          if (user == null || user is! DriverModel) {
+    return AdaptiveScaffold(
+      body: roleAsync.when(
+        data: (role) {
+          if (role != UserRole.driver) {
             return _buildNotDriverState(context);
           }
 
           return vehiclesAsync.when(
             data: (vehicles) => _buildMainContent(context, vehicles),
             loading: () =>
-                const Center(child: CircularProgressIndicator.adaptive()),
+                const SkeletonLoader(type: SkeletonType.rideCard, itemCount: 4),
             error: (err, stack) => _buildErrorState(context, err.toString()),
           );
         },
         loading: () =>
-            const Center(child: CircularProgressIndicator.adaptive()),
+            const SkeletonLoader(type: SkeletonType.rideCard, itemCount: 4),
         error: (err, stack) => _buildErrorState(context, err.toString()),
       ),
     );
   }
 
   Widget _buildNotDriverState(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.scaffoldBg,
-      appBar: AppBar(
-        backgroundColor: AppColors.background,
-        elevation: 0,
+    return AdaptiveScaffold(
+      appBar: AdaptiveAppBar(
         leading: IconButton(
           tooltip: AppLocalizations.of(context).goBackTooltip,
           icon: Icon(Icons.adaptive.arrow_back_rounded, size: 20),
@@ -275,11 +285,8 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
   }
 
   Widget _buildErrorState(BuildContext context, String error) {
-    return Scaffold(
-      backgroundColor: AppColors.scaffoldBg,
-      appBar: AppBar(
-        backgroundColor: AppColors.background,
-        elevation: 0,
+    return AdaptiveScaffold(
+      appBar: AdaptiveAppBar(
         leading: IconButton(
           tooltip: AppLocalizations.of(context).goBackTooltip,
           icon: Icon(Icons.adaptive.arrow_back_rounded, size: 20),
@@ -327,19 +334,20 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
       children: [
         _buildSliverHeader(context),
         Expanded(
-          child: PageView(
+          child: PageView.builder(
             controller: _pageController,
             physics: const NeverScrollableScrollPhysics(),
+            itemCount: 3,
             onPageChanged: (index) {
               ref
                   .read(driverOfferRideViewModelProvider.notifier)
                   .setStep(index);
             },
-            children: [
-              _buildRouteStep(),
-              _buildDetailsStep(vehicles),
-              _buildPreferencesStep(vehicles),
-            ],
+            itemBuilder: (context, index) => switch (index) {
+              0 => _buildRouteStep(),
+              1 => _buildDetailsStep(vehicles),
+              _ => _buildPreferencesStep(vehicles),
+            },
           ),
         ),
         _buildBottomBar(vehicles),
@@ -526,95 +534,6 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
     );
   }
 
-  Widget _buildDestinationOverlay() {
-    return Container(
-      height: 180.h,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: AppColors.borderLight),
-        color: AppColors.surface,
-      ),
-      child: Stack(
-        children: [
-          // Blurred/faded map hint using color
-          Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16.r),
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  AppColors.primary.withValues(alpha: 0.04),
-                  AppColors.primary.withValues(alpha: 0.08),
-                ],
-              ),
-            ),
-          ),
-          // Centered CTA
-          Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: EdgeInsets.all(14.w),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.location_on_rounded,
-                    color: AppColors.primary,
-                    size: 28.sp,
-                  ),
-                ),
-                SizedBox(height: 10.h),
-                Text(
-                  AppLocalizations.of(context).selectDestinationTitle,
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                SizedBox(height: 4.h),
-                Text(
-                  AppLocalizations.of(context).selectDropoffLocation,
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                SizedBox(height: 12.h),
-                TextButton.icon(
-                  onPressed: () => _selectLocation(isFrom: false),
-                  icon: Icon(Icons.add_location_alt_rounded, size: 16.sp),
-                  label: Text(
-                    AppLocalizations.of(context).toLabel,
-                    style: TextStyle(
-                      fontSize: 13.sp,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppColors.primary,
-                    backgroundColor: AppColors.primary.withValues(alpha: 0.08),
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 16.w,
-                      vertical: 8.h,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20.r),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildRouteCard() {
     return Container(
       padding: EdgeInsets.all(16.w),
@@ -736,6 +655,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 userAgentPackageName: 'com.sportconnect.app',
               ),
+              const CurrentLocationLayer(),
               PolylineLayer(
                 polylines: [
                   Polyline(
@@ -1025,7 +945,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                 ),
               ),
               const Spacer(),
-              Switch.adaptive(
+              AdaptiveSwitch(
                 value: _isRecurring,
                 activeColor: AppColors.primary,
                 onChanged: (v) {
@@ -1336,6 +1256,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
       ).selectStopTitle(_waypoints.length + 1),
     );
     if (result != null) {
+      if (!mounted) return;
       final waypoint = LocationPoint(
         latitude: result.location.latitude,
         longitude: result.location.longitude,
@@ -1353,6 +1274,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
       initialLocation: LatLng(wp.latitude, wp.longitude),
     );
     if (result != null) {
+      if (!mounted) return;
       final updated = List<LocationPoint>.from(_waypoints);
       updated[index] = LocationPoint(
         latitude: result.location.latitude,
@@ -1591,6 +1513,8 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
   Widget _buildSeatsAndPriceWithVehicle(List<VehicleModel> vehicles) {
     final l10n = AppLocalizations.of(context);
     final selectedVehicle = _selectedVehicle(vehicles);
+    final pricePerSeat = _pricePerSeatInCents / 100.0;
+    final totalPrice = (_pricePerSeatInCents * _availableSeats) / 100.0;
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
@@ -1625,20 +1549,18 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                   ),
                   SizedBox(height: 2.h),
                   Text(
-                    _pricePerSeat < 1
+                    _pricePerSeatInCents < 1
                         ? l10n.minimumPriceError
                         : l10n.totalPriceForSeats(
-                            (_pricePerSeat * _availableSeats).toStringAsFixed(
-                              0,
-                            ),
+                            totalPrice.toStringAsFixed(2),
                             _availableSeats,
                           ),
                     style: TextStyle(
                       fontSize: 11.sp,
-                      color: _pricePerSeat < 1
+                      color: _pricePerSeatInCents < 1
                           ? AppColors.error
                           : AppColors.textSecondary,
-                      fontWeight: _pricePerSeat < 1
+                      fontWeight: _pricePerSeatInCents < 1
                           ? FontWeight.w600
                           : FontWeight.w400,
                     ),
@@ -1650,7 +1572,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                   color: AppColors.surfaceVariant,
                   borderRadius: BorderRadius.circular(12.r),
                   border: Border.all(
-                    color: _pricePerSeat < 1
+                    color: _pricePerSeatInCents < 1
                         ? AppColors.error
                         : AppColors.border,
                   ),
@@ -1659,27 +1581,27 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                   children: [
                     IconButton(
                       tooltip: l10n.decreasePriceTooltip,
-                      onPressed: _pricePerSeat > 1
+                      onPressed: _pricePerSeatInCents > 100
                           ? () {
                               HapticFeedback.lightImpact();
                               ref
                                   .read(
                                     driverOfferRideViewModelProvider.notifier,
                                   )
-                                  .setPrice(_pricePerSeat - 1);
+                                  .setPrice(_pricePerSeatInCents - 100);
                             }
                           : null,
                       icon: Icon(Icons.remove, size: 18.sp),
                     ),
                     SizedBox(
-                      width: 50.w,
+                      width: 72.w,
                       child: Text(
-                        '\$${_pricePerSeat.toInt()}',
+                        '€${pricePerSeat.toStringAsFixed(2)}',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontWeight: FontWeight.w700,
                           fontSize: 17.sp,
-                          color: _pricePerSeat < 1
+                          color: _pricePerSeatInCents < 1
                               ? AppColors.error
                               : AppColors.textPrimary,
                         ),
@@ -1687,14 +1609,14 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                     ),
                     IconButton(
                       tooltip: l10n.increasePriceTooltip,
-                      onPressed: _pricePerSeat < 999
+                      onPressed: _pricePerSeatInCents < 99900
                           ? () {
                               HapticFeedback.lightImpact();
                               ref
                                   .read(
                                     driverOfferRideViewModelProvider.notifier,
                                   )
-                                  .setPrice(_pricePerSeat + 1);
+                                  .setPrice(_pricePerSeatInCents + 100);
                             }
                           : null,
                       icon: Icon(Icons.add, size: 18.sp),
@@ -1887,9 +1809,11 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
           ),
           SizedBox(height: 8.h),
           _buildSummaryRow(
-            Icons.attach_money_rounded,
+            Icons.euro_rounded,
             l10n.priceSummaryLabel,
-            l10n.pricePerSeatSummary('\$${_pricePerSeat.toInt()}'),
+            l10n.pricePerSeatSummary(
+              (_pricePerSeatInCents / 100).toStringAsFixed(2),
+            ),
           ),
           if (_selectedEvent != null) ...[
             SizedBox(height: 8.h),
@@ -2031,7 +1955,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
             style: TextStyle(fontSize: 12.sp, color: AppColors.textSecondary),
           ),
           SizedBox(height: 8.h),
-          Slider.adaptive(
+          AdaptiveSlider(
             value: (_maxDetourMinutes ?? 0).toDouble(),
             max: 60,
             divisions: 12,
@@ -2408,33 +2332,23 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
         );
         if (!mounted) return;
         if (selected.isBefore(DateTime.now())) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(AppLocalizations.of(context).timeInPastWarning),
-              backgroundColor: AppColors.warning,
-              behavior: SnackBarBehavior.floating,
-            ),
+          AdaptiveSnackBar.show(
+            context,
+            message: AppLocalizations.of(context).timeInPastWarning,
+            type: AdaptiveSnackBarType.warning,
           );
         } else if (selected.difference(DateTime.now()).inMinutes < 15) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                AppLocalizations.of(context).departureMinimumWarning,
-              ),
-              backgroundColor: AppColors.warning,
-              behavior: SnackBarBehavior.floating,
-            ),
+          AdaptiveSnackBar.show(
+            context,
+            message: AppLocalizations.of(context).departureMinimumWarning,
+            type: AdaptiveSnackBarType.warning,
           );
         } else if (_selectedEvent?.endsAt != null &&
             selected.isAfter(_selectedEvent!.endsAt!)) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                AppLocalizations.of(context).departureAfterEventWarning,
-              ),
-              backgroundColor: AppColors.warning,
-              behavior: SnackBarBehavior.floating,
-            ),
+          AdaptiveSnackBar.show(
+            context,
+            message: AppLocalizations.of(context).departureAfterEventWarning,
+            type: AdaptiveSnackBarType.warning,
           );
         }
       }

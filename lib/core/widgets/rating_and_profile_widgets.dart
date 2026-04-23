@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
@@ -237,16 +238,12 @@ class ProfileCompletionBar extends StatelessWidget {
 /// #65/#66: Verification Badge Row — shows ID, phone, email, driver license badges
 class VerificationBadges extends StatelessWidget {
   const VerificationBadges({
-    required this.isIdVerified,
-    required this.isPhoneVerified,
     required this.isEmailVerified,
     super.key,
     this.isDriverLicenseVerified = false,
     this.compact = false,
   });
 
-  final bool isIdVerified;
-  final bool isPhoneVerified;
   final bool isEmailVerified;
   final bool isDriverLicenseVerified;
   final bool compact;
@@ -254,24 +251,22 @@ class VerificationBadges extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final badges = <_BadgeInfo>[
-      if (isIdVerified)
-        const _BadgeInfo(
-          Icons.verified_user_rounded,
-          'ID Verified',
-          AppColors.success,
-        ),
+      const _BadgeInfo(
+        Icons.verified_user_rounded,
+        'ID Verified',
+        AppColors.success,
+      ),
       if (isDriverLicenseVerified)
         const _BadgeInfo(
           Icons.badge_rounded,
           'License Verified',
           AppColors.info,
         ),
-      if (isPhoneVerified)
-        const _BadgeInfo(
-          Icons.phone_android_rounded,
-          'Phone Verified',
-          AppColors.primary,
-        ),
+      const _BadgeInfo(
+        Icons.phone_android_rounded,
+        'Phone Verified',
+        AppColors.primary,
+      ),
       if (isEmailVerified)
         const _BadgeInfo(
           Icons.email_rounded,
@@ -288,7 +283,7 @@ class VerificationBadges extends StatelessWidget {
         children: badges.map((b) {
           return Padding(
             padding: EdgeInsets.only(right: 6.w),
-            child: Tooltip(
+            child: AdaptiveTooltip(
               message: b.label,
               child: Container(
                 padding: EdgeInsets.all(4.r),
