@@ -27,6 +27,7 @@ import 'package:sport_connect/features/rides/repositories/booking_repository.dar
     show BookingRepository;
 import 'package:sport_connect/features/rides/repositories/dispute_repository.dart'
     show DisputeRepository;
+import 'package:sport_connect/features/rides/services/active_ride_geofence_service.dart';
 import 'package:sport_connect/features/rides/services/ride_service.dart';
 import 'package:uuid/uuid.dart';
 
@@ -1940,7 +1941,14 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
 
   @override
   ActiveRideState build(String rideId) {
-    ref.onDispose(() => _positionStreamSubscription?.cancel());
+    final geofenceService = ActiveRideGeofenceService.instance;
+    ref.onDispose(() {
+      final positionStreamSubscription = _positionStreamSubscription;
+      if (positionStreamSubscription != null) {
+        unawaited(positionStreamSubscription.cancel());
+      }
+      unawaited(geofenceService.clearRideGeofences(rideId));
+    });
 
     ref.listen(rideStreamProvider(rideId), (_, next) {
       Future.microtask(() {
@@ -2857,6 +2865,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
     if (ride == null) {
       _clearDynamicEta();
       _clearPassengerRouteTracking();
+      unawaited(ActiveRideGeofenceService.instance.clearRideGeofences(rideId));
       return;
     }
 
@@ -2869,6 +2878,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
     _updateDynamicEta(ride);
     _computeWaypointEtas(ride);
     _updatePassengerRouteTracking(ride, state.driverLiveLocation);
+    unawaited(_syncActiveRideGeofences());
   }
 
   void _handleBookingsUpdate(List<RideBooking> bookings) {
@@ -2882,6 +2892,24 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
     state = state.copyWith(
       bookings: bookings,
       pickedUpPassengerIds: pickedUpPassengerIds,
+    );
+    unawaited(_syncActiveRideGeofences());
+  }
+
+  Future<void> _syncActiveRideGeofences() async {
+    final ride = state.currentRide;
+    final user = ref.read(currentUserProvider).value;
+    if (ride == null || user == null) return;
+
+    final role = ride.driverId == user.uid
+        ? ActiveRideGeofenceRole.driver
+        : ActiveRideGeofenceRole.passenger;
+
+    await ActiveRideGeofenceService.instance.syncForRide(
+      role: role,
+      ride: ride,
+      bookings: state.bookings,
+      passengerId: role == ActiveRideGeofenceRole.passenger ? user.uid : null,
     );
   }
 

@@ -34,7 +34,7 @@ android {
 
     defaultConfig {
         applicationId = "com.sportconnect.sport_connect"
-        minSdk = flutter.minSdkVersion
+        minSdk = 26
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
