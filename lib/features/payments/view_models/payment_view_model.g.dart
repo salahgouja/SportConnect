@@ -332,7 +332,7 @@ final class DriverOnboardingViewModelProvider
 }
 
 String _$driverOnboardingViewModelHash() =>
-    r'42abbfa3bca6c74b0567b8412e71a1ac07a5d190';
+    r'5c2b35c1c7c576ed0113b6259ab4485444a3c18f';
 
 /// Driver Onboarding View Model
 ///
@@ -398,7 +398,7 @@ final class DriverStripeOnboardingFlowViewModelProvider
 }
 
 String _$driverStripeOnboardingFlowViewModelHash() =>
-    r'26bd3b503749bda4ddcc85ba1ec3a6e95fd5e6e1';
+    r'f7aa66088230bb0f839d899cb305757216356e72';
 
 abstract class _$DriverStripeOnboardingFlowViewModel
     extends $Notifier<DriverStripeOnboardingFlowState> {

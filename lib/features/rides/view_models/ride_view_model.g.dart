@@ -890,7 +890,7 @@ final class ActiveRideViewModelProvider
 }
 
 String _$activeRideViewModelHash() =>
-    r'1c2d27ef0ae2108fcb0068b5ea03274695a02a12';
+    r'35cfc777337438bf0b24d9c2d1b17ba80ef16425';
 
 /// ViewModel for active-ride screens — views watch only this provider.
 

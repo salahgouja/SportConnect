@@ -2165,7 +2165,12 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
                       position.longitude,
                       heading: _sanitizeHeading(position.heading),
                     )
-                    .catchError((_) {}),
+                    .catchError((e, st) {
+                      TalkerService.error(
+                        'Failed to write live location update',
+                        e,
+                      );
+                    }),
               );
             }
 
@@ -2313,7 +2318,12 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
               rideId: ride.id,
               rideName: rideName,
             )
-            .catchError((_) {}),
+            .catchError((e, st) {
+              TalkerService.error(
+                'Failed to send driver arrived notification to ${booking.passengerId}',
+                e,
+              );
+            }),
       );
     }
   }
@@ -2735,7 +2745,12 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
               unawaited(_clearPersistedLocation());
             }
           })
-          .catchError((_) {}),
+          .catchError((e, st) {
+            TalkerService.error(
+              'Failed to write live location update',
+              e,
+            );
+          }),
     );
   }
 
@@ -3538,7 +3553,10 @@ Stream<RideBooking?> bookingStream(Ref ref, String bookingId) {
 /// Used on the pending-booking screen where the passenger polls for
 /// status changes before being auto-navigated.
 @riverpod
-Stream<List<RideBooking>> bookingsByPassenger(Ref ref, String passengerId) async* {
+Stream<List<RideBooking>> bookingsByPassenger(
+  Ref ref,
+  String passengerId,
+) async* {
   // Emit immediately so the provider never stays in pure loading state.
   yield const <RideBooking>[];
 
@@ -3546,6 +3564,7 @@ Stream<List<RideBooking>> bookingsByPassenger(Ref ref, String passengerId) async
       .watch(bookingRepositoryProvider)
       .streamBookingsByPassengerId(passengerId);
 }
+
 /// All Active Rides Stream Provider (for search screen)
 @riverpod
 Stream<List<RideModel>> activeRides(Ref ref) {

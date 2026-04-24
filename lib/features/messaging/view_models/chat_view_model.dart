@@ -1,18 +1,13 @@
 import 'dart:async';
 import 'dart:io';
 
-// FIX: Removed `import 'package:riverpod/src/providers/stream_provider.dart'`.
-// That imports from Riverpod's private `src` directory — it breaks silently on
-// any Riverpod version bump. StreamProvider.family is part of the public API
-// exported by flutter_riverpod.
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/features/messaging/models/message_model.dart';
 
-part 'chat_view_model.g.dart';
 part 'chat_view_model.freezed.dart';
+part 'chat_view_model.g.dart';
 
 // ── Draft chat helpers ────────────────────────────────────────────────────────
 
@@ -70,6 +65,15 @@ class ChatActionsViewModel extends _$ChatActionsViewModel {
     return;
   }
 
+  Future<void> clearChatHistoryForUser({
+    required String chatId,
+    required String userId,
+  }) => ref
+      .read(chatRepositoryProvider)
+      .clearChatHistoryForUser(
+        chatId: chatId,
+        userId: userId,
+      );
   Future<String> uploadChatImage({
     required String chatId,
     required File imageFile,
@@ -175,14 +179,23 @@ Stream<List<ChatModel>> userChats(Ref ref, String userId) =>
 
 @riverpod
 Stream<List<String>> blockedUserIds(Ref ref, String userId) {
-  return ref
-      .watch(profileRepositoryProvider)
-      .streamBlockedUserIds(userId);
+  return ref.watch(profileRepositoryProvider).streamBlockedUserIds(userId);
 }
+
 /// Messages stream for a single chat, filtered to non-deleted only.
 @riverpod
-Stream<List<MessageModel>> chatMessages(Ref ref, String chatId) =>
-    ref.watch(chatRepositoryProvider).streamMessages(chatId);
+Stream<List<MessageModel>> chatMessages(
+  Ref ref,
+  String chatId,
+  String currentUserId,
+) {
+  return ref
+      .watch(chatRepositoryProvider)
+      .streamMessagesForUser(
+        chatId: chatId,
+        userId: currentUserId,
+      );
+}
 
 /// Typing indicators stream for a single chat, non-expired only.
 @riverpod
@@ -212,7 +225,7 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
       return const ChatDetailState(isLoading: false);
     }
 
-    ref.listen(chatMessagesProvider(chatId), (_, next) {
+    ref.listen(chatMessagesProvider(chatId, currentUserId), (_, next) {
       next.whenData((messages) {
         if (!ref.mounted) return;
         state = state.copyWith(messages: messages, isLoading: false);
@@ -443,8 +456,9 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
       if (!ref.mounted) return;
       final olderMessages = await ref
           .read(chatRepositoryProvider)
-          .loadMoreMessages(
+          .loadMoreMessagesForUser(
             chatId: chatId,
+            userId: currentUserId,
             beforeTimestamp: state.messages.last.createdAt ?? DateTime.now(),
           );
       if (!ref.mounted) return;

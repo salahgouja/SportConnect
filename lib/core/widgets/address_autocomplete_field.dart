@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -10,16 +9,14 @@ import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/map_location_picker.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
-/// Address/City autocomplete input with Nominatim search + map picker.
+/// Address autocomplete input with Nominatim search + map picker.
 ///
 /// Features:
 /// - Real-time address suggestions via Nominatim
 /// - Debounced search (500ms) to reduce API calls
 /// - Optional map picker button to open full MapLocationPicker
-/// - Displays city/country in suggestions
 /// - Supports initial value and location
 /// - Accessible labels and semantics
-/// - Can be used for both city-only and full address inputs
 class AddressAutocompleteField extends ConsumerStatefulWidget {
   const AddressAutocompleteField({
     super.key,
@@ -29,24 +26,21 @@ class AddressAutocompleteField extends ConsumerStatefulWidget {
     this.initialLocation,
     this.onSelected,
     this.showMapPicker = true,
-    this.countryCode,
     this.accentColor,
     this.fillColor,
     this.enabled = true,
-    this.cityOnly = false,
     this.validator,
   });
+
   final String? label;
   final String? hint;
   final String? initialValue;
   final LatLng? initialLocation;
   final ValueChanged<AddressResult>? onSelected;
   final bool showMapPicker;
-  final String? countryCode;
   final Color? accentColor;
   final Color? fillColor;
   final bool enabled;
-  final bool cityOnly;
   final String? Function(String?)? validator;
 
   @override
@@ -116,41 +110,27 @@ class AddressAutocompleteFieldState
 
     if (mounted) setState(() => _isSearching = true);
     try {
-      return ref
-          .read(mapServiceProvider)
-          .searchPlaces(query, countryCode: widget.countryCode, limit: 6);
+      return ref.read(mapServiceProvider).searchPlaces(query, limit: 6);
     } finally {
       if (mounted) setState(() => _isSearching = false);
     }
   }
 
-  String _firstAddressSegment(String address) {
-    final parts = address
-        .split(',')
-        .map((part) => part.trim())
-        .where((part) => part.isNotEmpty)
-        .toList();
-    return parts.isEmpty ? address.trim() : parts.first;
-  }
-
   void _selectSuggestion(SearchResult result) {
-    final displayText = widget.cityOnly
-        ? ((result.city?.trim().isNotEmpty ?? false)
-              ? result.city!.trim()
-              : _firstAddressSegment(result.displayName))
-        : result.displayName;
+    final displayText = result.displayName;
+
     _controller.text = displayText;
     _selectedLocation = result.location;
     _focusNode.unfocus();
+
     widget.onSelected?.call(
       AddressResult(
         address: displayText,
         fullAddress: result.displayName,
         location: result.location,
-        city: result.city,
-        country: result.country,
       ),
     );
+
     if (widget.validator != null) {
       setState(() => _errorText = widget.validator!(_controller.text));
     }
@@ -158,24 +138,25 @@ class AddressAutocompleteFieldState
 
   Future<void> _openMapPicker() async {
     _focusNode.unfocus();
+
     final result = await MapLocationPicker.show(
       context,
       title: widget.label ?? 'Select Location',
       initialLocation: _selectedLocation,
-      countryCode: widget.countryCode,
     );
+
     if (result != null && mounted) {
-      _controller.text = widget.cityOnly
-          ? _firstAddressSegment(result.address)
-          : result.address;
+      _controller.text = result.address;
       _selectedLocation = result.location;
+
       widget.onSelected?.call(
         AddressResult(
-          address: _controller.text,
+          address: result.address,
           fullAddress: result.address,
           location: result.location,
         ),
       );
+
       if (widget.validator != null) {
         setState(() => _errorText = widget.validator!(_controller.text));
       }
@@ -215,7 +196,6 @@ class AddressAutocompleteFieldState
           onSelected: _selectSuggestion,
           itemBuilder: (context, result) => _SuggestionTile(
             result: result,
-            cityOnly: widget.cityOnly,
             accentColor: accent,
           ),
           loadingBuilder: (context) => Padding(
@@ -258,9 +238,7 @@ class AddressAutocompleteFieldState
                 Padding(
                   padding: EdgeInsets.only(left: 12.w),
                   child: Icon(
-                    widget.cityOnly
-                        ? Icons.location_city_rounded
-                        : Icons.location_on_outlined,
+                    Icons.location_on_outlined,
                     color: accent.withValues(alpha: 0.6),
                     size: 20.sp,
                   ),
@@ -278,11 +256,7 @@ class AddressAutocompleteFieldState
                         color: AppColors.textPrimary,
                       ),
                       decoration: InputDecoration(
-                        hintText:
-                            widget.hint ??
-                            (widget.cityOnly
-                                ? 'Search city...'
-                                : 'Search address...'),
+                        hintText: widget.hint ?? 'Search address...',
                         hintStyle: TextStyle(
                           fontSize: 14.sp,
                           color: AppColors.textTertiary,
@@ -341,11 +315,10 @@ class AddressAutocompleteFieldState
 class _SuggestionTile extends StatelessWidget {
   const _SuggestionTile({
     required this.result,
-    required this.cityOnly,
     required this.accentColor,
   });
+
   final SearchResult result;
-  final bool cityOnly;
   final Color accentColor;
 
   @override
@@ -355,15 +328,9 @@ class _SuggestionTile extends StatelessWidget {
         .map((part) => part.trim())
         .where((part) => part.isNotEmpty)
         .toList();
-    final primary = cityOnly
-        ? ((result.city?.trim().isNotEmpty ?? false)
-              ? result.city!.trim()
-              : (parts.isEmpty ? result.displayName.trim() : parts.first))
-        : (parts.isEmpty ? result.displayName.trim() : parts.first);
-    final secondaryParts = cityOnly
-        ? parts.where((part) => part.toLowerCase() != primary.toLowerCase())
-        : parts.skip(1);
-    final secondary = secondaryParts.join(', ').trim();
+
+    final primary = parts.isEmpty ? result.displayName.trim() : parts.first;
+    final secondary = parts.skip(1).join(', ').trim();
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
@@ -376,7 +343,7 @@ class _SuggestionTile extends StatelessWidget {
               shape: BoxShape.circle,
             ),
             child: Icon(
-              cityOnly ? Icons.location_city : Icons.place_rounded,
+              Icons.place_rounded,
               color: accentColor,
               size: 16.sp,
             ),
@@ -413,9 +380,7 @@ class _SuggestionTile extends StatelessWidget {
       ),
     );
   }
-}
-
-// ─── Data Model ───────────────────────────────────────────────────────────────
+} // ─── Data Model ───────────────────────────────────────────────────────────────
 
 /// Result from address autocomplete selection.
 class AddressResult {
@@ -423,12 +388,9 @@ class AddressResult {
     required this.address,
     required this.fullAddress,
     required this.location,
-    this.city,
-    this.country,
   });
+
   final String address;
   final String fullAddress;
   final LatLng location;
-  final String? city;
-  final String? country;
 }

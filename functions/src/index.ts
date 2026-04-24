@@ -55,59 +55,23 @@ type StripeRefundCreateParams = NonNullable<
   Parameters<StripeClient["refunds"]["create"]>[0]
 >;
 
-// Stripe Express Connect is only available in specific countries.
-// If the driver's detected country is not supported, fall back to "FR".
-const STRIPE_EXPRESS_COUNTRIES = new Set([
-  "AU",
-  "AT",
-  "BE",
-  "BR",
-  "BG",
-  "CA",
-  "HR",
-  "CY",
-  "CZ",
-  "DK",
-  "EE",
-  "FI",
-  "FR",
-  "DE",
-  "GH",
-  "GI",
-  "GR",
-  "HK",
-  "HU",
-  "IN",
-  "ID",
-  "IE",
-  "IT",
-  "JP",
-  "KE",
-  "LV",
-  "LI",
-  "LT",
-  "LU",
-  "MY",
-  "MT",
-  "MX",
-  "NL",
-  "NZ",
-  "NG",
-  "NO",
-  "PL",
-  "PT",
-  "RO",
-  "SG",
-  "SK",
-  "SI",
-  "ZA",
-  "ES",
-  "SE",
-  "CH",
-  "TH",
-  "GB",
-  "US",
-]);
+// SportConnect is available only in Tunisia and France.
+// We do not store user city/country; the app sends only addressLine1.
+// Stripe still requires an account country, restricted here to TN/FR.
+const SUPPORTED_APP_COUNTRIES = new Set(["TN", "FR"]);
+const DEFAULT_SUPPORTED_COUNTRY = "FR";
+
+function resolveSupportedCountry(value: unknown): "TN" | "FR" {
+  if (typeof value !== "string") return DEFAULT_SUPPORTED_COUNTRY;
+
+  const normalized = value.trim().toUpperCase();
+
+  if (normalized === "TN" || normalized === "FR") {
+    return normalized;
+  }
+
+  return DEFAULT_SUPPORTED_COUNTRY;
+}
 
 // ============================================
 // Helper: Clean up a single stale FCM token
@@ -1475,13 +1439,12 @@ export const createConnectedAccount = onCall(
     const {
       userId,
       email,
-      country = "FR",
+      country = DEFAULT_SUPPORTED_COUNTRY,
       firstName,
       lastName,
       phone,
       dateOfBirth,
       addressLine1,
-      city,
     } = request.data;
     logger.info(
       "Parsed - userId:",
@@ -1500,16 +1463,12 @@ export const createConnectedAccount = onCall(
       throw new HttpsError("invalid-argument", "Email is required");
     }
 
-    // Normalize and validate country — Stripe Express only supports ~44 countries.
-    // Fall back to FR if the user's detected country is not in the list.
-    const normalizedCountry = (country as string).toUpperCase();
-    const stripeCountry = STRIPE_EXPRESS_COUNTRIES.has(normalizedCountry)
-      ? normalizedCountry
-      : "FR";
-    if (stripeCountry !== normalizedCountry) {
-      logger.warn(
-        `Country "${normalizedCountry}" is not supported for Stripe Express. Falling back to "FR".`,
-        { userId, country: normalizedCountry },
+    const stripeCountry = resolveSupportedCountry(country);
+
+    if (!SUPPORTED_APP_COUNTRIES.has(stripeCountry)) {
+      throw new HttpsError(
+        "invalid-argument",
+        "SportConnect is only available in Tunisia and France.",
       );
     }
 
@@ -1630,14 +1589,12 @@ export const createConnectedAccount = onCall(
         };
       }
 
-      if (addressLine1 || city) {
+      if (addressLine1) {
         individual.address = {
-          ...(addressLine1 && { line1: addressLine1 }),
-          ...(city && { city }),
+          line1: String(addressLine1).trim(),
           country: stripeCountry,
         };
       }
-
       let createdAccount: StripeAccount;
       try {
         createdAccount = await stripe.accounts.create({
@@ -1791,10 +1748,7 @@ export const getAccountStatus = onCall(
       }
 
       const account = await stripe.accounts.retrieve(accountId);
-      if (
-        authorizedAccountIds.size === 0 &&
-        account.metadata?.userId !== uid
-      ) {
+      if (authorizedAccountIds.size === 0 && account.metadata?.userId !== uid) {
         throw new HttpsError(
           "permission-denied",
           "You are not authorized to access this Stripe account",
@@ -2729,18 +2683,19 @@ export const stripeWebhook = onRequest(
         case "account.updated": {
           const account = event.data.object as StripeAccount;
           const userId = account.metadata?.userId;
-logger.info("Stripe account status", {
-  accountId: account.id,
-  chargesEnabled: account.charges_enabled,
-  payoutsEnabled: account.payouts_enabled,
-  detailsSubmitted: account.details_submitted,
-  currentlyDue: account.requirements?.currently_due ?? [],
-  pastDue: account.requirements?.past_due ?? [],
-  pendingVerification: account.requirements?.pending_verification ?? [],
-  disabledReason: account.requirements?.disabled_reason ?? null,
-  transfersCapability: account.capabilities?.transfers ?? null,
-  cardPaymentsCapability: account.capabilities?.card_payments ?? null,
-});
+          logger.info("Stripe account status", {
+            accountId: account.id,
+            chargesEnabled: account.charges_enabled,
+            payoutsEnabled: account.payouts_enabled,
+            detailsSubmitted: account.details_submitted,
+            currentlyDue: account.requirements?.currently_due ?? [],
+            pastDue: account.requirements?.past_due ?? [],
+            pendingVerification:
+              account.requirements?.pending_verification ?? [],
+            disabledReason: account.requirements?.disabled_reason ?? null,
+            transfersCapability: account.capabilities?.transfers ?? null,
+            cardPaymentsCapability: account.capabilities?.card_payments ?? null,
+          });
           if (!userId) {
             logger.warn("account.updated received without metadata.userId", {
               accountId: account.id,

@@ -101,11 +101,21 @@
         { "fieldPath": "status", "order": "ASCENDING" }
       ]
     },
+
     {
       "collectionGroup": "bookings",
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "rideId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "bookings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "rideId", "order": "ASCENDING" },
+        { "fieldPath": "driverId", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     },
@@ -133,6 +143,31 @@
         { "fieldPath": "passengerId", "order": "ASCENDING" },
         { "fieldPath": "status", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "bookings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "passengerId", "order": "ASCENDING" },
+        { "fieldPath": "rideId", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "bookings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "passengerId", "order": "ASCENDING" },
+        { "fieldPath": "rideId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "bookings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "passengerId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
       ]
     },
     {
@@ -154,6 +189,16 @@
       ]
     },
     {
+      "collectionGroup": "bookings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "driverId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+
+    {
       "collectionGroup": "rideRequests",
       "queryScope": "COLLECTION",
       "fields": [
@@ -171,6 +216,7 @@
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     },
+
     {
       "collectionGroup": "vehicles",
       "queryScope": "COLLECTION",
@@ -187,6 +233,7 @@
         { "fieldPath": "isActive", "order": "ASCENDING" }
       ]
     },
+
     {
       "collectionGroup": "reviews",
       "queryScope": "COLLECTION",
@@ -231,6 +278,7 @@
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     },
+
     {
       "collectionGroup": "payments",
       "queryScope": "COLLECTION",
@@ -272,6 +320,7 @@
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     },
+
     {
       "collectionGroup": "payouts",
       "queryScope": "COLLECTION",
@@ -280,6 +329,7 @@
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     },
+
     {
       "collectionGroup": "notifications",
       "queryScope": "COLLECTION",
@@ -315,6 +365,7 @@
         { "fieldPath": "isArchived", "order": "ASCENDING" }
       ]
     },
+
     {
       "collectionGroup": "chats",
       "queryScope": "COLLECTION",
@@ -340,6 +391,7 @@
         { "fieldPath": "lastMessageAt", "order": "DESCENDING" }
       ]
     },
+
     {
       "collectionGroup": "messages",
       "queryScope": "COLLECTION",
@@ -356,6 +408,7 @@
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     },
+
     {
       "collectionGroup": "calls",
       "queryScope": "COLLECTION",
@@ -398,6 +451,7 @@
         { "fieldPath": "status", "order": "ASCENDING" }
       ]
     },
+
     {
       "collectionGroup": "transactions",
       "queryScope": "COLLECTION",
@@ -406,6 +460,7 @@
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     },
+
     {
       "collectionGroup": "events",
       "queryScope": "COLLECTION",
@@ -435,8 +490,25 @@
       "collectionGroup": "events",
       "queryScope": "COLLECTION",
       "fields": [
+        { "fieldPath": "creatorId", "order": "ASCENDING" },
+        { "fieldPath": "isActive", "order": "ASCENDING" },
+        { "fieldPath": "startsAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "events",
+      "queryScope": "COLLECTION",
+      "fields": [
         { "fieldPath": "participantIds", "arrayConfig": "CONTAINS" },
         { "fieldPath": "isActive", "order": "ASCENDING" },
+        { "fieldPath": "startsAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "events",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "participantIds", "arrayConfig": "CONTAINS" },
         { "fieldPath": "startsAt", "order": "ASCENDING" }
       ]
     },
@@ -450,12 +522,47 @@
         { "fieldPath": "location.latitude", "order": "ASCENDING" }
       ]
     },
+
     {
-      "collectionGroup": "bookings",
+      "collectionGroup": "disputes",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "driverId", "order": "ASCENDING" },
-        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "rideId", "order": "ASCENDING" },
+        { "fieldPath": "complainantId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "disputes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "complainantId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "disputes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "respondentId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+
+    {
+      "collectionGroup": "support_tickets",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+
+    {
+      "collectionGroup": "reports",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "reporterId", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     }
@@ -464,17 +571,32 @@
     {
       "collectionGroup": "users",
       "fieldPath": "email",
-      "indexes": [{ "queryScope": "COLLECTION", "order": "ASCENDING" }]
+      "indexes": [
+        {
+          "queryScope": "COLLECTION",
+          "order": "ASCENDING"
+        }
+      ]
     },
     {
       "collectionGroup": "users",
       "fieldPath": "displayName",
-      "indexes": [{ "queryScope": "COLLECTION", "order": "ASCENDING" }]
+      "indexes": [
+        {
+          "queryScope": "COLLECTION",
+          "order": "ASCENDING"
+        }
+      ]
     },
     {
       "collectionGroup": "users",
       "fieldPath": "gamification.totalXP",
-      "indexes": [{ "queryScope": "COLLECTION", "order": "DESCENDING" }]
+      "indexes": [
+        {
+          "queryScope": "COLLECTION",
+          "order": "DESCENDING"
+        }
+      ]
     }
   ]
 }

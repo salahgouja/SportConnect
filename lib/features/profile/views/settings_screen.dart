@@ -15,12 +15,12 @@ import 'package:sport_connect/core/theme/platform_adaptive.dart';
 import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/core/widgets/custom_button.dart';
 import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
+import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 import 'package:sport_connect/features/auth/views/reauth_dialog.dart';
 import 'package:sport_connect/features/profile/view_models/driver_settings_view_model.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
-import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -474,16 +474,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   title: l10n.payoutMethod,
                   subtitle: l10n.bankAccountEndingIn4532,
                   icon: Icons.account_balance_outlined,
-                  onTap: () =>
-                      context.push(AppRoutes.driverStripeOnboarding.path),
+                  onTap: () => context.pushNamed(
+                    AppRoutes.driverStripeOnboarding.name,
+                    queryParameters: {
+                      'mode': 'manage',
+                      'returnTo': AppRoutes.driverEarnings.name,
+                    },
+                  ),
                 ),
-                _buildDivider(),
-                _buildNavTile(
-                  title: l10n.taxDocuments,
-                  subtitle: l10n.viewAndDownloadTaxForms,
-                  icon: Icons.description_outlined,
-                  onTap: () => context.push(AppRoutes.taxDocuments.path),
-                ),
+                // _buildDivider(),
+                // _buildNavTile(
+                //   title: l10n.taxDocuments,
+                //   subtitle: l10n.viewAndDownloadTaxForms,
+                //   icon: Icons.description_outlined,
+                //   onTap: () => context.push(AppRoutes.taxDocuments.path),
+                // ),
                 _buildDivider(),
                 _buildSubSectionLabel(l10n.navigationMap),
                 _buildSwitchTile(
@@ -1153,73 +1158,73 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       forceMaxHeight: true,
       maxHeightFactor: 0.86,
       child: Container(
-          padding: EdgeInsets.all(24.w),
-          child: ListView(
-            children: [
-              Center(
-                child: Container(
-                  width: 40.w,
-                  height: 4.h,
-                  decoration: BoxDecoration(
-                    color: AppColors.border,
-                    borderRadius: BorderRadius.circular(2.r),
-                  ),
+        padding: EdgeInsets.all(24.w),
+        child: ListView(
+          children: [
+            Center(
+              child: Container(
+                width: 40.w,
+                height: 4.h,
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2.r),
                 ),
               ),
-              SizedBox(height: 24.h),
-              Icon(
-                Icons.verified_user_outlined,
-                size: 48.sp,
-                color: AppColors.primary,
+            ),
+            SizedBox(height: 24.h),
+            Icon(
+              Icons.verified_user_outlined,
+              size: 48.sp,
+              color: AppColors.primary,
+            ),
+            SizedBox(height: 16.h),
+            Text(
+              AppLocalizations.of(context).dataProcessingNotice,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 18.sp,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
               ),
-              SizedBox(height: 16.h),
-              Text(
-                AppLocalizations.of(context).dataProcessingNotice,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 18.sp,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
+            ),
+            SizedBox(height: 16.h),
+            _buildConsentInfoItem(
+              'Personal Information',
+              'We collect your name, email, phone number, and profile photo to create and manage your account.',
+              Icons.person_outline,
+            ),
+            _buildConsentInfoItem(
+              'Location Data',
+              'We process your location to match rides, calculate routes, and show nearby destinations.',
+              Icons.location_on_outlined,
+            ),
+            _buildConsentInfoItem(
+              'Payment Data',
+              'Payment information is processed securely by Stripe. We do not store your full card details.',
+              Icons.payment_outlined,
+            ),
+            _buildConsentInfoItem(
+              'Usage Data',
+              'We collect crash reports and usage analytics. This data is anonymized.',
+              Icons.analytics_outlined,
+            ),
+            _buildConsentInfoItem(
+              'Your Rights',
+              'You can access, export, correct, or delete your data at any time.',
+              Icons.gavel_outlined,
+            ),
+            SizedBox(height: 16.h),
+            Text(
+              'By using SportConnect, you consent to the data processing described above and in our Privacy Policy.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12.sp,
+                color: AppColors.textSecondary,
               ),
-              SizedBox(height: 16.h),
-              _buildConsentInfoItem(
-                'Personal Information',
-                'We collect your name, email, phone number, and profile photo to create and manage your account.',
-                Icons.person_outline,
-              ),
-              _buildConsentInfoItem(
-                'Location Data',
-                'We process your location to match rides, calculate routes, and show nearby destinations.',
-                Icons.location_on_outlined,
-              ),
-              _buildConsentInfoItem(
-                'Payment Data',
-                'Payment information is processed securely by Stripe. We do not store your full card details.',
-                Icons.payment_outlined,
-              ),
-              _buildConsentInfoItem(
-                'Usage Data',
-                'We collect crash reports and usage analytics. This data is anonymized.',
-                Icons.analytics_outlined,
-              ),
-              _buildConsentInfoItem(
-                'Your Rights',
-                'You can access, export, correct, or delete your data at any time.',
-                Icons.gavel_outlined,
-              ),
-              SizedBox(height: 16.h),
-              Text(
-                'By using SportConnect, you consent to the data processing described above and in our Privacy Policy.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 12.sp,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              SizedBox(height: 16.h),
-            ],
-          ),
+            ),
+            SizedBox(height: 16.h),
+          ],
+        ),
       ),
     );
   }

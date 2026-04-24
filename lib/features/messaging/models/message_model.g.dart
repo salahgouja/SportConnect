@@ -158,11 +158,12 @@ _ChatModel _$ChatModelFromJson(Map json) => _ChatModel(
         (k, e) => MapEntry(k as String, e as bool),
       ) ??
       const {},
-  deletedFor:
-      (json['deletedFor'] as Map?)?.map(
-        (k, e) => MapEntry(k as String, e as bool),
-      ) ??
-      const {},
+  deletedAtBy: json['deletedAtBy'] == null
+      ? const {}
+      : const TimestampMapConverter().fromJson(json['deletedAtBy']),
+  clearedAtBy: json['clearedAtBy'] == null
+      ? const {}
+      : const TimestampMapConverter().fromJson(json['clearedAtBy']),
   isActive: json['isActive'] as bool? ?? true,
   createdAt: const TimestampConverter().fromJson(json['createdAt']),
   updatedAt: const TimestampConverter().fromJson(json['updatedAt']),
@@ -188,7 +189,8 @@ Map<String, dynamic> _$ChatModelToJson(
   'unreadCounts': instance.unreadCounts,
   'mutedBy': instance.mutedBy,
   'pinnedBy': instance.pinnedBy,
-  'deletedFor': instance.deletedFor,
+  'deletedAtBy': const TimestampMapConverter().toJson(instance.deletedAtBy),
+  'clearedAtBy': const TimestampMapConverter().toJson(instance.clearedAtBy),
   'isActive': instance.isActive,
   'createdAt': const TimestampConverter().toJson(instance.createdAt),
   'updatedAt': const TimestampConverter().toJson(instance.updatedAt),

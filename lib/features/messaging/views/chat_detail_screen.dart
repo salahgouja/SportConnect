@@ -21,11 +21,10 @@ import 'package:sport_connect/core/theme/platform_adaptive.dart';
 import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
+import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/messaging/models/message_model.dart';
 import 'package:sport_connect/features/messaging/view_models/chat_view_model.dart';
-import 'package:sport_connect/features/messaging/widgets/flyer_chat_preview_sheet.dart';
-import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:v_chat_voice_player/v_chat_voice_player.dart';
@@ -242,7 +241,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
 
     notifier.setEmojiPickerVisible(false);
 
-    await notifier.sendMessage(
+    final success = await notifier.sendMessage(
       content: text,
       senderName: currentUser?.username ?? 'User',
       senderPhotoUrl: currentUser?.photoUrl,
@@ -251,6 +250,22 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     );
 
     if (!mounted) return;
+
+    if (!success) {
+      final error = ref
+          .read(chatDetailViewModelProvider(_chatId, currentUser?.uid ?? ''))
+          .error;
+
+      _messageController.text = text;
+
+      _showStatusSnackBar(
+        error ?? 'Failed to send message',
+        type: AdaptiveSnackBarType.error,
+      );
+
+      return;
+    }
+
     notifier.clearReply();
     _scrollToBottom();
   }
@@ -522,20 +537,6 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       );
     }
 
-    void onOpenFlyerPreview() {
-      final user = currentUser;
-      if (user == null) return;
-      final state = ref.read(
-        chatDetailViewModelProvider(_chatId, user.uid),
-      );
-      FlyerChatPreviewSheet.show(
-        context: context,
-        messages: state.messages,
-        currentUser: user,
-        receiver: _receiver,
-      );
-    }
-
     AppModalSheet.showActions<void>(
       context: context,
       title: 'Chat options',
@@ -545,11 +546,6 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
           icon: Icons.person_outline_rounded,
           title: l10n.viewProfile,
           onTap: onViewProfile,
-        ),
-        AppModalAction(
-          icon: Icons.forum_outlined,
-          title: 'Chat preview',
-          onTap: onOpenFlyerPreview,
         ),
         AppModalAction(
           icon: Icons.notifications_off_outlined,
@@ -576,12 +572,80 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
           },
         ),
         AppModalAction(
-          icon: Icons.delete_outline_rounded,
-          title: l10n.clearChat,
+          icon: Icons.cleaning_services_outlined,
+          title: 'Clear chat history',
           isDestructive: true,
-          onTap: _confirmClearChat,
+          onTap: _confirmClearChatHistory,
+        ),
+        AppModalAction(
+          icon: Icons.delete_outline_rounded,
+          title: 'Delete conversation',
+          isDestructive: true,
+          onTap: _confirmDeleteConversation,
         ),
       ],
+    );
+  }
+
+  void _confirmDeleteConversation() {
+    showDialog<void>(
+      context: context,
+      barrierLabel: 'Delete conversation',
+      builder: (dialogContext) => AlertDialog.adaptive(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
+        ),
+        title: const Text('Delete conversation?'),
+        content: const Text(
+          'This will remove the conversation from your chat list. '
+          'It will appear again if a new message is sent.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => dialogContext.pop(),
+            child: Text(AppLocalizations.of(context).actionCancel),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              dialogContext.pop();
+
+              try {
+                await ref
+                    .read(chatActionsViewModelProvider.notifier)
+                    .clearChat(
+                      chatId: _chatId,
+                      userId: currentUser!.uid,
+                    );
+
+                if (!mounted) return;
+
+                context.pop();
+
+                AdaptiveSnackBar.show(
+                  context,
+                  message: 'Conversation deleted',
+                  type: AdaptiveSnackBarType.success,
+                );
+              } on Exception {
+                if (!mounted) return;
+
+                AdaptiveSnackBar.show(
+                  context,
+                  message: AppLocalizations.of(
+                    context,
+                  ).couldNotClearChatTryAgain,
+                  type: AdaptiveSnackBarType.error,
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -777,7 +841,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     );
   }
 
-  void _confirmClearChat() {
+  void _confirmClearChatHistory() {
     showDialog<void>(
       context: context,
       barrierLabel: AppLocalizations.of(context).clearChat,
@@ -785,8 +849,11 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
         ),
-        title: Text(AppLocalizations.of(context).clearChat),
-        content: Text(AppLocalizations.of(context).areYouSureYouWant),
+        title: const Text('Clear chat history?'),
+        content: const Text(
+          'This will clear the messages from this chat for you only. '
+          'The conversation will stay in your chat list.',
+        ),
         actions: [
           TextButton(
             onPressed: () => dialogContext.pop(),
@@ -795,14 +862,17 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
           ElevatedButton(
             onPressed: () async {
               dialogContext.pop();
+
               try {
                 await ref
                     .read(chatActionsViewModelProvider.notifier)
-                    .clearChat(
+                    .clearChatHistoryForUser(
                       chatId: _chatId,
                       userId: currentUser!.uid,
                     );
+
                 if (!mounted) return;
+
                 AdaptiveSnackBar.show(
                   context,
                   message: AppLocalizations.of(context).chatCleared,
@@ -810,6 +880,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                 );
               } on Exception {
                 if (!mounted) return;
+
                 AdaptiveSnackBar.show(
                   context,
                   message: AppLocalizations.of(
@@ -820,9 +891,9 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-            child: Text(
-              AppLocalizations.of(context).clear,
-              style: const TextStyle(color: Colors.white),
+            child: const Text(
+              'Clear history',
+              style: TextStyle(color: Colors.white),
             ),
           ),
         ],
@@ -895,7 +966,10 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                         .setEmojiPickerVisible(false);
                   },
                   child: chatState.isLoading
-                      ? const SkeletonLoader(type: SkeletonType.chatTile, itemCount: 6)
+                      ? const SkeletonLoader(
+                          type: SkeletonType.chatTile,
+                          itemCount: 6,
+                        )
                       : chatState.messages.isEmpty
                       ? _buildEmptyState()
                       : _buildMessagesList(chatState),
@@ -1136,10 +1210,10 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       actions: [
         // Note: Map params here based on your specific AdaptiveAppBarAction class structure
         AdaptiveAppBarAction(
+          iosSymbol: 'ellipsis.circle',
+          icon: Icons.more_horiz_rounded,
           onPressed: () =>
               _showOptionsSheet(isReceiverBlocked: isReceiverBlocked),
-          // Assuming it takes an icon or child:
-          // icon: Icons.adaptive.more_rounded,
         ),
       ],
 

@@ -10,12 +10,12 @@ import 'package:latlong2/latlong.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
-import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/core/theme/platform_adaptive.dart';
 import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/core/widgets/passenger_info_widget.dart';
 import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/core/widgets/poi_search_sheet.dart';
+import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/messaging/view_models/chat_view_model.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
@@ -2304,139 +2304,185 @@ class _DriverActiveRideScreenState
   /// Shows OTP input dialog. Driver enters the 4-digit code the passenger
   /// displays on their screen to confirm the pickup.
   void _showOtpDialog(RideBooking booking) {
-    final otpController = TextEditingController();
+    var otp = '';
     String? errorText;
+    var isSubmitting = false;
 
     showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setState) => AlertDialog.adaptive(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20.r),
-          ),
-          title: Row(
-            children: [
-              Container(
-                padding: EdgeInsets.all(8.w),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.12),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.pin_rounded,
-                  color: AppColors.primary,
-                  size: 20.sp,
-                ),
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (dialogContext, setDialogState) {
+            return AlertDialog.adaptive(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20.r),
               ),
-              SizedBox(width: 10.w),
-              Text(
-                'Confirm Pickup',
-                style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w700),
-              ),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Ask the passenger for their 4-digit pickup code.',
-                style: TextStyle(
-                  fontSize: 13.sp,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              SizedBox(height: 16.h),
-              TextField(
-                controller: otpController,
-                keyboardType: TextInputType.number,
-                maxLength: 4,
-                textAlign: TextAlign.center,
-                autofocus: true,
-                style: TextStyle(
-                  fontSize: 28.sp,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 12,
-                ),
-                decoration: InputDecoration(
-                  hintText: '- - - -',
-                  hintStyle: TextStyle(
-                    fontSize: 24.sp,
-                    letterSpacing: 8,
-                    color: AppColors.textTertiary,
-                  ),
-                  counterText: '',
-                  errorText: errorText,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.r),
-                    borderSide: const BorderSide(
+              title: Row(
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(8.w),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.pin_rounded,
                       color: AppColors.primary,
-                      width: 2,
+                      size: 20.sp,
                     ),
                   ),
-                ),
-                onChanged: (_) {
-                  if (errorText != null) setState(() => errorText = null);
-                },
+                  SizedBox(width: 10.w),
+                  Expanded(
+                    child: Text(
+                      'Confirm Pickup',
+                      style: TextStyle(
+                        fontSize: 18.sp,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(ctx).pop();
-              },
-              child: Text(AppLocalizations.of(context).actionCancel),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10.r),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Ask the passenger for their 4-digit pickup code.',
+                      style: TextStyle(
+                        fontSize: 13.sp,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    SizedBox(height: 16.h),
+                    TextField(
+                      keyboardType: TextInputType.number,
+                      maxLength: 4,
+                      textAlign: TextAlign.center,
+                      autofocus: true,
+                      enabled: !isSubmitting,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(4),
+                      ],
+                      style: TextStyle(
+                        fontSize: 28.sp,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 12,
+                      ),
+                      decoration: InputDecoration(
+                        hintText: '- - - -',
+                        hintStyle: TextStyle(
+                          fontSize: 24.sp,
+                          letterSpacing: 8,
+                          color: AppColors.textTertiary,
+                        ),
+                        counterText: '',
+                        errorText: errorText,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12.r),
+                          borderSide: const BorderSide(
+                            color: AppColors.primary,
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                      onChanged: (value) {
+                        otp = value.trim();
+                        if (errorText != null) {
+                          setDialogState(() => errorText = null);
+                        }
+                      },
+                    ),
+                  ],
                 ),
               ),
-              onPressed: () async {
-                final otp = otpController.text.trim();
-                if (otp.length != 4) {
-                  setState(() => errorText = 'Enter the 4-digit code');
-                  return;
-                }
-                final notifier = ref.read(
-                  activeRideViewModelProvider(widget.rideId!).notifier,
-                );
-                final ok = await notifier.confirmPickupWithOtp(
-                  passengerId: booking.passengerId,
-                  bookingId: booking.id,
-                  enteredOtp: otp,
-                );
-                if (!mounted || !ctx.mounted) return;
-                if (ok) {
-                  Navigator.of(ctx).pop();
-                  HapticFeedback.mediumImpact();
-                  AdaptiveSnackBar.show(
-                    context,
-                    message: 'Passenger confirmed!',
-                    type: AdaptiveSnackBarType.success,
-                    duration: const Duration(seconds: 2),
-                  );
-                } else {
-                  setState(
-                    () => errorText = 'Wrong code — ask the passenger again',
-                  );
-                  HapticFeedback.heavyImpact();
-                }
-              },
-              child: const Text('Confirm'),
-            ),
-          ],
-        ),
-      ),
-    ).then((_) => otpController.dispose());
+              actions: [
+                TextButton(
+                  onPressed: isSubmitting
+                      ? null
+                      : () => Navigator.of(dialogContext).pop(),
+                  child: Text(AppLocalizations.of(context).actionCancel),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10.r),
+                    ),
+                  ),
+                  onPressed: isSubmitting
+                      ? null
+                      : () async {
+                          if (otp.length != 4) {
+                            setDialogState(
+                              () => errorText = 'Enter the 4-digit code',
+                            );
+                            return;
+                          }
+
+                          setDialogState(() {
+                            isSubmitting = true;
+                            errorText = null;
+                          });
+
+                          final notifier = ref.read(
+                            activeRideViewModelProvider(
+                              widget.rideId!,
+                            ).notifier,
+                          );
+
+                          final ok = await notifier.confirmPickupWithOtp(
+                            passengerId: booking.passengerId,
+                            bookingId: booking.id,
+                            enteredOtp: otp,
+                          );
+
+                          if (!mounted || !dialogContext.mounted) return;
+
+                          if (ok) {
+                            Navigator.of(dialogContext).pop();
+
+                            HapticFeedback.mediumImpact();
+
+                            if (!mounted) return;
+                            AdaptiveSnackBar.show(
+                              context,
+                              message: 'Passenger confirmed!',
+                              type: AdaptiveSnackBarType.success,
+                              duration: const Duration(seconds: 2),
+                            );
+                          } else {
+                            setDialogState(() {
+                              isSubmitting = false;
+                              errorText =
+                                  'Wrong code — ask the passenger again';
+                            });
+                            HapticFeedback.heavyImpact();
+                          }
+                        },
+                  child: isSubmitting
+                      ? SizedBox(
+                          width: 18.w,
+                          height: 18.w,
+                          child: const CircularProgressIndicator.adaptive(
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text('Confirm'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   /// Confirm no-show dialog for a passenger with 30-second undo window.

@@ -54,6 +54,13 @@ GoRouter appRouter(Ref ref) {
     }
   });
 
+  ref.listen(currentDriverConnectedAccountProvider, (previous, next) {
+    if (_routeConnectedAccountStateKey(previous) !=
+        _routeConnectedAccountStateKey(next)) {
+      routerListenable.notify();
+    }
+  });
+
   ref.listen(selectedRoleIntentProvider, (previous, next) {
     if (_routeRoleIntentStateKey(previous) != _routeRoleIntentStateKey(next)) {
       routerListenable.notify();
@@ -88,7 +95,9 @@ GoRouter appRouter(Ref ref) {
       final userState = ref.read(currentUserProvider);
       final onboardingState = ref.read(isOnboardingCompleteProvider);
       final firebaseUser = ref.read(authStateProvider).value;
-
+      final connectedAccountState = ref.read(
+        currentDriverConnectedAccountProvider,
+      );
       final isFirestoreStillLoading =
           firebaseUser != null &&
           userState.value == null &&
@@ -103,6 +112,7 @@ GoRouter appRouter(Ref ref) {
       return _handleRedirect(
         userState,
         onboardingState,
+        connectedAccountState,
         state,
         isEmailVerified: firebaseUser?.emailVerified ?? false,
         needsRoleSelection: needsRoleSelection,
@@ -120,6 +130,7 @@ GoRouter appRouter(Ref ref) {
 String? _handleRedirect(
   AsyncValue<UserModel?> userState,
   AsyncValue<bool> onboardingState,
+  AsyncValue<DriverConnectedAccount?> connectedAccountState,
   GoRouterState state, {
   bool isEmailVerified = false,
   bool needsRoleSelection = false,
@@ -131,11 +142,13 @@ String? _handleRedirect(
     userState,
     isOnboardingLoading: onboardingState.isLoading,
     isFirestoreStillLoading: isFirestoreStillLoading,
+    isConnectedAccountLoading: connectedAccountState.isLoading,
     needsRoleSelection: needsRoleSelection,
     hasCompletedOnboarding: onboardingState.value ?? true,
     isEmailVerified: isEmailVerified,
     hasVerifiableEmail: hasVerifiableEmail,
     selectedRoleIntent: selectedRoleIntent,
+    currentDriverConnectedAccount: connectedAccountState.value,
   );
   return guard.getRedirect(state.uri);
 }
@@ -181,85 +194,68 @@ StatefulShellRoute _buildMainShell() {
 
 List<StatefulShellBranch> _buildRiderBranches() {
   return [
-    // [0] Explore (Home)
     StatefulShellBranch(
       routes: [
         GoRoute(
           path: AppRoutes.home.path,
           name: AppRoutes.home.name,
-          pageBuilder: (context, state) => PlatformInfo.isIOS
-              ? CupertinoPage(
-                  key: state.pageKey,
-                  child: const RiderHomeScreen(),
-                )
-              : MaterialPage(
-                  key: state.pageKey,
-                  child: const RiderHomeScreen(),
-                ),
+          pageBuilder: (context, state) => _shellPage(
+            state: state,
+            keyValue: AppRoutes.home.name,
+            child: const RiderHomeScreen(),
+          ),
         ),
       ],
     ),
-
-    // [1] Activity (My Rides)
     StatefulShellBranch(
       routes: [
         GoRoute(
           path: AppRoutes.riderMyRides.path,
           name: AppRoutes.riderMyRides.name,
-          pageBuilder: (context, state) => PlatformInfo.isIOS
-              ? CupertinoPage(
-                  key: state.pageKey,
-                  child: const RiderMyRidesScreen(),
-                )
-              : MaterialPage(
-                  key: state.pageKey,
-                  child: const RiderMyRidesScreen(),
-                ),
+          pageBuilder: (context, state) => _shellPage(
+            state: state,
+            keyValue: AppRoutes.riderMyRides.name,
+            child: const RiderMyRidesScreen(),
+          ),
         ),
       ],
     ),
-
-    // [2] Events (Middle Tab)
     StatefulShellBranch(
       routes: [
         GoRoute(
           path: AppRoutes.events.path,
           name: AppRoutes.events.name,
-          pageBuilder: (context, state) => PlatformInfo.isIOS
-              ? CupertinoPage(
-                  key: state.pageKey,
-                  child: const EventListScreen(),
-                )
-              : MaterialPage(
-                  key: state.pageKey,
-                  child: const EventListScreen(),
-                ),
+          pageBuilder: (context, state) => _shellPage(
+            state: state,
+            keyValue: AppRoutes.events.name,
+            child: const EventListScreen(),
+          ),
         ),
       ],
     ),
-
-    // [3] Chat
     StatefulShellBranch(
       routes: [
         GoRoute(
           path: AppRoutes.chat.path,
           name: AppRoutes.chat.name,
-          pageBuilder: (context, state) => PlatformInfo.isIOS
-              ? CupertinoPage(key: state.pageKey, child: const ChatListScreen())
-              : MaterialPage(key: state.pageKey, child: const ChatListScreen()),
+          pageBuilder: (context, state) => _shellPage(
+            state: state,
+            keyValue: AppRoutes.chat.name,
+            child: const ChatListScreen(),
+          ),
         ),
       ],
     ),
-
-    // [4] Profile
     StatefulShellBranch(
       routes: [
         GoRoute(
           path: AppRoutes.profile.path,
           name: AppRoutes.profile.name,
-          pageBuilder: (context, state) => PlatformInfo.isIOS
-              ? CupertinoPage(key: state.pageKey, child: const ProfileScreen())
-              : MaterialPage(key: state.pageKey, child: const ProfileScreen()),
+          pageBuilder: (context, state) => _shellPage(
+            state: state,
+            keyValue: AppRoutes.profile.name,
+            child: const ProfileScreen(),
+          ),
         ),
       ],
     ),
@@ -268,89 +264,92 @@ List<StatefulShellBranch> _buildRiderBranches() {
 
 List<StatefulShellBranch> _buildDriverBranches() {
   return [
-    // [5] Dashboard
     StatefulShellBranch(
       routes: [
         GoRoute(
           path: AppRoutes.driverHome.path,
           name: AppRoutes.driverHome.name,
-          pageBuilder: (context, state) => PlatformInfo.isIOS
-              ? CupertinoPage(
-                  key: state.pageKey,
-                  child: const DriverHomeScreen(),
-                )
-              : MaterialPage(
-                  key: state.pageKey,
-                  child: const DriverHomeScreen(),
-                ),
+          pageBuilder: (context, state) => _shellPage(
+            state: state,
+            keyValue: AppRoutes.driverHome.name,
+            child: const DriverHomeScreen(),
+          ),
         ),
       ],
     ),
-
-    // [6] Schedule (Rides)
     StatefulShellBranch(
       routes: [
         GoRoute(
           path: AppRoutes.driverRides.path,
           name: AppRoutes.driverRides.name,
-          pageBuilder: (context, state) => PlatformInfo.isIOS
-              ? CupertinoPage(
-                  key: state.pageKey,
-                  child: const DriverMyRidesScreen(),
-                )
-              : MaterialPage(
-                  key: state.pageKey,
-                  child: const DriverMyRidesScreen(),
-                ),
+          pageBuilder: (context, state) => _shellPage(
+            state: state,
+            keyValue: AppRoutes.driverRides.name,
+            child: const DriverMyRidesScreen(),
+          ),
         ),
       ],
     ),
-
-    // [7] Earnings
     StatefulShellBranch(
       routes: [
         GoRoute(
           path: AppRoutes.driverEarnings.path,
           name: AppRoutes.driverEarnings.name,
-          pageBuilder: (context, state) => PlatformInfo.isIOS
-              ? CupertinoPage(
-                  key: state.pageKey,
-                  child: const DriverEarningsScreen(),
-                )
-              : MaterialPage(
-                  key: state.pageKey,
-                  child: const DriverEarningsScreen(),
-                ),
+          pageBuilder: (context, state) => _shellPage(
+            state: state,
+            keyValue: AppRoutes.driverEarnings.name,
+            child: const DriverEarningsScreen(),
+          ),
         ),
       ],
     ),
-
-    // [8] Inbox (Chat)
     StatefulShellBranch(
       routes: [
         GoRoute(
           path: AppRoutes.driverChat.path,
           name: AppRoutes.driverChat.name,
-          pageBuilder: (context, state) => PlatformInfo.isIOS
-              ? CupertinoPage(key: state.pageKey, child: const ChatListScreen())
-              : MaterialPage(key: state.pageKey, child: const ChatListScreen()),
+          pageBuilder: (context, state) => _shellPage(
+            state: state,
+            keyValue: AppRoutes.driverChat.name,
+            child: const ChatListScreen(),
+          ),
         ),
       ],
     ),
-
-    // [9] Profile
     StatefulShellBranch(
       routes: [
         GoRoute(
           path: AppRoutes.driverProfileTab.path,
           name: AppRoutes.driverProfileTab.name,
-          pageBuilder: (context, state) => PlatformInfo.isIOS
-              ? CupertinoPage(key: state.pageKey, child: const ProfileScreen())
-              : MaterialPage(key: state.pageKey, child: const ProfileScreen()),
+          pageBuilder: (context, state) => _shellPage(
+            state: state,
+            keyValue: AppRoutes.driverProfileTab.name,
+            child: const ProfileScreen(),
+          ),
         ),
       ],
     ),
   ];
+}
+
+Page<void> _shellPage({
+  required GoRouterState state,
+  required String keyValue,
+  required Widget child,
+}) {
+  final key = ValueKey<String>('shell-tab-$keyValue');
+
+  if (PlatformInfo.isIOS) {
+    return CupertinoPage<void>(
+      key: key,
+      child: child,
+    );
+  }
+
+  return MaterialPage<void>(
+    key: key,
+    child: child,
+  );
 }
 
 // ── Router refresh listenable ─────────────────────────────────────────────────
@@ -383,6 +382,28 @@ class _AuthChangeNotifier extends ChangeNotifier {
 String _routeUserStateKey(AsyncValue<UserModel?>? state) {
   if (state == null) return 'none';
   return '${state.isLoading}:${state.hasError}:${_routeUserKey(state.value)}';
+}
+
+String _routeConnectedAccountStateKey(
+  AsyncValue<DriverConnectedAccount?>? state,
+) {
+  if (state == null) return 'none';
+
+  final account = state.value;
+  if (account == null) {
+    return '${state.isLoading}:${state.hasError}:null';
+  }
+
+  return [
+    state.isLoading,
+    state.hasError,
+    account.stripeAccountId,
+    account.chargesEnabled,
+    account.payoutsEnabled,
+    account.detailsSubmitted,
+    account.onboardingCompleted,
+    account.capabilities.transfers.name,
+  ].join(':');
 }
 
 String _routeRoleIntentStateKey(AsyncValue<UserRole?>? state) {

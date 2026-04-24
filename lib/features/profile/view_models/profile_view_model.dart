@@ -18,7 +18,7 @@ class ProfileEditState {
     this.dateOfBirth,
     this.gender,
     this.expertise = Expertise.rookie,
-    this.cityResult,
+    this.addressResult,
     this.newPhotoFile,
     this.imageRemoved = false,
     this.hasChanges = false,
@@ -53,7 +53,7 @@ class ProfileEditState {
   final DateTime? dateOfBirth;
   final String? gender;
   final Expertise expertise;
-  final AddressResult? cityResult;
+  final AddressResult? addressResult;
   final File? newPhotoFile;
   final bool imageRemoved;
   final bool hasChanges;
@@ -67,8 +67,8 @@ class ProfileEditState {
     DateTime? dateOfBirth,
     String? gender,
     Expertise? expertise,
-    AddressResult? cityResult,
-    bool clearCityResult = false,
+    AddressResult? addressResult,
+    bool clearAddressResult = false,
     File? newPhotoFile,
     bool clearNewPhotoFile = false,
     bool? imageRemoved,
@@ -83,7 +83,7 @@ class ProfileEditState {
       dateOfBirth: dateOfBirth ?? this.dateOfBirth,
       gender: gender ?? this.gender,
       expertise: expertise ?? this.expertise,
-      cityResult: clearCityResult ? null : (cityResult ?? this.cityResult),
+      addressResult: clearAddressResult ? null : (addressResult ?? this.addressResult),
       newPhotoFile: clearNewPhotoFile
           ? null
           : (newPhotoFile ?? this.newPhotoFile),
@@ -615,10 +615,10 @@ class ProfileEditViewModel extends _$ProfileEditViewModel {
     );
   }
 
-  void setCityResult(AddressResult? result) {
+  void setAddressResult(AddressResult? result) {
     state = state.copyWith(
-      cityResult: result,
-      clearCityResult: result == null,
+      addressResult: result,
+      clearAddressResult: result == null,
       hasChanges: true,
       isSaved: false,
     );

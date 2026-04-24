@@ -28,48 +28,12 @@ class MapService {
   // MAP TILE PROVIDERS
   // ═══════════════════════════════════════════════════════════════
 
-  static const Map<String, MapTileProvider> tileProviders = {
-    'standard': MapTileProvider(
-      name: 'OpenStreetMap Standard',
-      urlTemplate: AppConstants.osmStandardTileUrl,
-      attribution: '© OpenStreetMap contributors',
-      license: 'ODbL',
-    ),
-    'humanitarian': MapTileProvider(
-      name: 'Humanitarian (HOT)',
-      urlTemplate: AppConstants.osmHotTileUrl,
-      subdomains: ['a', 'b', 'c'],
-      attribution: '© OpenStreetMap contributors, Tiles by HOT',
-      license: 'ODbL',
-    ),
-    'terrain': MapTileProvider(
-      name: 'OpenTopoMap',
-      urlTemplate: AppConstants.openTopoTileUrl,
-      subdomains: ['a', 'b', 'c'],
-      attribution: '© OpenStreetMap contributors, SRTM, OpenTopoMap',
-      license: 'CC-BY-SA',
-    ),
-    'dark': MapTileProvider(
-      name: 'CartoDB Dark',
-      urlTemplate: AppConstants.cartoDarkTileUrl,
-      subdomains: ['a', 'b', 'c', 'd'],
-      attribution: '© OpenStreetMap contributors, © CARTO',
-      license: 'CC-BY 3.0',
-    ),
-    'light': MapTileProvider(
-      name: 'CartoDB Positron',
-      urlTemplate: AppConstants.cartoLightTileUrl,
-      subdomains: ['a', 'b', 'c', 'd'],
-      attribution: '© OpenStreetMap contributors, © CARTO',
-      license: 'CC-BY 3.0',
-    ),
-    'watercolor': MapTileProvider(
-      name: 'Stamen Watercolor',
-      urlTemplate: AppConstants.stadiaWatercolorTileUrl,
-      attribution: '© OpenStreetMap contributors, Map tiles by Stamen Design',
-      license: 'CC-BY 3.0',
-    ),
-  };
+  static const MapTileProvider standardTileProvider = MapTileProvider(
+    name: 'OpenStreetMap Standard',
+    urlTemplate: AppConstants.osmStandardTileUrl,
+    attribution: '© OpenStreetMap contributors',
+    license: 'ODbL',
+  );
 
   // ═══════════════════════════════════════════════════════════════
   // GEOCODING — Nominatim

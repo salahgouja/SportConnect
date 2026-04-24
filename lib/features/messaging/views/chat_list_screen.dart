@@ -99,7 +99,8 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
             Expanded(
               child: AdaptiveTabBarView(
                 tabs: [l10n.direct, l10n.groups, l10n.rides],
-                selectedColor: AppColors.primary,
+                selectedColor: Colors.white,
+                backgroundColor: AppColors.primary,
                 children: [
                   _buildDirectChats(),
                   _buildGroupChats(),

@@ -16,7 +16,6 @@ import 'package:sport_connect/core/models/location/location_point.dart';
 import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
-import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
 import 'package:sport_connect/core/widgets/driver_info_widget.dart';
 import 'package:sport_connect/core/widgets/map_location_picker.dart';
@@ -27,6 +26,7 @@ import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/core/widgets/premium_card.dart';
 import 'package:sport_connect/core/widgets/ride_feature_widgets.dart';
 import 'package:sport_connect/core/widgets/ride_progress_timeline.dart';
+import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/features/messaging/view_models/chat_view_model.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
@@ -126,7 +126,10 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
           flexibleSpace: FlexibleSpaceBar(
             background: Container(
               decoration: const BoxDecoration(gradient: AppColors.heroGradient),
-              child: const SkeletonLoader(type: SkeletonType.rideCard, itemCount: 1),
+              child: const SkeletonLoader(
+                type: SkeletonType.rideCard,
+                itemCount: 1,
+              ),
             ),
           ),
         ),
@@ -1501,21 +1504,54 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
             ),
           ],
           SizedBox(height: 12.h),
-          Row(
+          Column(
             children: [
-              Expanded(
-                child: PremiumButton(
-                  text: AppLocalizations.of(context).decline,
-                  onPressed: () => _handleDeclineRequest(rideId, booking.id),
-                  style: PremiumButtonStyle.secondary,
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => _openPassengerChat(booking.passengerId),
+                  icon: Icon(
+                    Icons.chat_bubble_outline_rounded,
+                    size: 18.sp,
+                  ),
+                  label: Text(
+                    'Message passenger',
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.primary,
+                    side: BorderSide(
+                      color: AppColors.primary.withValues(alpha: 0.45),
+                    ),
+                    padding: EdgeInsets.symmetric(vertical: 14.h),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                  ),
                 ),
               ),
-              SizedBox(width: 12.w),
-              Expanded(
-                child: PremiumButton(
-                  text: AppLocalizations.of(context).accept,
-                  onPressed: () => _handleAcceptRequest(rideId, booking.id),
-                ),
+              SizedBox(height: 10.h),
+              Row(
+                children: [
+                  Expanded(
+                    child: PremiumButton(
+                      text: AppLocalizations.of(context).decline,
+                      onPressed: () =>
+                          _handleDeclineRequest(rideId, booking.id),
+                      style: PremiumButtonStyle.secondary,
+                    ),
+                  ),
+                  SizedBox(width: 12.w),
+                  Expanded(
+                    child: PremiumButton(
+                      text: AppLocalizations.of(context).accept,
+                      onPressed: () => _handleAcceptRequest(rideId, booking.id),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -2367,73 +2403,101 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
 
   Future<void> _openDriverChat(String driverId) async {
     HapticFeedback.lightImpact();
+
     final currentUser = ref.read(currentUserProvider).value;
     if (currentUser == null) return;
+
+    if (currentUser.uid == driverId) return;
+
     try {
       final driverProfile = await ref.read(
         userProfileProvider(driverId).future,
       );
+
       if (!mounted) return;
+
       if (driverProfile == null) {
         _showSnackBar(AppLocalizations.of(context).passengerProfileNotFound);
         return;
       }
+
       final chat = await ref.read(
         getOrCreateChatProvider(
           userId1: currentUser.uid,
-          userId2: driverId,
+          userId2: driverProfile.uid,
           userName1: currentUser.username,
           userName2: driverProfile.username,
           userPhoto1: currentUser.photoUrl,
           userPhoto2: driverProfile.photoUrl,
         ).future,
       );
+
       if (!mounted) return;
+
       context.pushNamed(
         AppRoutes.chatDetail.name,
         pathParameters: {'id': chat.id},
+        queryParameters: {
+          'receiverId': driverProfile.uid,
+          'receiverName': driverProfile.username,
+          if (driverProfile.photoUrl != null)
+            'receiverPhotoUrl': driverProfile.photoUrl!,
+        },
         extra: driverProfile,
       );
-    } catch (e, st) {
-      if (mounted) {
-        _showSnackBar(AppLocalizations.of(context).failedToOpenChatTryAgain);
-      }
+    } catch (_) {
+      if (!mounted) return;
+      _showSnackBar(AppLocalizations.of(context).failedToOpenChatTryAgain);
     }
   }
 
   Future<void> _openPassengerChat(String passengerId) async {
     HapticFeedback.lightImpact();
+
     final currentUser = ref.read(currentUserProvider).value;
     if (currentUser == null) return;
+
+    if (currentUser.uid == passengerId) return;
+
     try {
       final passengerProfile = await ref.read(
         userProfileProvider(passengerId).future,
       );
+
       if (!mounted) return;
+
       if (passengerProfile == null) {
         _showSnackBar(AppLocalizations.of(context).passengerProfileNotFound);
         return;
       }
+
       final chat = await ref.read(
         getOrCreateChatProvider(
           userId1: currentUser.uid,
-          userId2: passengerId,
+          userId2: passengerProfile.uid,
           userName1: currentUser.username,
           userName2: passengerProfile.username,
           userPhoto1: currentUser.photoUrl,
           userPhoto2: passengerProfile.photoUrl,
         ).future,
       );
+
       if (!mounted) return;
+
       context.pushNamed(
         AppRoutes.chatDetail.name,
         pathParameters: {'id': chat.id},
+        queryParameters: {
+          'receiverId': passengerProfile.uid,
+          'receiverName': passengerProfile.username,
+          if (passengerProfile.photoUrl != null)
+            'receiverPhotoUrl': passengerProfile.photoUrl!,
+        },
         extra: passengerProfile,
       );
-    } catch (e, st) {
-      if (mounted) {
-        _showSnackBar(AppLocalizations.of(context).failedToOpenChatTryAgain);
-      }
+    } catch (_) {
+      if (!mounted) return;
+      _showSnackBar(AppLocalizations.of(context).failedToOpenChatTryAgain);
     }
   }
 

@@ -685,8 +685,6 @@ class AuthRepository implements IAuthRepository {
 
       final phoneNumber = rawData['phoneNumber'] as String?;
       final gender = rawData['gender'] as String?;
-      final city = rawData['city'] as String?;
-      final country = rawData['country'] as String?;
       final address = rawData['address'] as String?;
       final latitude = (rawData['latitude'] as num?)?.toDouble();
       final longitude = (rawData['longitude'] as num?)?.toDouble();
@@ -706,7 +704,7 @@ class AuthRepository implements IAuthRepository {
         return existing;
       }
 
-      final UserModel finalized = switch (role) {
+      final finalized = switch (role) {
         UserRole.rider => UserModel.rider(
           uid: existing.uid,
           email: existing.email,
@@ -714,8 +712,6 @@ class AuthRepository implements IAuthRepository {
           photoUrl: existing.photoUrl,
           phoneNumber: phoneNumber,
           gender: gender,
-          city: city,
-          country: country,
           address: address,
           latitude: latitude,
           longitude: longitude,
@@ -733,8 +729,6 @@ class AuthRepository implements IAuthRepository {
           photoUrl: existing.photoUrl,
           phoneNumber: phoneNumber,
           gender: gender,
-          city: city,
-          country: country,
           address: address,
           latitude: latitude,
           longitude: longitude,

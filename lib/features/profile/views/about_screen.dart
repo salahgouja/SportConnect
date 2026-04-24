@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -75,7 +75,7 @@ class AboutScreen extends ConsumerWidget {
             SizedBox(height: 4.h),
 
             Text(
-              'Version 1.0.4',
+              'Version 1.0.5',
               style: TextStyle(fontSize: 14.sp, color: AppColors.textTertiary),
             ).animate().fadeIn(delay: 150.ms),
 
@@ -165,7 +165,7 @@ class AboutScreen extends ConsumerWidget {
               onTap: () => showLicensePage(
                 context: context,
                 applicationName: 'SportConnect',
-                applicationVersion: '1.0.4',
+                applicationVersion: '1.0.5',
               ),
             ).animate().fadeIn(delay: 600.ms).slideX(begin: 0.05),
 

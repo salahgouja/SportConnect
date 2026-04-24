@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
+import 'package:sport_connect/features/payments/payments.dart';
 
 class RouteGuardService {
   const RouteGuardService({
@@ -8,33 +9,39 @@ class RouteGuardService {
     required this.user,
     this.isOnboardingLoading = false,
     this.isFirestoreStillLoading = false,
+    this.isConnectedAccountLoading = false,
     this.needsRoleSelection = false,
     this.hasCompletedOnboarding = false,
     this.isEmailVerified = false,
     this.hasVerifiableEmail = false,
     this.selectedRoleIntent,
+    this.currentDriverConnectedAccount,
   });
 
   factory RouteGuardService.fromAuthState(
     AsyncValue<UserModel?> userState, {
     bool isOnboardingLoading = false,
     bool isFirestoreStillLoading = false,
+    bool isConnectedAccountLoading = false,
     bool needsRoleSelection = false,
     bool hasCompletedOnboarding = false,
     bool isEmailVerified = false,
     bool hasVerifiableEmail = false,
     UserRole? selectedRoleIntent,
+    DriverConnectedAccount? currentDriverConnectedAccount,
   }) {
     return RouteGuardService(
       isLoading: userState.isLoading,
       isOnboardingLoading: isOnboardingLoading,
       isFirestoreStillLoading: isFirestoreStillLoading,
+      isConnectedAccountLoading: isConnectedAccountLoading,
       needsRoleSelection: needsRoleSelection,
       hasCompletedOnboarding: hasCompletedOnboarding,
       user: userState.value,
       isEmailVerified: isEmailVerified,
       hasVerifiableEmail: hasVerifiableEmail,
       selectedRoleIntent: selectedRoleIntent,
+      currentDriverConnectedAccount: currentDriverConnectedAccount,
     );
   }
 
@@ -47,6 +54,8 @@ class RouteGuardService {
   final bool isEmailVerified;
   final bool hasVerifiableEmail;
   final UserRole? selectedRoleIntent;
+  final bool isConnectedAccountLoading;
+  final DriverConnectedAccount? currentDriverConnectedAccount;
 
   bool get isLoggedIn => user != null;
 
@@ -63,18 +72,40 @@ class RouteGuardService {
   bool get isDriver => user?.role == UserRole.driver;
 
   DriverModel? get _driver => user is DriverModel ? user as DriverModel : null;
+  bool get hasCompletedDriverVehicleStep {
+    final driver = _driver;
+    if (driver == null) return true;
+    return driver.vehicleIds.isNotEmpty;
+  }
+
+  bool get hasCompletedDriverPayoutSetup {
+    final driver = _driver;
+    if (driver == null) return true;
+
+    final account = currentDriverConnectedAccount;
+
+    return account != null && account.isFullySetup;
+  }
+
+  bool get shouldRedirectToSetupPayouts {
+    final driver = _driver;
+    if (driver == null) return false;
+
+    return hasCompletedDriverVehicleStep && !hasCompletedDriverPayoutSetup;
+  }
 
   bool get hasCompletedDriverOnboarding {
     final driver = _driver;
     if (driver == null) return true;
-    return driver.vehicleIds.isNotEmpty;
+
+    return hasCompletedDriverVehicleStep && hasCompletedDriverPayoutSetup;
   }
 
   bool get _driverHasPersistedProfileData {
     final driver = _driver;
     if (driver == null) return false;
     return (driver.phoneNumber?.isNotEmpty ?? false) ||
-        (driver.city?.isNotEmpty ?? false) ||
+        (driver.address?.isNotEmpty ?? false) ||
         driver.dateOfBirth != null ||
         (driver.gender?.isNotEmpty ?? false);
   }
@@ -173,9 +204,24 @@ class RouteGuardService {
       return AppRoutes.driverHome.path;
     }
 
-    if (_isDriverRoute(currentPath) && !_isDriverOnboardingRoute(currentPath)) {
-      if (!hasCompletedDriverOnboarding) {
+    if (isDriver) {
+      if (!hasCompletedDriverVehicleStep &&
+          !_isDriverOnboardingRoute(currentPath)) {
         return _driverOnboardingRedirectPath;
+      }
+
+      if (hasCompletedDriverVehicleStep && isConnectedAccountLoading) {
+        return null;
+      }
+
+      if (shouldRedirectToSetupPayouts &&
+          currentPath != AppRoutes.driverStripeOnboarding.path) {
+        return AppRoutes.driverStripeOnboarding.path;
+      }
+
+      if (hasCompletedDriverPayoutSetup &&
+          currentPath == AppRoutes.driverStripeOnboarding.path) {
+        return AppRoutes.driverHome.path;
       }
     }
 
@@ -200,7 +246,18 @@ class RouteGuardService {
     return user!.map(
       rider: (_) => AppRoutes.home.path,
       driver: (driver) {
-        if (driver.vehicleIds.isEmpty) return _driverOnboardingRedirectPath;
+        if (!hasCompletedDriverVehicleStep) {
+          return _driverOnboardingRedirectPath;
+        }
+
+        if (isConnectedAccountLoading) {
+          return AppRoutes.driverStripeOnboarding.path;
+        }
+
+        if (!hasCompletedDriverPayoutSetup) {
+          return AppRoutes.driverStripeOnboarding.path;
+        }
+
         return AppRoutes.driverHome.path;
       },
       pending: (_) => _pendingIntentRoute ?? AppRoutes.roleSelection.path,

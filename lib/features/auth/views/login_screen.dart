@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -406,16 +408,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       children: [
         Column(
           children: [
-            _buildGoogleButton(
-              socialState,
-            ).animate().fadeIn(duration: 300.ms, delay: 250.ms),
-            SizedBox(height: 12.h),
-            SignInWithAppleButton(
-              onPressed: socialState.isLoading ? () {} : _handleAppleSignIn,
-              text: AppLocalizations.of(context).continueWithApple,
-              height: 44.h,
-              borderRadius: BorderRadius.circular(14.r),
-            ).animate().fadeIn(duration: 300.ms, delay: 300.ms),
+            if (Platform.isAndroid) ...[
+              _buildGoogleButton(
+                socialState,
+              ).animate().fadeIn(duration: 300.ms, delay: 250.ms),
+              SizedBox(height: 12.h),
+            ] else
+              SignInWithAppleButton(
+                onPressed: socialState.isLoading ? () {} : _handleAppleSignIn,
+                text: AppLocalizations.of(context).continueWithApple,
+                height: 44.h,
+                borderRadius: BorderRadius.circular(14.r),
+              ).animate().fadeIn(duration: 300.ms, delay: 300.ms),
           ],
         ),
         if (socialState.isLoading)

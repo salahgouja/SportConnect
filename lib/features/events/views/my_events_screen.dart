@@ -52,8 +52,8 @@ class _MyEventsScreenState extends ConsumerState<MyEventsScreen> {
       ),
       body: AdaptiveTabBarView(
         tabs: [l10n.myEventsCreatedTab, l10n.myEventsJoinedTab],
-        selectedColor: AppColors.primary,
-        children: [
+          selectedColor: Colors.white,
+          backgroundColor: AppColors.primary,        children: [
           _CreatedTab(userId: userId),
           _JoinedTab(userId: userId),
         ],

@@ -53,7 +53,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     'email': FormControl<String>(),
   });
   final _phoneKey = GlobalKey<IntlPhoneInputState>();
-  final _cityKey = GlobalKey<AddressAutocompleteFieldState>();
+  final _addressKey = GlobalKey<AddressAutocompleteFieldState>();
 
   bool _isPopulated = false;
   UserModel? _currentUser;
@@ -366,15 +366,14 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                               _buildContainer(
                                 children: [
                                   AddressAutocompleteField(
-                                    key: _cityKey,
-                                    label: 'City',
-                                    hint: 'Search your city...',
-                                    cityOnly: true,
+                                    key: _addressKey,
+                                    label: 'Address',
+                                    hint: 'Search your address...',
                                     initialValue: switch (_currentUser) {
                                       final RiderModel rider =>
-                                        rider.asRider?.city,
+                                        rider.asRider?.address,
                                       final DriverModel driver =>
-                                        driver.asDriver?.city,
+                                        driver.asDriver?.address,
                                       _ => null,
                                     },
                                     accentColor: AppColors.primary,
@@ -385,7 +384,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                               _currentUser!.uid,
                                             ).notifier,
                                           )
-                                          .setCityResult(result);
+                                          .setAddressResult(result);
                                     },
                                   ),
                                   SizedBox(height: 20.h),
@@ -650,24 +649,18 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           ? editState.phoneNumber!
           : (formValues['phone'] as String? ?? '');
 
-      // Get city from AddressAutocompleteField or form
-      final cityStr =
-          editState.cityResult?.address ??
-          _cityKey.currentState?.text ??
-          (formValues['city'] as String? ?? '');
-
-      // Get country from AddressAutocompleteField result or form
-      final countryStr =
-          editState.cityResult?.country ??
-          (formValues['country'] as String? ?? '');
+      // Get address from AddressAutocompleteField or form
+      final addressStr =
+          editState.addressResult?.address ??
+          _addressKey.currentState?.text ??
+          (formValues['address'] as String? ?? '');
 
       // 1. Create updated model using 'map' to preserve subclass type
       final updatedUser = _currentUser!.map(
         rider: (rider) => rider.copyWith(
           username: formValues['name'] as String? ?? '',
           phoneNumber: phoneStr,
-          city: cityStr,
-          country: countryStr,
+          address: addressStr,
           gender: editState.gender,
           dateOfBirth: editState.dateOfBirth,
           photoUrl: _currentUser!.photoUrl,
@@ -675,8 +668,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         driver: (driver) => driver.copyWith(
           username: formValues['name'] as String? ?? '',
           phoneNumber: phoneStr,
-          city: cityStr,
-          country: countryStr,
+          address: addressStr,
           gender: editState.gender,
           dateOfBirth: editState.dateOfBirth,
           photoUrl: _currentUser!.photoUrl,

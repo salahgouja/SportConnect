@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -26,7 +27,6 @@ import 'package:sport_connect/core/theme/cupertino_app_theme.dart';
 import 'package:sport_connect/core/theme/material_app_theme.dart';
 // Localization
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
-import 'package:upgrader/upgrader.dart';
 
 const _enableDebugInstrumentation = bool.fromEnvironment(
   'SPORT_CONNECT_DEBUG_INSTRUMENTATION',
@@ -121,24 +121,56 @@ class _SportConnectAppState extends ConsumerState<SportConnectApp> {
   bool _deepLinksInitialized = false;
   bool _fcmTokenSaved = false;
 
+  ProviderSubscription<AsyncValue<User?>>? _authSubscription;
+
   bool get _isFirebaseInitialized => Firebase.apps.isNotEmpty;
 
-  void _initializeDeepLinks(GoRouter router, BuildContext context) {
+  @override
+  void initState() {
+    super.initState();
+
+    _authSubscription = ref.listenManual(authStateProvider, (prev, next) {
+      if (!_isFirebaseInitialized) return;
+
+      if (next.value != null) {
+        _saveFcmTokenIfNeeded();
+      } else {
+        _fcmTokenSaved = false;
+      }
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_isFirebaseInitialized) return;
+
+      final router = ref.read(appRouterProvider);
+      _initializeDeepLinks(router);
+    });
+  }
+
+  @override
+  void dispose() {
+    _authSubscription?.close();
+    super.dispose();
+  }
+
+  void _initializeDeepLinks(GoRouter router) {
     if (_deepLinksInitialized || !_isFirebaseInitialized) return;
+
     _deepLinksInitialized = true;
 
     PushNotificationService.navigatorKey = rootNavigatorKey;
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && _isFirebaseInitialized) {
-        ref.read(deepLinkServiceProvider).initialize(router);
-        PushNotificationService.instance.handlePendingInitialMessage(context);
-      }
-    });
+    ref.read(deepLinkServiceProvider).initialize(router);
+
+    final context = rootNavigatorKey.currentContext;
+    if (context != null && mounted) {
+      PushNotificationService.instance.handlePendingInitialMessage(context);
+    }
   }
 
   void _saveFcmTokenIfNeeded() {
     if (_fcmTokenSaved || !_isFirebaseInitialized) return;
+
     final authUser = ref.read(authStateProvider).value;
     if (authUser != null) {
       _fcmTokenSaved = true;
@@ -151,23 +183,11 @@ class _SportConnectAppState extends ConsumerState<SportConnectApp> {
     final router = ref.watch(appRouterProvider);
     final localeAsync = ref.watch(localeProvider);
 
-    if (_isFirebaseInitialized) {
-      ref.listen(authStateProvider, (prev, next) {
-        if (next.value != null) {
-          _saveFcmTokenIfNeeded();
-        } else {
-          _fcmTokenSaved = false;
-        }
-      });
-    }
-
     return ScreenUtilInit(
       designSize: const Size(375, 812),
       minTextAdapt: true,
       splitScreenMode: true,
       builder: (context, child) {
-        _initializeDeepLinks(router, context);
-
         return AdaptiveApp.router(
           title: 'SportConnect',
           locale: localeAsync.value,
@@ -186,10 +206,12 @@ class _SportConnectAppState extends ConsumerState<SportConnectApp> {
           routerConfig: router,
           builder: (context, child) {
             final appChild = child ?? const SizedBox.shrink();
+
             if (!_isFirebaseInitialized) {
               return appChild;
             }
-            return UpgradeAlert(child: appChild);
+
+            return appChild;
           },
         );
       },

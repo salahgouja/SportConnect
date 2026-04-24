@@ -668,7 +668,11 @@ mixin _$ChatModel {
  String? get lastMessageContent; String? get lastMessageSenderId; String? get lastMessageSenderName; MessageType get lastMessageType;@TimestampConverter() DateTime? get lastMessageAt;// Unread counts: userId → count
  Map<String, int> get unreadCounts;// Per-user settings
  Map<String, bool> get mutedBy; Map<String, bool> get pinnedBy;// One-sided deletion: userId → true
- Map<String, bool> get deletedFor; bool get isActive;@TimestampConverter() DateTime? get createdAt;@TimestampConverter() DateTime? get updatedAt;
+// User removed the conversation from their chat list.
+// If a newer message arrives after this timestamp, the chat appears again.
+@TimestampMapConverter() Map<String, DateTime> get deletedAtBy;// User cleared message history up to this timestamp.
+// The chat can stay visible, but older messages are hidden for this user.
+@TimestampMapConverter() Map<String, DateTime> get clearedAtBy; bool get isActive;@TimestampConverter() DateTime? get createdAt;@TimestampConverter() DateTime? get updatedAt;
 /// Create a copy of ChatModel
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -681,16 +685,16 @@ $ChatModelCopyWith<ChatModel> get copyWith => _$ChatModelCopyWithImpl<ChatModel>
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ChatModel&&(identical(other.id, id) || other.id == id)&&(identical(other.type, type) || other.type == type)&&const DeepCollectionEquality().equals(other.participants, participants)&&const DeepCollectionEquality().equals(other.participantIds, participantIds)&&(identical(other.groupName, groupName) || other.groupName == groupName)&&(identical(other.groupPhotoUrl, groupPhotoUrl) || other.groupPhotoUrl == groupPhotoUrl)&&(identical(other.description, description) || other.description == description)&&(identical(other.rideId, rideId) || other.rideId == rideId)&&(identical(other.eventId, eventId) || other.eventId == eventId)&&(identical(other.lastMessageContent, lastMessageContent) || other.lastMessageContent == lastMessageContent)&&(identical(other.lastMessageSenderId, lastMessageSenderId) || other.lastMessageSenderId == lastMessageSenderId)&&(identical(other.lastMessageSenderName, lastMessageSenderName) || other.lastMessageSenderName == lastMessageSenderName)&&(identical(other.lastMessageType, lastMessageType) || other.lastMessageType == lastMessageType)&&(identical(other.lastMessageAt, lastMessageAt) || other.lastMessageAt == lastMessageAt)&&const DeepCollectionEquality().equals(other.unreadCounts, unreadCounts)&&const DeepCollectionEquality().equals(other.mutedBy, mutedBy)&&const DeepCollectionEquality().equals(other.pinnedBy, pinnedBy)&&const DeepCollectionEquality().equals(other.deletedFor, deletedFor)&&(identical(other.isActive, isActive) || other.isActive == isActive)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ChatModel&&(identical(other.id, id) || other.id == id)&&(identical(other.type, type) || other.type == type)&&const DeepCollectionEquality().equals(other.participants, participants)&&const DeepCollectionEquality().equals(other.participantIds, participantIds)&&(identical(other.groupName, groupName) || other.groupName == groupName)&&(identical(other.groupPhotoUrl, groupPhotoUrl) || other.groupPhotoUrl == groupPhotoUrl)&&(identical(other.description, description) || other.description == description)&&(identical(other.rideId, rideId) || other.rideId == rideId)&&(identical(other.eventId, eventId) || other.eventId == eventId)&&(identical(other.lastMessageContent, lastMessageContent) || other.lastMessageContent == lastMessageContent)&&(identical(other.lastMessageSenderId, lastMessageSenderId) || other.lastMessageSenderId == lastMessageSenderId)&&(identical(other.lastMessageSenderName, lastMessageSenderName) || other.lastMessageSenderName == lastMessageSenderName)&&(identical(other.lastMessageType, lastMessageType) || other.lastMessageType == lastMessageType)&&(identical(other.lastMessageAt, lastMessageAt) || other.lastMessageAt == lastMessageAt)&&const DeepCollectionEquality().equals(other.unreadCounts, unreadCounts)&&const DeepCollectionEquality().equals(other.mutedBy, mutedBy)&&const DeepCollectionEquality().equals(other.pinnedBy, pinnedBy)&&const DeepCollectionEquality().equals(other.deletedAtBy, deletedAtBy)&&const DeepCollectionEquality().equals(other.clearedAtBy, clearedAtBy)&&(identical(other.isActive, isActive) || other.isActive == isActive)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hashAll([runtimeType,id,type,const DeepCollectionEquality().hash(participants),const DeepCollectionEquality().hash(participantIds),groupName,groupPhotoUrl,description,rideId,eventId,lastMessageContent,lastMessageSenderId,lastMessageSenderName,lastMessageType,lastMessageAt,const DeepCollectionEquality().hash(unreadCounts),const DeepCollectionEquality().hash(mutedBy),const DeepCollectionEquality().hash(pinnedBy),const DeepCollectionEquality().hash(deletedFor),isActive,createdAt,updatedAt]);
+int get hashCode => Object.hashAll([runtimeType,id,type,const DeepCollectionEquality().hash(participants),const DeepCollectionEquality().hash(participantIds),groupName,groupPhotoUrl,description,rideId,eventId,lastMessageContent,lastMessageSenderId,lastMessageSenderName,lastMessageType,lastMessageAt,const DeepCollectionEquality().hash(unreadCounts),const DeepCollectionEquality().hash(mutedBy),const DeepCollectionEquality().hash(pinnedBy),const DeepCollectionEquality().hash(deletedAtBy),const DeepCollectionEquality().hash(clearedAtBy),isActive,createdAt,updatedAt]);
 
 @override
 String toString() {
-  return 'ChatModel(id: $id, type: $type, participants: $participants, participantIds: $participantIds, groupName: $groupName, groupPhotoUrl: $groupPhotoUrl, description: $description, rideId: $rideId, eventId: $eventId, lastMessageContent: $lastMessageContent, lastMessageSenderId: $lastMessageSenderId, lastMessageSenderName: $lastMessageSenderName, lastMessageType: $lastMessageType, lastMessageAt: $lastMessageAt, unreadCounts: $unreadCounts, mutedBy: $mutedBy, pinnedBy: $pinnedBy, deletedFor: $deletedFor, isActive: $isActive, createdAt: $createdAt, updatedAt: $updatedAt)';
+  return 'ChatModel(id: $id, type: $type, participants: $participants, participantIds: $participantIds, groupName: $groupName, groupPhotoUrl: $groupPhotoUrl, description: $description, rideId: $rideId, eventId: $eventId, lastMessageContent: $lastMessageContent, lastMessageSenderId: $lastMessageSenderId, lastMessageSenderName: $lastMessageSenderName, lastMessageType: $lastMessageType, lastMessageAt: $lastMessageAt, unreadCounts: $unreadCounts, mutedBy: $mutedBy, pinnedBy: $pinnedBy, deletedAtBy: $deletedAtBy, clearedAtBy: $clearedAtBy, isActive: $isActive, createdAt: $createdAt, updatedAt: $updatedAt)';
 }
 
 
@@ -701,7 +705,7 @@ abstract mixin class $ChatModelCopyWith<$Res>  {
   factory $ChatModelCopyWith(ChatModel value, $Res Function(ChatModel) _then) = _$ChatModelCopyWithImpl;
 @useResult
 $Res call({
- String id, ChatType type, List<ChatParticipant> participants, List<String> participantIds, String? groupName, String? groupPhotoUrl, String? description, String? rideId, String? eventId, String? lastMessageContent, String? lastMessageSenderId, String? lastMessageSenderName, MessageType lastMessageType,@TimestampConverter() DateTime? lastMessageAt, Map<String, int> unreadCounts, Map<String, bool> mutedBy, Map<String, bool> pinnedBy, Map<String, bool> deletedFor, bool isActive,@TimestampConverter() DateTime? createdAt,@TimestampConverter() DateTime? updatedAt
+ String id, ChatType type, List<ChatParticipant> participants, List<String> participantIds, String? groupName, String? groupPhotoUrl, String? description, String? rideId, String? eventId, String? lastMessageContent, String? lastMessageSenderId, String? lastMessageSenderName, MessageType lastMessageType,@TimestampConverter() DateTime? lastMessageAt, Map<String, int> unreadCounts, Map<String, bool> mutedBy, Map<String, bool> pinnedBy,@TimestampMapConverter() Map<String, DateTime> deletedAtBy,@TimestampMapConverter() Map<String, DateTime> clearedAtBy, bool isActive,@TimestampConverter() DateTime? createdAt,@TimestampConverter() DateTime? updatedAt
 });
 
 
@@ -718,7 +722,7 @@ class _$ChatModelCopyWithImpl<$Res>
 
 /// Create a copy of ChatModel
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? type = null,Object? participants = null,Object? participantIds = null,Object? groupName = freezed,Object? groupPhotoUrl = freezed,Object? description = freezed,Object? rideId = freezed,Object? eventId = freezed,Object? lastMessageContent = freezed,Object? lastMessageSenderId = freezed,Object? lastMessageSenderName = freezed,Object? lastMessageType = null,Object? lastMessageAt = freezed,Object? unreadCounts = null,Object? mutedBy = null,Object? pinnedBy = null,Object? deletedFor = null,Object? isActive = null,Object? createdAt = freezed,Object? updatedAt = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? type = null,Object? participants = null,Object? participantIds = null,Object? groupName = freezed,Object? groupPhotoUrl = freezed,Object? description = freezed,Object? rideId = freezed,Object? eventId = freezed,Object? lastMessageContent = freezed,Object? lastMessageSenderId = freezed,Object? lastMessageSenderName = freezed,Object? lastMessageType = null,Object? lastMessageAt = freezed,Object? unreadCounts = null,Object? mutedBy = null,Object? pinnedBy = null,Object? deletedAtBy = null,Object? clearedAtBy = null,Object? isActive = null,Object? createdAt = freezed,Object? updatedAt = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
@@ -737,8 +741,9 @@ as MessageType,lastMessageAt: freezed == lastMessageAt ? _self.lastMessageAt : l
 as DateTime?,unreadCounts: null == unreadCounts ? _self.unreadCounts : unreadCounts // ignore: cast_nullable_to_non_nullable
 as Map<String, int>,mutedBy: null == mutedBy ? _self.mutedBy : mutedBy // ignore: cast_nullable_to_non_nullable
 as Map<String, bool>,pinnedBy: null == pinnedBy ? _self.pinnedBy : pinnedBy // ignore: cast_nullable_to_non_nullable
-as Map<String, bool>,deletedFor: null == deletedFor ? _self.deletedFor : deletedFor // ignore: cast_nullable_to_non_nullable
-as Map<String, bool>,isActive: null == isActive ? _self.isActive : isActive // ignore: cast_nullable_to_non_nullable
+as Map<String, bool>,deletedAtBy: null == deletedAtBy ? _self.deletedAtBy : deletedAtBy // ignore: cast_nullable_to_non_nullable
+as Map<String, DateTime>,clearedAtBy: null == clearedAtBy ? _self.clearedAtBy : clearedAtBy // ignore: cast_nullable_to_non_nullable
+as Map<String, DateTime>,isActive: null == isActive ? _self.isActive : isActive // ignore: cast_nullable_to_non_nullable
 as bool,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,updatedAt: freezed == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,
@@ -826,10 +831,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  ChatType type,  List<ChatParticipant> participants,  List<String> participantIds,  String? groupName,  String? groupPhotoUrl,  String? description,  String? rideId,  String? eventId,  String? lastMessageContent,  String? lastMessageSenderId,  String? lastMessageSenderName,  MessageType lastMessageType, @TimestampConverter()  DateTime? lastMessageAt,  Map<String, int> unreadCounts,  Map<String, bool> mutedBy,  Map<String, bool> pinnedBy,  Map<String, bool> deletedFor,  bool isActive, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  ChatType type,  List<ChatParticipant> participants,  List<String> participantIds,  String? groupName,  String? groupPhotoUrl,  String? description,  String? rideId,  String? eventId,  String? lastMessageContent,  String? lastMessageSenderId,  String? lastMessageSenderName,  MessageType lastMessageType, @TimestampConverter()  DateTime? lastMessageAt,  Map<String, int> unreadCounts,  Map<String, bool> mutedBy,  Map<String, bool> pinnedBy, @TimestampMapConverter()  Map<String, DateTime> deletedAtBy, @TimestampMapConverter()  Map<String, DateTime> clearedAtBy,  bool isActive, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ChatModel() when $default != null:
-return $default(_that.id,_that.type,_that.participants,_that.participantIds,_that.groupName,_that.groupPhotoUrl,_that.description,_that.rideId,_that.eventId,_that.lastMessageContent,_that.lastMessageSenderId,_that.lastMessageSenderName,_that.lastMessageType,_that.lastMessageAt,_that.unreadCounts,_that.mutedBy,_that.pinnedBy,_that.deletedFor,_that.isActive,_that.createdAt,_that.updatedAt);case _:
+return $default(_that.id,_that.type,_that.participants,_that.participantIds,_that.groupName,_that.groupPhotoUrl,_that.description,_that.rideId,_that.eventId,_that.lastMessageContent,_that.lastMessageSenderId,_that.lastMessageSenderName,_that.lastMessageType,_that.lastMessageAt,_that.unreadCounts,_that.mutedBy,_that.pinnedBy,_that.deletedAtBy,_that.clearedAtBy,_that.isActive,_that.createdAt,_that.updatedAt);case _:
   return orElse();
 
 }
@@ -847,10 +852,10 @@ return $default(_that.id,_that.type,_that.participants,_that.participantIds,_tha
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  ChatType type,  List<ChatParticipant> participants,  List<String> participantIds,  String? groupName,  String? groupPhotoUrl,  String? description,  String? rideId,  String? eventId,  String? lastMessageContent,  String? lastMessageSenderId,  String? lastMessageSenderName,  MessageType lastMessageType, @TimestampConverter()  DateTime? lastMessageAt,  Map<String, int> unreadCounts,  Map<String, bool> mutedBy,  Map<String, bool> pinnedBy,  Map<String, bool> deletedFor,  bool isActive, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  ChatType type,  List<ChatParticipant> participants,  List<String> participantIds,  String? groupName,  String? groupPhotoUrl,  String? description,  String? rideId,  String? eventId,  String? lastMessageContent,  String? lastMessageSenderId,  String? lastMessageSenderName,  MessageType lastMessageType, @TimestampConverter()  DateTime? lastMessageAt,  Map<String, int> unreadCounts,  Map<String, bool> mutedBy,  Map<String, bool> pinnedBy, @TimestampMapConverter()  Map<String, DateTime> deletedAtBy, @TimestampMapConverter()  Map<String, DateTime> clearedAtBy,  bool isActive, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt)  $default,) {final _that = this;
 switch (_that) {
 case _ChatModel():
-return $default(_that.id,_that.type,_that.participants,_that.participantIds,_that.groupName,_that.groupPhotoUrl,_that.description,_that.rideId,_that.eventId,_that.lastMessageContent,_that.lastMessageSenderId,_that.lastMessageSenderName,_that.lastMessageType,_that.lastMessageAt,_that.unreadCounts,_that.mutedBy,_that.pinnedBy,_that.deletedFor,_that.isActive,_that.createdAt,_that.updatedAt);case _:
+return $default(_that.id,_that.type,_that.participants,_that.participantIds,_that.groupName,_that.groupPhotoUrl,_that.description,_that.rideId,_that.eventId,_that.lastMessageContent,_that.lastMessageSenderId,_that.lastMessageSenderName,_that.lastMessageType,_that.lastMessageAt,_that.unreadCounts,_that.mutedBy,_that.pinnedBy,_that.deletedAtBy,_that.clearedAtBy,_that.isActive,_that.createdAt,_that.updatedAt);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -867,10 +872,10 @@ return $default(_that.id,_that.type,_that.participants,_that.participantIds,_tha
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  ChatType type,  List<ChatParticipant> participants,  List<String> participantIds,  String? groupName,  String? groupPhotoUrl,  String? description,  String? rideId,  String? eventId,  String? lastMessageContent,  String? lastMessageSenderId,  String? lastMessageSenderName,  MessageType lastMessageType, @TimestampConverter()  DateTime? lastMessageAt,  Map<String, int> unreadCounts,  Map<String, bool> mutedBy,  Map<String, bool> pinnedBy,  Map<String, bool> deletedFor,  bool isActive, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  ChatType type,  List<ChatParticipant> participants,  List<String> participantIds,  String? groupName,  String? groupPhotoUrl,  String? description,  String? rideId,  String? eventId,  String? lastMessageContent,  String? lastMessageSenderId,  String? lastMessageSenderName,  MessageType lastMessageType, @TimestampConverter()  DateTime? lastMessageAt,  Map<String, int> unreadCounts,  Map<String, bool> mutedBy,  Map<String, bool> pinnedBy, @TimestampMapConverter()  Map<String, DateTime> deletedAtBy, @TimestampMapConverter()  Map<String, DateTime> clearedAtBy,  bool isActive, @TimestampConverter()  DateTime? createdAt, @TimestampConverter()  DateTime? updatedAt)?  $default,) {final _that = this;
 switch (_that) {
 case _ChatModel() when $default != null:
-return $default(_that.id,_that.type,_that.participants,_that.participantIds,_that.groupName,_that.groupPhotoUrl,_that.description,_that.rideId,_that.eventId,_that.lastMessageContent,_that.lastMessageSenderId,_that.lastMessageSenderName,_that.lastMessageType,_that.lastMessageAt,_that.unreadCounts,_that.mutedBy,_that.pinnedBy,_that.deletedFor,_that.isActive,_that.createdAt,_that.updatedAt);case _:
+return $default(_that.id,_that.type,_that.participants,_that.participantIds,_that.groupName,_that.groupPhotoUrl,_that.description,_that.rideId,_that.eventId,_that.lastMessageContent,_that.lastMessageSenderId,_that.lastMessageSenderName,_that.lastMessageType,_that.lastMessageAt,_that.unreadCounts,_that.mutedBy,_that.pinnedBy,_that.deletedAtBy,_that.clearedAtBy,_that.isActive,_that.createdAt,_that.updatedAt);case _:
   return null;
 
 }
@@ -882,7 +887,7 @@ return $default(_that.id,_that.type,_that.participants,_that.participantIds,_tha
 @JsonSerializable()
 
 class _ChatModel extends ChatModel {
-  const _ChatModel({required this.id, this.type = ChatType.private, final  List<ChatParticipant> participants = const [], final  List<String> participantIds = const [], this.groupName, this.groupPhotoUrl, this.description, this.rideId, this.eventId, this.lastMessageContent, this.lastMessageSenderId, this.lastMessageSenderName, this.lastMessageType = MessageType.text, @TimestampConverter() this.lastMessageAt, final  Map<String, int> unreadCounts = const {}, final  Map<String, bool> mutedBy = const {}, final  Map<String, bool> pinnedBy = const {}, final  Map<String, bool> deletedFor = const {}, this.isActive = true, @TimestampConverter() this.createdAt, @TimestampConverter() this.updatedAt}): _participants = participants,_participantIds = participantIds,_unreadCounts = unreadCounts,_mutedBy = mutedBy,_pinnedBy = pinnedBy,_deletedFor = deletedFor,super._();
+  const _ChatModel({required this.id, this.type = ChatType.private, final  List<ChatParticipant> participants = const [], final  List<String> participantIds = const [], this.groupName, this.groupPhotoUrl, this.description, this.rideId, this.eventId, this.lastMessageContent, this.lastMessageSenderId, this.lastMessageSenderName, this.lastMessageType = MessageType.text, @TimestampConverter() this.lastMessageAt, final  Map<String, int> unreadCounts = const {}, final  Map<String, bool> mutedBy = const {}, final  Map<String, bool> pinnedBy = const {}, @TimestampMapConverter() final  Map<String, DateTime> deletedAtBy = const {}, @TimestampMapConverter() final  Map<String, DateTime> clearedAtBy = const {}, this.isActive = true, @TimestampConverter() this.createdAt, @TimestampConverter() this.updatedAt}): _participants = participants,_participantIds = participantIds,_unreadCounts = unreadCounts,_mutedBy = mutedBy,_pinnedBy = pinnedBy,_deletedAtBy = deletedAtBy,_clearedAtBy = clearedAtBy,super._();
   factory _ChatModel.fromJson(Map<String, dynamic> json) => _$ChatModelFromJson(json);
 
 @override final  String id;
@@ -942,12 +947,27 @@ class _ChatModel extends ChatModel {
 }
 
 // One-sided deletion: userId → true
- final  Map<String, bool> _deletedFor;
+// User removed the conversation from their chat list.
+// If a newer message arrives after this timestamp, the chat appears again.
+ final  Map<String, DateTime> _deletedAtBy;
 // One-sided deletion: userId → true
-@override@JsonKey() Map<String, bool> get deletedFor {
-  if (_deletedFor is EqualUnmodifiableMapView) return _deletedFor;
+// User removed the conversation from their chat list.
+// If a newer message arrives after this timestamp, the chat appears again.
+@override@JsonKey()@TimestampMapConverter() Map<String, DateTime> get deletedAtBy {
+  if (_deletedAtBy is EqualUnmodifiableMapView) return _deletedAtBy;
   // ignore: implicit_dynamic_type
-  return EqualUnmodifiableMapView(_deletedFor);
+  return EqualUnmodifiableMapView(_deletedAtBy);
+}
+
+// User cleared message history up to this timestamp.
+// The chat can stay visible, but older messages are hidden for this user.
+ final  Map<String, DateTime> _clearedAtBy;
+// User cleared message history up to this timestamp.
+// The chat can stay visible, but older messages are hidden for this user.
+@override@JsonKey()@TimestampMapConverter() Map<String, DateTime> get clearedAtBy {
+  if (_clearedAtBy is EqualUnmodifiableMapView) return _clearedAtBy;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableMapView(_clearedAtBy);
 }
 
 @override@JsonKey() final  bool isActive;
@@ -967,16 +987,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ChatModel&&(identical(other.id, id) || other.id == id)&&(identical(other.type, type) || other.type == type)&&const DeepCollectionEquality().equals(other._participants, _participants)&&const DeepCollectionEquality().equals(other._participantIds, _participantIds)&&(identical(other.groupName, groupName) || other.groupName == groupName)&&(identical(other.groupPhotoUrl, groupPhotoUrl) || other.groupPhotoUrl == groupPhotoUrl)&&(identical(other.description, description) || other.description == description)&&(identical(other.rideId, rideId) || other.rideId == rideId)&&(identical(other.eventId, eventId) || other.eventId == eventId)&&(identical(other.lastMessageContent, lastMessageContent) || other.lastMessageContent == lastMessageContent)&&(identical(other.lastMessageSenderId, lastMessageSenderId) || other.lastMessageSenderId == lastMessageSenderId)&&(identical(other.lastMessageSenderName, lastMessageSenderName) || other.lastMessageSenderName == lastMessageSenderName)&&(identical(other.lastMessageType, lastMessageType) || other.lastMessageType == lastMessageType)&&(identical(other.lastMessageAt, lastMessageAt) || other.lastMessageAt == lastMessageAt)&&const DeepCollectionEquality().equals(other._unreadCounts, _unreadCounts)&&const DeepCollectionEquality().equals(other._mutedBy, _mutedBy)&&const DeepCollectionEquality().equals(other._pinnedBy, _pinnedBy)&&const DeepCollectionEquality().equals(other._deletedFor, _deletedFor)&&(identical(other.isActive, isActive) || other.isActive == isActive)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ChatModel&&(identical(other.id, id) || other.id == id)&&(identical(other.type, type) || other.type == type)&&const DeepCollectionEquality().equals(other._participants, _participants)&&const DeepCollectionEquality().equals(other._participantIds, _participantIds)&&(identical(other.groupName, groupName) || other.groupName == groupName)&&(identical(other.groupPhotoUrl, groupPhotoUrl) || other.groupPhotoUrl == groupPhotoUrl)&&(identical(other.description, description) || other.description == description)&&(identical(other.rideId, rideId) || other.rideId == rideId)&&(identical(other.eventId, eventId) || other.eventId == eventId)&&(identical(other.lastMessageContent, lastMessageContent) || other.lastMessageContent == lastMessageContent)&&(identical(other.lastMessageSenderId, lastMessageSenderId) || other.lastMessageSenderId == lastMessageSenderId)&&(identical(other.lastMessageSenderName, lastMessageSenderName) || other.lastMessageSenderName == lastMessageSenderName)&&(identical(other.lastMessageType, lastMessageType) || other.lastMessageType == lastMessageType)&&(identical(other.lastMessageAt, lastMessageAt) || other.lastMessageAt == lastMessageAt)&&const DeepCollectionEquality().equals(other._unreadCounts, _unreadCounts)&&const DeepCollectionEquality().equals(other._mutedBy, _mutedBy)&&const DeepCollectionEquality().equals(other._pinnedBy, _pinnedBy)&&const DeepCollectionEquality().equals(other._deletedAtBy, _deletedAtBy)&&const DeepCollectionEquality().equals(other._clearedAtBy, _clearedAtBy)&&(identical(other.isActive, isActive) || other.isActive == isActive)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hashAll([runtimeType,id,type,const DeepCollectionEquality().hash(_participants),const DeepCollectionEquality().hash(_participantIds),groupName,groupPhotoUrl,description,rideId,eventId,lastMessageContent,lastMessageSenderId,lastMessageSenderName,lastMessageType,lastMessageAt,const DeepCollectionEquality().hash(_unreadCounts),const DeepCollectionEquality().hash(_mutedBy),const DeepCollectionEquality().hash(_pinnedBy),const DeepCollectionEquality().hash(_deletedFor),isActive,createdAt,updatedAt]);
+int get hashCode => Object.hashAll([runtimeType,id,type,const DeepCollectionEquality().hash(_participants),const DeepCollectionEquality().hash(_participantIds),groupName,groupPhotoUrl,description,rideId,eventId,lastMessageContent,lastMessageSenderId,lastMessageSenderName,lastMessageType,lastMessageAt,const DeepCollectionEquality().hash(_unreadCounts),const DeepCollectionEquality().hash(_mutedBy),const DeepCollectionEquality().hash(_pinnedBy),const DeepCollectionEquality().hash(_deletedAtBy),const DeepCollectionEquality().hash(_clearedAtBy),isActive,createdAt,updatedAt]);
 
 @override
 String toString() {
-  return 'ChatModel(id: $id, type: $type, participants: $participants, participantIds: $participantIds, groupName: $groupName, groupPhotoUrl: $groupPhotoUrl, description: $description, rideId: $rideId, eventId: $eventId, lastMessageContent: $lastMessageContent, lastMessageSenderId: $lastMessageSenderId, lastMessageSenderName: $lastMessageSenderName, lastMessageType: $lastMessageType, lastMessageAt: $lastMessageAt, unreadCounts: $unreadCounts, mutedBy: $mutedBy, pinnedBy: $pinnedBy, deletedFor: $deletedFor, isActive: $isActive, createdAt: $createdAt, updatedAt: $updatedAt)';
+  return 'ChatModel(id: $id, type: $type, participants: $participants, participantIds: $participantIds, groupName: $groupName, groupPhotoUrl: $groupPhotoUrl, description: $description, rideId: $rideId, eventId: $eventId, lastMessageContent: $lastMessageContent, lastMessageSenderId: $lastMessageSenderId, lastMessageSenderName: $lastMessageSenderName, lastMessageType: $lastMessageType, lastMessageAt: $lastMessageAt, unreadCounts: $unreadCounts, mutedBy: $mutedBy, pinnedBy: $pinnedBy, deletedAtBy: $deletedAtBy, clearedAtBy: $clearedAtBy, isActive: $isActive, createdAt: $createdAt, updatedAt: $updatedAt)';
 }
 
 
@@ -987,7 +1007,7 @@ abstract mixin class _$ChatModelCopyWith<$Res> implements $ChatModelCopyWith<$Re
   factory _$ChatModelCopyWith(_ChatModel value, $Res Function(_ChatModel) _then) = __$ChatModelCopyWithImpl;
 @override @useResult
 $Res call({
- String id, ChatType type, List<ChatParticipant> participants, List<String> participantIds, String? groupName, String? groupPhotoUrl, String? description, String? rideId, String? eventId, String? lastMessageContent, String? lastMessageSenderId, String? lastMessageSenderName, MessageType lastMessageType,@TimestampConverter() DateTime? lastMessageAt, Map<String, int> unreadCounts, Map<String, bool> mutedBy, Map<String, bool> pinnedBy, Map<String, bool> deletedFor, bool isActive,@TimestampConverter() DateTime? createdAt,@TimestampConverter() DateTime? updatedAt
+ String id, ChatType type, List<ChatParticipant> participants, List<String> participantIds, String? groupName, String? groupPhotoUrl, String? description, String? rideId, String? eventId, String? lastMessageContent, String? lastMessageSenderId, String? lastMessageSenderName, MessageType lastMessageType,@TimestampConverter() DateTime? lastMessageAt, Map<String, int> unreadCounts, Map<String, bool> mutedBy, Map<String, bool> pinnedBy,@TimestampMapConverter() Map<String, DateTime> deletedAtBy,@TimestampMapConverter() Map<String, DateTime> clearedAtBy, bool isActive,@TimestampConverter() DateTime? createdAt,@TimestampConverter() DateTime? updatedAt
 });
 
 
@@ -1004,7 +1024,7 @@ class __$ChatModelCopyWithImpl<$Res>
 
 /// Create a copy of ChatModel
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? type = null,Object? participants = null,Object? participantIds = null,Object? groupName = freezed,Object? groupPhotoUrl = freezed,Object? description = freezed,Object? rideId = freezed,Object? eventId = freezed,Object? lastMessageContent = freezed,Object? lastMessageSenderId = freezed,Object? lastMessageSenderName = freezed,Object? lastMessageType = null,Object? lastMessageAt = freezed,Object? unreadCounts = null,Object? mutedBy = null,Object? pinnedBy = null,Object? deletedFor = null,Object? isActive = null,Object? createdAt = freezed,Object? updatedAt = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? type = null,Object? participants = null,Object? participantIds = null,Object? groupName = freezed,Object? groupPhotoUrl = freezed,Object? description = freezed,Object? rideId = freezed,Object? eventId = freezed,Object? lastMessageContent = freezed,Object? lastMessageSenderId = freezed,Object? lastMessageSenderName = freezed,Object? lastMessageType = null,Object? lastMessageAt = freezed,Object? unreadCounts = null,Object? mutedBy = null,Object? pinnedBy = null,Object? deletedAtBy = null,Object? clearedAtBy = null,Object? isActive = null,Object? createdAt = freezed,Object? updatedAt = freezed,}) {
   return _then(_ChatModel(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
@@ -1023,8 +1043,9 @@ as MessageType,lastMessageAt: freezed == lastMessageAt ? _self.lastMessageAt : l
 as DateTime?,unreadCounts: null == unreadCounts ? _self._unreadCounts : unreadCounts // ignore: cast_nullable_to_non_nullable
 as Map<String, int>,mutedBy: null == mutedBy ? _self._mutedBy : mutedBy // ignore: cast_nullable_to_non_nullable
 as Map<String, bool>,pinnedBy: null == pinnedBy ? _self._pinnedBy : pinnedBy // ignore: cast_nullable_to_non_nullable
-as Map<String, bool>,deletedFor: null == deletedFor ? _self._deletedFor : deletedFor // ignore: cast_nullable_to_non_nullable
-as Map<String, bool>,isActive: null == isActive ? _self.isActive : isActive // ignore: cast_nullable_to_non_nullable
+as Map<String, bool>,deletedAtBy: null == deletedAtBy ? _self._deletedAtBy : deletedAtBy // ignore: cast_nullable_to_non_nullable
+as Map<String, DateTime>,clearedAtBy: null == clearedAtBy ? _self._clearedAtBy : clearedAtBy // ignore: cast_nullable_to_non_nullable
+as Map<String, DateTime>,isActive: null == isActive ? _self.isActive : isActive // ignore: cast_nullable_to_non_nullable
 as bool,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,updatedAt: freezed == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,

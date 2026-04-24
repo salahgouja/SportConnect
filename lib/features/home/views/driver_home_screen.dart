@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -19,6 +21,7 @@ import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/home/view_models/driver_location_view_model.dart';
+import 'package:sport_connect/features/messaging/view_models/chat_view_model.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/models/driver_stats.dart';
@@ -430,7 +433,10 @@ class _DriverDashboard extends ConsumerWidget {
         children: [
           // Avatar
           GestureDetector(
-            onTap: () => context.go(AppRoutes.profile.path),
+            onTap: () => context.goNamed(
+              AppRoutes.profile.name,
+              extra: {'resetBranch': true},
+            ),
             child: user.when(
               data: (userData) => PremiumAvatar(
                 imageUrl: userData?.photoUrl,
@@ -493,7 +499,10 @@ class _DriverDashboard extends ConsumerWidget {
           ),
           IconButton(
             tooltip: l10n.messages,
-            onPressed: () => context.go(AppRoutes.chat.path),
+            onPressed: () => context.goNamed(
+              AppRoutes.chat.name,
+              extra: {'resetBranch': true},
+            ),
             icon: Icon(
               Icons.chat_bubble_outline_rounded,
               size: 24.sp,
@@ -645,7 +654,10 @@ class _DriverDashboard extends ConsumerWidget {
             icon: Icons.history_rounded,
             label: l10n.history,
             color: AppColors.info,
-            onTap: () => context.go(AppRoutes.driverRides.path),
+            onTap: () => context.goNamed(
+              AppRoutes.driverRides.name,
+              extra: {'resetBranch': true},
+            ),
           ),
         ),
         SizedBox(width: 12.w),
@@ -1472,6 +1484,33 @@ class _RequestCard extends ConsumerWidget {
           Row(
             children: [
               Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: isProcessing || profile == null
+                      ? null
+                      : () => _openMessageChat(context, ref, profile),
+                  icon: Icon(
+                    Icons.chat_bubble_outline_rounded,
+                    size: 16.sp,
+                  ),
+                  label: Text(
+                    'Message',
+                    style: TextStyle(
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.primary,
+                    side: BorderSide(color: AppColors.primary.withAlpha(80)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                    padding: EdgeInsets.symmetric(vertical: 12.h),
+                  ),
+                ),
+              ),
+              SizedBox(width: 8.w),
+              Expanded(
                 child: OutlinedButton(
                   onPressed: isProcessing ? null : onDecline,
                   style: OutlinedButton.styleFrom(
@@ -1485,13 +1524,13 @@ class _RequestCard extends ConsumerWidget {
                   child: Text(
                     AppLocalizations.of(context).decline,
                     style: TextStyle(
-                      fontSize: 14.sp,
+                      fontSize: 13.sp,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
               ),
-              SizedBox(width: 12.w),
+              SizedBox(width: 8.w),
               Expanded(
                 child: ElevatedButton(
                   onPressed: isProcessing ? null : onAccept,
@@ -1517,7 +1556,7 @@ class _RequestCard extends ConsumerWidget {
                       : Text(
                           AppLocalizations.of(context).accept,
                           style: TextStyle(
-                            fontSize: 14.sp,
+                            fontSize: 13.sp,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -1528,6 +1567,75 @@ class _RequestCard extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _openMessageChat(
+    BuildContext context,
+    WidgetRef ref,
+    UserModel passenger,
+  ) async {
+    final currentUser = ref.read(currentUserProvider).value;
+
+    if (currentUser == null) {
+      AdaptiveSnackBar.show(
+        context,
+        message: AppLocalizations.of(context).pleaseLoginToViewChats,
+        type: AdaptiveSnackBarType.error,
+      );
+      return;
+    }
+
+    HapticFeedback.lightImpact();
+
+    unawaited(
+      showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        barrierLabel: AppLocalizations.of(context).creatingChatLabel,
+        builder: (_) => const Center(
+          child: CircularProgressIndicator.adaptive(),
+        ),
+      ),
+    );
+
+    try {
+      final chat = await ref.read(
+        getOrCreateChatProvider(
+          userId1: currentUser.uid,
+          userId2: passenger.uid,
+          userName1: currentUser.username,
+          userName2: passenger.username,
+          userPhoto1: currentUser.photoUrl,
+          userPhoto2: passenger.photoUrl,
+        ).future,
+      );
+
+      if (!context.mounted) return;
+
+      context.pop(); // Close loading dialog.
+
+      context.pushNamed(
+        AppRoutes.chatDetail.name,
+        pathParameters: {'id': chat.id},
+        queryParameters: {
+          'receiverId': passenger.uid,
+          'receiverName': passenger.username,
+          if (passenger.photoUrl != null)
+            'receiverPhotoUrl': passenger.photoUrl!,
+        },
+        extra: passenger,
+      );
+    } on Exception {
+      if (!context.mounted) return;
+
+      context.pop(); // Close loading dialog.
+
+      AdaptiveSnackBar.show(
+        context,
+        message: AppLocalizations.of(context).failedToCreateChatTryAgain,
+        type: AdaptiveSnackBarType.error,
+      );
+    }
   }
 }
 

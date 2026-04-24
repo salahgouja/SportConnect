@@ -6,6 +6,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:sliver_tools/sliver_tools.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/models/user/user_model.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
@@ -13,6 +14,7 @@ import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/driver_info_widget.dart';
 import 'package:sport_connect/core/widgets/gamification_widgets.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
+import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/features/events/models/event_model.dart';
 import 'package:sport_connect/features/events/view_models/event_view_model.dart';
 import 'package:sport_connect/features/home/view_models/home_view_model.dart';
@@ -20,8 +22,6 @@ import 'package:sport_connect/features/home/view_models/rider_home_view_model.da
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
-import 'package:sliver_tools/sliver_tools.dart';
-import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Scrollable content-first feed for the Rider Home Screen.
@@ -614,7 +614,10 @@ class _EventsNearYouSection extends ConsumerWidget {
                     ),
                     const Spacer(),
                     GestureDetector(
-                      onTap: () => context.push(AppRoutes.events.path),
+                      onTap: () => context.goNamed(
+                        AppRoutes.events.name,
+                        extra: {'resetBranch': true},
+                      ),
                       child: Text(
                         l10n.seeAll,
                         style: TextStyle(

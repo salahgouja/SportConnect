@@ -9,11 +9,11 @@ import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/custom_button.dart';
-import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/core/widgets/gamification_widgets.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/core/widgets/rating_and_profile_widgets.dart';
 import 'package:sport_connect/core/widgets/safety_widgets.dart';
+import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
@@ -318,6 +318,11 @@ class ProfileScreen extends ConsumerWidget {
         driver.asDriver?.rating ?? const RatingBreakdown(),
       _ => const RatingBreakdown(),
     };
+    final address = switch (user) {
+      final RiderModel rider => rider.asRider?.address,
+      final DriverModel driver => driver.asDriver?.address,
+      _ => null,
+    };
     final memberSince = user.createdAt;
 
     return Padding(
@@ -436,18 +441,7 @@ class ProfileScreen extends ConsumerWidget {
           ),
 
           // Location
-          if (switch (user) {
-                    final RiderModel rider => rider.asRider?.city,
-                    final DriverModel driver => driver.asDriver?.city,
-                    _ => null,
-                  } !=
-                  null ||
-              switch (user) {
-                    final RiderModel rider => rider.asRider?.country,
-                    final DriverModel driver => driver.asDriver?.country,
-                    _ => null,
-                  } !=
-                  null) ...[
+          if (address != null && address.trim().isNotEmpty) ...[
             SizedBox(height: 8.h),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -458,22 +452,15 @@ class ProfileScreen extends ConsumerWidget {
                   size: 16.sp,
                 ),
                 SizedBox(width: 4.w),
-                Text(
-                  [
-                    switch (user) {
-                      final RiderModel rider => rider.asRider?.city,
-                      final DriverModel driver => driver.asDriver?.city,
-                      _ => null,
-                    },
-                    switch (user) {
-                      final RiderModel rider => rider.asRider?.country,
-                      final DriverModel driver => driver.asDriver?.country,
-                      _ => null,
-                    },
-                  ].where((e) => e != null && e.isNotEmpty).join(', '),
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    color: AppColors.textSecondary,
+                Flexible(
+                  child: Text(
+                    address.trim(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ),
               ],

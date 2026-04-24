@@ -46,7 +46,7 @@ class AppConfig {
   /// 2) Android emulator loopback (10.0.2.2) when enabled.
   /// 3) Loopback (127.0.0.1) for local reverse/forward workflows.
   static String get emulatorHost {
-    return '10.67.2.105';
+    return '10.221.107.105';
     final overrideHost = emulatorHostOverride.trim();
     if (overrideHost.isNotEmpty) {
       return overrideHost;
@@ -87,7 +87,7 @@ class AppConfig {
 
   /// App-level settings
   static const String appName = 'SportConnect';
-  static const String appVersion = '1.0.4';
+  static const String appVersion = '1.0.5';
   static const String supportTicketEmail = String.fromEnvironment(
     'SPORTCONNECT_SUPPORT_EMAIL',
     defaultValue: 'support@sportconnect.app',

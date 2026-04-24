@@ -8,14 +8,14 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:sliver_tools/sliver_tools.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
 import 'package:sport_connect/core/theme/platform_adaptive.dart';
-import 'package:sliver_tools/sliver_tools.dart';
-import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/core/widgets/analytics_payment_widgets.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
+import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/features/payments/models/payment_model.dart'
     show DriverConnectedAccount;
 import 'package:sport_connect/features/payments/view_models/payment_view_model.dart';
@@ -391,37 +391,56 @@ class DriverEarningsScreen extends ConsumerWidget {
     WidgetRef ref,
     String selectedPeriod,
   ) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 14.h),
-      child: SegmentedButton<String>(
-        segments: _periodKeys
-            .map(
-              (p) => ButtonSegment<String>(
-                value: p,
-                label: Text(
-                  _periodLabel(context, p),
-                  style: TextStyle(
-                    fontSize: 13.sp,
-                    fontWeight: FontWeight.w600,
+    return SizedBox(
+      height: 56.h,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
+        itemCount: _periodKeys.length,
+        separatorBuilder: (_, _) => SizedBox(width: 8.w),
+        itemBuilder: (context, index) {
+          final period = _periodKeys[index];
+          final isSelected = selectedPeriod == period;
+
+          return Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(999.r),
+              onTap: () => ref
+                  .read(driverEarningsPeriodViewModelProvider.notifier)
+                  .setPeriod(period),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                padding: EdgeInsets.symmetric(
+                  horizontal: 18.w,
+                  vertical: 8.h,
+                ),
+                decoration: BoxDecoration(
+                  color: isSelected ? AppColors.primary : AppColors.surface,
+                  borderRadius: BorderRadius.circular(999.r),
+                  border: Border.all(
+                    color: isSelected ? AppColors.primary : AppColors.border,
+                  ),
+                  boxShadow: isSelected ? AppSpacing.shadowSm : null,
+                ),
+                child: Center(
+                  child: Text(
+                    _periodLabel(context, period),
+                    maxLines: 1,
+                    softWrap: false,
+                    style: TextStyle(
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.w700,
+                      color: isSelected
+                          ? Colors.white
+                          : AppColors.textSecondary,
+                    ),
                   ),
                 ),
               ),
-            )
-            .toList(),
-        selected: {selectedPeriod},
-        onSelectionChanged: (value) => ref
-            .read(driverEarningsPeriodViewModelProvider.notifier)
-            .setPeriod(value.first),
-        style: SegmentedButton.styleFrom(
-          backgroundColor: AppColors.surface,
-          selectedBackgroundColor: AppColors.primary,
-          selectedForegroundColor: Colors.white,
-          foregroundColor: AppColors.textSecondary,
-          side: BorderSide(color: AppColors.border),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12.r),
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }

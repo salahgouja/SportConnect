@@ -11,10 +11,10 @@ import 'package:latlong2/latlong.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
-import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/core/widgets/driver_info_widget.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
+import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/messaging/view_models/chat_view_model.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
@@ -350,7 +350,11 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
                             text: AppLocalizations.of(context).instantPayout,
                             onPressed: () {
                               HapticFeedback.lightImpact();
-                              context.push(AppRoutes.driverEarnings.path);
+                              context.goNamed(
+                                AppRoutes.driverEarnings.name,
+                                extra: {'resetBranch': true},
+                              );
+                              ;
                             },
                             icon: Icons.euro_rounded,
                           ),
@@ -361,7 +365,10 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
                   ),
 
                   TextButton(
-                    onPressed: () => context.go(AppRoutes.home.path),
+                    onPressed: () => context.goNamed(
+                      AppRoutes.driverHome.name,
+                      extra: {'resetBranch': true},
+                    ),
                     child: Text(
                       l10n.goHome,
                       style: TextStyle(

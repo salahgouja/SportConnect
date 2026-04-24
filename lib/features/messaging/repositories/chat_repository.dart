@@ -112,6 +112,7 @@ class ChatRepository implements IChatRepository {
     return newChat.copyWith(id: chatId);
   }
 
+  @override
   Future<ChatModel> createRideChat({
     required String rideId,
     required String driverId,
@@ -139,6 +140,7 @@ class ChatRepository implements IChatRepository {
     return chat.copyWith(id: chatId);
   }
 
+  @override
   Future<ChatModel> createEventChat({
     required String eventId,
     required String creatorId,
@@ -190,7 +192,7 @@ class ChatRepository implements IChatRepository {
       .map(
         (snap) => snap.docs
             .map((d) => d.data())
-            .where((chat) => !(chat.deletedFor[userId] ?? false))
+            .where((chat) => chat.isVisibleFor(userId))
             .toList(),
       );
 
@@ -212,7 +214,7 @@ class ChatRepository implements IChatRepository {
   }
 
   // ── Participant management ────────────────────────────────────────────────
-
+  @override
   Future<void> addParticipant({
     required String chatId,
     required ChatParticipant participant,
@@ -233,6 +235,7 @@ class ChatRepository implements IChatRepository {
   /// the [Transaction.get] return-type ambiguity in some cloud_firestore
   /// versions where [DocumentSnapshot.data] is typed as [Object?] rather than
   /// [Map<String, dynamic>?], causing a compile error on the `[]` operator.
+  @override
   Future<void> ensureParticipant({
     required String chatId,
     required String userId,
@@ -258,6 +261,7 @@ class ChatRepository implements IChatRepository {
     await _chatsCollection.doc(chatId).update(updates);
   }
 
+  @override
   Future<void> removeParticipant({
     required String chatId,
     required String userId,
@@ -289,6 +293,7 @@ class ChatRepository implements IChatRepository {
     });
   }
 
+  @override
   Future<void> togglePin({
     required String chatId,
     required String userId,
@@ -306,7 +311,19 @@ class ChatRepository implements IChatRepository {
     required String userId,
   }) async {
     await _chatsCollection.doc(chatId).update({
-      'deletedFor.$userId': true,
+      'deletedAtBy.$userId': FieldValue.serverTimestamp(),
+      'unreadCounts.$userId': 0,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  @override
+  Future<void> clearChatHistoryForUser({
+    required String chatId,
+    required String userId,
+  }) async {
+    await _chatsCollection.doc(chatId).update({
+      'clearedAtBy.$userId': FieldValue.serverTimestamp(),
       'unreadCounts.$userId': 0,
       'updatedAt': FieldValue.serverTimestamp(),
     });
@@ -364,8 +381,13 @@ class ChatRepository implements IChatRepository {
       participantIds = chat.participantIds;
     } else if (message.chatId.startsWith('draft-')) {
       participantIds = _extractParticipantsFromDraftId(message.chatId);
+
+      if (participantIds.length != 2 ||
+          !participantIds.contains(message.senderId)) {
+        throw StateError('Invalid draft chat id: ${message.chatId}');
+      }
     } else {
-      participantIds = [message.senderId];
+      throw StateError('sendMessage: chat does not exist: ${message.chatId}');
     }
 
     final docRef = _messagesCollection(message.chatId).doc();
@@ -396,7 +418,7 @@ class ChatRepository implements IChatRepository {
         'lastMessageAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
         'participantIds': participantIds,
-        for (final id in participantIds) 'deletedFor.$id': FieldValue.delete(),
+        'deletedAtBy.${message.senderId}': FieldValue.delete(),
       },
       SetOptions(merge: true),
     );
@@ -421,9 +443,34 @@ class ChatRepository implements IChatRepository {
           .snapshots()
           .map((snap) => snap.docs.map((d) => d.data()).toList());
 
-  // FIX: Removed the duplicate getChatMessages method — it was identical to
-  // streamMessages. All callers should use streamMessages directly.
-  // (Interface method removed; update IChatRepository accordingly.)
+  @override
+  Stream<List<MessageModel>> streamMessagesForUser({
+    required String chatId,
+    required String userId,
+    int limit = 50,
+  }) {
+    return _chatsCollection.doc(chatId).snapshots().asyncExpand((chatSnap) {
+      final chat = chatSnap.data();
+      final clearedAt = chat?.clearedAtBy[userId];
+
+      Query<MessageModel> query = _messagesCollection(chatId)
+          .where('isDeleted', isEqualTo: false)
+          .orderBy('createdAt', descending: true)
+          .limit(limit);
+
+      if (clearedAt != null) {
+        query = _messagesCollection(chatId)
+            .where('isDeleted', isEqualTo: false)
+            .where('createdAt', isGreaterThan: Timestamp.fromDate(clearedAt))
+            .orderBy('createdAt', descending: true)
+            .limit(limit);
+      }
+
+      return query.snapshots().map(
+        (snap) => snap.docs.map((d) => d.data()).toList(),
+      );
+    });
+  }
 
   @override
   Future<List<MessageModel>> loadMoreMessages({
@@ -584,4 +631,35 @@ class ChatRepository implements IChatRepository {
     await ref.putFile(audioFile);
     return ref.getDownloadURL();
   }
+
+  @override
+  Future<List<MessageModel>> loadMoreMessagesForUser({
+    required String chatId,
+    required String userId,
+    required DateTime beforeTimestamp,
+    int limit = 20,
+  }) async {
+    final chat = await getChatById(chatId);
+    final clearedAt = chat?.clearedAtBy[userId];
+
+    Query<MessageModel> query = _messagesCollection(chatId)
+        .where('isDeleted', isEqualTo: false)
+        .where('createdAt', isLessThan: Timestamp.fromDate(beforeTimestamp))
+        .orderBy('createdAt', descending: true)
+        .limit(limit);
+
+    if (clearedAt != null) {
+      query = _messagesCollection(chatId)
+          .where('isDeleted', isEqualTo: false)
+          .where('createdAt', isGreaterThan: Timestamp.fromDate(clearedAt))
+          .where('createdAt', isLessThan: Timestamp.fromDate(beforeTimestamp))
+          .orderBy('createdAt', descending: true)
+          .limit(limit);
+    }
+
+    final snapshot = await query.get();
+    return snapshot.docs.map((d) => d.data()).toList();
+  }
+
+  
 }

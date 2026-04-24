@@ -48,7 +48,7 @@ final class ChatActionsViewModelProvider
 }
 
 String _$chatActionsViewModelHash() =>
-    r'c5c77ea4e18847208025cb3fb12e168a97314bb9';
+    r'151e425e7f7793f1ec0a1d9c854df0096221858d';
 
 /// Plain-class wrapper for one-shot chat operations (upload, mute, block, etc.)
 /// that don't require reactive state of their own.
@@ -250,7 +250,7 @@ final class ChatMessagesProvider
   /// Messages stream for a single chat, filtered to non-deleted only.
   ChatMessagesProvider._({
     required ChatMessagesFamily super.from,
-    required String super.argument,
+    required (String, String) super.argument,
   }) : super(
          retry: null,
          name: r'chatMessagesProvider',
@@ -266,7 +266,7 @@ final class ChatMessagesProvider
   String toString() {
     return r'chatMessagesProvider'
         ''
-        '($argument)';
+        '$argument';
   }
 
   @$internal
@@ -277,8 +277,8 @@ final class ChatMessagesProvider
 
   @override
   Stream<List<MessageModel>> create(Ref ref) {
-    final argument = this.argument as String;
-    return chatMessages(ref, argument);
+    final argument = this.argument as (String, String);
+    return chatMessages(ref, argument.$1, argument.$2);
   }
 
   @override
@@ -292,12 +292,16 @@ final class ChatMessagesProvider
   }
 }
 
-String _$chatMessagesHash() => r'd6faceff95e4e7eb9d6bae1fcaafad4773203e7e';
+String _$chatMessagesHash() => r'30e07c648a8114c05a390ca67605c6c55b2e76e9';
 
 /// Messages stream for a single chat, filtered to non-deleted only.
 
 final class ChatMessagesFamily extends $Family
-    with $FunctionalFamilyOverride<Stream<List<MessageModel>>, String> {
+    with
+        $FunctionalFamilyOverride<
+          Stream<List<MessageModel>>,
+          (String, String)
+        > {
   ChatMessagesFamily._()
     : super(
         retry: null,
@@ -309,8 +313,8 @@ final class ChatMessagesFamily extends $Family
 
   /// Messages stream for a single chat, filtered to non-deleted only.
 
-  ChatMessagesProvider call(String chatId) =>
-      ChatMessagesProvider._(argument: chatId, from: this);
+  ChatMessagesProvider call(String chatId, String currentUserId) =>
+      ChatMessagesProvider._(argument: (chatId, currentUserId), from: this);
 
   @override
   String toString() => r'chatMessagesProvider';
@@ -452,7 +456,7 @@ final class ChatDetailViewModelProvider
 }
 
 String _$chatDetailViewModelHash() =>
-    r'8db17796282336ce9e4a8a8820385769a35a7089';
+    r'4ec67d1544695c0483a9f10b17e12e220a65b6d8';
 
 final class ChatDetailViewModelFamily extends $Family
     with

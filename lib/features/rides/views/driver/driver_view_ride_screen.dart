@@ -203,8 +203,8 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen> {
                 ? '${AppLocalizations.of(context).passengers} (${confirmedBookings.length})'
                 : AppLocalizations.of(context).passengers,
           ],
-          selectedColor: AppColors.primary,
-          children: [
+          selectedColor: Colors.white,
+          backgroundColor: AppColors.primary,          children: [
             _buildDetailsTab(ride),
             _buildRequestsTab(ride, pendingBookings),
             _buildPassengersTab(ride, confirmedBookings),

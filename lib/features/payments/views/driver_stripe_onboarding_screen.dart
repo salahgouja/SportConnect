@@ -29,6 +29,7 @@ class DriverStripeOnboardingScreen extends ConsumerStatefulWidget {
 
 class _DriverStripeOnboardingScreenState
     extends ConsumerState<DriverStripeOnboardingScreen> {
+  bool _didNavigateAway = false;
   @override
   void initState() {
     super.initState();
@@ -40,11 +41,34 @@ class _DriverStripeOnboardingScreenState
     });
   }
 
+  void _safeGoNamed(
+    String routeName, {
+    Map<String, String> queryParameters = const {},
+  }) {
+    if (_didNavigateAway || !mounted) return;
+
+    _didNavigateAway = true;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
+      context.goNamed(
+        routeName,
+        queryParameters: queryParameters,
+        extra: {'resetBranch': true},
+      );
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final onboardingState = ref.watch(
       driverStripeOnboardingFlowViewModelProvider,
     );
+    final mode = GoRouterState.of(context).uri.queryParameters['mode'];
+    final returnTo = GoRouterState.of(context).uri.queryParameters['returnTo'];
+
+    final isManageMode = mode == 'manage';
 
     ref.listen(currentUserProvider, (previous, next) {
       final previousUser = previous?.value;
@@ -70,7 +94,9 @@ class _DriverStripeOnboardingScreenState
       if (next.isConnected &&
           previous?.isConnected != true &&
           context.mounted) {
-        context.go(AppRoutes.driverHome.path);
+        if (isManageMode) return;
+
+        _safeGoNamed(returnTo ?? AppRoutes.driverHome.name);
       }
     });
 
@@ -467,8 +493,11 @@ class _DriverStripeOnboardingScreenState
 
   /// Handle successful onboarding completion
   Future<void> _handleOnboardingComplete() async {
-    if (!context.mounted) return;
+    if (!mounted) return;
+
     final l10n = AppLocalizations.of(context);
+    final uri = GoRouterState.of(context).uri;
+    final returnTo = uri.queryParameters['returnTo'];
 
     await ref
         .read(driverStripeOnboardingFlowViewModelProvider.notifier)
@@ -478,6 +507,14 @@ class _DriverStripeOnboardingScreenState
           additionalInfoMessage: l10n.stripeAdditionalInfoNeeded,
           verifyFailedMessage: l10n.stripeVerifyFailed,
         );
+
+    if (!mounted) return;
+
+    final state = ref.read(driverStripeOnboardingFlowViewModelProvider);
+
+    if (state.isConnected) {
+      _safeGoNamed(returnTo ?? AppRoutes.driverHome.name);
+    }
   }
 
   /// Show confirmation dialog before canceling onboarding

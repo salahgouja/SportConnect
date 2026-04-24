@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:sport_connect/core/config/supported_markets.dart';
 import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/services/stripe_service.dart';
@@ -332,7 +333,6 @@ class DriverOnboardingViewModel extends _$DriverOnboardingViewModel {
     String? phone,
     DateTime? dateOfBirth,
     String? addressLine1,
-    String? city,
   }) async {
     state = const AsyncValue.loading();
 
@@ -347,7 +347,6 @@ class DriverOnboardingViewModel extends _$DriverOnboardingViewModel {
         phone: phone,
         dateOfBirth: dateOfBirth,
         addressLine1: addressLine1,
-        city: city,
       );
 
       if (!ref.mounted) return account;
@@ -429,11 +428,6 @@ class DriverStripeOnboardingFlowViewModel
             addressLine1: switch (user) {
               final RiderModel rider => rider.address,
               final DriverModel driver => driver.address,
-              _ => null,
-            },
-            city: switch (user) {
-              final RiderModel rider => rider.city,
-              final DriverModel driver => driver.city,
               _ => null,
             },
           );
@@ -592,46 +586,13 @@ class DriverStripeOnboardingFlowViewModel
   }
 
   String _detectUserCountry(UserModel user) {
-    final country = switch (user) {
-      final RiderModel rider => rider.country,
-      final DriverModel driver => driver.country,
-      _ => null,
-    };
-    if (country != null && country.isNotEmpty) {
-      return country.toUpperCase();
-    }
     final phone = switch (user) {
       final RiderModel rider => rider.phoneNumber,
       final DriverModel driver => driver.phoneNumber,
       _ => null,
     };
-    if (phone != null) {
-      const phoneCountryMap = {
-        '+216': 'TN',
-        '+33': 'FR',
-        '+49': 'DE',
-        '+34': 'ES',
-        '+39': 'IT',
-        '+44': 'GB',
-        '+1': 'US',
-        '+32': 'BE',
-        '+41': 'CH',
-        '+352': 'LU',
-        '+31': 'NL',
-        '+351': 'PT',
-        '+43': 'AT',
-        '+212': 'MA',
-        '+213': 'DZ',
-      };
 
-      for (final entry in phoneCountryMap.entries) {
-        if (phone.startsWith(entry.key)) {
-          return entry.value;
-        }
-      }
-    }
-
-    return 'FR';
+    return SupportedMarkets.stripeCountryFromPhone(phone);
   }
 }
 

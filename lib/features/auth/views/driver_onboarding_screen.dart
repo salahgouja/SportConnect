@@ -1,6 +1,7 @@
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -117,7 +118,7 @@ class _DriverOnboardingScreenState
   });
 
   final _phoneKey = GlobalKey<IntlPhoneInputState>();
-  final _cityKey = GlobalKey<AddressAutocompleteFieldState>();
+  final _addressKey = GlobalKey<AddressAutocompleteFieldState>();
 
   // ── Vehicle form (Step 1) ───────────────────────────────────────────
   final _vehicleForm = FormGroup({
@@ -189,6 +190,16 @@ class _DriverOnboardingScreenState
     FuelType.other,
   ];
 
+  static const List<int> _seatOptions = [1, 2, 3, 4, 5, 6, 7, 8];
+
+  List<String> get _vehicleYears {
+    final currentYear = DateTime.now().year;
+    return List.generate(
+      currentYear - 1980 + 1,
+      (index) => (currentYear - index).toString(),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -259,10 +270,12 @@ class _DriverOnboardingScreenState
     if (vmState.driverCurrentStep == 0) {
       _profileForm.markAllAsTouched();
       if (!_profileForm.valid) return;
+
       final phoneError = _phoneKey.currentState?.validate();
       if (phoneError != null) return;
-      final cityError = _cityKey.currentState?.validate();
-      if (cityError != null) return;
+
+      final addressError = _addressKey.currentState?.validate();
+      if (addressError != null) return;
     } else if (vmState.driverCurrentStep == 1) {
       _vehicleForm.markAllAsTouched();
       if (!_vehicleForm.valid) return;
@@ -320,8 +333,8 @@ class _DriverOnboardingScreenState
     final phoneError = _phoneKey.currentState?.validate();
     if (phoneError != null) return;
 
-    final cityError = _cityKey.currentState?.validate();
-    if (cityError != null) return;
+    final addressError = _addressKey.currentState?.validate();
+    if (addressError != null) return;
 
     final values = _profileForm.value;
     final currentUser = ref.read(currentUserProvider).value;
@@ -329,12 +342,13 @@ class _DriverOnboardingScreenState
 
     final vmState = ref.read(onboardingViewModelProvider);
     final dateOfBirth = values[_PF.dob] as DateTime?;
+
     final profileUpdates = <String, dynamic>{
       'username': (values[_PF.name] as String? ?? '').trim(),
       'phoneNumber': (vmState.driverPhoneNumber?.isNotEmpty ?? false)
           ? vmState.driverPhoneNumber
           : null,
-      'city': vmState.driverCity ?? _cityKey.currentState?.text ?? '',
+      'address': _addressKey.currentState?.text.trim() ?? '',
       'gender': values[_PF.gender] as String?,
       'dateOfBirth': dateOfBirth == null ? null : _dateOnly(dateOfBirth),
       'expertise':
@@ -893,8 +907,8 @@ class _DriverOnboardingScreenState
 
             SizedBox(height: 20.h),
 
-            // ── Section: Contact & Location ──────────────────────────────
-            _sectionLabel('Contact & Location'),
+            // ── Section: Contact & Address ──────────────────────────────
+            _sectionLabel('Contact & Address'),
 
             IntlPhoneInput(
                   key: _phoneKey,
@@ -917,23 +931,17 @@ class _DriverOnboardingScreenState
 
             SizedBox(height: 16.h),
 
+            // REPLACE the existing AddressAutocompleteField block with this
             AddressAutocompleteField(
-                  key: _cityKey,
-                  label: l10n.driverCityLabel,
-                  hint: l10n.driverCityHint,
-                  cityOnly: true,
+                  key: _addressKey,
+                  label: 'Address',
+                  hint: 'Search your address...',
                   accentColor: AppColors.primary,
                   fillColor: AppColors.background,
-                  onSelected: (result) => ref
-                      .read(onboardingViewModelProvider.notifier)
-                      .setDriverDraftContact(
-                        city: (result.city?.trim().isNotEmpty ?? false)
-                            ? result.city!.trim()
-                            : result.address,
-                      ),
+                  onSelected: (_) {},
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
-                      return l10n.driverCityRequired;
+                      return 'Address is required';
                     }
                     return null;
                   },
@@ -1003,7 +1011,7 @@ class _DriverOnboardingScreenState
                         text: 'Terms & Conditions',
                         recognizer: TapGestureRecognizer()
                           ..onTap = () => context.push(AppRoutes.terms.path),
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: AppColors.primary,
                           fontWeight: FontWeight.w600,
                           decoration: TextDecoration.underline,
@@ -1307,15 +1315,21 @@ class _DriverOnboardingScreenState
             Row(
                   children: [
                     Expanded(
-                      child: ReactiveTextField<String>(
+                      child: ReactiveDropdownField<String>(
                         formControlName: _VF.year,
+                        isExpanded: true,
                         decoration: InputDecoration(
                           labelText: l10n.year,
-                          hintText: l10n.vehicleYearHint,
                           prefixIcon: const Icon(Icons.calendar_today_outlined),
                         ),
-                        keyboardType: TextInputType.number,
-                        textInputAction: TextInputAction.next,
+                        items: _vehicleYears
+                            .map(
+                              (year) => DropdownMenuItem(
+                                value: year,
+                                child: Text(year),
+                              ),
+                            )
+                            .toList(),
                         validationMessages: {
                           ValidationMessage.required: (_) => l10n.requiredField,
                           'vehicleYear': (error) => error as String,
@@ -1359,6 +1373,17 @@ class _DriverOnboardingScreenState
                     helperText: l10n.licensePlateHelperText,
                   ),
                   textCapitalization: TextCapitalization.characters,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(
+                      RegExp(r'[A-Za-z0-9\-\s]'),
+                    ),
+                    TextInputFormatter.withFunction((oldValue, newValue) {
+                      return newValue.copyWith(
+                        text: newValue.text.toUpperCase(),
+                        selection: newValue.selection,
+                      );
+                    }),
+                  ],
                   validationMessages: {
                     ValidationMessage.required: (_) =>
                         l10n.pleaseEnterLicensePlate,
@@ -1367,37 +1392,17 @@ class _DriverOnboardingScreenState
                 )
                 .animate()
                 .fadeIn(duration: 300.ms, delay: 240.ms)
-                .slideY(
-                  begin: 0.04,
-                  end: 0,
-                ),
+                .slideY(begin: 0.04, end: 0),
 
             SizedBox(height: 20.h),
 
             // ── Section: Capacity ────────────────────────────────────────
             _sectionLabel('Capacity & Fuel'),
 
-            ReactiveTextField<String>(
-                  formControlName: _VF.seats,
-                  decoration: InputDecoration(
-                    labelText: l10n.availableSeats,
-                    hintText: '4',
-                    prefixIcon: const Icon(Icons.event_seat_rounded),
-                  ),
-                  keyboardType: TextInputType.number,
-                  validationMessages: {
-                    ValidationMessage.required: (_) =>
-                        l10n.pleaseEnterNumberOfSeats,
-                    'seats': (error) => error as String,
-                  },
-                )
+            _buildSeatSelector()
                 .animate()
                 .fadeIn(duration: 300.ms, delay: 300.ms)
-                .slideY(
-                  begin: 0.04,
-                  end: 0,
-                ),
-
+                .slideY(begin: 0.04, end: 0),
             SizedBox(height: 16.h),
 
             ReactiveDropdownField<FuelType>(
@@ -1422,10 +1427,7 @@ class _DriverOnboardingScreenState
                 )
                 .animate()
                 .fadeIn(duration: 300.ms, delay: 340.ms)
-                .slideY(
-                  begin: 0.04,
-                  end: 0,
-                ),
+                .slideY(begin: 0.04, end: 0),
 
             SizedBox(height: 32.h),
 
@@ -1632,6 +1634,148 @@ class _DriverOnboardingScreenState
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSeatSelector() {
+    final l10n = AppLocalizations.of(context);
+
+    return ReactiveValueListenableBuilder<String>(
+      formControlName: _VF.seats,
+      builder: (context, control, child) {
+        final selected = int.tryParse(control.value ?? '') ?? 4;
+        final hasError = control.touched && control.invalid;
+
+        void updateSeats(int value) {
+          final clamped = value.clamp(1, 8);
+          control.updateValue(clamped.toString());
+          control.markAsTouched();
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              l10n.availableSeats,
+              style: TextStyle(
+                fontSize: 13.sp,
+                fontWeight: FontWeight.w600,
+                color: hasError ? AppColors.error : AppColors.textSecondary,
+              ),
+            ),
+            SizedBox(height: 10.h),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 14.h),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(16.r),
+                border: Border.all(
+                  color: hasError ? AppColors.error : AppColors.border,
+                  width: hasError ? 1.4 : 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 42.w,
+                    height: 42.w,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                    child: Icon(
+                      Icons.event_seat_rounded,
+                      color: AppColors.primary,
+                      size: 22.sp,
+                    ),
+                  ),
+                  SizedBox(width: 14.w),
+                  Expanded(
+                    child: Text(
+                      '$selected seat${selected == 1 ? '' : 's'} available',
+                      style: TextStyle(
+                        fontSize: 15.sp,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                  _SeatCountButton(
+                    icon: Icons.remove_rounded,
+                    enabled: selected > 1,
+                    onTap: () => updateSeats(selected - 1),
+                  ),
+                  SizedBox(width: 10.w),
+                  SizedBox(
+                    width: 32.w,
+                    child: Text(
+                      '$selected',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 18.sp,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 10.w),
+                  _SeatCountButton(
+                    icon: Icons.add_rounded,
+                    enabled: selected < 8,
+                    onTap: () => updateSeats(selected + 1),
+                  ),
+                ],
+              ),
+            ),
+            if (hasError) ...[
+              SizedBox(height: 6.h),
+              Text(
+                l10n.pleaseEnterNumberOfSeats,
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  color: AppColors.error,
+                ),
+              ),
+            ],
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _SeatCountButton extends StatelessWidget {
+  const _SeatCountButton({
+    required this.icon,
+    required this.enabled,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final bool enabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: enabled
+          ? AppColors.primary.withValues(alpha: 0.1)
+          : AppColors.border.withValues(alpha: 0.35),
+      borderRadius: BorderRadius.circular(10.r),
+      child: InkWell(
+        onTap: enabled ? onTap : null,
+        borderRadius: BorderRadius.circular(10.r),
+        child: SizedBox(
+          width: 36.w,
+          height: 36.w,
+          child: Icon(
+            icon,
+            size: 20.sp,
+            color: enabled ? AppColors.primary : AppColors.textTertiary,
+          ),
+        ),
       ),
     );
   }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -8,11 +10,11 @@ import 'package:intl/intl.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
-import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
 import 'package:sport_connect/core/theme/platform_adaptive.dart';
 import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
+import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/messaging/view_models/chat_view_model.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
@@ -54,7 +56,8 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen> {
           AppLocalizations.of(context).accepted,
           AppLocalizations.of(context).declined,
         ],
-        selectedColor: AppColors.primary,
+        selectedColor: Colors.white,
+        backgroundColor: AppColors.primary,
         children: [
           _buildPendingBookings(),
           _buildAcceptedBookings(),
@@ -175,6 +178,7 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen> {
                 booking: booking,
                 onAccept: () => _handleAccept(booking),
                 onDecline: () => _handleDecline(booking),
+                onMessage: () => _handleMessagePassenger(booking),
                 onViewProfile: () => _handleViewProfile(booking),
               ),
             );
@@ -473,37 +477,67 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen> {
   }
 
   Future<void> _handleMessagePassenger(RideBooking booking) async {
+    unawaited(
+      showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        barrierLabel: AppLocalizations.of(context).creatingChatLabel,
+        builder: (_) => const Center(
+          child: CircularProgressIndicator.adaptive(),
+        ),
+      ),
+    );
+
     try {
-      final currentUser = ref.read(authStateProvider).value;
-      if (currentUser == null || !mounted) return;
+      final currentUser = ref.read(currentUserProvider).value;
+      if (currentUser == null || !mounted) {
+        if (mounted) context.pop();
+        return;
+      }
 
       final passengerProfile = await ref.read(
         userProfileProvider(booking.passengerId).future,
       );
-      if (passengerProfile == null || !mounted) return;
+
+      if (passengerProfile == null || !mounted) {
+        if (mounted) context.pop();
+        return;
+      }
 
       final chat = await ref.read(
         getOrCreateChatProvider(
           userId1: currentUser.uid,
-          userId2: booking.passengerId,
-          userName1: currentUser.displayName ?? '',
+          userId2: passengerProfile.uid,
+          userName1: currentUser.username,
           userName2: passengerProfile.username,
-          userPhoto1: currentUser.photoURL,
+          userPhoto1: currentUser.photoUrl,
           userPhoto2: passengerProfile.photoUrl,
         ).future,
       );
 
       if (!mounted) return;
+
+      context.pop();
+
       context.pushNamed(
         AppRoutes.chatDetail.name,
         pathParameters: {'id': chat.id},
+        queryParameters: {
+          'receiverId': passengerProfile.uid,
+          'receiverName': passengerProfile.username,
+          if (passengerProfile.photoUrl != null)
+            'receiverPhotoUrl': passengerProfile.photoUrl!,
+        },
         extra: passengerProfile,
       );
     } on Exception {
       if (!mounted) return;
+
+      context.pop();
+
       AdaptiveSnackBar.show(
         context,
-        message: AppLocalizations.of(context).failedToLaunchDialer,
+        message: AppLocalizations.of(context).failedToCreateChatTryAgain,
         type: AdaptiveSnackBarType.error,
       );
     }
@@ -519,11 +553,14 @@ class _PendingBookingCard extends ConsumerWidget {
     required this.booking,
     required this.onAccept,
     required this.onDecline,
+    required this.onMessage,
     required this.onViewProfile,
   });
+
   final RideBooking booking;
   final VoidCallback onAccept;
   final VoidCallback onDecline;
+  final VoidCallback onMessage;
   final VoidCallback onViewProfile;
 
   @override
@@ -825,16 +862,22 @@ class _PendingBookingCard extends ConsumerWidget {
                 ],
                 SizedBox(height: 16.h),
                 // Actions
-                Row(
+                Column(
                   children: [
-                    Expanded(
+                    SizedBox(
+                      width: double.infinity,
                       child: OutlinedButton.icon(
-                        onPressed: onDecline,
-                        icon: Icon(Icons.close_rounded, size: 18.sp),
-                        label: Text(AppLocalizations.of(context).decline),
+                        onPressed: profile == null ? null : onMessage,
+                        icon: Icon(
+                          Icons.chat_bubble_outline_rounded,
+                          size: 18.sp,
+                        ),
+                        label: const Text('Message passenger'),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.error,
-                          side: const BorderSide(color: AppColors.error),
+                          foregroundColor: AppColors.primary,
+                          side: BorderSide(
+                            color: AppColors.primary.withValues(alpha: 0.45),
+                          ),
                           padding: EdgeInsets.symmetric(vertical: 14.h),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12.r),
@@ -842,24 +885,41 @@ class _PendingBookingCard extends ConsumerWidget {
                         ),
                       ),
                     ),
-                    SizedBox(width: 12.w),
-                    Expanded(
-                      flex: 2,
-                      child: ElevatedButton.icon(
-                        onPressed: onAccept,
-                        icon: Icon(Icons.check_rounded, size: 18.sp),
-                        label: Text(
-                          AppLocalizations.of(context).acceptRequest2,
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.success,
-                          foregroundColor: Colors.white,
-                          padding: EdgeInsets.symmetric(vertical: 14.h),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12.r),
+                    SizedBox(height: 10.h),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: onDecline,
+                            icon: Icon(Icons.close_rounded, size: 18.sp),
+                            label: Text(AppLocalizations.of(context).decline),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.error,
+                              side: const BorderSide(color: AppColors.error),
+                              padding: EdgeInsets.symmetric(vertical: 14.h),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12.r),
+                              ),
+                            ),
                           ),
                         ),
-                      ),
+                        SizedBox(width: 12.w),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: onAccept,
+                            icon: Icon(Icons.check_rounded, size: 18.sp),
+                            label: Text(AppLocalizations.of(context).accept),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.success,
+                              foregroundColor: Colors.white,
+                              padding: EdgeInsets.symmetric(vertical: 14.h),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12.r),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),

@@ -122,7 +122,13 @@ abstract class ChatModel with _$ChatModel {
     @Default({}) Map<String, bool> pinnedBy,
 
     // One-sided deletion: userId → true
-    @Default({}) Map<String, bool> deletedFor,
+    // User removed the conversation from their chat list.
+    // If a newer message arrives after this timestamp, the chat appears again.
+    @TimestampMapConverter() @Default({}) Map<String, DateTime> deletedAtBy,
+
+    // User cleared message history up to this timestamp.
+    // The chat can stay visible, but older messages are hidden for this user.
+    @TimestampMapConverter() @Default({}) Map<String, DateTime> clearedAtBy,
 
     @Default(true) bool isActive,
     @TimestampConverter() DateTime? createdAt,
@@ -159,6 +165,21 @@ abstract class ChatModel with _$ChatModel {
   int getUnreadCount(String userId) => unreadCounts[userId] ?? 0;
   bool isMutedBy(String userId) => mutedBy[userId] ?? false;
   bool isPinnedBy(String userId) => pinnedBy[userId] ?? false;
+  bool isVisibleFor(String userId) {
+    final deletedAt = deletedAtBy[userId];
+
+    if (deletedAt == null) return true;
+
+    final latestActivity = lastMessageAt ?? updatedAt ?? createdAt;
+
+    if (latestActivity == null) return false;
+
+    return latestActivity.isAfter(deletedAt);
+  }
+
+  DateTime? messagesClearedBefore(String userId) {
+    return clearedAtBy[userId];
+  }
 }
 
 // ── TypingIndicator ───────────────────────────────────────────────────────────

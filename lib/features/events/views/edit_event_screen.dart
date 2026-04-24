@@ -62,6 +62,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
 
   @override
   void dispose() {
+    _form.dispose();
     super.dispose();
   }
 

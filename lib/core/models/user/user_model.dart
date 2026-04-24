@@ -29,8 +29,6 @@ sealed class UserModel with _$UserModel {
     String? address,
     double? latitude,
     double? longitude,
-    String? city,
-    String? country,
 
     // Verification & status
     @Default(false) bool isEmailVerified,
@@ -76,8 +74,6 @@ sealed class UserModel with _$UserModel {
     String? address,
     double? latitude,
     double? longitude,
-    String? city,
-    String? country,
 
     // Verification & status
     @Default(false) bool isEmailVerified,

@@ -7,6 +7,7 @@ import 'package:sport_connect/core/interfaces/repositories/i_event_repository.da
 import 'package:sport_connect/core/models/location/location_point.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/features/events/models/event_model.dart';
+import 'package:sport_connect/features/messaging/models/message_model.dart';
 
 class EventRepository implements IEventRepository {
   EventRepository(this._firestore, this._storage);
@@ -53,20 +54,32 @@ class EventRepository implements IEventRepository {
   }) {
     return {
       'id': chatId,
-      'type': 'rideGroup',
+      'type': ChatType.eventGroup.name,
       'eventId': event.id,
       'premiumOnly': true,
       'groupName': event.title,
       if ((event.imageUrl ?? '').isNotEmpty) 'groupPhotoUrl': event.imageUrl,
+
       'participantIds': participantIds,
       'participants': <Map<String, dynamic>>[],
+
+      'lastMessageContent': null,
+      'lastMessageSenderId': null,
+      'lastMessageSenderName': null,
+      'lastMessageType': MessageType.system.name,
+
       'unreadCounts': <String, int>{},
       'mutedBy': <String, bool>{},
       'pinnedBy': <String, bool>{},
-      'deletedFor': <String, bool>{},
+
+      // New timestamp-based visibility fields.
+      'deletedAtBy': <String, dynamic>{},
+      'clearedAtBy': <String, dynamic>{},
+
       'isActive': true,
-      'createdAt': now,
-      'updatedAt': now,
+      'lastMessageAt': FieldValue.serverTimestamp(),
+      'createdAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
     };
   }
 
@@ -76,15 +89,20 @@ class EventRepository implements IEventRepository {
     required DateTime now,
   }) {
     return {
-      'type': 'rideGroup',
+      'type': ChatType.eventGroup.name,
       'eventId': event.id,
       'premiumOnly': true,
       'groupName': event.title,
       if ((event.imageUrl ?? '').isNotEmpty) 'groupPhotoUrl': event.imageUrl,
+
       if (participantIds.isNotEmpty)
         'participantIds': FieldValue.arrayUnion(participantIds),
+
+      // Remove old boolean visibility field from existing docs.
+      'deletedFor': FieldValue.delete(),
+
       'isActive': true,
-      'updatedAt': now,
+      'updatedAt': FieldValue.serverTimestamp(),
     };
   }
 

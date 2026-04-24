@@ -335,8 +335,8 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                     : AppLocalizations.of(context).unread,
                 AppLocalizations.of(context).all,
               ],
-              selectedColor: AppColors.primary,
-              children: [
+          selectedColor: Colors.white,
+          backgroundColor: AppColors.primary,              children: [
                 _buildNotificationsList(unreadNotifications, userId),
                 _buildNotificationsList(allNotifications, userId),
               ],

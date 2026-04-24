@@ -142,7 +142,7 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
   });
 
   final _phoneKey = GlobalKey<IntlPhoneInputState>();
-  final _cityKey = GlobalKey<AddressAutocompleteFieldState>();
+  final _addressKey = GlobalKey<AddressAutocompleteFieldState>();
 
   @override
   void dispose() {
@@ -369,7 +369,7 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
     }
 
     final phoneValid = _phoneKey.currentState?.validate() == null;
-    final cityValid = _cityKey.currentState?.validate() == null;
+    final addressValid = _addressKey.currentState?.validate() == null;
 
     if (!phoneValid) {
       AdaptiveSnackBar.show(
@@ -380,10 +380,10 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
       return;
     }
 
-    if (!cityValid) {
+    if (!addressValid) {
       AdaptiveSnackBar.show(
         context,
-        message: 'Please select a city from the suggestions.',
+        message: 'Please enter your address.',
         type: AdaptiveSnackBarType.error,
       );
       return;
@@ -399,8 +399,7 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
           ? (values[_FormFields.name] as String).trim()
           : currentUser.username.trim(),
       'phoneNumber': vmState.riderPhoneNumber,
-      'city': vmState.riderCity ?? _cityKey.currentState?.text,
-      'country': vmState.riderCountry,
+      'address': _addressKey.currentState?.text.trim(),
       'gender': values[_FormFields.gender] as String?,
       'dateOfBirth': dateOfBirth == null ? null : _dateOnly(dateOfBirth),
       'expertise':
@@ -737,8 +736,8 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
                         ),
                         SizedBox(height: 24.h),
 
-                        // ── Section: Contact & Location ───────────────────
-                        _sectionLabel('Contact & Location'),
+                        // ── Section: Contact & Address ───────────────────
+                        _sectionLabel('Contact & Address'),
 
                         IntlPhoneInput(
                               key: _phoneKey,
@@ -766,26 +765,20 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
                         SizedBox(height: 16.h),
 
                         AddressAutocompleteField(
-                              key: _cityKey,
-                              label: l10n.driverCityLabel,
-                              hint: l10n.driverCityHint,
-                              cityOnly: true,
+                              key: _addressKey,
+                              label: 'Address',
+                              hint: 'Search your address...',
                               initialValue: switch (currentUser) {
-                                final RiderModel rider => rider.city,
-                                final DriverModel driver => driver.city,
+                                final RiderModel rider => rider.address,
+                                final DriverModel driver => driver.address,
                                 _ => null,
                               },
                               accentColor: AppColors.primary,
                               fillColor: AppColors.background,
-                              onSelected: (result) => ref
-                                  .read(onboardingViewModelProvider.notifier)
-                                  .setRiderDraftContact(
-                                    city: result.address,
-                                    country: result.country,
-                                  ),
+                              onSelected: (_) {},
                               validator: (value) {
                                 if (value == null || value.trim().isEmpty) {
-                                  return l10n.driverCityLabel;
+                                  return 'Address is required';
                                 }
                                 return null;
                               },

@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
@@ -117,7 +117,6 @@ class EstimatedWaitTime extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final color = waitMinutes <= 5
         ? AppColors.success
         : waitMinutes <= 15

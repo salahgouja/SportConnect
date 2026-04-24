@@ -51,7 +51,7 @@ class MapLocationPicker extends ConsumerStatefulWidget {
       context: context,
       useRootNavigator: true,
       forceMaxHeight: true,
-      maxHeightFactor: 0.92,
+      maxHeightFactor: 0.72,
       title: title,
       child: MapLocationPicker(
         title: title,
@@ -333,8 +333,7 @@ class _MapLocationPickerState extends ConsumerState<MapLocationPicker>
       ),
       child: Column(
         children: [
-          _buildHandle(),
-          _buildHeader(),
+          SizedBox(height: 12.h),
           _buildSearchBar(),
           if (_searchResults.isNotEmpty)
             _buildSearchResults()
@@ -344,115 +343,6 @@ class _MapLocationPickerState extends ConsumerState<MapLocationPicker>
           _buildBottomBar(),
         ],
       ),
-    );
-  }
-
-  Widget _buildHandle() {
-    return Container(
-      margin: EdgeInsets.only(top: 12.h),
-      width: 40.w,
-      height: 4.h,
-      decoration: BoxDecoration(
-        color: AppColors.border,
-        borderRadius: BorderRadius.circular(2.r),
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Padding(
-      padding: EdgeInsets.all(16.w),
-      child: Row(
-        children: [
-          GestureDetector(
-            onTap: () => context.pop(),
-            child: Container(
-              padding: EdgeInsets.all(8.w),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceVariant,
-                borderRadius: BorderRadius.circular(10.r),
-              ),
-              child: Icon(
-                Icons.close_rounded,
-                color: AppColors.textPrimary,
-                size: 22.sp,
-              ),
-            ),
-          ),
-          SizedBox(width: 16.w),
-          Expanded(
-            child: Text(
-              widget.title,
-              style: TextStyle(
-                fontSize: 20.sp,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
-            ),
-          ),
-          _buildMapStyleButton(),
-        ],
-      ),
-    ).animate().fadeIn(duration: 300.ms);
-  }
-
-  Widget _buildMapStyleButton() {
-    return AdaptivePopupMenuButton.widget<String>(
-      items: [
-        _buildMapStyleItem(
-          'standard',
-          AppLocalizations.of(context).standard2,
-          Icons.map,
-        ),
-        _buildMapStyleItem(
-          'terrain',
-          AppLocalizations.of(context).terrain2,
-          Icons.terrain,
-        ),
-        _buildMapStyleItem(
-          'dark',
-          AppLocalizations.of(context).settingsDarkMode,
-          Icons.dark_mode,
-        ),
-        _buildMapStyleItem(
-          'light',
-          AppLocalizations.of(context).lightMode,
-          Icons.light_mode,
-        ),
-        _buildMapStyleItem(
-          'humanitarian',
-          AppLocalizations.of(context).humanitarian2,
-          Icons.favorite,
-        ),
-      ],
-      onSelected: (index, entry) {
-        HapticFeedback.selectionClick();
-        setState(() => _selectedMapStyle = entry.value as String);
-      },
-      child: Container(
-        padding: EdgeInsets.all(8.w),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceVariant,
-          borderRadius: BorderRadius.circular(10.r),
-        ),
-        child: Icon(
-          Icons.layers_rounded,
-          color: AppColors.primary,
-          size: 22.sp,
-        ),
-      ),
-    );
-  }
-
-  AdaptivePopupMenuItem<String> _buildMapStyleItem(
-    String value,
-    String label,
-    IconData icon,
-  ) {
-    return AdaptivePopupMenuItem<String>(
-      label: label,
-      icon: icon,
-      value: value,
     );
   }
 
@@ -776,8 +666,6 @@ class _MapLocationPickerState extends ConsumerState<MapLocationPicker>
   }
 
   Widget _buildMap() {
-    final tileProvider = MapService.tileProviders[_selectedMapStyle]!;
-
     return Stack(
       children: [
         // Map
@@ -794,8 +682,9 @@ class _MapLocationPickerState extends ConsumerState<MapLocationPicker>
             ),
             children: [
               TileLayer(
-                urlTemplate: tileProvider.urlTemplate,
-                subdomains: tileProvider.subdomains ?? const [],
+                urlTemplate: MapService.standardTileProvider.urlTemplate,
+                subdomains:
+                    MapService.standardTileProvider.subdomains ?? const [],
                 userAgentPackageName: 'com.sportconnect.app',
               ),
               CurrentLocationLayer(
@@ -856,7 +745,7 @@ class _MapLocationPickerState extends ConsumerState<MapLocationPicker>
               borderRadius: BorderRadius.circular(4.r),
             ),
             child: Text(
-              tileProvider.attribution,
+              MapService.standardTileProvider.attribution,
               style: TextStyle(fontSize: 9.sp, color: AppColors.textTertiary),
             ),
           ),

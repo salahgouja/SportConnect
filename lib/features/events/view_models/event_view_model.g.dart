@@ -266,7 +266,7 @@ final class EventDetailViewModelProvider
 }
 
 String _$eventDetailViewModelHash() =>
-    r'0f027f13f5b9ac659183c61965176081c3be4471';
+    r'b8da1af1614a708db0b90036cec4f6f77cb1ab2d';
 
 final class EventDetailViewModelFamily extends $Family
     with

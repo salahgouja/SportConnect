@@ -1,18 +1,41 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
+    // ---------------------------------------------------------------------
+    // Helpers
+    // ---------------------------------------------------------------------
 
-    // Helper functions
     function isAuthenticated() {
       return request.auth != null;
     }
 
     function isOwner(userId) {
-      return request.auth.uid == userId;
+      return isAuthenticated() && request.auth.uid == userId;
     }
 
     function changedKeys() {
       return request.resource.data.diff(resource.data).affectedKeys();
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isCurrentUserPremium() {
+      return isAuthenticated() && getUserData().isPremium == true;
+    }
+
+    function isEventGroupChat(chatData) {
+      return chatData.type == 'eventGroup';
+    }
+
+    function isChatParticipant(chatId) {
+      let chat = get(/databases/$(database)/documents/chats/$(chatId)).data;
+
+      return isAuthenticated() &&
+        request.auth.uid in chat.participantIds &&
+        (!isEventGroupChat(chat) || isCurrentUserPremium());
     }
 
     function isPassengerBookingCreate() {
@@ -24,7 +47,8 @@ service cloud.firestore {
     }
 
     function isPassengerBookingUpdate() {
-      return resource.data.passengerId == request.auth.uid &&
+      return isAuthenticated() &&
+        resource.data.passengerId == request.auth.uid &&
         changedKeys().hasOnly([
           'status',
           'respondedAt',
@@ -39,7 +63,8 @@ service cloud.firestore {
     }
 
     function isDriverBookingUpdate(rideId) {
-      return (
+      return isAuthenticated() &&
+        (
           resource.data.driverId == request.auth.uid ||
           get(/databases/$(database)/documents/rides/$(rideId)).data.driverId == request.auth.uid
         ) &&
@@ -56,377 +81,580 @@ service cloud.firestore {
         request.resource.data.driverId == resource.data.driverId;
     }
 
-    function isConnectedAccountCreate(userId) {
-      let user = get(/databases/$(database)/documents/users/$(userId)).data;
-      return isOwner(userId) &&
-        request.resource.data.driverId == request.auth.uid &&
-        request.resource.data.stripeAccountId == user.stripeAccountId &&
-        request.resource.data.id == request.resource.data.stripeAccountId;
+    function isOwnRideStatusUpdate() {
+      return changedKeys().hasOnly(['rideStatuses', 'updatedAt']) &&
+        request.resource.data.rideStatuses
+          .diff(resource.data.rideStatuses)
+          .affectedKeys()
+          .hasOnly([request.auth.uid]);
     }
 
-    function isConnectedAccountUpdate(userId) {
-      return isOwner(userId) &&
-        request.resource.data.driverId == resource.data.driverId &&
-        request.resource.data.stripeAccountId == resource.data.stripeAccountId &&
-        request.resource.data.id == resource.data.id &&
-        changedKeys().hasOnly([
-          'email',
-          'country',
-          'defaultCurrency',
-          'accountHolderName',
-          'metadata',
-          'updatedAt'
-        ]);
+    function isJoiningEvent() {
+      return changedKeys().hasOnly(['participantIds', 'updatedAt']) &&
+        !(request.auth.uid in resource.data.participantIds) &&
+        request.auth.uid in request.resource.data.participantIds &&
+        request.resource.data.participantIds.size() == resource.data.participantIds.size() + 1 &&
+        request.resource.data.participantIds.hasAll(resource.data.participantIds);
     }
 
-    function getUserData() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    function isLeavingEvent() {
+      return (
+          changedKeys().hasOnly(['participantIds', 'updatedAt']) ||
+          changedKeys().hasOnly(['participantIds', 'rideStatuses', 'updatedAt'])
+        ) &&
+        request.auth.uid in resource.data.participantIds &&
+        !(request.auth.uid in request.resource.data.participantIds) &&
+        request.resource.data.participantIds.size() == resource.data.participantIds.size() - 1 &&
+        resource.data.participantIds.hasAll(request.resource.data.participantIds) &&
+        (
+          !changedKeys().hasAny(['rideStatuses']) ||
+          request.resource.data.rideStatuses
+            .diff(resource.data.rideStatuses)
+            .affectedKeys()
+            .hasOnly([request.auth.uid])
+        );
     }
 
-    function isCurrentUserPremium() {
-      return isAuthenticated() && getUserData().isPremium == true;
+    function isMeetupPinUpdate() {
+      return changedKeys().hasOnly([
+        'meetupPinLocation',
+        'updatedAt'
+      ]);
     }
 
-    function isEventGroupChat(chatData) {
-      return chatData.type == 'eventGroup';
+    function isLinkedRideUpdate() {
+      return changedKeys().hasOnly([
+        'linkedRideIds',
+        'updatedAt'
+      ]);
     }
 
-    // Reads the parent chat document once and checks participant membership +
-    // premium access in a single call, halving the Firestore read cost inside
-    // messages and typing subcollections.
-    function isChatParticipant(chatId) {
-      let chat = get(/databases/$(database)/documents/chats/$(chatId)).data;
-      return request.auth.uid in chat.participantIds &&
-        (!isEventGroupChat(chat) || isCurrentUserPremium());
-    }
+    // ---------------------------------------------------------------------
+    // Users
+    // ---------------------------------------------------------------------
 
-    // ==================== USERS COLLECTION ====================
     match /users/{userId} {
       allow read: if isAuthenticated();
+
       allow create: if isOwner(userId);
-      // Owner can update anything; other authenticated users can update gamification and rating fields
+
       allow update: if isOwner(userId) ||
-        (isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rating', 'gamification']));
+        (
+          isAuthenticated() &&
+          changedKeys().hasOnly(['rating', 'gamification'])
+        );
+
       allow delete: if isOwner(userId);
 
-      // Blocked users subcollection — only the owner can read/write
       match /blockedUsers/{blockedUserId} {
-        allow read: if isOwner(userId);
-        allow write: if isOwner(userId);
+        allow read, write: if isOwner(userId);
       }
     }
 
-    // ==================== RIDES COLLECTION ====================
+    // ---------------------------------------------------------------------
+    // Rides
+    // ---------------------------------------------------------------------
+
     match /rides/{rideId} {
       allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && request.resource.data.driverId == request.auth.uid;
-      allow update: if isAuthenticated() && (
-        resource.data.driverId == request.auth.uid ||
-        request.resource.data.diff(resource.data).affectedKeys()
-            .hasOnly(['bookingIds', 'updatedAt'])
-      );
 
-      allow delete: if isAuthenticated() && resource.data.driverId == request.auth.uid;
+      allow create: if isAuthenticated() &&
+        request.resource.data.driverId == request.auth.uid;
 
-      // Bookings subcollection — passengers book rides, drivers view their bookings
-      match /bookings/{bookingId} {
-        allow read: if isAuthenticated() && (
-          resource.data.passengerId == request.auth.uid ||
+      allow update: if isAuthenticated() &&
+        (
           resource.data.driverId == request.auth.uid ||
-          get(/databases/$(database)/documents/rides/$(rideId)).data.driverId == request.auth.uid
+          changedKeys().hasOnly(['bookingIds', 'updatedAt'])
         );
+
+      allow delete: if isAuthenticated() &&
+        resource.data.driverId == request.auth.uid;
+
+      match /bookings/{bookingId} {
+        allow read: if isAuthenticated() &&
+          (
+            resource.data.passengerId == request.auth.uid ||
+            resource.data.driverId == request.auth.uid ||
+            get(/databases/$(database)/documents/rides/$(rideId)).data.driverId == request.auth.uid
+          );
+
         allow create: if isPassengerBookingCreate();
-        allow update: if isAuthenticated() && (
-          isPassengerBookingUpdate() ||
-          isDriverBookingUpdate(rideId)
-        );
-        allow delete: if isAuthenticated() && resource.data.passengerId == request.auth.uid;
+
+        allow update: if isAuthenticated() &&
+          (
+            isPassengerBookingUpdate() ||
+            isDriverBookingUpdate(rideId)
+          );
+
+        allow delete: if isAuthenticated() &&
+          resource.data.passengerId == request.auth.uid;
       }
     }
 
-    // ==================== CHATS COLLECTION ====================
-    match /chats/{chatId} {
-      // Allow get when:
-      //  1. Document doesn't exist yet (resource == null) — needed so joinEvent
-      //     can check chat existence before creating it.
-      //  2. Caller is already a participant (standard case).
-      //  3. Caller is a participant of the associated event — needed when a
-      //     second premium user joins and the chat already exists but they
-      //     haven't been added to participantIds yet.
-      allow get: if isAuthenticated() && (
-        resource == null ||
-        (request.auth.uid in resource.data.participantIds &&
-         (!isEventGroupChat(resource.data) || isCurrentUserPremium())) ||
-        ('eventId' in resource.data && resource.data.eventId is string &&
-         request.auth.uid in
-           get(/databases/$(database)/documents/events/$(resource.data.eventId))
-             .data.participantIds)
-      );
+    // ---------------------------------------------------------------------
+    // Top-level bookings
+    // ---------------------------------------------------------------------
 
-      // List queries are used for inbox screens. Enforce membership here to
-      // avoid query-wide PERMISSION_DENIED when legacy premium-only chat docs
-      // are still present for a participant.
+    match /bookings/{bookingId} {
+      allow read: if isAuthenticated() &&
+        (
+          resource.data.passengerId == request.auth.uid ||
+          resource.data.driverId == request.auth.uid ||
+          get(/databases/$(database)/documents/rides/$(resource.data.rideId)).data.driverId == request.auth.uid
+        );
+
+      allow create: if isPassengerBookingCreate();
+
+      allow update: if isAuthenticated() &&
+        (
+          isPassengerBookingUpdate() ||
+          isDriverBookingUpdate(resource.data.rideId)
+        );
+
+      allow delete: if isAuthenticated() &&
+        resource.data.passengerId == request.auth.uid;
+    }
+
+    // Collection-group compatible bookings rule.
+    match /{path=**}/bookings/{bookingId} {
+      allow read: if isAuthenticated() &&
+        (
+          resource.data.passengerId == request.auth.uid ||
+          resource.data.driverId == request.auth.uid ||
+          get(/databases/$(database)/documents/rides/$(resource.data.rideId)).data.driverId == request.auth.uid
+        );
+
+      allow create: if isPassengerBookingCreate();
+
+      allow update: if isAuthenticated() &&
+        (
+          isPassengerBookingUpdate() ||
+          isDriverBookingUpdate(resource.data.rideId)
+        );
+
+      allow delete: if isAuthenticated() &&
+        resource.data.passengerId == request.auth.uid;
+    }
+
+    // ---------------------------------------------------------------------
+    // Chats
+    // ---------------------------------------------------------------------
+
+    match /chats/{chatId} {
+      allow get: if isAuthenticated() &&
+        (
+          resource == null ||
+          (
+            request.auth.uid in resource.data.participantIds &&
+            (!isEventGroupChat(resource.data) || isCurrentUserPremium())
+          ) ||
+          (
+            'eventId' in resource.data &&
+            resource.data.eventId is string &&
+            request.auth.uid in get(/databases/$(database)/documents/events/$(resource.data.eventId)).data.participantIds
+          )
+        );
+
       allow list: if isAuthenticated() &&
         request.auth.uid in resource.data.participantIds;
 
-      // Allow create when:
-      //  1. Caller is in the new doc's participantIds (standard case).
-      //  2. Caller is an event participant creating the associated event chat
-      //     (e.g. a non-premium user whose join triggers chat creation for a
-      //     premium creator).
-      allow create: if isAuthenticated() && (
-        (request.auth.uid in request.resource.data.participantIds &&
-         (!isEventGroupChat(request.resource.data) || isCurrentUserPremium())) ||
-        ('eventId' in request.resource.data && request.resource.data.eventId is string &&
-         request.auth.uid in
-           get(/databases/$(database)/documents/events/$(request.resource.data.eventId))
-             .data.participantIds)
-      );
+      allow create: if isAuthenticated() &&
+        (
+          (
+            request.auth.uid in request.resource.data.participantIds &&
+            (!isEventGroupChat(request.resource.data) || isCurrentUserPremium())
+          ) ||
+          (
+            'eventId' in request.resource.data &&
+            request.resource.data.eventId is string &&
+            request.auth.uid in get(/databases/$(database)/documents/events/$(request.resource.data.eventId)).data.participantIds
+          )
+        );
 
-      allow update: if isAuthenticated() && (
-        // Allow users to remove themselves from participantIds (account deletion)
-        (request.resource.data.participantIds.size() < resource.data.participantIds.size() &&
-         request.auth.uid in resource.data.participantIds) ||
-        // Standard update permissions for participants
-        (request.auth.uid in resource.data.participantIds &&
-          (!isEventGroupChat(resource.data) || isCurrentUserPremium())) ||
-        // Allow event participants to update the associated event chat
-        // (e.g. adding a newly-joined premium user to participantIds).
-        ('eventId' in resource.data && resource.data.eventId is string &&
-         request.auth.uid in
-           get(/databases/$(database)/documents/events/$(resource.data.eventId))
-             .data.participantIds)
-      );
+      allow update: if isAuthenticated() &&
+        (
+          // User-specific chat settings.
+          (
+            request.auth.uid in resource.data.participantIds &&
+            changedKeys().hasOnly([
+              'mutedBy',
+              'pinnedBy',
+              'deletedAtBy',
+              'clearedAtBy',
+              'unreadCounts',
+              'updatedAt'
+            ])
+          ) ||
+
+          // Message send preview update.
+          (
+            request.auth.uid in resource.data.participantIds &&
+            changedKeys().hasOnly([
+              'lastMessageContent',
+              'lastMessageSenderId',
+              'lastMessageSenderName',
+              'lastMessageType',
+              'lastMessageAt',
+              'updatedAt',
+              'participantIds',
+              'deletedAtBy'
+            ]) &&
+            request.resource.data.lastMessageSenderId == request.auth.uid
+          ) ||
+
+          // Remove self from chat.
+          (
+            request.auth.uid in resource.data.participantIds &&
+            request.resource.data.participantIds.size() < resource.data.participantIds.size()
+          ) ||
+
+          // Event chat membership/metadata update.
+          (
+            'eventId' in resource.data &&
+            resource.data.eventId is string &&
+            request.auth.uid in get(/databases/$(database)/documents/events/$(resource.data.eventId)).data.participantIds &&
+            changedKeys().hasOnly([
+              'participantIds',
+              'groupName',
+              'groupPhotoUrl',
+              'type',
+              'eventId',
+              'premiumOnly',
+              'isActive',
+              'updatedAt',
+              'deletedFor'
+            ])
+          )
+        );
 
       allow delete: if false;
 
-      // Messages subcollection — only participants of the parent chat can read/write
       match /messages/{messageId} {
-        allow read, write: if isAuthenticated() && isChatParticipant(chatId);
+        allow read: if isAuthenticated() &&
+          isChatParticipant(chatId);
+
+        allow create: if isAuthenticated() &&
+          isChatParticipant(chatId) &&
+          request.resource.data.senderId == request.auth.uid;
+
+        allow update: if isAuthenticated() &&
+          isChatParticipant(chatId) &&
+          (
+            resource.data.senderId == request.auth.uid ||
+            changedKeys().hasOnly([
+              'readBy',
+              'deliveredTo',
+              'reactions',
+              'status',
+              'updatedAt'
+            ])
+          );
+
+        allow delete: if false;
       }
 
-      // Typing indicators subcollection — only participants of the parent chat
       match /typing/{typingId} {
-        allow read, write: if isAuthenticated() && isChatParticipant(chatId);
+        allow read, write: if isAuthenticated() &&
+          isChatParticipant(chatId);
       }
     }
 
-    // ==================== NOTIFICATIONS COLLECTION ====================
+    // ---------------------------------------------------------------------
+    // Notifications
+    // ---------------------------------------------------------------------
+
     match /notifications/{notificationId} {
-      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      // App clients create in-app notification documents on behalf of other users
-      // (e.g. rider notifying driver of a new booking request).
+      allow read: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid;
+
       allow create: if isAuthenticated();
-      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+
+      allow update: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid;
+
+      allow delete: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid;
     }
 
-    // ==================== VEHICLES COLLECTION ====================
+    // ---------------------------------------------------------------------
+    // Vehicles
+    // ---------------------------------------------------------------------
+
     match /vehicles/{vehicleId} {
       allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && request.resource.data.ownerId == request.auth.uid;
-      allow update: if isAuthenticated() && resource.data.ownerId == request.auth.uid;
-      allow delete: if isAuthenticated() && resource.data.ownerId == request.auth.uid;
+
+      allow create: if isAuthenticated() &&
+        request.resource.data.ownerId == request.auth.uid;
+
+      allow update: if isAuthenticated() &&
+        resource.data.ownerId == request.auth.uid;
+
+      allow delete: if isAuthenticated() &&
+        resource.data.ownerId == request.auth.uid;
     }
 
-    // ==================== DRIVER STATS COLLECTION ====================
+    // ---------------------------------------------------------------------
+    // Driver stats
+    // ---------------------------------------------------------------------
+
     match /driver_stats/{driverId} {
       allow read: if isAuthenticated();
       allow write: if isAuthenticated() && driverId == request.auth.uid;
     }
 
-    // ==================== HOTSPOTS COLLECTION ====================
+    // ---------------------------------------------------------------------
+    // Hotspots / Leaderboard
+    // ---------------------------------------------------------------------
+
     match /hotspots/{hotspotId} {
       allow read: if isAuthenticated();
-      allow write: if false; // Admin/seeding only — use Admin SDK
+      allow write: if false;
     }
 
-    // ==================== LEADERBOARD COLLECTION ====================
     match /leaderboard/{entryId} {
       allow read: if isAuthenticated();
-      allow write: if false; // Admin/seeding only — use Admin SDK
+      allow write: if false;
     }
 
-    // ==================== TRANSACTIONS COLLECTION ====================
+    // ---------------------------------------------------------------------
+    // Transactions
+    // ---------------------------------------------------------------------
+
     match /transactions/{transactionId} {
-      // Both the driver and the rider can read their own transaction records
-      // (riders need access to view their payment history).
-      allow read: if isAuthenticated() && (
-        resource.data.driverId == request.auth.uid ||
-        resource.data.riderId == request.auth.uid
-      );
-      // Either the driver or the rider may create the transaction record
-      allow create: if isAuthenticated() && (
-        request.resource.data.driverId == request.auth.uid ||
-        request.resource.data.riderId == request.auth.uid
-      );
-      allow update, delete: if isAuthenticated() && resource.data.driverId == request.auth.uid;
+      allow read: if isAuthenticated() &&
+        (
+          resource.data.driverId == request.auth.uid ||
+          resource.data.riderId == request.auth.uid
+        );
+
+      allow create: if isAuthenticated() &&
+        (
+          request.resource.data.driverId == request.auth.uid ||
+          request.resource.data.riderId == request.auth.uid
+        );
+
+      allow update, delete: if isAuthenticated() &&
+        resource.data.driverId == request.auth.uid;
     }
 
-    // Support transactions in subcollections as collectionGroup queries
     match /{path=**}/transactions/{transactionId} {
-      allow read: if isAuthenticated() && (
-        resource.data.driverId == request.auth.uid ||
-        resource.data.riderId == request.auth.uid
-      );
-      // Either the driver or the rider may create the transaction record
-      allow create: if isAuthenticated() && (
-        request.resource.data.driverId == request.auth.uid ||
-        request.resource.data.riderId == request.auth.uid
-      );
-      allow update, delete: if isAuthenticated() && resource.data.driverId == request.auth.uid;
+      allow read: if isAuthenticated() &&
+        (
+          resource.data.driverId == request.auth.uid ||
+          resource.data.riderId == request.auth.uid
+        );
+
+      allow create: if isAuthenticated() &&
+        (
+          request.resource.data.driverId == request.auth.uid ||
+          request.resource.data.riderId == request.auth.uid
+        );
+
+      allow update, delete: if isAuthenticated() &&
+        resource.data.driverId == request.auth.uid;
     }
 
-    // ==================== DRIVER CONNECTED ACCOUNTS COLLECTION ====================
-    // Used for Stripe connected accounts for drivers.
-    // The Flutter client writes the initial record after the Cloud Function
-    // creates the Stripe account and returns the accountId; the driver may only
-    // write their own document.
-    match /driver_connected_accounts/{userId} {
-      allow read: if isAuthenticated() && userId == request.auth.uid;
+    // ---------------------------------------------------------------------
+    // Stripe connected accounts
+    // ---------------------------------------------------------------------
 
-      // Server-owned Stripe snapshot.
-      // Written only by Cloud Functions / Admin SDK.
+    match /driver_connected_accounts/{userId} {
+      allow read: if isAuthenticated() &&
+        userId == request.auth.uid;
+
+      // Server-owned snapshot. Cloud Functions/Admin SDK only.
       allow create, update, delete: if false;
     }
 
-    // Support bookings in subcollections as collectionGroup queries
-    match /{path=**}/bookings/{bookingId} {
-      allow read: if isAuthenticated() && (
-        resource.data.passengerId == request.auth.uid ||
-        resource.data.driverId == request.auth.uid ||
-        // Allow drivers to read all bookings on their own rides
-        get(/databases/$(database)/documents/rides/$(resource.data.rideId)).data.driverId == request.auth.uid
-      );
-      allow create: if isPassengerBookingCreate();
-      allow update: if isAuthenticated() && (
-        isPassengerBookingUpdate() ||
-        isDriverBookingUpdate(resource.data.rideId)
-      );
-      allow delete: if isAuthenticated() && resource.data.passengerId == request.auth.uid;
-    }
+    // ---------------------------------------------------------------------
+    // Ride requests
+    // ---------------------------------------------------------------------
 
-    // ==================== RIDE REQUESTS COLLECTION ====================
-    // Used for ride booking requests (riders request rides from drivers)
     match /rideRequests/{requestId} {
-      allow read: if isAuthenticated() && (
-        resource.data.riderId == request.auth.uid ||
-        resource.data.driverId == request.auth.uid
-      );
-      allow create: if isAuthenticated() && request.resource.data.riderId == request.auth.uid;
-      allow update: if isAuthenticated() && (
-        resource.data.riderId == request.auth.uid ||
-        resource.data.driverId == request.auth.uid
-      );
-      allow delete: if isAuthenticated() && (
-        resource.data.riderId == request.auth.uid ||
-        resource.data.driverId == request.auth.uid
-      );
+      allow read: if isAuthenticated() &&
+        (
+          resource.data.riderId == request.auth.uid ||
+          resource.data.driverId == request.auth.uid
+        );
+
+      allow create: if isAuthenticated() &&
+        request.resource.data.riderId == request.auth.uid;
+
+      allow update: if isAuthenticated() &&
+        (
+          resource.data.riderId == request.auth.uid ||
+          resource.data.driverId == request.auth.uid
+        );
+
+      allow delete: if isAuthenticated() &&
+        (
+          resource.data.riderId == request.auth.uid ||
+          resource.data.driverId == request.auth.uid
+        );
     }
 
-    // ==================== MESSAGES COLLECTION (Top-level) ====================
-    // Used for standalone messages (delete account cleanup)
+    // ---------------------------------------------------------------------
+    // Top-level standalone messages
+    // ---------------------------------------------------------------------
+
     match /messages/{messageId} {
-      allow read: if isAuthenticated() && (
-        resource.data.senderId == request.auth.uid ||
-        resource.data.receiverId == request.auth.uid
-      );
-      allow create: if isAuthenticated() && request.resource.data.senderId == request.auth.uid;
-      allow update: if isAuthenticated() && resource.data.senderId == request.auth.uid;
-      allow delete: if isAuthenticated() && resource.data.senderId == request.auth.uid;
+      allow read: if isAuthenticated() &&
+        (
+          resource.data.senderId == request.auth.uid ||
+          resource.data.receiverId == request.auth.uid
+        );
+
+      allow create: if isAuthenticated() &&
+        request.resource.data.senderId == request.auth.uid;
+
+      allow update: if isAuthenticated() &&
+        resource.data.senderId == request.auth.uid;
+
+      allow delete: if isAuthenticated() &&
+        resource.data.senderId == request.auth.uid;
     }
 
-    // ==================== REVIEWS COLLECTION ====================
-    // Used for ride/driver reviews
+    // ---------------------------------------------------------------------
+    // Reviews
+    // ---------------------------------------------------------------------
+
     match /reviews/{reviewId} {
       allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && request.resource.data.reviewerId == request.auth.uid;
-      // Only the review author may edit — the reviewed person must NOT be able
-      // to modify or suppress a rating written about them.
-      allow update: if isAuthenticated() && resource.data.reviewerId == request.auth.uid;
-      allow delete: if isAuthenticated() && resource.data.reviewerId == request.auth.uid;
+
+      allow create: if isAuthenticated() &&
+        request.resource.data.reviewerId == request.auth.uid;
+
+      allow update: if isAuthenticated() &&
+        resource.data.reviewerId == request.auth.uid;
+
+      allow delete: if isAuthenticated() &&
+        resource.data.reviewerId == request.auth.uid;
     }
 
-    // ==================== EVENTS COLLECTION ====================
-    // Sport events created by users; participants join/leave
+    // ---------------------------------------------------------------------
+    // Events
+    // ---------------------------------------------------------------------
+
     match /events/{eventId} {
-      // Any authenticated user can browse events
       allow read: if isAuthenticated();
 
-      // Only the creator can create their own event
-      allow create: if isAuthenticated() && request.resource.data.creatorId == request.auth.uid;
+      allow create: if isAuthenticated() &&
+        request.resource.data.creatorId == request.auth.uid;
 
-      // Creator can fully update the event;
-      // any authenticated user can join/leave (participantIds array)
-      allow update: if isAuthenticated() && (
-        resource.data.creatorId == request.auth.uid ||
-        // Participants can only modify the participantIds array
-        request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['participantIds', 'updatedAt'])
-      );
+      allow update: if isAuthenticated() &&
+        (
+          resource.data.creatorId == request.auth.uid ||
 
-      // Only the creator can delete their event
-      allow delete: if isAuthenticated() && resource.data.creatorId == request.auth.uid;
+          isJoiningEvent() ||
+
+          isLeavingEvent() ||
+
+          (
+            request.auth.uid in resource.data.participantIds &&
+            isOwnRideStatusUpdate()
+          ) ||
+
+          (
+            request.auth.uid in resource.data.participantIds &&
+            isMeetupPinUpdate()
+          ) ||
+
+          (
+            request.auth.uid in resource.data.participantIds &&
+            isLinkedRideUpdate()
+          )
+        );
+
+      allow delete: if isAuthenticated() &&
+        resource.data.creatorId == request.auth.uid;
     }
 
-    // ==================== PAYMENTS COLLECTION ====================
-    // Payment records written by Cloud Functions (Stripe webhook)
+    // ---------------------------------------------------------------------
+    // Payments / Payouts
+    // ---------------------------------------------------------------------
+
     match /payments/{paymentId} {
-      allow read: if isAuthenticated() && (
-        resource.data.riderId == request.auth.uid ||
-        resource.data.driverId == request.auth.uid
-      );
-      // Only Cloud Functions write to this collection (via webhook)
+      allow read: if isAuthenticated() &&
+        (
+          resource.data.riderId == request.auth.uid ||
+          resource.data.driverId == request.auth.uid
+        );
+
       allow create, update, delete: if false;
     }
 
-    // ==================== PAYOUTS COLLECTION ====================
-    // Stripe payout records for drivers
     match /payouts/{payoutId} {
-      allow read: if isAuthenticated() && resource.data.driverId == request.auth.uid;
-      // Only Cloud Functions write payout records (via Stripe webhook)
+      allow read: if isAuthenticated() &&
+        resource.data.driverId == request.auth.uid;
+
       allow create, update, delete: if false;
     }
 
-    // ==================== DISPUTES COLLECTION ====================
-    // Ride/user disputes raised by passengers or drivers
+    // ---------------------------------------------------------------------
+    // Disputes
+    // ---------------------------------------------------------------------
+
     match /disputes/{disputeId} {
-      allow read: if isAuthenticated() && (
-        resource.data.complainantId == request.auth.uid ||
-        resource.data.respondentId == request.auth.uid
-      );
-      allow create: if isAuthenticated() && request.resource.data.complainantId == request.auth.uid;
-      // Complainant can only update their own complaint details;
-      // Respondent can ONLY add their response — no tampering with original complaint
-      allow update: if isAuthenticated() && (
+      allow read: if isAuthenticated() &&
         (
-          resource.data.complainantId == request.auth.uid &&
-          request.resource.data.diff(resource.data).affectedKeys()
-            .hasOnly(['description', 'attachmentUrls', 'updatedAt'])
-        ) ||
+          resource.data.complainantId == request.auth.uid ||
+          resource.data.respondentId == request.auth.uid
+        );
+
+      allow create: if isAuthenticated() &&
+        request.resource.data.complainantId == request.auth.uid;
+
+      allow update: if isAuthenticated() &&
         (
-          resource.data.respondentId == request.auth.uid &&
-          request.resource.data.diff(resource.data).affectedKeys()
-            .hasOnly(['respondentResponse', 'respondentEvidence', 'updatedAt'])
-        )
-      );
+          (
+            resource.data.complainantId == request.auth.uid &&
+            changedKeys().hasOnly([
+              'description',
+              'attachmentUrls',
+              'updatedAt'
+            ])
+          ) ||
+          (
+            resource.data.respondentId == request.auth.uid &&
+            changedKeys().hasOnly([
+              'respondentResponse',
+              'respondentEvidence',
+              'updatedAt'
+            ])
+          )
+        );
+
       allow delete: if false;
     }
 
-    // ==================== REPORTS COLLECTION ====================
-    // User/content reports for moderation
+    // ---------------------------------------------------------------------
+    // Reports
+    // ---------------------------------------------------------------------
+
     match /reports/{reportId} {
-      allow read: if isAuthenticated() && resource.data.reporterId == request.auth.uid;
-      allow create: if isAuthenticated() && request.resource.data.reporterId == request.auth.uid;
-      allow update, delete: if false; // Admin only
+      allow read: if isAuthenticated() &&
+        resource.data.reporterId == request.auth.uid;
+
+      allow create: if isAuthenticated() &&
+        request.resource.data.reporterId == request.auth.uid;
+
+      allow update, delete: if false;
     }
 
-    // ==================== SUPPORT TICKETS COLLECTION ====================
-    // User support tickets
+    // ---------------------------------------------------------------------
+    // Support tickets
+    // ---------------------------------------------------------------------
+
     match /support_tickets/{ticketId} {
-      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow read: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid;
+
+      allow create: if isAuthenticated() &&
+        request.resource.data.userId == request.auth.uid;
+
+      allow update: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid;
+
       allow delete: if false;
     }
   }

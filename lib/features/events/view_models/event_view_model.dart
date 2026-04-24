@@ -1203,7 +1203,12 @@ class EventDetailViewModel extends _$EventDetailViewModel {
                 eventTitle: event.title,
                 reason: reason,
               )
-              .catchError((_) {});
+              .catchError((e, st) {
+                TalkerService.error(
+                  'Failed to send cancellation notification to $uid',
+                  e,
+                );
+              });
         }
       }
 

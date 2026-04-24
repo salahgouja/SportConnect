@@ -97,7 +97,7 @@ class AppModalSheet {
     bool enableDrag = true,
     bool useRootNavigator = false,
     bool forceMaxHeight = false,
-    bool showDragHandle = true,
+    bool showDragHandle = false,
     bool showCloseButton = true,
     double maxHeightFactor = 0.9,
     Widget? stickyActionBar,
@@ -134,7 +134,7 @@ class AppModalSheet {
     bool enableDrag = true,
     bool useRootNavigator = false,
     bool forceMaxHeight = false,
-    bool showDragHandle = true,
+    bool showDragHandle = false,
     bool showCloseButton = true,
     Widget? stickyActionBar,
     Widget? leadingNavBarWidget,
@@ -168,7 +168,7 @@ class AppModalSheet {
     bool barrierDismissible = true,
     bool enableDrag = true,
     bool useRootNavigator = false,
-    bool showDragHandle = true,
+    bool showDragHandle = false,
     int initialPageIndex = 0,
   }) {
     return WoltModalSheet.show<T>(
@@ -193,7 +193,7 @@ class AppModalSheet {
     bool barrierDismissible = true,
     bool enableDrag = true,
     bool useRootNavigator = false,
-    bool showDragHandle = true,
+    bool showDragHandle = false,
     bool showCloseButton = true,
     double maxHeightFactor = 0.82,
   }) {

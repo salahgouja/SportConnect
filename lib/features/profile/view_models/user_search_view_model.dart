@@ -1,7 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:riverpod/src/providers/future_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
@@ -10,16 +8,15 @@ part 'user_search_view_model.g.dart';
 
 /// Search results provider — accepts the query as a family parameter
 /// so ephemeral search state stays local to the widget.
-final FutureProviderFamily<List<UserModel>, String> searchResultsProvider =
-    FutureProvider.family<List<UserModel>, String>((
-      ref,
-      query,
-    ) async {
-      if (query.isEmpty || query.length < 2) return [];
+@riverpod
+Future<List<UserModel>> searchResults(Ref ref, String query) async {
+  final trimmedQuery = query.trim();
 
-      final vm = ref.watch(profileActionsViewModelProvider.notifier);
-      return vm.searchUsers(query: query);
-    });
+  if (trimmedQuery.length < 2) return [];
+
+  final vm = ref.read(profileActionsViewModelProvider.notifier);
+  return vm.searchUsers(query: trimmedQuery);
+}
 
 class UserSearchUiState {
   const UserSearchUiState({this.query = '', this.searchFieldKey = 0});

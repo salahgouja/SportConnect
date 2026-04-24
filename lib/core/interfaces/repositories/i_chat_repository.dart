@@ -6,6 +6,21 @@ import 'package:sport_connect/features/messaging/models/message_model.dart';
 abstract class IChatRepository {
   // Chat Management
   Future<String> createChat(ChatModel chat);
+  Future<ChatModel> createRideChat({
+    required String rideId,
+    required String driverId,
+    required String driverName,
+    required String rideName,
+    String? driverPhoto,
+  });
+
+  Future<ChatModel> createEventChat({
+    required String eventId,
+    required String creatorId,
+    required String creatorName,
+    required String eventName,
+    String? creatorPhoto,
+  });
   Future<ChatModel?> getChatById(String chatId);
   Future<ChatModel?> getChatByRideId(String rideId);
   Future<ChatModel?> getOrCreateDirectChat(String userId1, String userId2);
@@ -73,4 +88,47 @@ abstract class IChatRepository {
     required File audioFile,
     required String fileName,
   });
+
+  Stream<List<MessageModel>> streamMessagesForUser({
+    required String chatId,
+    required String userId,
+    int limit = 50,
+  });
+
+  Future<void> clearChatHistoryForUser({
+    required String chatId,
+    required String userId,
+  });
+
+  Future<List<MessageModel>> loadMoreMessagesForUser({
+    required String chatId,
+    required String userId,
+    required DateTime beforeTimestamp,
+    int limit = 20,
+  });
+
+  Future<void> addParticipant({
+    required String chatId,
+    required ChatParticipant participant,
+  });
+
+  Future<void> ensureParticipant({
+    required String chatId,
+    required String userId,
+    String? displayName,
+    String? photoUrl,
+  });
+
+  Future<void> removeParticipant({
+    required String chatId,
+    required String userId,
+  });
+
+  Future<void> togglePin({
+    required String chatId,
+    required String userId,
+    required bool pin,
+  });
+
+  
 }
