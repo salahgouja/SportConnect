@@ -165,26 +165,28 @@ class _SliverHeader extends StatelessWidget {
           left: canPop ? 50 : 20,
           bottom: 60,
         ),
-        title: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              l10n.myTrips,
-              style: TextStyle(
-                fontSize: 17.sp,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
+        title: Text.rich(
+          TextSpan(
+            children: [
+              TextSpan(text: l10n.myTrips),
+              TextSpan(
+                text: '  ·  $rideCount ${l10n.navRides.toLowerCase()}',
+                style: TextStyle(
+                  fontSize: 10.sp,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white.withValues(alpha: 0.8),
+                ),
               ),
-            ),
-            Text(
-              '$rideCount ${l10n.navRides.toLowerCase()}',
-              style: TextStyle(
-                fontSize: 10.sp,
-                color: Colors.white.withValues(alpha: 0.8),
-              ),
-            ),
-          ],
+            ],
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: 17.sp,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+            height: 1.0,
+          ),
         ),
         background: Container(
           decoration: const BoxDecoration(

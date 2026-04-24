@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -782,9 +784,9 @@ Future<DriverStripeStatus> driverStripeStatus(Ref ref) async {
     }
 
     try {
-      final liveStatus = await stripeService.getAccountStatus(
-        accountId: accountId,
-      );
+      final liveStatus = await stripeService
+          .getAccountStatus(accountId: accountId)
+          .timeout(const Duration(seconds: 8));
 
       int balanceInCents(String centsKey, String legacyMajorKey) {
         final cents = liveStatus[centsKey] as num?;
@@ -820,9 +822,10 @@ Future<DriverStripeStatus> driverStripeStatus(Ref ref) async {
         detailsSubmitted: liveDetailsSubmitted,
         availableBalanceInCents: liveAvailableBalance,
         pendingBalanceInCents: livePendingBalance,
+        currency: (liveStatus['currency'] as String?) ?? 'EUR',
         stripeAccountId: accountId,
       );
-    } catch (e, st) {
+    } catch (e) {
       TalkerService.warning(
         'Live Stripe status fetch failed, falling back to cached status: $e',
       );
@@ -843,6 +846,7 @@ Future<DriverStripeStatus> driverStripeStatus(Ref ref) async {
         detailsSubmitted: cachedDetailsSubmitted,
         availableBalanceInCents: connectedAccount?.availableBalanceInCents ?? 0,
         pendingBalanceInCents: connectedAccount?.pendingBalanceInCents ?? 0,
+        currency: connectedAccount?.defaultCurrency ?? 'EUR',
         stripeAccountId: accountId,
       );
     }

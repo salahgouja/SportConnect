@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -31,15 +32,6 @@ class DriverStatsRepository implements IDriverStatsRepository {
             RideModel.fromJson({...snap.data()!, 'id': snap.id}),
         toFirestore: (ride, _) => ride.toJson(),
       );
-
-  CollectionReference<EarningsTransaction> get _transactionsCollection =>
-      _firestore
-          .collection(AppConstants.transactionsCollection)
-          .withConverter<EarningsTransaction>(
-            fromFirestore: (snap, _) =>
-                EarningsTransaction.fromJson({...snap.data()!, 'id': snap.id}),
-            toFirestore: (tx, _) => tx.toJson(),
-          );
 
   CollectionReference<RideBooking> get _rideBookingsCollection => _firestore
       .collection(AppConstants.bookingsCollection)
@@ -128,14 +120,132 @@ class DriverStatsRepository implements IDriverStatsRepository {
   /// Get earnings transactions
   @override
   Stream<List<EarningsTransaction>> streamTransactions(String driverId) {
-    return _transactionsCollection
-        .where('driverId', isEqualTo: driverId)
-        .orderBy('createdAt', descending: true)
-        .limit(50)
-        .snapshots()
-        .map((snapshot) {
-          return snapshot.docs.map((doc) => doc.data()).toList();
-        });
+    final controller = StreamController<List<EarningsTransaction>>();
+    StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? paymentsSub;
+    StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? payoutsSub;
+    var paymentTransactions = <EarningsTransaction>[];
+    var payoutTransactions = <EarningsTransaction>[];
+
+    void emit() {
+      if (controller.isClosed) return;
+      final all = <EarningsTransaction>[
+        ...paymentTransactions,
+        ...payoutTransactions,
+      ]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      controller.add(all.take(50).toList());
+    }
+
+    controller.onListen = () {
+      paymentsSub = _firestore
+          .collection(AppConstants.paymentsCollection)
+          .where('driverId', isEqualTo: driverId)
+          .where(
+            'status',
+            whereIn: const ['succeeded', 'refunded', 'partiallyRefunded'],
+          )
+          .orderBy('createdAt', descending: true)
+          .limit(50)
+          .snapshots()
+          .listen((snapshot) {
+            paymentTransactions = snapshot.docs
+                .map(_paymentDocToEarningsTransaction)
+                .toList();
+            emit();
+          }, onError: controller.addError);
+
+      payoutsSub = _firestore
+          .collection(AppConstants.payoutsCollection)
+          .where('driverId', isEqualTo: driverId)
+          .orderBy('createdAt', descending: true)
+          .limit(50)
+          .snapshots()
+          .listen((snapshot) {
+            payoutTransactions = snapshot.docs
+                .map(_payoutDocToEarningsTransaction)
+                .toList();
+            emit();
+          }, onError: controller.addError);
+    };
+
+    controller.onCancel = () async {
+      await paymentsSub?.cancel();
+      await payoutsSub?.cancel();
+    };
+
+    return controller.stream;
+  }
+
+  EarningsTransaction _paymentDocToEarningsTransaction(
+    QueryDocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
+    final data = doc.data();
+    final status = data['status'] as String? ?? 'succeeded';
+    final isRefund = status == 'refunded' || status == 'partiallyRefunded';
+    final amountInCents = _centsValue(
+      data,
+      centsKey: 'driverEarningsInCents',
+      legacyMajorKey: 'driverEarnings',
+    );
+    final rideId = data['rideId'] as String? ?? '';
+    final riderName = data['riderName'] as String? ?? '';
+    final description = isRefund
+        ? 'Ride refund${riderName.isEmpty ? '' : ' - $riderName'}'
+        : 'Ride payment${riderName.isEmpty ? '' : ' - $riderName'}';
+
+    return EarningsTransaction(
+      id: doc.id,
+      rideId: rideId,
+      amountInCents: isRefund ? -amountInCents : amountInCents,
+      description: description,
+      createdAt:
+          _dateValue(data['completedAt']) ??
+          _dateValue(data['createdAt']) ??
+          DateTime.now(),
+      type: isRefund
+          ? EarningsTransactionType.refund
+          : EarningsTransactionType.ride,
+    );
+  }
+
+  EarningsTransaction _payoutDocToEarningsTransaction(
+    QueryDocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
+    final data = doc.data();
+    final amountInCents = _centsValue(
+      data,
+      centsKey: 'amountInCents',
+      legacyMajorKey: 'amount',
+    );
+    final method = data['method'] as String? ?? 'standard';
+    final status = data['status'] as String? ?? 'pending';
+
+    return EarningsTransaction(
+      id: doc.id,
+      rideId: '',
+      amountInCents: -amountInCents,
+      description:
+          '${method == 'instant' ? 'Instant payout' : 'Payout'} - $status',
+      createdAt: _dateValue(data['createdAt']) ?? DateTime.now(),
+      type: EarningsTransactionType.payout,
+    );
+  }
+
+  int _centsValue(
+    Map<String, dynamic> data, {
+    required String centsKey,
+    required String legacyMajorKey,
+  }) {
+    final cents = data[centsKey];
+    if (cents is num) return cents.round();
+    final major = data[legacyMajorKey];
+    if (major is num) return (major * 100).round();
+    return 0;
+  }
+
+  DateTime? _dateValue(Object? value) {
+    if (value is Timestamp) return value.toDate();
+    if (value is DateTime) return value;
+    return null;
   }
 
   /// Accept a ride request

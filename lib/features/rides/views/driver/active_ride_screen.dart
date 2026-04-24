@@ -908,7 +908,8 @@ class _DriverActiveRideScreenState
                       Icon(Icons.speed, size: 14.sp, color: Colors.white),
                       SizedBox(width: 4.w),
                       Text(
-                        rideState.currentSpeedKmh < 2
+                        !rideState.currentSpeedKmh.isFinite ||
+                                rideState.currentSpeedKmh < 2
                             ? 'Parked'
                             : '${rideState.currentSpeedKmh.toInt()} km/h',
                         style: TextStyle(

@@ -2106,6 +2106,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
         locationError: null,
       );
 
+      _publishLiveLocation(position, force: true);
       _startLocationStream();
       _updateDynamicEta(state.currentRide);
       return ActiveRideLocationInitResult.ready;
@@ -2149,30 +2150,8 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
               locationError: null,
             );
 
-            // Write to RTDB at most once every 3 seconds.
-            // RTDB is billed per GB transferred, not per write — no backoff needed.
             final now = DateTime.now();
-            if (_lastLocationWriteTime == null ||
-                now.difference(_lastLocationWriteTime!).inSeconds >=
-                    _writeIntervalSeconds) {
-              _lastLocationWriteTime = now;
-              unawaited(
-                ref
-                    .read(rideActionsViewModelProvider.notifier)
-                    .updateLiveLocation(
-                      rideId,
-                      position.latitude,
-                      position.longitude,
-                      heading: _sanitizeHeading(position.heading),
-                    )
-                    .catchError((e, st) {
-                      TalkerService.error(
-                        'Failed to write live location update',
-                        e,
-                      );
-                    }),
-              );
-            }
+            _publishLiveLocation(position);
 
             // G2: Debounce ETA + off-route checks to max 1/sec
             if (_lastEtaUpdateTime == null ||
@@ -2195,6 +2174,48 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
             );
           },
         );
+  }
+
+  void _publishLiveLocation(Position position, {bool force = false}) {
+    final now = DateTime.now();
+    if (!force &&
+        _lastLocationWriteTime != null &&
+        now.difference(_lastLocationWriteTime!).inSeconds <
+            _writeIntervalSeconds) {
+      return;
+    }
+
+    _lastLocationWriteTime = now;
+    final heading = _sanitizeHeading(position.heading);
+
+    unawaited(
+      _persistPendingLocation(rideId, position.latitude, position.longitude),
+    );
+    unawaited(
+      ref
+          .read(rideActionsViewModelProvider.notifier)
+          .updateLiveLocation(
+            rideId,
+            position.latitude,
+            position.longitude,
+            heading: heading,
+          )
+          .then((_) {
+            if (!ref.mounted) return;
+            _clearPendingWrites();
+            unawaited(_clearPersistedLocation());
+          })
+          .catchError((Object e, StackTrace st) {
+            if (ref.mounted && state.pendingLocationWrites == 0) {
+              _incrementPendingWrites();
+            }
+            TalkerService.error(
+              'Failed to write live location update',
+              e,
+              st,
+            );
+          }),
+    );
   }
 
   void toggleNavigationExpanded() {
@@ -3037,6 +3058,8 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
     final totalDuration =
         ride.durationMinutes ?? ride.route.durationMinutes ?? 0;
     if (!remainingDistance.isFinite ||
+        !totalDistance.isFinite ||
+        !totalDuration.isFinite ||
         totalDistance <= 0 ||
         totalDuration <= 0) {
       _clearDynamicEta();
@@ -3143,7 +3166,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
       );
     }
     final remainingRouteKm = cumulativeFromDriver.last;
-    if (remainingRouteKm <= 0) return;
+    if (!remainingRouteKm.isFinite || remainingRouteKm <= 0) return;
 
     // Use the live remaining ETA when available; fall back to proportional estimate.
     final remainingEtaMin =
@@ -3152,7 +3175,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
                 ride.route.durationMinutes ??
                 0)
             .toDouble();
-    if (remainingEtaMin <= 0) return;
+    if (!remainingEtaMin.isFinite || remainingEtaMin <= 0) return;
 
     final etas = <int, int>{};
     for (final wp in ride.route.waypoints) {
@@ -3179,6 +3202,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
       }
       final distToWp = cumulativeFromDriver[idxFromDriver];
       final fraction = (distToWp / remainingRouteKm).clamp(0.0, 1.0);
+      if (!fraction.isFinite) continue;
       etas[wp.order] = (fraction * remainingEtaMin).round();
     }
 
@@ -3552,7 +3576,7 @@ Stream<RideBooking?> bookingStream(Ref ref, String bookingId) {
 ///
 /// Used on the pending-booking screen where the passenger polls for
 /// status changes before being auto-navigated.
-@riverpod
+@Riverpod(keepAlive: true)
 Stream<List<RideBooking>> bookingsByPassenger(
   Ref ref,
   String passengerId,

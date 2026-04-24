@@ -185,16 +185,10 @@ class RideService extends _$RideService {
     try {
       final xp = calculateXpReward(ride);
       final distanceKm = ride.route.distanceKm ?? 0.0;
-      final earningsInCents =
+      final estimatedFareInCents =
           ride.pricing.pricePerSeatInCents.amountInCents * ride.capacity.booked;
-
-      final statsRepo = ref.read(driverStatsRepositoryProvider);
-      await statsRepo.recordRideCompletion(
-        driverId: ride.driverId,
-        earningsInCents: earningsInCents,
-        distanceKm: distanceKm,
-      );
-      if (!ref.mounted) return;
+      // Driver earnings are owned by Stripe webhook aggregation from the
+      // payments collection. Do not write gross fare estimates here.
 
       final profileRepo = ref.read(profileRepositoryProvider);
       final notificationRepo = ref.read(notificationRepositoryProvider);
@@ -269,7 +263,7 @@ class RideService extends _$RideService {
       }
 
       TalkerService.info(
-        'Ride $rideId completed. XP awarded: $xp, earnings: ${earningsInCents / 100}',
+        'Ride $rideId completed. XP awarded: $xp, estimated fare: ${estimatedFareInCents / 100}',
       );
     } catch (e, st) {
       // Stats failure should NOT roll back the completion
@@ -291,8 +285,9 @@ class RideService extends _$RideService {
     var xp = 50; // Base XP
 
     // Distance bonus
-    if (ride.route.distanceKm != null) {
-      xp += (ride.route.distanceKm! / 10).round();
+    final distanceKm = ride.route.distanceKm;
+    if (distanceKm != null && distanceKm.isFinite && distanceKm > 0) {
+      xp += (distanceKm / 10).round();
     }
 
     // Recurring ride bonus

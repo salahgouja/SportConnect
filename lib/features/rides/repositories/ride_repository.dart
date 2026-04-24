@@ -733,8 +733,13 @@ class RideRepository implements IRideRepository {
     // Register server-side auto-remove once per ride session.
     // If the device disconnects ungracefully the RTDB node is cleaned up automatically.
     if (!_disconnectRegistered.contains(rideId)) {
-      await rtdbRef.onDisconnect().remove();
-      _disconnectRegistered.add(rideId);
+      try {
+        await rtdbRef.onDisconnect().remove();
+        _disconnectRegistered.add(rideId);
+      } catch (_) {
+        // Do not block the live location write if disconnect cleanup cannot be
+        // registered yet. The next update will try again.
+      }
     }
     await rtdbRef.update({
       'lat': latitude,

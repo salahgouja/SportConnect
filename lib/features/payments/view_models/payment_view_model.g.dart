@@ -1172,7 +1172,7 @@ final class DriverStripeStatusProvider
 }
 
 String _$driverStripeStatusHash() =>
-    r'3d3b06e77c769beb4851774b77f0e30ff5d2d0ee';
+    r'3eb01e9dafedd1744a51ab6b251ad5855aade3e6';
 
 @ProviderFor(currentDriverConnectedAccount)
 final currentDriverConnectedAccountProvider =

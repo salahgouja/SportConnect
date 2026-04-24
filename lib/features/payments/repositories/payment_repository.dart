@@ -215,9 +215,13 @@ class PaymentRepository implements IPaymentRepository {
     String legacyMajorUnitsKey,
   ) {
     final cents = data[centsKey];
-    if (cents is num) return cents.toInt();
-
     final majorUnits = data[legacyMajorUnitsKey];
+    if (cents is num) {
+      if (cents != 0 || majorUnits is! num || majorUnits == 0) {
+        return cents.toInt();
+      }
+    }
+
     if (majorUnits is num) return (majorUnits * 100).round();
 
     return 0;

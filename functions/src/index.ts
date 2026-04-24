@@ -607,15 +607,22 @@ async function recomputeDriverStats(
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const yearStart = new Date(now.getFullYear(), 0, 1);
 
-  // Only scan this year — avoids a full collection scan that grows unbounded.
-  // Time-windowed buckets (today/week/month/year) are fully derived from this set.
-  const recentSnap = await db
+  // Recompute from canonical succeeded payments so webhook retries and refund
+  // transitions are idempotent. Store cents as canonical fields for Flutter,
+  // and legacy major-unit fields for older app versions.
+  const paymentsSnap = await db
     .collection("payments")
     .where("driverId", "==", driverId)
     .where("status", "==", "succeeded")
-    .where("createdAt", ">=", Timestamp.fromDate(yearStart))
     .get();
 
+  let totalEarningsInCents = 0;
+  let totalPlatformFeesInCents = 0;
+  let totalStripeFeesInCents = 0;
+  let earningsTodayInCents = 0;
+  let earningsThisWeekInCents = 0;
+  let earningsThisMonthInCents = 0;
+  let earningsThisYearInCents = 0;
   let totalPlatformFees = 0;
   let totalStripeFees = 0;
   let earningsToday = 0;
@@ -625,30 +632,54 @@ async function recomputeDriverStats(
   let ridesToday = 0;
   let ridesThisWeek = 0;
   let ridesThisMonth = 0;
+  let ridesThisYear = 0;
+  let lastRideAt: Date | null = null;
 
-  for (const doc of recentSnap.docs) {
+  for (const doc of paymentsSnap.docs) {
     const data = doc.data();
-    const earnings = (data.driverEarnings as number) ?? 0;
-    const platformFee = (data.platformFee as number) ?? 0;
-    const stripeFee = (data.stripeFee as number) ?? 0;
+    const earningsCents =
+      finiteNumber(data.driverEarningsInCents) ??
+      Math.round((finiteNumber(data.driverEarnings) ?? 0) * 100);
+    const platformFeeCents =
+      finiteNumber(data.platformFeeInCents) ??
+      Math.round((finiteNumber(data.platformFee) ?? 0) * 100);
+    const stripeFeeCents =
+      finiteNumber(data.stripeFeeInCents) ??
+      Math.round((finiteNumber(data.stripeFee) ?? 0) * 100);
+    const earnings = earningsCents / 100;
+    const platformFee = platformFeeCents / 100;
+    const stripeFee = stripeFeeCents / 100;
     const completedAt =
       (data.completedAt as Timestamp | null)?.toDate() ??
       (data.createdAt as Timestamp | null)?.toDate();
 
+    totalEarningsInCents += earningsCents;
+    totalPlatformFeesInCents += platformFeeCents;
+    totalStripeFeesInCents += stripeFeeCents;
     totalPlatformFees += platformFee;
     totalStripeFees += stripeFee;
-    earningsThisYear += earnings;
 
     if (completedAt) {
+      if (!lastRideAt || completedAt > lastRideAt) {
+        lastRideAt = completedAt;
+      }
+      if (completedAt >= yearStart) {
+        earningsThisYearInCents += earningsCents;
+        earningsThisYear += earnings;
+        ridesThisYear += 1;
+      }
       if (completedAt >= monthStart) {
+        earningsThisMonthInCents += earningsCents;
         earningsThisMonth += earnings;
         ridesThisMonth += 1;
       }
       if (completedAt >= weekStart) {
+        earningsThisWeekInCents += earningsCents;
         earningsThisWeek += earnings;
         ridesThisWeek += 1;
       }
       if (completedAt >= todayStart) {
+        earningsTodayInCents += earningsCents;
         earningsToday += earnings;
         ridesToday += 1;
       }
@@ -657,13 +688,19 @@ async function recomputeDriverStats(
 
   const statsRef = db.collection("driver_stats").doc(driverId);
 
-  // Time-windowed fields are fully recomputed each call.
-  // totalEarnings / totalRides use FieldValue.increment so all-time data
-  // is never lost across year boundaries.
   const updates: Record<string, unknown> = {
     driverId,
+    totalEarningsInCents,
+    totalPlatformFeesInCents,
+    totalStripeFeesInCents,
+    earningsTodayInCents,
+    earningsThisWeekInCents,
+    earningsThisMonthInCents,
+    earningsThisYearInCents,
+    totalRides: paymentsSnap.size,
     totalPlatformFees,
     totalStripeFees,
+    totalEarnings: totalEarningsInCents / 100,
     earningsToday,
     earningsThisWeek,
     earningsThisMonth,
@@ -671,14 +708,12 @@ async function recomputeDriverStats(
     ridesToday,
     ridesThisWeek,
     ridesThisMonth,
+    ridesThisYear,
     lastUpdatedAt: FieldValue.serverTimestamp(),
   };
 
-  if (earningsDelta !== undefined) {
-    updates.totalEarnings = FieldValue.increment(earningsDelta);
-  }
-  if (ridesDelta !== undefined) {
-    updates.totalRides = FieldValue.increment(ridesDelta);
+  if (lastRideAt) {
+    updates.lastRideAt = Timestamp.fromDate(lastRideAt);
   }
 
   await statsRef.set(updates, { merge: true });
@@ -687,6 +722,8 @@ async function recomputeDriverStats(
     driverId,
     earningsDelta,
     ridesDelta,
+    totalEarningsInCents,
+    totalRides: paymentsSnap.size,
   });
 }
 
@@ -1957,6 +1994,19 @@ export const createInstantPayout = onCall(
         : null,
     });
 
+    await db
+      .collection("driver_connected_accounts")
+      .doc(request.auth.uid)
+      .set(
+        {
+          availableBalance: FieldValue.increment(-(payoutAmountInCents / 100)),
+          availableBalanceInCents: FieldValue.increment(-payoutAmountInCents),
+          lastPayoutAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      );
+
     return {
       payoutId: payoutRef.id,
       stripePayoutId: payout.id,
@@ -2428,6 +2478,11 @@ export const stripeWebhook = onRequest(
       switch (event.type) {
         case "payment_intent.succeeded": {
           const pi = event.data.object as StripePaymentIntent;
+          const rideId = pi.metadata?.rideId;
+          const riderId = pi.metadata?.riderId;
+          const driverId = pi.metadata?.driverId;
+          const bookingId = pi.metadata?.bookingId;
+
           let payments = await db
             .collection("payments")
             .where("paymentIntentId", "==", pi.id)
@@ -2436,6 +2491,47 @@ export const stripeWebhook = onRequest(
             payments = await db
               .collection("payments")
               .where("stripePaymentIntentId", "==", pi.id)
+              .get();
+          }
+
+          if (payments.empty && rideId && riderId && driverId) {
+            const amountInCents =
+              finiteNumber(pi.amount_received) ??
+              finiteNumber(pi.amount) ??
+              0;
+            const { platformFee, driverAmount } = calculateFees(amountInCents);
+            await db
+              .collection("payments")
+              .doc(pi.id)
+              .set(
+                {
+                  paymentIntentId: pi.id,
+                  stripePaymentIntentId: pi.id,
+                  bookingId: bookingId ?? "",
+                  rideId,
+                  driverId,
+                  riderId,
+                  riderName: "",
+                  driverName: "",
+                  amount: amountInCents / 100,
+                  amountInCents,
+                  currency: pi.currency ?? "eur",
+                  platformFee: platformFee / 100,
+                  platformFeeInCents: platformFee,
+                  driverEarnings: driverAmount / 100,
+                  driverEarningsInCents: driverAmount,
+                  stripeFee: 0,
+                  stripeFeeInCents: 0,
+                  status: "pending",
+                  createdAt: FieldValue.serverTimestamp(),
+                  updatedAt: FieldValue.serverTimestamp(),
+                  metadataRecoveredFromWebhook: true,
+                },
+                { merge: true },
+              );
+            payments = await db
+              .collection("payments")
+              .where("paymentIntentId", "==", pi.id)
               .get();
           }
 
@@ -2496,11 +2592,6 @@ export const stripeWebhook = onRequest(
             });
           }
 
-          const rideId = pi.metadata?.rideId;
-          const riderId = pi.metadata?.riderId;
-          const driverId = pi.metadata?.driverId;
-          const bookingId = pi.metadata?.bookingId;
-
           if (rideId && riderId) {
             let bookingDoc:
               | QueryDocumentSnapshot<DocumentData>
@@ -2512,9 +2603,13 @@ export const stripeWebhook = onRequest(
                 .collection("bookings")
                 .doc(bookingId)
                 .get();
+              const exactBookingStatus = exactBooking.data()?.status as
+                | string
+                | undefined;
               if (
                 exactBooking.exists &&
-                exactBooking.data()?.status === "accepted" &&
+                exactBookingStatus !== "cancelled" &&
+                exactBookingStatus !== "rejected" &&
                 !exactBooking.data()?.paidAt
               ) {
                 bookingDoc = exactBooking;
@@ -2548,7 +2643,9 @@ export const stripeWebhook = onRequest(
             if (bookingDoc) {
               await bookingDoc.ref.update({
                 paymentIntentId: pi.id,
+                paymentStatus: "paid",
                 paidAt: FieldValue.serverTimestamp(),
+                updatedAt: FieldValue.serverTimestamp(),
               });
             }
           }
@@ -2611,6 +2708,121 @@ export const stripeWebhook = onRequest(
               // Don't rethrow — stats update is best-effort, payment already succeeded
             }
           }
+          break;
+        }
+
+        case "charge.succeeded":
+        case "charge.updated": {
+          const charge = event.data.object as StripeCharge;
+          if (charge.status !== "succeeded" || !charge.paid) {
+            break;
+          }
+
+          const rideId = charge.metadata?.rideId;
+          const riderId = charge.metadata?.riderId;
+          const driverId = charge.metadata?.driverId;
+          const bookingId = charge.metadata?.bookingId;
+          const paymentIntentId = stripeObjectId(charge.payment_intent);
+
+          // Connected-account destination payment events do not carry the ride
+          // metadata and should not create duplicate app payment records.
+          if (!rideId || !riderId || !driverId) {
+            break;
+          }
+
+          let payments = paymentIntentId
+            ? await db
+                .collection("payments")
+                .where("paymentIntentId", "==", paymentIntentId)
+                .get()
+            : await db
+                .collection("payments")
+                .where("stripeChargeId", "==", charge.id)
+                .get();
+
+          if (payments.empty && paymentIntentId) {
+            payments = await db
+              .collection("payments")
+              .where("stripePaymentIntentId", "==", paymentIntentId)
+              .get();
+          }
+
+          if (payments.empty) {
+            const amountInCents =
+              finiteNumber(charge.amount_captured) ??
+              finiteNumber(charge.amount) ??
+              0;
+            const { platformFee, driverAmount } = calculateFees(amountInCents);
+            const paymentDocId = paymentIntentId ?? charge.id;
+
+            await db
+              .collection("payments")
+              .doc(paymentDocId)
+              .set(
+                {
+                  paymentIntentId: paymentIntentId ?? "",
+                  stripePaymentIntentId: paymentIntentId ?? "",
+                  bookingId: bookingId ?? "",
+                  rideId,
+                  driverId,
+                  riderId,
+                  riderName: "",
+                  driverName: "",
+                  amount: amountInCents / 100,
+                  amountInCents,
+                  currency: charge.currency ?? "eur",
+                  platformFee: platformFee / 100,
+                  platformFeeInCents: platformFee,
+                  driverEarnings: driverAmount / 100,
+                  driverEarningsInCents: driverAmount,
+                  stripeFee: 0,
+                  stripeFeeInCents: 0,
+                  status: "pending",
+                  createdAt: FieldValue.serverTimestamp(),
+                  updatedAt: FieldValue.serverTimestamp(),
+                  metadataRecoveredFromWebhook: true,
+                },
+                { merge: true },
+              );
+
+            payments = await db
+              .collection("payments")
+              .where("__name__", "==", paymentDocId)
+              .get();
+          }
+
+          for (const doc of payments.docs) {
+            await doc.ref.update({
+              status: "succeeded",
+              completedAt: FieldValue.serverTimestamp(),
+              updatedAt: FieldValue.serverTimestamp(),
+              stripeChargeId: charge.id,
+              ...(paymentIntentId && { paymentIntentId }),
+              ...(paymentIntentId && { stripePaymentIntentId: paymentIntentId }),
+              ...(stripeObjectId(charge.transfer) && {
+                stripeTransferId: stripeObjectId(charge.transfer),
+              }),
+              ...(stripeObjectId(charge.balance_transaction) && {
+                stripeBalanceTransactionId: stripeObjectId(
+                  charge.balance_transaction,
+                ),
+              }),
+            });
+          }
+
+          if (bookingId) {
+            await db.collection("bookings").doc(bookingId).set(
+              {
+                ...(paymentIntentId && { paymentIntentId }),
+                paymentStatus: "paid",
+                paidAt: FieldValue.serverTimestamp(),
+                updatedAt: FieldValue.serverTimestamp(),
+              },
+              { merge: true },
+            );
+          }
+
+          await recomputeDriverStats(db, driverId);
           break;
         }
 
@@ -2825,6 +3037,21 @@ export const stripeWebhook = onRequest(
           const driverId = payoutsSnap.docs[0]?.data().driverId as
             | string
             | undefined;
+          const wasAlreadyFailed =
+            payoutsSnap.docs[0]?.data().status === "failed";
+          if (driverId && !wasAlreadyFailed) {
+            await db
+              .collection("driver_connected_accounts")
+              .doc(driverId)
+              .set(
+                {
+                  availableBalance: FieldValue.increment(po.amount / 100),
+                  availableBalanceInCents: FieldValue.increment(po.amount),
+                  updatedAt: FieldValue.serverTimestamp(),
+                },
+                { merge: true },
+              );
+          }
           if (driverId) {
             await sendPushToUser(
               driverId,

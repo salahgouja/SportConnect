@@ -36,7 +36,32 @@ abstract class DriverStats with _$DriverStats {
   }) = _DriverStats;
 
   factory DriverStats.fromJson(Map<String, dynamic> json) =>
-      _$DriverStatsFromJson(json);
+      _$DriverStatsFromJson(_normalizeDriverStatsJson(json));
+}
+
+Map<String, dynamic> _normalizeDriverStatsJson(Map<String, dynamic> json) {
+  final normalized = Map<String, dynamic>.from(json);
+
+  int majorUnitsToCents(String key) {
+    final value = normalized[key];
+    if (value is num) return (value * 100).round();
+    return 0;
+  }
+
+  void fillCents(String centsKey, String legacyMajorKey) {
+    final current = normalized[centsKey];
+    final legacy = majorUnitsToCents(legacyMajorKey);
+    if (current == null || (current is num && current == 0 && legacy > 0)) {
+      normalized[centsKey] = legacy;
+    }
+  }
+
+  fillCents('totalEarningsInCents', 'totalEarnings');
+  fillCents('earningsTodayInCents', 'earningsToday');
+  fillCents('earningsThisWeekInCents', 'earningsThisWeek');
+  fillCents('earningsThisMonthInCents', 'earningsThisMonth');
+
+  return normalized;
 }
 
 /// Earnings Transaction - converted to Freezed

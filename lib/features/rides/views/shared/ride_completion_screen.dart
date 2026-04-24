@@ -44,6 +44,17 @@ class RideCompletionScreen extends ConsumerStatefulWidget {
 }
 
 class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
+  int? _averageSpeedKmh(RideModel ride) {
+    final distanceKm = ride.route.distanceKm;
+    final durationMinutes = ride.route.durationMinutes;
+    if (distanceKm == null || durationMinutes == null) return null;
+    if (!distanceKm.isFinite || durationMinutes <= 0) return null;
+
+    final speed = distanceKm / (durationMinutes / 60);
+    if (!speed.isFinite || speed < 0) return null;
+    return speed.round();
+  }
+
   @override
   Widget build(BuildContext context) {
     final rideAsync = ref.watch(rideStreamProvider(widget.rideId));
@@ -689,6 +700,8 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
     AppLocalizations l10n,
     List<RideBooking> bookings,
   ) {
+    final averageSpeedKmh = _averageSpeedKmh(ride);
+
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 24.w),
       padding: EdgeInsets.all(20.w),
@@ -777,12 +790,11 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
                     ride.route.formattedDuration,
                     'Duration',
                   ),
-                if (ride.route.durationMinutes != null &&
-                    ride.route.distanceKm != null) ...[
+                if (averageSpeedKmh != null) ...[
                   _buildStatDivider(),
                   _buildStatItem(
                     Icons.speed_rounded,
-                    '${(ride.route.distanceKm! / (ride.route.durationMinutes! / 60)).round()} km/h',
+                    '$averageSpeedKmh km/h',
                     'Avg Speed',
                   ),
                 ],

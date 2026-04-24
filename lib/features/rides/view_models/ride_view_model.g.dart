@@ -890,7 +890,7 @@ final class ActiveRideViewModelProvider
 }
 
 String _$activeRideViewModelHash() =>
-    r'35cfc777337438bf0b24d9c2d1b17ba80ef16425';
+    r'3aae9a746d805b72d58ee59bf97446e64ba548c2';
 
 /// ViewModel for active-ride screens — views watch only this provider.
 
@@ -1626,7 +1626,7 @@ final class BookingsByPassengerProvider
   }) : super(
          retry: null,
          name: r'bookingsByPassengerProvider',
-         isAutoDispose: true,
+         isAutoDispose: false,
          dependencies: null,
          $allTransitiveDependencies: null,
        );
@@ -1665,7 +1665,7 @@ final class BookingsByPassengerProvider
 }
 
 String _$bookingsByPassengerHash() =>
-    r'afc623defdbefd8caf3040ab85d8a7ba136c1d83';
+    r'2f3d4ed2fd70538b3331b6145fadf387f4590dc7';
 
 /// Real-time stream of all bookings for a given passenger.
 ///
@@ -1680,7 +1680,7 @@ final class BookingsByPassengerFamily extends $Family
         name: r'bookingsByPassengerProvider',
         dependencies: null,
         $allTransitiveDependencies: null,
-        isAutoDispose: true,
+        isAutoDispose: false,
       );
 
   /// Real-time stream of all bookings for a given passenger.

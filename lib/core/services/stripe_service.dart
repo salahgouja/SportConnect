@@ -169,8 +169,9 @@ class StripeService {
             buttonType: PlatformButtonType.book,
           ),
           returnURL: 'flutterstripe://redirect',
-          // Allow SEPA direct debit and other delayed payment methods
-          allowsDelayedPaymentMethods: true,
+          // Active rides need immediate confirmation. Delayed methods can make
+          // PaymentSheet return before the webhook has actually marked paid.
+          allowsDelayedPaymentMethods: false,
           // Collect billing details for fraud prevention
           billingDetailsCollectionConfiguration:
               const BillingDetailsCollectionConfiguration(

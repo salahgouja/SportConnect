@@ -131,11 +131,16 @@ class DriverEarningsScreen extends ConsumerWidget {
       body: RefreshIndicator.adaptive(
         onRefresh: () async {
           ref.invalidate(driverStripeStatusProvider);
-          await Future.wait<Object?>([
-            ref.refresh(driverStatsProvider.future),
-            ref.refresh(earningsTransactionsProvider.future),
-            ref.read(driverStripeStatusProvider.future),
-          ]);
+          await Future.wait<Object?>(
+            [
+              ref.refresh(driverStatsProvider.future),
+              ref.refresh(earningsTransactionsProvider.future),
+              ref
+                  .read(driverStripeStatusProvider.future)
+                  .timeout(const Duration(seconds: 8))
+                  .catchError((_) => const DriverStripeStatus()),
+            ],
+          );
           ref.invalidate(currentDriverConnectedAccountProvider);
         },
         child: CustomScrollView(
@@ -207,32 +212,6 @@ class DriverEarningsScreen extends ConsumerWidget {
                     context,
                     driverStats,
                     selectedPeriod,
-                  ),
-                ),
-                SliverToBoxAdapter(
-                  child: transactions.when(
-                    data: (txList) {
-                      if (txList.isEmpty) return const SizedBox.shrink();
-                      final monthlyMap = <String, int>{};
-                      for (final tx in txList) {
-                        final key = DateFormat('MMM yyyy').format(tx.createdAt);
-                        monthlyMap[key] =
-                            (monthlyMap[key] ?? 0) +
-                            (tx.amountInCents / 100).toInt();
-                      }
-                      final monthlyCosts = monthlyMap.entries
-                          .map((e) => MonthlyCost(e.key, e.value))
-                          .toList();
-                      return Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 20.w,
-                          vertical: 8.h,
-                        ),
-                        child: RideCostHistoryChart(data: monthlyCosts),
-                      ).animate().fadeIn(delay: 350.ms).slideY(begin: 0.1);
-                    },
-                    loading: () => const SizedBox.shrink(),
-                    error: (_, _) => const SizedBox.shrink(),
                   ),
                 ),
               ],
@@ -720,18 +699,94 @@ class DriverEarningsScreen extends ConsumerWidget {
     );
   }
 
+  Widget _buildStripeBalanceLine(String label, int amountInCents, Color color) {
+    return Row(
+      children: [
+        Container(
+          width: 8.w,
+          height: 8.w,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        SizedBox(width: 10.w),
+        Expanded(
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(fontSize: 12.sp, color: AppColors.textSecondary),
+          ),
+        ),
+        Text(
+          '€${(amountInCents / 100).toStringAsFixed(2)}',
+          style: TextStyle(
+            fontSize: 12.sp,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          ),
+        ),
+      ],
+    );
+  }
+
   /// Build the payout section with Stripe integration
   Widget _buildPayoutSection(BuildContext context, WidgetRef ref) {
     final connectedAccount = ref.watch(currentDriverConnectedAccountProvider);
+    final liveStatus = ref.watch(driverStripeStatusProvider);
+    final cachedStatus = _statusFromConnectedAccount(connectedAccount.value);
+    final resolvedLiveStatus = liveStatus.value;
 
     return connectedAccount.when(
-      data: (account) => _buildPayoutCard(
-        context,
-        ref,
-        _statusFromConnectedAccount(account),
+      data: (account) {
+        final accountStatus = _statusFromConnectedAccount(account);
+        return _buildPayoutCard(
+          context,
+          ref,
+          _stableStripeStatus(accountStatus, resolvedLiveStatus),
+        );
+      },
+      loading: () {
+        final status = _stableStripeStatus(cachedStatus, resolvedLiveStatus);
+        if (status == null) return _buildPayoutStatusLoading();
+        return _buildPayoutCard(context, ref, status);
+      },
+      error: (_, _) {
+        final status = _stableStripeStatus(cachedStatus, resolvedLiveStatus);
+        if (status == null) return _buildPayoutStatusLoading();
+        return _buildPayoutCard(context, ref, status);
+      },
+    );
+  }
+
+  DriverStripeStatus? _stableStripeStatus(
+    DriverStripeStatus? cachedStatus,
+    DriverStripeStatus? liveStatus,
+  ) {
+    if (cachedStatus == null) return liveStatus;
+    if (liveStatus == null) return cachedStatus;
+
+    final liveHasAccount = liveStatus.stripeAccountId?.isNotEmpty ?? false;
+    if (!liveHasAccount) return cachedStatus;
+
+    // Do not let a partial live refresh flip a connected account back to the
+    // setup CTA. Firestore is the source of truth for whether onboarding exists;
+    // live Stripe only refreshes payout flags and balances.
+    return liveStatus.copyWith(
+      isConnected: cachedStatus.isConnected || liveStatus.isConnected,
+      stripeAccountId:
+          liveStatus.stripeAccountId ?? cachedStatus.stripeAccountId,
+    );
+  }
+
+  Widget _buildPayoutStatusLoading() {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 20.w),
+      padding: EdgeInsets.all(20.w),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20.r),
+        border: Border.all(color: AppColors.border),
       ),
-      loading: _buildPayoutCardLoading,
-      error: (_, _) => _buildErrorPlaceholder(context),
+      child: const SkeletonLoader(type: SkeletonType.compactTile, itemCount: 2),
     );
   }
 
@@ -760,6 +815,11 @@ class DriverEarningsScreen extends ConsumerWidget {
     final isConnected = status?.isConnected ?? false;
     final payoutsEnabled = status?.payoutsEnabled ?? false;
     final availableBalanceInCents = status?.availableBalanceInCents ?? 0;
+    final pendingBalanceInCents = status?.pendingBalanceInCents ?? 0;
+    final totalStripeBalanceInCents =
+        availableBalanceInCents + pendingBalanceInCents;
+    final tripEarningsInCents =
+        ref.watch(driverStatsProvider).value?.totalEarningsInCents ?? 0;
     final stripeAccountId = status?.stripeAccountId;
 
     return Container(
@@ -885,7 +945,6 @@ class DriverEarningsScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Available Balance
                   Row(
                     children: [
                       Expanded(
@@ -957,15 +1016,40 @@ class DriverEarningsScreen extends ConsumerWidget {
                           ref,
                           stripeAccountId: stripeAccountId,
                           availableBalanceInCents: availableBalanceInCents,
+                          pendingBalanceInCents: pendingBalanceInCents,
                           isFullySetup: payoutsEnabled,
                         ),
                         style: PremiumButtonStyle.secondary,
                       ),
                     ],
                   ),
+                  SizedBox(height: 14.h),
+                  _buildStripeBalanceLine(
+                    'Withdrawable now',
+                    availableBalanceInCents,
+                    AppColors.success,
+                  ),
                   SizedBox(height: 8.h),
+                  _buildStripeBalanceLine(
+                    'Processing',
+                    pendingBalanceInCents,
+                    AppColors.warning,
+                  ),
+                  SizedBox(height: 8.h),
+                  _buildStripeBalanceLine(
+                    'Stripe balance total',
+                    totalStripeBalanceInCents,
+                    AppColors.primary,
+                  ),
+                  SizedBox(height: 8.h),
+                  _buildStripeBalanceLine(
+                    'Trip earnings recorded',
+                    tripEarningsInCents,
+                    AppColors.textSecondary,
+                  ),
+                  SizedBox(height: 12.h),
                   Text(
-                    'Total earnings are trip stats. Withdrawals use settled Stripe balance.',
+                    'Only withdrawable now can be transferred. Processing funds have reached Stripe but are not settled yet.',
                     style: TextStyle(
                       fontSize: 11.sp,
                       color: AppColors.textSecondary,
@@ -1000,17 +1084,6 @@ class DriverEarningsScreen extends ConsumerWidget {
         ],
       ),
     ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1);
-  }
-
-  Widget _buildPayoutCardLoading() {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 20.w),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(20.r),
-      ),
-      child: const SkeletonLoader(type: SkeletonType.compactTile, itemCount: 2),
-    );
   }
 
   Future<void> _requestPayout(
@@ -1123,6 +1196,7 @@ class DriverEarningsScreen extends ConsumerWidget {
     WidgetRef ref, {
     required String? stripeAccountId,
     required int availableBalanceInCents,
+    required int pendingBalanceInCents,
     required bool isFullySetup,
   }) async {
     if (!isFullySetup) {
@@ -1144,9 +1218,12 @@ class DriverEarningsScreen extends ConsumerWidget {
     }
 
     if (availableBalanceInCents <= 0) {
+      final pendingText = pendingBalanceInCents > 0
+          ? ' €${(pendingBalanceInCents / 100).toStringAsFixed(2)} is still processing.'
+          : '';
       AdaptiveSnackBar.show(
         context,
-        message: AppLocalizations.of(context).noData,
+        message: 'No settled balance available yet.$pendingText',
         type: AdaptiveSnackBarType.error,
       );
       return;

@@ -87,7 +87,7 @@ class AppConfig {
 
   /// App-level settings
   static const String appName = 'SportConnect';
-  static const String appVersion = '1.0.5';
+  static const String appVersion = '1.0.6';
   static const String supportTicketEmail = String.fromEnvironment(
     'SPORTCONNECT_SUPPORT_EMAIL',
     defaultValue: 'support@sportconnect.app',
