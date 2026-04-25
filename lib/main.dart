@@ -27,6 +27,7 @@ import 'package:sport_connect/core/theme/cupertino_app_theme.dart';
 import 'package:sport_connect/core/theme/material_app_theme.dart';
 // Localization
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
+import 'package:upgrader/upgrader.dart';
 
 const _enableDebugInstrumentation = bool.fromEnvironment(
   'SPORT_CONNECT_DEBUG_INSTRUMENTATION',
@@ -211,7 +212,7 @@ class _SportConnectAppState extends ConsumerState<SportConnectApp> {
               return appChild;
             }
 
-            return appChild;
+            return UpgradeAlert(child: appChild);
           },
         );
       },
