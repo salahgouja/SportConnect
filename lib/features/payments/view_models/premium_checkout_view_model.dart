@@ -66,27 +66,30 @@ class PremiumCheckoutViewModel extends _$PremiumCheckoutViewModel {
 
     try {
       final selectedPlan = state.selectedPlan;
-      var premiumSource = 'stripe_fallback';
-      String? premiumTransactionId;
-
       final iapService = ref.read(premiumIapServiceProvider.notifier);
-      if (await iapService.isSupported) {
-        if (!ref.mounted) return false;
-        final purchaseResult = await iapService.purchasePlan(selectedPlan);
-        if (!ref.mounted) return false;
-        if (!purchaseResult.isSuccess) {
-          state = state.copyWith(
-            isProcessing: false,
-            errorMessage:
-                purchaseResult.errorMessage ??
-                'Unable to complete purchase. Please try again.',
-          );
-          return false;
-        }
-
-        premiumSource = 'iap';
-        premiumTransactionId = purchaseResult.purchase?.purchaseID;
+      final isIapSupported = await iapService.isSupported;
+      if (!ref.mounted) return false;
+      if (!isIapSupported) {
+        state = state.copyWith(
+          isProcessing: false,
+          errorMessage:
+              'In-app purchases are not available on this device right now. '
+              'Please try again later.',
+        );
+        return false;
       }
+      final purchaseResult = await iapService.purchasePlan(selectedPlan);
+      if (!ref.mounted) return false;
+      if (!purchaseResult.isSuccess) {
+        state = state.copyWith(
+          isProcessing: false,
+          errorMessage:
+              purchaseResult.errorMessage ??
+              'Unable to complete purchase. Please try again.',
+        );
+        return false;
+      }
+      final premiumTransactionId = purchaseResult.purchase?.purchaseID;
 
       await _syncStripeCustomer(currentUser);
       if (!ref.mounted) return false;
@@ -94,7 +97,7 @@ class PremiumCheckoutViewModel extends _$PremiumCheckoutViewModel {
       await ref.read(profileRepositoryProvider).updateProfile(currentUser.uid, {
         'isPremium': true,
         'premiumPlan': selectedPlan.name,
-        'premiumSource': premiumSource,
+        'premiumSource': 'iap',
         'premiumUpdatedAt': DateTime.now(),
         if (premiumTransactionId != null && premiumTransactionId.isNotEmpty)
           'premiumTransactionId': premiumTransactionId,

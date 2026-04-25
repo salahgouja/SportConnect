@@ -52,7 +52,29 @@
 				<key>CFBundleURLName</key>
 				<string>com.sportconnect.app</string>
 			</dict>
+			<dict>
+				<key>CFBundleTypeRole</key>
+				<string>Editor</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>$(GOOGLE_REVERSED_CLIENT_ID)</string>
+				</array>
+				<key>CFBundleURLName</key>
+				<string>com.googleusercontent.apps</string>
+			</dict>
+			<dict>
+				<key>CFBundleTypeRole</key>
+				<string>Editor</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>flutterstripe</string>
+				</array>
+				<key>CFBundleURLName</key>
+				<string>com.sportconnect.payments</string>
+			</dict>
 		</array>
+		<key>GIDClientID</key>
+		<string>$(GOOGLE_CLIENT_ID)</string>
 		<!-- Location permissions -->
 		<key>NSLocationWhenInUseUsageDescription</key>
 		<string>SportConnect needs your location to find nearby rides, show live trip progress, and detect pickup and dropoff arrival.</string>

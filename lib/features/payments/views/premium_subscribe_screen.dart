@@ -2,11 +2,13 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/features/payments/services/premium_iap_service.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // DATA
@@ -77,14 +79,15 @@ const _kYearlyTotal = 49.99;
 // MAIN SCREEN
 // ═══════════════════════════════════════════════════════════════════════════════
 
-class PremiumSubscribeScreen extends StatefulWidget {
+class PremiumSubscribeScreen extends ConsumerStatefulWidget {
   const PremiumSubscribeScreen({super.key});
 
   @override
-  State<PremiumSubscribeScreen> createState() => _PremiumSubscribeScreenState();
+  ConsumerState<PremiumSubscribeScreen> createState() =>
+      _PremiumSubscribeScreenState();
 }
 
-class _PremiumSubscribeScreenState extends State<PremiumSubscribeScreen> {
+class _PremiumSubscribeScreenState extends ConsumerState<PremiumSubscribeScreen> {
   _Cycle _cycle = _Cycle.yearly;
 
   double get _price =>
@@ -95,6 +98,30 @@ class _PremiumSubscribeScreenState extends State<PremiumSubscribeScreen> {
     context.pushNamed(
       AppRoutes.premiumCheckout.name,
       extra: {'cycle': _cycle.name},
+    );
+  }
+
+  void _openTerms() {
+    context.push(AppRoutes.terms.path);
+  }
+
+  void _openPrivacy() {
+    context.push(AppRoutes.privacy.path);
+  }
+
+  Future<void> _restorePurchases() async {
+    final result = await ref
+        .read(premiumIapServiceProvider.notifier)
+        .restorePurchases();
+    if (!mounted) return;
+    AdaptiveSnackBar.show(
+      context,
+      message: result.isSuccess
+          ? 'Restore request sent. Any eligible purchases will be restored.'
+          : (result.errorMessage ?? 'Unable to restore purchases.'),
+      type: result.isSuccess
+          ? AdaptiveSnackBarType.success
+          : AdaptiveSnackBarType.error,
     );
   }
 
@@ -471,11 +498,11 @@ class _PremiumSubscribeScreenState extends State<PremiumSubscribeScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _buildLegalLink('Terms'),
+              _buildLegalLink('Terms', onTap: _openTerms),
               _legalDot(),
-              _buildLegalLink('Privacy'),
+              _buildLegalLink('Privacy', onTap: _openPrivacy),
               _legalDot(),
-              _buildLegalLink('Restore'),
+              _buildLegalLink('Restore', onTap: () => _restorePurchases()),
             ],
           ),
         ],
@@ -495,9 +522,9 @@ class _PremiumSubscribeScreenState extends State<PremiumSubscribeScreen> {
     );
   }
 
-  Widget _buildLegalLink(String label) {
+  Widget _buildLegalLink(String label, {required VoidCallback onTap}) {
     return GestureDetector(
-      onTap: () {},
+      onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),

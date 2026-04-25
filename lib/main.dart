@@ -69,7 +69,7 @@ Future<void> _initializeApp() async {
   await FirebaseService.instance.initialize();
   TalkerService.info('✅ Firebase initialized');
 
-  if (defaultTargetPlatform != TargetPlatform.iOS) {
+  if (!kIsWeb) {
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
     await PushNotificationService.instance.initialize();
     TalkerService.info('✅ Push notifications initialized');

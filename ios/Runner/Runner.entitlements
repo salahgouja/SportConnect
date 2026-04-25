@@ -11,6 +11,7 @@
 	<key>com.apple.developer.associated-domains</key>
 	<array>
 		<string>applinks:sportaxitrip.com</string>
+		<string>applinks:www.sportaxitrip.com</string>
 	</array>
 	<!-- Push Notifications -->
 	<key>aps-environment</key>

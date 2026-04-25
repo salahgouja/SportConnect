@@ -185,6 +185,27 @@ class PremiumIapService extends _$PremiumIapService {
     }
   }
 
+  Future<PremiumIapResult> restorePurchases() async {
+    try {
+      if (!await isSupported) {
+        return const PremiumIapResult.failure(
+          'Restore purchases is only available on iOS and Android.',
+        );
+      }
+
+      await _iap.restorePurchases();
+      return const PremiumIapResult.success();
+    } on PlatformException catch (e) {
+      return PremiumIapResult.failure(_mapPlatformError(e));
+    } on MissingPluginException {
+      return const PremiumIapResult.failure(
+        'In-app purchase plugin is not ready. Fully restart the app and try again.',
+      );
+    } catch (e) {
+      return PremiumIapResult.failure('Restore purchases failed: $e');
+    }
+  }
+
   bool _hasVerificationPayload(PurchaseDetails purchase) {
     return purchase.verificationData.serverVerificationData.trim().isNotEmpty;
   }
