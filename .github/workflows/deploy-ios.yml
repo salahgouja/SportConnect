@@ -47,7 +47,7 @@ jobs:
       # Open-source Python package — not Codemagic the platform.
       # Handles cert + profile fetching from Apple via the API key.
       - name: Install Codemagic CLI tools
-        run: pip3 install codemagic-cli-tools
+        run: pipx install codemagic-cli-tools
 
       # ── Code signing ─────────────────────────────────────────────────────────
       - name: Initialize keychain
