@@ -1,3 +1,7 @@
+# iOS deployment is handled entirely by the GitHub Actions workflow
+# using Codemagic CLI tools (no Fastlane Match / no Mac required).
+# This Fastfile only manages the Android lane.
+
 default_platform(:android)
 
 platform :android do

@@ -1,15 +1,6 @@
-# Fastlane Match — certificate & provisioning profile sync
-# Store certificates in a PRIVATE git repository.
-# Never commit the certificates themselves to your app repo.
-
-git_url(ENV["MATCH_GIT_URL"])
-git_basic_authorization(ENV["MATCH_GIT_BASIC_AUTH"]) # base64("username:personal_access_token")
-
-storage_mode("git")
-type("appstore")                  # "appstore" covers TestFlight + production
-
-app_identifier(["com.sportconnect.SportConnectApplication"])
-username(ENV["APPLE_ID"])
-
-# In CI always read-only — never rotate certs automatically
-readonly(true)
+# Match is no longer used for iOS signing.
+# Certificate management is handled by Codemagic CLI tools in the
+# GitHub Actions workflow (.github/workflows/deploy-ios.yml), which
+# does not require a Mac or a private certificate repository.
+#
+# Keep this file to avoid Fastlane warnings; it is intentionally empty.

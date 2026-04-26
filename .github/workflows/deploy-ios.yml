@@ -1,63 +1,102 @@
-# name: Deploy iOS to TestFlight
+name: Deploy iOS to TestFlight
 
-# # Trigger on version tags (e.g. v1.2.3) or manually via GitHub UI
-# on:
-#   push:
-#     tags:
-#       - 'v[0-9]+.[0-9]+.[0-9]+'
-#   workflow_dispatch:
+# Trigger on version tags (e.g. v1.2.3) or manually via GitHub UI
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch:
 
-# permissions:
-#   contents: read
+permissions:
+  contents: read
 
-# jobs:
-#   deploy-ios:
-#     name: Build & Deploy iOS IPA to TestFlight
-#     runs-on: macos-latest  # macOS required for Xcode toolchain
+jobs:
+  deploy-ios:
+    name: Build & Deploy iOS IPA to TestFlight
+    runs-on: macos-latest
 
-#     steps:
-#       # ── Source ────────────────────────────────────────────────────────────
-#       - name: Checkout repository
-#         uses: actions/checkout@v4
+    env:
+      # ── App Store Connect API key (3 values from App Store Connect dashboard) ──
+      APP_STORE_CONNECT_KEY_IDENTIFIER: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+      APP_STORE_CONNECT_ISSUER_ID:      ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+      APP_STORE_CONNECT_PRIVATE_KEY:    ${{ secrets.APP_STORE_CONNECT_API_KEY }}
+      # ── Certificate private key (generated once, stored forever as a secret) ──
+      # This ensures the SAME certificate is reused on every build.
+      # Generate it once with: openssl ecparam -name prime256v1 -genkey -noout -out certificate_private_key.pem
+      # Then store the file contents as this secret. Never regenerate it.
+      CERTIFICATE_PRIVATE_KEY:          ${{ secrets.CERTIFICATE_PRIVATE_KEY }}
+      # ── 10-digit Apple ID of the app in App Store Connect ──
+      APP_STORE_APP_ID:                 ${{ secrets.APP_STORE_APP_ID }}
 
-#       # ── Flutter ────────────────────────────────────────────────────────────
-#       - name: Set up Flutter (stable)
-#         uses: subosito/flutter-action@v2
-#         with:
-#           channel: 'stable'
-#           cache: true
+    steps:
+      # ── Source ──────────────────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-#       - name: Install Flutter dependencies
-#         run: flutter pub get
+      # ── Flutter ─────────────────────────────────────────────────────────────
+      - name: Set up Flutter (stable)
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
 
-#       # ── Build Flutter iOS (no codesign — Fastlane handles signing) ─────────
-#       - name: Build Flutter iOS release (unsigned)
-#         run: flutter build ios --release --no-codesign
+      - name: Install Flutter dependencies
+        run: flutter pub get
 
-#       # ── Ruby / Fastlane ────────────────────────────────────────────────────
-#       - name: Set up Ruby
-#         uses: ruby/setup-ruby@v1
-#         with:
-#           ruby-version: '3.3'
-#           bundler-cache: true
+      # ── Codemagic CLI tools ──────────────────────────────────────────────────
+      # Open-source Python package — not Codemagic the platform.
+      # Handles cert + profile fetching from Apple via the API key.
+      - name: Install Codemagic CLI tools
+        run: pip3 install codemagic-cli-tools
 
-#       # ── Sign & Upload via Fastlane ─────────────────────────────────────────
-#       # Fastlane Match pulls certificates + profiles from your private Git repo,
-#       # Fastlane Gym signs the .xcarchive, and Fastlane Pilot uploads to TestFlight.
-#       - name: Deploy to TestFlight via Fastlane
-#         env:
-#           # App Store Connect API key (no 2FA issues in CI)
-#           APP_STORE_CONNECT_API_KEY_ID:  ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
-#           APP_STORE_CONNECT_ISSUER_ID:   ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
-#           APP_STORE_CONNECT_API_KEY:     ${{ secrets.APP_STORE_CONNECT_API_KEY }}
-#           # Fastlane Match — private certificate repo
-#           MATCH_GIT_URL:                 ${{ secrets.MATCH_GIT_URL }}
-#           MATCH_GIT_BASIC_AUTH:          ${{ secrets.MATCH_GIT_BASIC_AUTH }}
-#           MATCH_PASSWORD:                ${{ secrets.MATCH_PASSWORD }}
-#           # Apple credentials
-#           APPLE_ID:                      ${{ secrets.APPLE_ID }}
-#           APP_STORE_CONNECT_TEAM_ID:     ${{ secrets.APP_STORE_CONNECT_TEAM_ID }}
-#           DEVELOPER_PORTAL_TEAM_ID:      ${{ secrets.DEVELOPER_PORTAL_TEAM_ID }}
-#           # Tell Fastlane this is a CI environment
-#           CI: "true"
-#         run: bundle exec fastlane ios beta
+      # ── Code signing ─────────────────────────────────────────────────────────
+      - name: Initialize keychain
+        run: keychain initialize
+
+      # fetch-signing-files fetches the existing cert tied to CERTIFICATE_PRIVATE_KEY.
+      # It only creates a new cert if one doesn't exist in Apple yet.
+      # On every subsequent build it reuses the same cert — no new cert is generated.
+      - name: Fetch certificate and provisioning profile from Apple
+        run: |
+          app-store-connect fetch-signing-files \
+            com.sportconnect.SportConnectApplication \
+            --type IOS_APP_STORE \
+            --certificate-key @env:CERTIFICATE_PRIVATE_KEY \
+            --create
+
+      - name: Add certificate to keychain
+        run: keychain add-certificates
+
+      - name: Configure Xcode project signing
+        run: xcode-project use-profiles
+
+      # ── Version ──────────────────────────────────────────────────────────────
+      - name: Derive build name and number from git tag
+        id: version
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$TAG"
+          BUILD_NUMBER=$(( MAJOR * 1000000 + MINOR * 10000 + PATCH ))
+          echo "build_name=$TAG"         >> "$GITHUB_OUTPUT"
+          echo "build_number=$BUILD_NUMBER" >> "$GITHUB_OUTPUT"
+
+      # ── Build ─────────────────────────────────────────────────────────────────
+      - name: Build Flutter IPA (release)
+        run: |
+          flutter build ipa --release \
+            --build-name="${{ steps.version.outputs.build_name }}" \
+            --build-number="${{ steps.version.outputs.build_number }}" \
+            --export-options-plist="$HOME/export_options.plist"
+
+      # ── Upload ────────────────────────────────────────────────────────────────
+      - name: Upload IPA to TestFlight
+        run: |
+          IPA=$(find "$(pwd)" -name "*.ipa" | head -1)
+          app-store-connect publish \
+            --path "$IPA" \
+            --app-store-app-id "$APP_STORE_APP_ID"
+
+      # ── Cleanup ───────────────────────────────────────────────────────────────
+      - name: Delete keychain
+        if: always()
+        run: keychain delete || true
