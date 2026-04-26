@@ -55,6 +55,7 @@ jobs:
 
       # fetch-signing-files fetches the existing cert tied to CERTIFICATE_PRIVATE_KEY.
       # It only creates a new cert if one doesn't exist in Apple yet.
+      # Apple requires RSA 2048 for distribution certificates.
       # On every subsequent build it reuses the same cert — no new cert is generated.
       - name: Fetch certificate and provisioning profile from Apple
         run: |
@@ -62,6 +63,7 @@ jobs:
             com.sportconnect.SportConnectApplication \
             --type IOS_APP_STORE \
             --certificate-key @env:CERTIFICATE_PRIVATE_KEY \
+            --certificate-key-password "" \
             --create
 
       - name: Add certificate to keychain
