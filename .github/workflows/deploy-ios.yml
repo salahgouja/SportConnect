@@ -13,7 +13,7 @@ permissions:
 jobs:
   deploy-ios:
     name: Build & Deploy iOS IPA to TestFlight
-    runs-on: macos-latest
+    runs-on: macos-26  # Xcode 26 required for iOS 26 SDK (adaptive_platform_ui uses glass/prominentGlass APIs)
 
     env:
       # ── App Store Connect API key ─────────────────────────────────────────

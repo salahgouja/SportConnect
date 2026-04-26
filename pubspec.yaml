@@ -141,7 +141,7 @@ dependencies:
   v_platform: ^2.1.5
   flutter_secure_storage: ^10.0.0
   upgrader: ^13.1.0
-  adaptive_platform_ui: ^0.1.104
+  adaptive_platform_ui: ^0.1.105
   native_geofence: ^1.2.1
 
 dev_dependencies:
