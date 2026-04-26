@@ -117,6 +117,7 @@ jobs:
       - name: Upload AAB to Play Store (${{ steps.track.outputs.track }})
         env:
           PLAY_STORE_JSON_KEY: ${{ secrets.PLAY_STORE_JSON_KEY }}
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -XX:ReservedCodeCacheSize=512m -XX:+UseG1GC"
         run: bundle exec fastlane android deploy track:${{ steps.track.outputs.track }}
 
       # ── Cleanup (always, even on failure) ────────────────────────────────
