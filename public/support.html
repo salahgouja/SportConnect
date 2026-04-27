@@ -1,0 +1,503 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Support - SportConnect</title>
+    <style>
+      *, *::before, *::after {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+          Arial, sans-serif;
+        background: #f5f5f7;
+        color: #1a1a1a;
+        line-height: 1.6;
+      }
+
+      .page {
+        max-width: 920px;
+        margin: 0 auto;
+        padding: 40px 20px 72px;
+      }
+
+      .card {
+        background: #ffffff;
+        border-radius: 18px;
+        box-shadow: 0 2px 18px rgba(0, 0, 0, 0.08);
+        padding: 36px;
+        margin-bottom: 22px;
+      }
+
+      .header {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 28px;
+      }
+
+      .logo-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        overflow: hidden;
+        background: #111827;
+        flex-shrink: 0;
+      }
+
+      .logo-icon img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+
+      .logo-fallback {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #111827, #2563eb);
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 1.2rem;
+      }
+
+      .app-name {
+        font-size: 1.2rem;
+        font-weight: 750;
+        color: #111827;
+      }
+
+      .meta {
+        color: #6b7280;
+        font-size: 0.9rem;
+      }
+
+      h1 {
+        font-size: 2rem;
+        line-height: 1.2;
+        margin: 0 0 10px;
+        color: #111827;
+      }
+
+      h2 {
+        font-size: 1.25rem;
+        margin: 0 0 14px;
+        color: #111827;
+      }
+
+      h3 {
+        font-size: 1rem;
+        margin: 22px 0 8px;
+        color: #111827;
+      }
+
+      p {
+        margin: 0 0 14px;
+      }
+
+      ul {
+        margin: 10px 0 0;
+        padding-left: 20px;
+      }
+
+      li {
+        margin-bottom: 7px;
+      }
+
+      a {
+        color: #2563eb;
+        text-decoration: none;
+      }
+
+      a:hover {
+        text-decoration: underline;
+      }
+
+      .hero-text {
+        font-size: 1.02rem;
+        color: #374151;
+        max-width: 720px;
+      }
+
+      .contact-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+        margin-top: 24px;
+      }
+
+      .contact-box {
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        padding: 18px;
+        background: #f9fafb;
+      }
+
+      .contact-box strong {
+        display: block;
+        color: #111827;
+        margin-bottom: 6px;
+      }
+
+      .contact-box span,
+      .contact-box a {
+        font-size: 0.93rem;
+      }
+
+      .notice {
+        background: #eff6ff;
+        border-left: 4px solid #2563eb;
+        border-radius: 10px;
+        padding: 16px 18px;
+        color: #1f2937;
+        margin-top: 20px;
+      }
+
+      .warning {
+        background: #fff7ed;
+        border-left: 4px solid #f97316;
+        border-radius: 10px;
+        padding: 16px 18px;
+        color: #1f2937;
+      }
+
+      .faq-item {
+        border-top: 1px solid #e5e7eb;
+        padding-top: 18px;
+        margin-top: 18px;
+      }
+
+      .faq-item:first-of-type {
+        border-top: none;
+        padding-top: 0;
+        margin-top: 0;
+      }
+
+      .button-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 22px;
+      }
+
+      .button {
+        display: inline-block;
+        border-radius: 10px;
+        padding: 11px 16px;
+        font-weight: 650;
+        font-size: 0.95rem;
+        text-align: center;
+      }
+
+      .button.primary {
+        background: #2563eb;
+        color: #ffffff;
+      }
+
+      .button.secondary {
+        background: #f3f4f6;
+        color: #111827;
+        border: 1px solid #e5e7eb;
+      }
+
+      .footer {
+        text-align: center;
+        color: #6b7280;
+        font-size: 0.85rem;
+        margin-top: 34px;
+      }
+
+      .footer a {
+        color: #6b7280;
+        text-decoration: underline;
+      }
+
+      @media (max-width: 760px) {
+        .page {
+          padding: 24px 14px 56px;
+        }
+
+        .card {
+          padding: 26px 20px;
+          border-radius: 16px;
+        }
+
+        h1 {
+          font-size: 1.65rem;
+        }
+
+        .contact-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .button {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <main class="page">
+      <section class="card">
+        <div class="header">
+          <div class="logo-icon">
+            <img
+              src="app_icon.png"
+              alt="SportConnect"
+              onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=&quot;logo-fallback&quot;>SC</div>';"
+            />
+          </div>
+          <div>
+            <div class="app-name">SportConnect</div>
+            <div class="meta">Support utilisateur</div>
+          </div>
+        </div>
+
+        <h1>Support SportConnect</h1>
+        <p class="hero-text">
+          Besoin d'aide avec votre compte, un trajet, un paiement, une réservation,
+          un abonnement ou une demande de confidentialité ? Notre équipe support
+          peut vous aider.
+        </p>
+
+        <div class="contact-grid">
+          <div class="contact-box">
+            <strong>Email support</strong>
+            <a href="mailto:support@sportaxitrip.com">
+              support@sportaxitrip.com
+            </a>
+          </div>
+
+          <div class="contact-box">
+            <strong>Téléphone</strong>
+            <a href="tel:+33620184896">+33 06 20 18 48 96</a>
+          </div>
+
+          <div class="contact-box">
+            <strong>Site web</strong>
+            <a href="https://sportaxitrip.com" target="_blank" rel="noopener">
+              sportaxitrip.com
+            </a>
+          </div>
+        </div>
+
+        <div class="notice">
+          <strong>Délai de réponse :</strong>
+          nous faisons notre possible pour répondre aux demandes de support dans
+          un délai de 30 jours. Pour les problèmes liés à un trajet en cours ou à
+          un paiement récent, indiquez autant de détails que possible dans votre
+          message.
+        </div>
+
+        <div class="button-row">
+          <a class="button primary" href="mailto:support@sportaxitrip.com">
+            Contacter le support
+          </a>
+          <a
+            class="button secondary"
+            href="https://sportaxitrip.com/privacy.html"
+            target="_blank"
+            rel="noopener"
+          >
+            Politique de confidentialité
+          </a>
+          <a
+            class="button secondary"
+            href="https://sportaxitrip.com/delete-account.html"
+            target="_blank"
+            rel="noopener"
+          >
+            Supprimer mon compte
+          </a>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Avant de nous contacter</h2>
+        <p>
+          Pour accélérer le traitement de votre demande, merci d'inclure les
+          informations suivantes lorsque cela est pertinent :
+        </p>
+        <ul>
+          <li>l'adresse e-mail associée à votre compte SportConnect ;</li>
+          <li>le type de problème rencontré ;</li>
+          <li>la date et l'heure approximatives du problème ;</li>
+          <li>le trajet, événement, paiement ou abonnement concerné ;</li>
+          <li>une capture d'écran si elle aide à comprendre le problème ;</li>
+          <li>le modèle de votre appareil et la version iOS ou Android utilisée.</li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <h2>Questions fréquentes</h2>
+
+        <div class="faq-item">
+          <h3>Je n'arrive pas à me connecter à mon compte</h3>
+          <p>
+            Vérifiez que vous utilisez la même méthode de connexion que lors de
+            votre inscription : e-mail/mot de passe, Google Sign-In ou Apple
+            Sign-In. Si vous avez oublié votre mot de passe, utilisez l'option de
+            réinitialisation depuis l'écran de connexion.
+          </p>
+        </div>
+
+        <div class="faq-item">
+          <h3>J'ai un problème avec une réservation ou un trajet</h3>
+          <p>
+            Contactez-nous à
+            <a href="mailto:support@sportaxitrip.com">support@sportaxitrip.com</a>
+            en indiquant votre adresse e-mail de compte, la date du trajet, le
+            point de départ, le point d'arrivée et une description claire du
+            problème.
+          </p>
+        </div>
+
+        <div class="faq-item">
+          <h3>Comment demander un remboursement ?</h3>
+          <p>
+            Pour un paiement de trajet, contactez le support avec les détails de
+            la transaction. Les remboursements éligibles sont généralement
+            traités sur le moyen de paiement d'origine.
+          </p>
+          <p>
+            Pour un abonnement premium acheté via l'App Store ou Google Play, la
+            demande de remboursement doit être faite directement auprès d'Apple ou
+            de Google, car la facturation est gérée par la plateforme concernée.
+          </p>
+        </div>
+
+        <div class="faq-item">
+          <h3>Comment supprimer mon compte ?</h3>
+          <p>
+            Vous pouvez supprimer votre compte depuis l'application via
+            <strong>Paramètres → Compte → Supprimer mon compte</strong>, ou
+            utiliser notre formulaire web de suppression de compte.
+          </p>
+          <p>
+            <a
+              href="https://sportaxitrip.com/delete-account.html"
+              target="_blank"
+              rel="noopener"
+            >
+              Ouvrir le formulaire de suppression de compte
+            </a>
+          </p>
+        </div>
+
+        <div class="faq-item">
+          <h3>Comment gérer mes données personnelles ?</h3>
+          <p>
+            Pour toute demande d'accès, de rectification, de suppression ou de
+            portabilité de vos données, contactez-nous à
+            <a href="mailto:support@sportaxitrip.com">support@sportaxitrip.com</a>.
+            Vous pouvez aussi consulter notre politique de confidentialité.
+          </p>
+        </div>
+
+        <div class="faq-item">
+          <h3>Pourquoi SportConnect demande l'accès à la localisation ?</h3>
+          <p>
+            SportConnect utilise la localisation pour afficher les trajets à
+            proximité, calculer les distances et aider au suivi d'un trajet
+            actif. La localisation en arrière-plan est utilisée uniquement pendant
+            un trajet actif, notamment pour détecter l'arrivée à la prise en
+            charge ou à la dépose.
+          </p>
+        </div>
+
+        <div class="faq-item">
+          <h3>Comment signaler un utilisateur ou un comportement abusif ?</h3>
+          <p>
+            Envoyez un e-mail au support avec le nom de l'utilisateur concerné,
+            le contexte, la date et toute information utile. Les signalements
+            liés à la sécurité sont traités en priorité.
+          </p>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Paiements et abonnements</h2>
+        <p>
+          Les paiements de trajets sont traités via Stripe. Les abonnements
+          premium sont traités par l'App Store d'Apple ou par Google Play selon
+          la plateforme utilisée.
+        </p>
+
+        <div class="warning">
+          <strong>Important :</strong>
+          SportConnect ne reçoit pas les informations complètes de votre carte
+          bancaire. Pour les abonnements achetés via l'App Store, la gestion de
+          la facturation, de l'annulation et des remboursements se fait depuis
+          votre compte Apple.
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Confidentialité et sécurité</h2>
+        <p>
+          Nous utilisons vos données uniquement pour fournir et améliorer le
+          service SportConnect, notamment la gestion des comptes, des trajets, des
+          messages, des paiements, des notifications et de la sécurité de la
+          plateforme.
+        </p>
+        <p>
+          Pour plus d'informations sur les données collectées, leur utilisation,
+          leur durée de conservation et vos droits, consultez notre politique de
+          confidentialité.
+        </p>
+
+        <div class="button-row">
+          <a
+            class="button secondary"
+            href="https://sportaxitrip.com/privacy.html"
+            target="_blank"
+            rel="noopener"
+          >
+            Lire la politique de confidentialité
+          </a>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Nous contacter</h2>
+        <p>
+          Pour toute demande de support, contactez-nous par e-mail :
+        </p>
+        <p>
+          <strong>
+            <a href="mailto:support@sportaxitrip.com">
+              support@sportaxitrip.com
+            </a>
+          </strong>
+        </p>
+        <p>
+          Vous pouvez également visiter notre site :
+          <a href="https://sportaxitrip.com" target="_blank" rel="noopener">
+            https://sportaxitrip.com
+          </a>
+        </p>
+      </section>
+
+      <footer class="footer">
+        <p>
+          © 2026 SportConnect. Tous droits réservés.
+          <br />
+          <a href="https://sportaxitrip.com/privacy.html">Confidentialité</a>
+          ·
+          <a href="https://sportaxitrip.com/delete-account.html">
+            Suppression de compte
+          </a>
+        </p>
+      </footer>
+    </main>
+  </body>
+</html>
