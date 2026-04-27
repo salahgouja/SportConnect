@@ -45,6 +45,7 @@
         "lib/firebase_options.dart": {
           "projectId": "marathon-connect",
           "configurations": {
+            "android": "1:950804897667:android:336cec4dff83493780e0b6",
             "ios": "1:950804897667:ios:ee25c791f879565e80e0b6"
           }
         }

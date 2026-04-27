@@ -11,7 +11,6 @@ class AppConstants {
   static const String ridesCollection = 'rides';
   static const String eventsCollection = 'events';
   static const String messagesCollection = 'messages';
-  static const String conversationsCollection = 'conversations';
   static const String chatsCollection = 'chats';
   static const String notificationsCollection = 'notifications';
   static const String vehiclesCollection = 'vehicles';
@@ -19,8 +18,6 @@ class AppConstants {
   static const String payoutsCollection = 'payouts';
   static const String reviewsCollection = 'reviews';
   static const String reportsCollection = 'reports';
-  static const String rideRequestsCollection = 'rideRequests';
-  static const String transactionsCollection = 'transactions';
   static const String bookingsCollection = 'bookings';
   static const String supportTicketsCollection = 'support_tickets';
   static const String connectedAccountsCollection = 'driver_connected_accounts';
@@ -28,6 +25,7 @@ class AppConstants {
   static const String typingCollection = 'typing';
   static const String blockedUsersCollection = 'blockedUsers';
   static const String disputesCollection = 'disputes';
+  static const String archivedTransactionsCollection = 'archived_transactions';
 
   // Storage Paths
   static const String profileImagesPath = 'profile_images';

@@ -137,6 +137,23 @@ class PushNotificationService {
   /// Uses `set` with merge so it works even if the document does not yet
   /// contain an `fcmToken` field (avoids the `update`-on-missing-field
   /// silent failure).
+  /// Revoke the current device FCM token and clear it from Firestore.
+  ///
+  /// Call on every logout so the device stops receiving notifications after
+  /// sign-out. Firebase does not remove stale tokens automatically.
+  Future<void> deleteFcmToken(String userId) async {
+    try {
+      await _messaging.deleteToken();
+      await FirebaseFirestore.instance
+          .collection(AppConstants.usersCollection)
+          .doc(userId)
+          .update({'fcmToken': FieldValue.delete()});
+      TalkerService.info('FCM token deleted for user $userId');
+    } on Exception catch (e) {
+      TalkerService.warning('FCM token cleanup failed (best-effort): $e');
+    }
+  }
+
   Future<void> saveFcmToken(String userId) async {
     try {
       // FIX PN-1 / PN-2: Check that the user has granted notification

@@ -2501,7 +2501,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
     }
   }
 
-  /// Book ride – creates a pending booking and navigates to the pending screen.
+  /// Book ride - creates a pending booking and navigates to the pending screen.
   /// Payment (if applicable) is collected after the driver accepts.
   Future<void> _bookRide(RideModel ride) async {
     final uiState = ref.read(rideDetailUiViewModelProvider(widget.rideId));

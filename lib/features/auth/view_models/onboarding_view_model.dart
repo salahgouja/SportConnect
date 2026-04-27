@@ -19,11 +19,11 @@ enum OnboardingAction {
 /// [completedAction] is set after each successful async operation so the
 /// UI's `ref.listen` callback can decide what to do next (advance a page,
 /// navigate to home, etc.).  Possible values:
-/// - `'riderDone'` – rider onboarding completed → navigate to home
-/// - `'profileSaved'` – driver profile saved → advance to vehicle step
-/// - `'vehicleSaved'` – vehicle saved → advance to stripe step
-/// - `'finalized'` – driver setup finalized → navigate to driver home
-/// - `'finalizedStripe'` – driver setup finalized → navigate to stripe onboarding
+/// - `'riderDone'` - rider onboarding completed → navigate to home
+/// - `'profileSaved'` - driver profile saved → advance to vehicle step
+/// - `'vehicleSaved'` - vehicle saved → advance to stripe step
+/// - `'finalized'` - driver setup finalized → navigate to driver home
+/// - `'finalizedStripe'` - driver setup finalized → navigate to stripe onboarding
 class OnboardingState {
   const OnboardingState({
     this.isLoading = false,

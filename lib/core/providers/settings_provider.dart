@@ -3,6 +3,8 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/core/repositories/settings_repository.dart'
     show SettingsRepository;
+import 'package:sport_connect/core/services/analytics_service.dart'
+    show AnalyticsService;
 
 part 'settings_provider.g.dart';
 
@@ -144,6 +146,24 @@ class PublicProfileProvider extends _$PublicProfileProvider {
   Future<void> setEnabled(bool enabled) async {
     final repository = await ref.read(settingsRepositoryProvider.future);
     await repository.setPublicProfile(enabled);
+    if (!ref.mounted) return;
+    state = AsyncValue.data(enabled);
+  }
+}
+
+/// Provider for analytics & crash reporting opt-out
+@Riverpod(name: 'analyticsEnabledProvider')
+class AnalyticsEnabledProvider extends _$AnalyticsEnabledProvider {
+  @override
+  Future<bool> build() async {
+    final repository = await ref.watch(settingsRepositoryProvider.future);
+    return repository.analyticsEnabled;
+  }
+
+  Future<void> setEnabled({required bool enabled}) async {
+    final repository = await ref.read(settingsRepositoryProvider.future);
+    await repository.setAnalyticsEnabled(enabled: enabled);
+    await AnalyticsService.instance.setCollectionEnabled(enabled: enabled);
     if (!ref.mounted) return;
     state = AsyncValue.data(enabled);
   }

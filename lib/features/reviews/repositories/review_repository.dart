@@ -124,7 +124,7 @@ class ReviewRepository implements IReviewRepository {
       throw Exception('You cannot review yourself');
     }
 
-    // V-2: Enforce comment length (1–500 characters).
+    // V-2: Enforce comment length (1-500 characters).
     final comment = request.comment;
     if (comment != null && comment.isNotEmpty && comment.length > 500) {
       throw ArgumentError(

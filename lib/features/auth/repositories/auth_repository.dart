@@ -12,6 +12,7 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/interfaces/repositories/i_auth_repository.dart';
 import 'package:sport_connect/core/services/analytics_service.dart';
+import 'package:sport_connect/core/services/push_notification_service.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 
@@ -220,6 +221,10 @@ class AuthRepository implements IAuthRepository {
   @override
   Future<void> signOut() async {
     try {
+      final uid = _auth.currentUser?.uid;
+      if (uid != null) {
+        unawaited(PushNotificationService.instance.deleteFcmToken(uid));
+      }
       await _auth.signOut();
       unawaited(_signOutGoogleBestEffort());
       TalkerService.info('User signed out');
@@ -319,6 +324,45 @@ class AuthRepository implements IAuthRepository {
           'updatedAt': FieldValue.serverTimestamp(),
         });
       }
+
+      // Archive financial records before deletion — retained 10 years per
+      // article L.123-22 of the French Code de commerce (legal obligation).
+      // Each collection uses a different field to identify the user:
+      //   payments  → riderId (passenger) or driverId
+      //   payouts   → driverId
+      //   bookings  → passengerId or driverId
+      // We run separate queries for each role and merge-write into
+      // archived_transactions so no document is double-archived (doc ID is
+      // the same, so a second write is a safe no-op).
+      Future<void> archiveDocs(
+        String collection,
+        String field,
+      ) async {
+        final snap = await _firestore
+            .collection(collection)
+            .where(field, isEqualTo: uid)
+            .get();
+        for (final doc in snap.docs) {
+          await _firestore
+              .collection(AppConstants.archivedTransactionsCollection)
+              .doc(doc.id)
+              .set({
+            ...doc.data(),
+            'originalCollection': collection,
+            'archivedAt': FieldValue.serverTimestamp(),
+            'archivedReason': 'account_deletion',
+          }, SetOptions(merge: true));
+        }
+      }
+
+      // payments — user may appear as passenger (riderId) or driver (driverId)
+      await archiveDocs(AppConstants.paymentsCollection, 'riderId');
+      await archiveDocs(AppConstants.paymentsCollection, 'driverId');
+      // payouts — driver only
+      await archiveDocs(AppConstants.payoutsCollection, 'driverId');
+      // bookings — user may appear as passenger or as the ride's driver
+      await archiveDocs(AppConstants.bookingsCollection, 'passengerId');
+      await archiveDocs(AppConstants.bookingsCollection, 'driverId');
 
       // Commit in chunks of 499 to stay within Firestore batch limit (500)
       const batchLimit = 499;

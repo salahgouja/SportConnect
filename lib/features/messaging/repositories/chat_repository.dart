@@ -605,12 +605,18 @@ class ChatRepository implements IChatRepository {
 
   // ── File uploads ──────────────────────────────────────────────────────────
 
+  static const int _maxUploadBytes = 5 * 1024 * 1024; // 5 MB
+
   @override
   Future<String> uploadChatImage({
     required String chatId,
     required File imageFile,
     required String fileName,
   }) async {
+    final size = await imageFile.length();
+    if (size > _maxUploadBytes) {
+      throw Exception('Image must be smaller than 5 MB');
+    }
     final ref = _storage
         .ref()
         .child('chats')
@@ -627,6 +633,10 @@ class ChatRepository implements IChatRepository {
     required File audioFile,
     required String fileName,
   }) async {
+    final size = await audioFile.length();
+    if (size > _maxUploadBytes) {
+      throw Exception('Audio message must be smaller than 5 MB');
+    }
     final ref = _storage.ref().child('chats/$chatId/audio/$fileName');
     await ref.putFile(audioFile);
     return ref.getDownloadURL();

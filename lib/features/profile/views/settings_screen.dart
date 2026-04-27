@@ -56,6 +56,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ref.watch(chatNotificationsProvider).value ?? true;
     final showLocation = ref.watch(showLocationProvider).value ?? true;
     final publicProfile = ref.watch(publicProfileProvider).value ?? true;
+    final analyticsEnabled = ref.watch(analyticsEnabledProvider).value ?? true;
     final mapStyle = ref.watch(mapStyleProvider).value ?? 'standard';
 
     final driverSettings = isDriver
@@ -192,6 +193,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               subtitle: l10n.settingsBlockedUsersDesc,
               icon: Icons.block_outlined,
               onTap: _openBlockedUsersScreen,
+            ),
+            _buildDivider(),
+            _buildSwitchTile(
+              title: 'Analytics & Crash Reports',
+              subtitle: 'Allow anonymous usage data and crash reports',
+              value: analyticsEnabled,
+              icon: Icons.analytics_outlined,
+              onChanged: (v) => ref
+                  .read(analyticsEnabledProvider.notifier)
+                  .setEnabled(enabled: v),
             ),
             _buildDivider(),
             _buildNavTile(

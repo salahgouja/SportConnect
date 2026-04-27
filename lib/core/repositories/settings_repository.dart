@@ -17,6 +17,7 @@ class SettingsRepository {
   static const String _rememberMeKey = 'remember_me';
   static const String _mapStyleKey = 'map_style';
   static const String _notificationDialogShownKey = 'notification_dialog_shown';
+  static const String _analyticsEnabledKey = 'analytics_enabled';
   static const String _premiumPromptPrefix = 'premium_prompt_seen_';
 
   final SharedPreferences _prefs;
@@ -152,6 +153,17 @@ class SettingsRepository {
   Future<void> clearCredentials() async {
     await _prefs.remove(_savedEmailKey);
     await _prefs.setBool(_rememberMeKey, false);
+  }
+
+  // ============================================================
+  // Analytics & Crash Reporting
+  // ============================================================
+
+  /// Whether Firebase Analytics and Crashlytics collection is enabled (defaults to true)
+  bool get analyticsEnabled => _prefs.getBool(_analyticsEnabledKey) ?? true;
+
+  Future<void> setAnalyticsEnabled({required bool enabled}) async {
+    await _prefs.setBool(_analyticsEnabledKey, enabled);
   }
 
   // ============================================================

@@ -1,34 +1,320 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Account Deletion - SportConnect</title>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.6; max-width: 600px; margin: 50px auto; padding: 20px; color: #333; }
-        .container { background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; }
-        h1 { color: #d32f2f; }
-        p { margin-bottom: 20px; }
-        .btn { background-color: #d32f2f; color: white; border: none; padding: 10px 20px; font-size: 16px; border-radius: 4px; cursor: pointer; text-decoration: none; }
-        .btn:hover { background-color: #b71c1c; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Suppression de compte - SportConnect</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f5f5f7;
+      color: #1a1a1a;
+      line-height: 1.6;
+      padding: 40px 16px 80px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+      max-width: 580px;
+      margin: 0 auto;
+      padding: 40px 36px;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 32px;
+    }
+    .logo-icon {
+      width: 40px; height: 40px;
+      border-radius: 10px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .logo-icon img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .logo-name { font-size: 1.15rem; font-weight: 700; color: #1a1a1a; }
+
+    h1 { font-size: 1.5rem; font-weight: 700; color: #ef4444; margin-bottom: 8px; }
+    .subtitle { font-size: 0.95rem; color: #555; margin-bottom: 28px; }
+
+    .info-box {
+      background: #fef2f2;
+      border-left: 4px solid #ef4444;
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-bottom: 28px;
+      font-size: 0.9rem;
+      color: #333;
+    }
+    .info-box strong { display: block; margin-bottom: 6px; color: #b91c1c; }
+    .info-box ul { padding-left: 18px; margin-top: 6px; }
+    .info-box ul li { margin-bottom: 4px; }
+
+    .retained-box {
+      background: #f0f9ff;
+      border-left: 4px solid #0ea5e9;
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-bottom: 28px;
+      font-size: 0.9rem;
+      color: #333;
+    }
+    .retained-box strong { display: block; margin-bottom: 6px; color: #0369a1; }
+    .retained-box ul { padding-left: 18px; margin-top: 6px; }
+    .retained-box ul li { margin-bottom: 4px; }
+
+    label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 6px;
+      margin-top: 18px;
+    }
+    label .required { color: #ef4444; margin-left: 2px; }
+    input, select, textarea {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      color: #1a1a1a;
+      background: #fff;
+      transition: border-color 0.15s;
+      appearance: none;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: #ef4444;
+      box-shadow: 0 0 0 3px rgba(239,68,68,0.12);
+    }
+    textarea { resize: vertical; min-height: 90px; }
+    .hint { font-size: 0.8rem; color: #6b7280; margin-top: 4px; }
+
+    .checkbox-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .checkbox-row input[type="checkbox"] {
+      width: 18px; height: 18px;
+      flex-shrink: 0;
+      margin-top: 2px;
+      accent-color: #ef4444;
+      cursor: pointer;
+    }
+    .checkbox-row label {
+      margin: 0;
+      font-size: 0.875rem;
+      font-weight: 400;
+      color: #374151;
+      cursor: pointer;
+    }
+    .checkbox-row label a { color: #ef4444; text-decoration: underline; }
+
+    .btn-submit {
+      width: 100%;
+      margin-top: 28px;
+      padding: 13px;
+      background: #ef4444;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, opacity 0.15s;
+    }
+    .btn-submit:hover { background: #dc2626; }
+    .btn-submit:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .success-state {
+      display: none;
+      text-align: center;
+      padding: 20px 0;
+    }
+    .success-state .check {
+      width: 60px; height: 60px;
+      background: #d1fae5;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px;
+    }
+    .success-state .check svg { width: 30px; height: 30px; stroke: #059669; fill: none; stroke-width: 2.5; }
+    .success-state h2 { font-size: 1.25rem; color: #065f46; margin-bottom: 8px; }
+    .success-state p { font-size: 0.9rem; color: #374141; }
+
+    .divider { border: none; border-top: 1px solid #e5e7eb; margin: 28px 0; }
+
+    .legal-note {
+      font-size: 0.8rem;
+      color: #6b7280;
+      text-align: center;
+      line-height: 1.5;
+    }
+    .legal-note a { color: #6b7280; text-decoration: underline; }
+
+    .in-app-note {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-bottom: 24px;
+      font-size: 0.875rem;
+      color: #374151;
+    }
+    .in-app-note strong { color: #1a1a1a; }
+  </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>Delete Your SportConnect Account</h1>
-    <p>In accordance with the App Store, Google Play Store, and GDPR requirements, you may request the complete deletion of your SportConnect account and associated data directly from this page.</p>
-    
-    <p><strong>Note:</strong> Deleting your account is permanent. All ride history, messages, and profile data will be permanently erased within 30 days. Payout histories may be retained securely for up to 10 years for French/EU tax compliance.</p>
-    
-    <!-- 
-      Developer note: 
-      Replace the mailto link below with an actual form or authentication flow 
-      if you have a backend process for web deletion. 
-      For MVP, a mailto requesting deletion from the authenticated email is acceptable for initial store reviews. 
-    -->
-    <a href="mailto:privacy@sportconnect.app?subject=Request%20Account%20Deletion&body=Hello,%20please%20delete%20my%20SportConnect%20account%20associated%20with%20this%20email%20address." class="btn">Request Account Deletion</a>
+<div class="card" id="form-card">
+
+  <div class="logo">
+    <div class="logo-icon">
+      <img src="app_icon.png" alt="SportConnect" />
+    </div>
+    <span class="logo-name">SportConnect</span>
+  </div>
+
+  <h1>Suppression de compte</h1>
+  <p class="subtitle">Vous disposez d'un droit à l'effacement de votre compte et de vos données personnelles. Remplissez le formulaire ci-dessous pour soumettre votre demande.</p>
+
+  <div class="in-app-note">
+    <strong>Depuis l'application :</strong> Vous pouvez également supprimer votre compte directement dans l'application via <em>Paramètres → Compte → Supprimer mon compte</em>. La suppression est immédiate si vous êtes connecté.
+  </div>
+
+  <div class="info-box">
+    <strong>Ce qui sera supprimé de manière permanente</strong>
+    <ul>
+      <li>Profil, photo et informations de compte</li>
+      <li>Tous les trajets créés et réservations effectuées</li>
+      <li>Messages, conversations et fichiers partagés</li>
+      <li>Données de véhicule et documents associés</li>
+      <li>Informations de paiement et lien Stripe Connect</li>
+      <li>Évaluations rédigées et données de gamification</li>
+    </ul>
+  </div>
+
+  <div class="retained-box">
+    <strong>Ce qui est conservé après suppression (obligation légale)</strong>
+    <ul>
+      <li>Enregistrements de paiements, réservations et virements conducteurs — <strong>10 ans</strong></li>
+      <li>Évaluations reçues d'autres utilisateurs — conservées sous forme anonymisée pour l'intégrité de la plateforme</li>
+      <li>Données liées à des litiges en cours — jusqu'à clôture du dossier</li>
+    </ul>
+  </div>
+
+  <form id="deletion-form" novalidate>
+    <label for="email">Adresse e-mail du compte <span class="required">*</span></label>
+    <input type="email" id="email" name="email" required autocomplete="email"
+           placeholder="votre@email.com" />
+
+    <label for="reason">Motif de la demande</label>
+    <select id="reason" name="reason">
+      <option value="">— Sélectionnez un motif (facultatif) —</option>
+      <option value="no_longer_use">Je n'utilise plus l'application</option>
+      <option value="privacy_concerns">Préoccupations relatives à la vie privée</option>
+      <option value="switching_service">Je passe à un autre service</option>
+      <option value="technical_issues">Problèmes techniques</option>
+      <option value="other">Autre</option>
+    </select>
+
+    <label for="comments">Commentaires supplémentaires</label>
+    <textarea id="comments" name="comments" placeholder="Précisions facultatives sur votre demande…"></textarea>
+    <p class="hint">Ces informations nous aident à améliorer le service. Leur fourniture est entièrement facultative.</p>
+
+    <div class="checkbox-row">
+      <input type="checkbox" id="confirm" name="confirm" required />
+      <label for="confirm">
+        Je comprends que cette action est <strong>irréversible</strong> et que toutes les données listées ci-dessus seront supprimées définitivement. J'ai lu la
+        <a href="https://sportaxitrip.com/privacy.html" target="_blank" rel="noopener">politique de confidentialité</a>.
+      </label>
+    </div>
+
+    <button type="submit" class="btn-submit" id="submit-btn" disabled>
+      Soumettre la demande de suppression
+    </button>
+  </form>
+
+  <hr class="divider" />
+
+  <p class="legal-note">
+    Votre demande sera traitée dans un délai de <strong>30 jours</strong>.<br />
+    Pour toute question : <a href="mailto:support@sportaxitrip.com">support@sportaxitrip.com</a>
+  </p>
+
 </div>
+
+<div class="card" id="success-card" style="display:none;">
+  <div class="check">
+    <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+  </div>
+  <h2>Demande reçue</h2>
+  <p>
+    Votre demande de suppression de compte a été enregistrée.<br /><br />
+    Nous traiterons votre demande dans un délai de <strong>30 jours</strong> et vous enverrons une confirmation à l'adresse e-mail fournie une fois la suppression effectuée.<br /><br />
+    Si vous n'avez pas reçu de confirmation sous 30 jours, contactez-nous à
+    <a href="mailto:support@sportaxitrip.com">support@sportaxitrip.com</a>.
+  </p>
+</div>
+
+<script>
+  const form = document.getElementById('deletion-form');
+  const submitBtn = document.getElementById('submit-btn');
+  const confirmCb = document.getElementById('confirm');
+  const emailInput = document.getElementById('email');
+
+  function updateSubmitState() {
+    submitBtn.disabled = !(confirmCb.checked && emailInput.value.trim().length > 0);
+  }
+
+  confirmCb.addEventListener('change', updateSubmitState);
+  emailInput.addEventListener('input', updateSubmitState);
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    if (!emailInput.value.trim() || !confirmCb.checked) return;
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Envoi en cours…';
+
+    const payload = {
+      email: emailInput.value.trim(),
+      reason: document.getElementById('reason').value,
+      comments: document.getElementById('comments').value.trim(),
+      requestedAt: new Date().toISOString(),
+      source: 'web-deletion-page',
+    };
+
+    try {
+      // Submit to Cloud Function endpoint
+      const res = await fetch('https://europe-west1-marathon-connect.cloudfunctions.net/requestAccountDeletion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      document.getElementById('form-card').style.display = 'none';
+      const successCard = document.getElementById('success-card');
+      successCard.style.display = 'block';
+    } catch (err) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Soumettre la demande de suppression';
+      alert(
+        'Une erreur est survenue lors de l\'envoi de votre demande.\n' +
+        'Veuillez réessayer ou envoyer un e-mail à support@sportaxitrip.com'
+      );
+    }
+  });
+</script>
 
 </body>
 </html>

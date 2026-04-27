@@ -20,7 +20,7 @@ import 'package:sport_connect/core/theme/platform_adaptive.dart';
 ///   FIX: primaryContainer dark = #1A4028. g400 on it = 5.19:1 ✓
 ///
 /// PROBLEM 2 — semi-transparent green fills were invisible:
-///   g400 at alpha 0.14–0.20 on surfaceDark = 1.29–1.46:1. Invisible.
+///   g400 at alpha 0.14-0.20 on surfaceDark = 1.29-1.46:1. Invisible.
 ///   FIX: nav indicator  → primaryContainerDark (#1A4028, opaque)
 ///        chip selected  → primaryContainerDark (#1A4028, opaque)
 ///        chip label/icon stays g400 → 5.19:1 ✓

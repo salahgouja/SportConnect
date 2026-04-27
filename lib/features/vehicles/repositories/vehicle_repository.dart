@@ -29,7 +29,7 @@ class VehicleRepository implements IVehicleRepository {
   /// Create a new vehicle
   @override
   Future<String> createVehicle(VehicleModel vehicle) async {
-    // VE-3: Validate vehicle year is realistic (1900–current year + 1).
+    // VE-3: Validate vehicle year is realistic (1900-current year + 1).
     final currentYear = DateTime.now().year;
     if (vehicle.year < 1900 || vehicle.year > currentYear + 1) {
       throw ArgumentError(

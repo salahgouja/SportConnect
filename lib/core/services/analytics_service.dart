@@ -41,6 +41,14 @@ class AnalyticsService {
     TalkerService.info('✅ Analytics & Crashlytics initialized');
   }
 
+  // ── Collection toggle (RGPD opt-out) ─────────────────────────
+
+  Future<void> setCollectionEnabled({required bool enabled}) async {
+    await _analytics.setAnalyticsCollectionEnabled(enabled);
+    await _crashlytics.setCrashlyticsCollectionEnabled(enabled);
+    TalkerService.info('Analytics collection ${enabled ? 'enabled' : 'disabled'}');
+  }
+
   // ── Analytics helpers ─────────────────────────────────────────────
 
   /// The observer to attach to [GoRouter] (or [MaterialApp.navigatorObservers]).
@@ -51,7 +59,7 @@ class AnalyticsService {
   Future<void> logEvent(String name, {Map<String, Object>? parameters}) async {
     try {
       await _analytics.logEvent(name: name, parameters: parameters);
-    } catch (e, st) {
+    } on Exception catch (e) {
       TalkerService.error('Analytics logEvent failed', e);
     }
   }
@@ -93,11 +101,13 @@ class AnalyticsService {
     String? reason,
     bool fatal = false,
   }) {
-    _crashlytics.recordError(
-      exception,
-      stack,
-      reason: reason ?? 'non-fatal',
-      fatal: fatal,
+    unawaited(
+      _crashlytics.recordError(
+        exception,
+        stack,
+        reason: reason ?? 'non-fatal',
+        fatal: fatal,
+      ),
     );
   }
 

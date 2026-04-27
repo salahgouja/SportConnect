@@ -375,6 +375,57 @@ abstract class _$PublicProfileProvider extends $AsyncNotifier<bool> {
   }
 }
 
+/// Provider for analytics & crash reporting opt-out
+
+@ProviderFor(AnalyticsEnabledProvider)
+final analyticsEnabledProvider = AnalyticsEnabledProviderProvider._();
+
+/// Provider for analytics & crash reporting opt-out
+final class AnalyticsEnabledProviderProvider
+    extends $AsyncNotifierProvider<AnalyticsEnabledProvider, bool> {
+  /// Provider for analytics & crash reporting opt-out
+  AnalyticsEnabledProviderProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'analyticsEnabledProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$analyticsEnabledProviderHash();
+
+  @$internal
+  @override
+  AnalyticsEnabledProvider create() => AnalyticsEnabledProvider();
+}
+
+String _$analyticsEnabledProviderHash() =>
+    r'acba18483b9945fd6f2b0807599d10759b4d8fa4';
+
+/// Provider for analytics & crash reporting opt-out
+
+abstract class _$AnalyticsEnabledProvider extends $AsyncNotifier<bool> {
+  FutureOr<bool> build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<AsyncValue<bool>, bool>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<bool>, bool>,
+              AsyncValue<bool>,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}
+
 @ProviderFor(SavedCredentialsNotifier)
 final savedCredentialsProvider = SavedCredentialsNotifierProvider._();
 

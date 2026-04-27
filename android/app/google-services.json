@@ -23,6 +23,14 @@
           }
         },
         {
+          "client_id": "950804897667-hgo7illjm71tsei2bkptbes9cmvkgve3.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.sportconnect.sport_connect",
+            "certificate_hash": "9ff691ef9754e3cf6f08c1b9f3db7869246e524f"
+          }
+        },
+        {
           "client_id": "950804897667-j6qtjf1k5ambnegmo31rrhbqo4o6pmto.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {

@@ -154,7 +154,6 @@ class MonthlyRideSummary extends StatelessWidget {
   }
 }
 
-
 class MonthlyCost {
   const MonthlyCost(this.label, this.amountInCents);
   final String label;
@@ -175,7 +174,7 @@ class PaymentReceiptGenerator {
     required int totalInCents,
   }) async {
     final pdf = pw.Document();
-    final dateStr = DateFormat('MMM dd, yyyy – hh:mm a').format(rideDate);
+    final dateStr = DateFormat('MMM dd, yyyy - hh:mm a').format(rideDate);
 
     pdf.addPage(
       pw.Page(

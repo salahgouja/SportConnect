@@ -24,7 +24,7 @@ import 'package:sport_connect/l10n/generated/app_localizations.dart';
 ///
 /// Navigated to from [RideCompletionScreen] when the authenticated user is
 /// the driver of the completed ride.  The driver selects a passenger (if
-/// multiple bookings), picks a 1–5 star rating, optionally adds a comment,
+/// multiple bookings), picks a 1-5 star rating, optionally adds a comment,
 /// and submits the review via the view model.
 class DriverRatePassengerScreen extends ConsumerStatefulWidget {
   const DriverRatePassengerScreen({required this.rideId, super.key});
@@ -106,7 +106,10 @@ class _DriverRatePassengerScreenState
         return _buildContent(ride, bookings, formState);
       },
       loading: () => _buildAdaptiveScaffold(
-        body: const SkeletonLoader(type: SkeletonType.profileCard, itemCount: 3),
+        body: const SkeletonLoader(
+          type: SkeletonType.profileCard,
+          itemCount: 3,
+        ),
       ),
       error: (e, _) => _buildAdaptiveScaffold(
         body: Center(child: Text(AppLocalizations.of(context).errorValue(e))),
