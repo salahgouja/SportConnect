@@ -104,6 +104,45 @@ final class CurrentUserProvider
 
 String _$currentUserHash() => r'c506edc63c12df0dd555224781026d46219f2817';
 
+@ProviderFor(premiumMetadata)
+final premiumMetadataProvider = PremiumMetadataProvider._();
+
+final class PremiumMetadataProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<PremiumMetadata>,
+          PremiumMetadata,
+          Stream<PremiumMetadata>
+        >
+    with $FutureModifier<PremiumMetadata>, $StreamProvider<PremiumMetadata> {
+  PremiumMetadataProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'premiumMetadataProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$premiumMetadataHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<PremiumMetadata> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<PremiumMetadata> create(Ref ref) {
+    return premiumMetadata(ref);
+  }
+}
+
+String _$premiumMetadataHash() => r'cc1aab8848022e5923c8a5521516122ed356f81a';
+
 /// Pending user's selected role intent during onboarding setup.
 ///
 /// This is stored on the user document as `selectedRoleIntent` so refresh/restart

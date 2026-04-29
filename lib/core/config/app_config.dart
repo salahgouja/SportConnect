@@ -115,11 +115,11 @@ class AppConfig {
   /// Override via --dart-define in CI/CD per environment if needed.
   static const String premiumMonthlyProductId = String.fromEnvironment(
     'SPORTCONNECT_IAP_PREMIUM_MONTHLY_ID',
-    defaultValue: 'sportconnect_premium_monthly',
+    defaultValue: 'sportconnect_premium:monthly',
   );
   static const String premiumYearlyProductId = String.fromEnvironment(
     'SPORTCONNECT_IAP_PREMIUM_YEARLY_ID',
-    defaultValue: 'sportconnect_premium_yearly',
+    defaultValue: 'sportconnect_premium:yearly',
   );
 
   /// Get environment status string for logging

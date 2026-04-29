@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
@@ -30,6 +31,49 @@ Stream<UserModel?> currentUser(Ref ref) async* {
   }
 
   yield* repository.getUserDataStream(authUser.uid);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Premium metadata (plan + date — not in freezed model)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class PremiumMetadata {
+  const PremiumMetadata({
+    required this.isPremium,
+    this.plan,
+    this.updatedAt,
+  });
+  final bool isPremium;
+  final String? plan; // 'monthly' | 'yearly'
+  final DateTime? updatedAt;
+}
+
+@riverpod
+Stream<PremiumMetadata> premiumMetadata(Ref ref) async* {
+  final authUser = await ref.watch(authStateProvider.future);
+  if (authUser == null) {
+    yield const PremiumMetadata(isPremium: false);
+    return;
+  }
+
+  yield* ref
+      .read(firebaseServiceProvider)
+      .firestore
+      .collection(AppConstants.usersCollection)
+      .doc(authUser.uid)
+      .snapshots()
+      .map((doc) {
+        final data = doc.data();
+        if (data == null) return const PremiumMetadata(isPremium: false);
+
+        final isPremium = data['isPremium'] as bool? ?? false;
+        final plan = data['premiumPlan'] as String?;
+        final rawDate = data['premiumUpdatedAt'];
+        DateTime? updatedAt;
+        if (rawDate is Timestamp) updatedAt = rawDate.toDate();
+
+        return PremiumMetadata(isPremium: isPremium, plan: plan, updatedAt: updatedAt);
+      });
 }
 
 /// Pending user's selected role intent during onboarding setup.

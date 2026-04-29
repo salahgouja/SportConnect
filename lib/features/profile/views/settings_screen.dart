@@ -1,13 +1,17 @@
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/services/push_notification_service.dart';
+import 'package:sport_connect/features/payments/services/premium_iap_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/platform_adaptive.dart';
 import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
@@ -43,6 +47,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         (value) => value.value?.role == UserRole.driver,
       ),
     );
+    final premiumMeta = ref.watch(premiumMetadataProvider);
 
     return AdaptiveScaffold(
       appBar: AdaptiveAppBar(
@@ -74,6 +79,29 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               settingsViewModel: settingsViewModel,
             ),
           ],
+
+          SizedBox(height: 32.h),
+          _buildSectionHeader(
+            'Premium',
+            Icons.workspace_premium_rounded,
+            color: AppColors.warning,
+          ),
+          SizedBox(height: 12.h),
+          premiumMeta.when(
+            loading: () => const SizedBox.shrink(),
+            error: (_, __) => const SizedBox.shrink(),
+            data: (meta) => meta.isPremium
+                ? _buildActivePremiumCard(meta)
+                : _buildCard([
+                    _buildNavTile(
+                      title: 'Upgrade to Premium',
+                      subtitle: 'Unlock smart matching, priority rides & more',
+                      icon: Icons.workspace_premium_rounded,
+                      onTap: () => context.push(AppRoutes.premiumSubscribe.path),
+                      color: AppColors.warning,
+                    ),
+                  ]),
+          ),
 
           SizedBox(height: 32.h),
           _buildSectionHeader(l10n.settingsNotifications, Icons.tune_rounded),
@@ -2042,6 +2070,141 @@ class _BlockedUsersScreenState extends ConsumerState<_BlockedUsersScreen> {
           );
         },
       ),
+    );
+  }
+
+  Widget _buildActivePremiumCard(PremiumMetadata meta) {
+    final planLabel = switch (meta.plan) {
+      'monthly' => 'Monthly',
+      'yearly' => 'Yearly',
+      _ => 'Premium',
+    };
+    final dateLabel = meta.updatedAt != null
+        ? DateFormat('MMM d, yyyy').format(meta.updatedAt!)
+        : null;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: AppColors.warning.withValues(alpha: 0.35)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.warning.withValues(alpha: 0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        children: [
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+            child: Row(
+              children: [
+                Container(
+                  width: 44.w,
+                  height: 44.w,
+                  decoration: BoxDecoration(
+                    color: AppColors.warning.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(14.r),
+                  ),
+                  child: Icon(
+                    Icons.workspace_premium_rounded,
+                    color: AppColors.warning,
+                    size: 22.sp,
+                  ),
+                ),
+                SizedBox(width: 14.w),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'SportConnect Premium',
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      if (dateLabel != null) ...[
+                        SizedBox(height: 2.h),
+                        Text(
+                          'Active since $dateLabel',
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                  decoration: BoxDecoration(
+                    color: AppColors.warning.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8.r),
+                  ),
+                  child: Text(
+                    planLabel,
+                    style: TextStyle(
+                      fontSize: 11.sp,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.warning,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Divider(height: 1, color: AppColors.warning.withValues(alpha: 0.2)),
+          _buildNavTile(
+            title: 'Manage Subscription',
+            subtitle: 'Cancel or change your plan in the store',
+            icon: Icons.manage_subscriptions_rounded,
+            onTap: _manageSubscription,
+          ),
+          _buildDivider(),
+          _buildNavTile(
+            title: 'Restore Purchases',
+            subtitle: 'Re-apply your active subscription',
+            icon: Icons.restore_rounded,
+            onTap: _restorePurchases,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _manageSubscription() async {
+    final uri = defaultTargetPlatform == TargetPlatform.iOS
+        ? Uri.parse('https://apps.apple.com/account/subscriptions')
+        : Uri.parse('https://play.google.com/store/account/subscriptions');
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      if (!mounted) return;
+      AdaptiveSnackBar.show(
+        context,
+        message: 'Could not open subscription management.',
+        type: AdaptiveSnackBarType.error,
+      );
+    }
+  }
+
+  Future<void> _restorePurchases() async {
+    final result =
+        await ref.read(premiumIapServiceProvider.notifier).restorePurchases();
+    if (!mounted) return;
+    AdaptiveSnackBar.show(
+      context,
+      message: result.isSuccess
+          ? 'Purchases restored successfully.'
+          : (result.errorMessage ?? 'Could not restore purchases.'),
+      type: result.isSuccess
+          ? AdaptiveSnackBarType.success
+          : AdaptiveSnackBarType.error,
     );
   }
 }
