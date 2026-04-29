@@ -1857,7 +1857,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           _buildNavTile(
             title: 'Manage Subscription',
             subtitle: 'Cancel or change your plan in the store',
-            icon: Icons.manage_subscriptions,
+            icon: Icons.subscriptions,
             onTap: _manageSubscription,
           ),
           _buildDivider(),
