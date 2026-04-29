@@ -5,17 +5,25 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
-import 'package:sport_connect/core/interfaces/repositories/i_user_repository.dart';
-import 'package:sport_connect/core/providers/repository_providers.dart';
+
 import 'package:sport_connect/core/providers/user_providers.dart';
+import 'package:sport_connect/core/services/firebase_service.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
 
 part 'profile_repository.g.dart';
 
+@Riverpod(keepAlive: true)
+ProfileRepository profileRepository(Ref ref) {
+  return ProfileRepository(
+    ref.watch(firebaseServiceProvider).firestore,
+    ref.watch(firebaseServiceProvider).storage,
+  );
+}
+
 /// Profile Repository for user operations - Firebase only
-class ProfileRepository implements IUserRepository {
+class ProfileRepository {
   ProfileRepository(this._firestore, this._storage);
   final FirebaseFirestore _firestore;
   final FirebaseStorage _storage;

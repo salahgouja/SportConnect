@@ -6,28 +6,37 @@ import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:crypto/crypto.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
-import 'package:sport_connect/core/interfaces/repositories/i_auth_repository.dart';
-import 'package:sport_connect/core/services/analytics_service.dart';
+import 'package:sport_connect/core/services/firebase_service.dart';
 import 'package:sport_connect/core/services/push_notification_service.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 
+part 'auth_repository.g.dart';
+
+@Riverpod(keepAlive: true)
+AuthRepository authRepository(Ref ref) {
+  return AuthRepository(
+    ref.watch(firebaseServiceProvider),
+    ref.watch(pushNotificationServiceProvider),
+  );
+}
+
 /// Repository for authentication operations - Firebase only
-class AuthRepository implements IAuthRepository {
+class AuthRepository {
   /// Creates an [AuthRepository] with optional dependency injection.
   ///
   /// Defaults to production Firebase instances when no arguments are provided.
   /// Pass custom instances in tests to enable mocking.
-  AuthRepository(this._auth, this._storage, this._firestore);
-  final FirebaseAuth _auth;
-  final FirebaseStorage _storage;
-  final FirebaseFirestore _firestore;
+  AuthRepository(this._firebaseService, this._pushNotificationService);
+  final FirebaseService _firebaseService;
+  final PushNotificationService _pushNotificationService;
 
-  CollectionReference<UserModel> get _usersCollection => _firestore
+  CollectionReference<UserModel> get _usersCollection => _firebaseService
+      .firestore
       .collection(AppConstants.usersCollection)
       .withConverter<UserModel>(
         fromFirestore: (snap, _) => UserModel.fromJson(snap.data()!),
@@ -39,30 +48,24 @@ class AuthRepository implements IAuthRepository {
       );
 
   /// Get current user stream
-  @override
-  Stream<User?> get authStateChanges => _auth.authStateChanges();
+  Stream<User?> get authStateChanges =>
+      _firebaseService.auth.authStateChanges();
 
   /// Get current user
-  @override
-  User? get currentUser => _auth.currentUser;
+  User? get currentUser => _firebaseService.auth.currentUser;
 
   /// Check if user is logged in
-  @override
-  bool get isLoggedIn => _auth.currentUser != null;
+  bool get isLoggedIn => _firebaseService.auth.currentUser != null;
 
   /// Get current user ID
-  @override
-  String? get currentUserId => _auth.currentUser?.uid;
+
+  String? get currentUserId => _firebaseService.auth.currentUser?.uid;
 
   /// Sign in with email and password
-  @override
-  Future<UserModel?> signInWithEmail(
-    String email,
-    String password, {
-    bool rememberMe = false,
-  }) async {
+
+  Future<UserModel?> signInWithEmail(String email, String password) async {
     try {
-      final credential = await _auth.signInWithEmailAndPassword(
+      final credential = await _firebaseService.auth.signInWithEmailAndPassword(
         email: email.trim(),
         password: password,
       );
@@ -81,7 +84,7 @@ class AuthRepository implements IAuthRepository {
   }
 
   /// Register with email and password
-  @override
+
   Future<UserModel?> registerWithEmail({
     required String email,
     required String password,
@@ -92,7 +95,7 @@ class AuthRepository implements IAuthRepository {
   }) async {
     UserCredential? credential;
     try {
-      credential = await _auth.createUserWithEmailAndPassword(
+      credential = await _firebaseService.auth.createUserWithEmailAndPassword(
         email: email.trim(),
         password: password,
       );
@@ -171,7 +174,7 @@ class AuthRepository implements IAuthRepository {
 
     try {
       // Create a reference: users/{uid}/profile/profile.jpg
-      final ref = _storage
+      final ref = _firebaseService.storage
           .ref()
           .child('users')
           .child(uid)
@@ -193,7 +196,7 @@ class AuthRepository implements IAuthRepository {
   }
 
   /// Get user data from Firestore
-  @override
+
   Future<UserModel?> getUserData(String uid) async {
     try {
       final doc = await _usersCollection.doc(uid).get();
@@ -207,7 +210,6 @@ class AuthRepository implements IAuthRepository {
     return null;
   }
 
-  @override
   Stream<UserModel?> getUserDataStream(String uid) {
     return _usersCollection.doc(uid).snapshots().map((doc) {
       if (doc.exists && doc.data() != null) {
@@ -218,14 +220,14 @@ class AuthRepository implements IAuthRepository {
   }
 
   /// Sign out
-  @override
+
   Future<void> signOut() async {
     try {
-      final uid = _auth.currentUser?.uid;
+      final uid = _firebaseService.auth.currentUser?.uid;
       if (uid != null) {
-        unawaited(PushNotificationService.instance.deleteFcmToken(uid));
+        unawaited(_pushNotificationService.deleteFcmToken(uid));
       }
-      await _auth.signOut();
+      await _firebaseService.auth.signOut();
       unawaited(_signOutGoogleBestEffort());
       TalkerService.info('User signed out');
     } catch (e, st) {
@@ -243,10 +245,10 @@ class AuthRepository implements IAuthRepository {
   }
 
   /// Delete user account and all associated data
-  @override
+
   Future<void> deleteAccount() async {
     try {
-      final user = _auth.currentUser;
+      final user = _firebaseService.auth.currentUser;
       if (user == null) {
         throw Exception('No user is currently signed in');
       }
@@ -255,7 +257,7 @@ class AuthRepository implements IAuthRepository {
 
       // FIX A-1: Block deletion if the user has a ride currently in progress.
       // Orphaning an active ride leaves passengers with no driver and no refund.
-      final activeRideQuery = await _firestore
+      final activeRideQuery = await _firebaseService.firestore
           .collection(AppConstants.ridesCollection)
           .where('driverId', isEqualTo: uid)
           .where('status', isEqualTo: 'inProgress')
@@ -272,14 +274,14 @@ class AuthRepository implements IAuthRepository {
       final refs = <DocumentReference>[_usersCollection.doc(uid)];
 
       // User's rides
-      final ridesQuery = await _firestore
+      final ridesQuery = await _firebaseService.firestore
           .collection(AppConstants.ridesCollection)
           .where('driverId', isEqualTo: uid)
           .get();
       refs.addAll(ridesQuery.docs.map((d) => d.reference));
 
       // User's bookings
-      final bookingsQuery = await _firestore
+      final bookingsQuery = await _firebaseService.firestore
           .collection(AppConstants.bookingsCollection)
           .where('passengerId', isEqualTo: uid)
           .get();
@@ -287,26 +289,26 @@ class AuthRepository implements IAuthRepository {
 
       // FIX A-2: Delete driver financial records so a deleted UID doesn't
       // leave dangling references in driver_connected_accounts and driver_stats.
-      final driverConnectedRef = _firestore
+      final driverConnectedRef = _firebaseService.firestore
           .collection(AppConstants.connectedAccountsCollection)
           .doc(uid);
       if ((await driverConnectedRef.get()).exists) refs.add(driverConnectedRef);
 
-      final driverStatsRef = _firestore
+      final driverStatsRef = _firebaseService.firestore
           .collection(AppConstants.driverStatsCollection)
           .doc(uid);
       if ((await driverStatsRef.get()).exists) refs.add(driverStatsRef);
 
       // FIX A-3: Delete reviews *written by* this user so deleted users'
       // names don't persist on other people's profiles.
-      final reviewsByUserQuery = await _firestore
+      final reviewsByUserQuery = await _firebaseService.firestore
           .collection(AppConstants.reviewsCollection)
           .where('reviewerId', isEqualTo: uid)
           .get();
       refs.addAll(reviewsByUserQuery.docs.map((d) => d.reference));
 
       // User's messages
-      final messagesQuery = await _firestore
+      final messagesQuery = await _firebaseService.firestore
           .collection(AppConstants.messagesCollection)
           .where('senderId', isEqualTo: uid)
           .get();
@@ -314,7 +316,7 @@ class AuthRepository implements IAuthRepository {
 
       // User's chats: remove the user from participantIds.
       // Chat deletion is blocked by security rules.
-      final chatsQuery = await _firestore
+      final chatsQuery = await _firebaseService.firestore
           .collection(AppConstants.chatsCollection)
           .where('participantIds', arrayContains: uid)
           .get();
@@ -338,20 +340,20 @@ class AuthRepository implements IAuthRepository {
         String collection,
         String field,
       ) async {
-        final snap = await _firestore
+        final snap = await _firebaseService.firestore
             .collection(collection)
             .where(field, isEqualTo: uid)
             .get();
         for (final doc in snap.docs) {
-          await _firestore
+          await _firebaseService.firestore
               .collection(AppConstants.archivedTransactionsCollection)
               .doc(doc.id)
               .set({
-            ...doc.data(),
-            'originalCollection': collection,
-            'archivedAt': FieldValue.serverTimestamp(),
-            'archivedReason': 'account_deletion',
-          }, SetOptions(merge: true));
+                ...doc.data(),
+                'originalCollection': collection,
+                'archivedAt': FieldValue.serverTimestamp(),
+                'archivedReason': 'account_deletion',
+              }, SetOptions(merge: true));
         }
       }
 
@@ -371,7 +373,7 @@ class AuthRepository implements IAuthRepository {
           i,
           i + batchLimit > refs.length ? refs.length : i + batchLimit,
         );
-        final batch = _firestore.batch();
+        final batch = _firebaseService.firestore.batch();
         chunk.forEach(batch.delete);
         await batch.commit();
       }
@@ -380,7 +382,9 @@ class AuthRepository implements IAuthRepository {
       try {
         final storagePrefixes = ['users/$uid/profile', 'users/$uid/cover'];
         for (final prefixPath in storagePrefixes) {
-          final result = await _storage.ref(prefixPath).listAll();
+          final result = await _firebaseService.storage
+              .ref(prefixPath)
+              .listAll();
           for (final ref in result.items) {
             await ref.delete();
           }
@@ -411,7 +415,7 @@ class AuthRepository implements IAuthRepository {
   }
 
   /// Sign in with Google
-  @override
+
   Future<SocialSignInResult> signInWithGoogle() async {
     try {
       await GoogleSignIn.instance.initialize();
@@ -421,14 +425,16 @@ class AuthRepository implements IAuthRepository {
         idToken: googleUser.authentication.idToken,
       );
 
-      final userCredential = await _auth.signInWithCredential(credential);
+      final userCredential = await _firebaseService.auth.signInWithCredential(
+        credential,
+      );
 
       if (userCredential.user != null) {
         final existingUser = await getUserData(userCredential.user!.uid);
 
         if (existingUser != null) {
           if (existingUser.isBanned) {
-            await _auth.signOut();
+            await _firebaseService.auth.signOut();
             throw const AuthException(
               code: 'account-disabled',
               message:
@@ -477,7 +483,7 @@ class AuthRepository implements IAuthRepository {
           message: 'Sign-in was cancelled.',
         );
       }
-      AnalyticsService.instance.recordError(
+      _firebaseService.recordError(
         e,
         StackTrace.current,
         reason: 'GoogleSignIn non-canceled: ${e.code.name}',
@@ -496,7 +502,7 @@ class AuthRepository implements IAuthRepository {
   }
 
   /// Sign in with Apple
-  @override
+
   Future<SocialSignInResult> signInWithApple() async {
     try {
       final rawNonce = _generateNonce();
@@ -515,14 +521,16 @@ class AuthRepository implements IAuthRepository {
         rawNonce: rawNonce,
       );
 
-      final userCredential = await _auth.signInWithCredential(oauthCredential);
+      final userCredential = await _firebaseService.auth.signInWithCredential(
+        oauthCredential,
+      );
 
       if (userCredential.user != null) {
         final existingUser = await getUserData(userCredential.user!.uid);
 
         if (existingUser != null) {
           if (existingUser.isBanned) {
-            await _auth.signOut();
+            await _firebaseService.auth.signOut();
             throw const AuthException(
               code: 'account-disabled',
               message:
@@ -612,7 +620,7 @@ class AuthRepository implements IAuthRepository {
   /// Create or update user document in Firestore.
   ///
   /// Useful for syncing Firebase Auth user with Firestore document.
-  @override
+
   Future<UserModel> createUserDocument(UserModel user) async {
     try {
       await _usersCollection.doc(user.uid).set(user, SetOptions(merge: true));
@@ -625,7 +633,7 @@ class AuthRepository implements IAuthRepository {
   }
 
   /// Update user gamification stats (XP, rides, etc.).
-  @override
+
   Future<void> updateUserStats({
     required String userId,
     int? xpIncrement,
@@ -647,7 +655,7 @@ class AuthRepository implements IAuthRepository {
   }
 
   /// Update user role (rider/driver)
-  @override
+
   Future<void> updateUserRole(String userId, UserRole role) async {
     try {
       await _usersCollection.doc(userId).update({
@@ -660,10 +668,9 @@ class AuthRepository implements IAuthRepository {
     }
   }
 
-  @override
   Future<void> sendPasswordResetEmail(String email) async {
     try {
-      await _auth.sendPasswordResetEmail(email: email.trim());
+      await _firebaseService.auth.sendPasswordResetEmail(email: email.trim());
       TalkerService.info('Password reset email sent to $email');
     } on FirebaseAuthException catch (e) {
       TalkerService.error('Password reset error: ${e.code}');
@@ -674,10 +681,9 @@ class AuthRepository implements IAuthRepository {
     }
   }
 
-  @override
   Future<void> updatePassword(String newPassword) async {
     try {
-      final user = _auth.currentUser;
+      final user = _firebaseService.auth.currentUser;
       if (user == null) {
         throw Exception('No user logged in');
       }
@@ -693,7 +699,6 @@ class AuthRepository implements IAuthRepository {
     }
   }
 
-  @override
   Future<String?> uploadProfileImage(File image, String uid) async {
     return _uploadProfileImage(image, uid);
   }
@@ -708,7 +713,7 @@ class AuthRepository implements IAuthRepository {
   /// Throws [StateError] if:
   /// - No document exists for [uid]
   /// - [role] is [UserRole.pending] (cannot finalize into pending)
-  @override
+
   Future<UserModel> finalizeRoleAs(String uid, UserRole role) async {
     assert(
       role != UserRole.pending,
@@ -721,7 +726,7 @@ class AuthRepository implements IAuthRepository {
         throw StateError('finalizeRoleAs: no user document found for $uid');
       }
 
-      final rawDoc = await _firestore
+      final rawDoc = await _firebaseService.firestore
           .collection(AppConstants.usersCollection)
           .doc(uid)
           .get();
@@ -850,10 +855,10 @@ class AuthRepository implements IAuthRepository {
   ///
   /// Required before [deleteAccount] or [updatePassword] when the session
   /// is too old (Firebase throws `requires-recent-login`).
-  @override
+
   Future<void> reauthenticateWithPassword(String password) async {
     try {
-      final user = _auth.currentUser;
+      final user = _firebaseService.auth.currentUser;
       if (user == null || user.email == null) {
         throw Exception('No user is currently signed in');
       }
@@ -874,14 +879,14 @@ class AuthRepository implements IAuthRepository {
   }
 
   /// Re-authenticate user with Google credential for sensitive operations.
-  @override
+
   Future<void> reauthenticateWithGoogle() async {
     try {
       await GoogleSignIn.instance.initialize();
       final googleUser = await GoogleSignIn.instance.authenticate();
 
       // FIX A-7: Verify the Google account email matches the current user's email
-      final currentEmail = _auth.currentUser?.email;
+      final currentEmail = _firebaseService.auth.currentUser?.email;
       if (currentEmail != null && googleUser.email != currentEmail) {
         throw const AuthException(
           code: 'email-mismatch',
@@ -896,7 +901,7 @@ class AuthRepository implements IAuthRepository {
         idToken: googleUser.authentication.idToken,
       );
 
-      final user = _auth.currentUser;
+      final user = _firebaseService.auth.currentUser;
       if (user == null) {
         throw Exception('No user is currently signed in');
       }
@@ -913,17 +918,17 @@ class AuthRepository implements IAuthRepository {
   // =========================================================================
 
   /// Send a verification email to the current user.
-  @override
+
   Future<void> sendEmailVerification() async {
     try {
-      final user = _auth.currentUser;
+      final user = _firebaseService.auth.currentUser;
       if (user == null) {
         throw Exception('No user is currently signed in');
       }
 
       // FIX A-5: Enforce a 60-second cooldown between verification email sends
       const cooldownSeconds = 60;
-      final rawUserDoc = await _firestore
+      final rawUserDoc = await _firebaseService.firestore
           .collection(AppConstants.usersCollection)
           .doc(user.uid)
           .get();
@@ -942,7 +947,7 @@ class AuthRepository implements IAuthRepository {
       }
 
       await user.sendEmailVerification();
-      await _firestore
+      await _firebaseService.firestore
           .collection(AppConstants.usersCollection)
           .doc(user.uid)
           .update({
@@ -961,18 +966,18 @@ class AuthRepository implements IAuthRepository {
   /// Check whether the current user's email is verified.
   ///
   /// Reloads the user first to get the latest status from Firebase.
-  @override
+
   Future<bool> isEmailVerified() async {
-    final user = _auth.currentUser;
+    final user = _firebaseService.auth.currentUser;
     if (user == null) return false;
     await user.reload();
-    return _auth.currentUser?.emailVerified ?? false;
+    return _firebaseService.auth.currentUser?.emailVerified ?? false;
   }
 
   /// Reload the current Firebase Auth user to refresh cached properties
   /// such as [User.emailVerified].
-  @override
+
   Future<void> reloadUser() async {
-    await _auth.currentUser?.reload();
+    await _firebaseService.auth.currentUser?.reload();
   }
 }

@@ -2,11 +2,11 @@ import 'dart:async';
 
 import 'package:app_links/app_links.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
+import 'package:sport_connect/core/services/firebase_service.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/messaging/models/message_model.dart';
@@ -38,24 +38,31 @@ class _RouteHandler {
 /// - sc://ride/abc123
 /// - https://sportaxitrip.com/ride/abc123
 class DeepLinkService {
-  DeepLinkService() : _appLinks = AppLinks();
+  DeepLinkService({
+    FirebaseService? firebaseService,
+    AppLinks? appLinks,
+  }) : _firebaseService = firebaseService ?? FirebaseService.instance,
+       _appLinks = appLinks ?? AppLinks();
 
   /// Singleton instance for convenient static access.
-  static final DeepLinkService instance = DeepLinkService();
+  static final DeepLinkService instance = DeepLinkService(
+    firebaseService: FirebaseService.instance,
+  );
 
+  final FirebaseService _firebaseService;
   final AppLinks _appLinks;
   StreamSubscription<Uri>? _subscription;
 
-  CollectionReference<UserModel> get _usersCollection => FirebaseFirestore
-      .instance
+  CollectionReference<UserModel> get _usersCollection => _firebaseService
+      .firestore
       .collection(AppConstants.usersCollection)
       .withConverter<UserModel>(
         fromFirestore: (snap, _) => UserModel.fromJson(snap.data()!),
         toFirestore: (user, _) => user.toJson(),
       );
 
-  CollectionReference<ChatModel> get _chatsCollection => FirebaseFirestore
-      .instance
+  CollectionReference<ChatModel> get _chatsCollection => _firebaseService
+      .firestore
       .collection(AppConstants.chatsCollection)
       .withConverter<ChatModel>(
         fromFirestore: (snap, _) => ChatModel.fromJson(snap.data()!),
@@ -265,7 +272,7 @@ class DeepLinkService {
     required String id,
   }) async {
     try {
-      final db = FirebaseFirestore.instance;
+      final db = _firebaseService.firestore;
       if (routeName == AppRoutes.rideDetail.name) {
         final snap = await db
             .collection(AppConstants.ridesCollection)
@@ -285,7 +292,7 @@ class DeepLinkService {
     required String chatId,
   }) async {
     try {
-      final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+      final currentUserId = _firebaseService.auth.currentUser?.uid;
       final chat = await _chatsCollection
           .doc(chatId)
           .get()
@@ -390,7 +397,12 @@ class DeepLinkService {
 /// Provides the [DeepLinkService] singleton.
 @Riverpod(keepAlive: true)
 DeepLinkService deepLinkService(Ref ref) {
-  final service = DeepLinkService();
+  final firebaseService = ref.watch(firebaseServiceProvider);
+
+  final service = DeepLinkService(
+    firebaseService: firebaseService,
+  );
+
   ref.onDispose(service.dispose);
   return service;
 }

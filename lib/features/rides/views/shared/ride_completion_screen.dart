@@ -295,13 +295,25 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
                                 text: AppLocalizations.of(context).shareReceipt,
                                 onPressed: () async {
                                   HapticFeedback.lightImpact();
+                                  final l10n = AppLocalizations.of(context);
                                   await ref
                                       .read(
                                         rideCompletionUiViewModelProvider(
                                           widget.rideId,
                                         ).notifier,
                                       )
-                                      .shareReceipt(ride);
+                                      .shareReceipt(
+                                        ride,
+                                        receiptTitle: l10n.receiptTitle,
+                                        fromLabel: l10n.fromLabel,
+                                        toLabel: l10n.toLabel,
+                                        dateLabel: l10n.dateLabel,
+                                        driverLabel: l10n.driver,
+                                        baseFareLabel: l10n.receiptBaseFare,
+                                        serviceFeeLabel: l10n.receiptServiceFee,
+                                        totalLabel: l10n.totalLabel,
+                                        rideIdLabel: l10n.receiptRideId,
+                                      );
                                 },
                                 style: PremiumButtonStyle.secondary,
                                 icon: Icons.receipt_long_rounded,

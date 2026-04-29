@@ -79,7 +79,6 @@ class _MapLocationPickerState extends ConsumerState<MapLocationPicker>
 
   LatLng? _selectedLocation;
   String? _selectedAddress;
-  String _selectedMapStyle = 'standard';
 
   late final AnimationController _markerBounceController;
   late final AnimationController _pulseController;
@@ -221,7 +220,7 @@ class _MapLocationPickerState extends ConsumerState<MapLocationPicker>
         .read(mapServiceProvider)
         .searchPlaces(
           query,
-          countryCode: widget.countryCode,
+          countryCode: widget.countryCode ?? "FR",
           nearLocation: _selectedLocation,
           limit: 8,
         );

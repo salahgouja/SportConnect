@@ -9,6 +9,54 @@ part of 'driver_stats_repository.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 
+@ProviderFor(driverStatsRepository)
+final driverStatsRepositoryProvider = DriverStatsRepositoryProvider._();
+
+final class DriverStatsRepositoryProvider
+    extends
+        $FunctionalProvider<
+          DriverStatsRepository,
+          DriverStatsRepository,
+          DriverStatsRepository
+        >
+    with $Provider<DriverStatsRepository> {
+  DriverStatsRepositoryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'driverStatsRepositoryProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$driverStatsRepositoryHash();
+
+  @$internal
+  @override
+  $ProviderElement<DriverStatsRepository> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  DriverStatsRepository create(Ref ref) {
+    return driverStatsRepository(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(DriverStatsRepository value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<DriverStatsRepository>(value),
+    );
+  }
+}
+
+String _$driverStatsRepositoryHash() =>
+    r'bf9b0d8f7d29d025c1961c82c618522baeb61997';
+
 @ProviderFor(driverStats)
 final driverStatsProvider = DriverStatsProvider._();
 

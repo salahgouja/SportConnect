@@ -1,12 +1,23 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
-import 'package:sport_connect/core/interfaces/repositories/i_payment_repository.dart';
+import 'package:sport_connect/core/services/firebase_service.dart';
 import 'package:sport_connect/core/services/stripe_service.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/features/payments/models/payment_model.dart';
 
+part 'payment_repository.g.dart';
+
+@Riverpod(keepAlive: true)
+PaymentRepository paymentRepository(Ref ref) {
+  return PaymentRepository(
+    ref.watch(firebaseServiceProvider).firestore,
+    ref.read(stripeServiceProvider),
+  );
+}
+
 /// Payment Repository for Firestore operations
-class PaymentRepository implements IPaymentRepository {
+class PaymentRepository {
   PaymentRepository(this._firestore, this._stripeService);
   final FirebaseFirestore _firestore;
   final StripeService _stripeService;
@@ -626,7 +637,7 @@ class PaymentRepository implements IPaymentRepository {
       await _payoutsCollection.doc(payoutId).update({
         'status': status.name,
         'updatedAt': DateTime.now(),
-        'failureReason': failureReason,
+        'failureReason': ?failureReason,
         if (arrivedAt != null) 'arrivedAt': Timestamp.fromDate(arrivedAt),
       });
 
@@ -728,6 +739,9 @@ class PaymentRepository implements IPaymentRepository {
     try {
       final payment = await getPaymentById(paymentId);
       if (payment == null) throw Exception('Payment not found');
+      if (payment.stripePaymentIntentId == null) {
+        throw Exception('Payment has no Stripe intent — cannot refund');
+      }
 
       // Call Stripe service to process refund
       // The Cloud Function also updates the Firestore payment record
@@ -763,25 +777,11 @@ class PaymentRepository implements IPaymentRepository {
   Future<ConnectedAccountCreationResult?> createConnectedAccount({
     required String userId,
     required String email,
-    required String country,
-    String? firstName,
-    String? lastName,
-    String? phone,
-    DateTime? dateOfBirth,
-    String? addressLine1,
-    String? city,
   }) async {
     try {
       final result = await _stripeService.createDriverConnectedAccount(
         userId: userId,
         email: email,
-        country: country,
-        firstName: firstName,
-        lastName: lastName,
-        phone: phone,
-        dateOfBirth: dateOfBirth,
-        addressLine1: addressLine1,
-        city: city,
       );
 
       final accountId = result['accountId'] as String?;
@@ -792,7 +792,7 @@ class PaymentRepository implements IPaymentRepository {
         driverId: userId,
         stripeAccountId: accountId,
         email: email,
-        country: country,
+        country: 'FR',
         chargesEnabled: false,
         payoutsEnabled: false,
         detailsSubmitted: false,

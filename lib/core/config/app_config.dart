@@ -46,21 +46,21 @@ class AppConfig {
   /// 2) Android emulator loopback (10.0.2.2) when enabled.
   /// 3) Loopback (127.0.0.1) for local reverse/forward workflows.
   static String get emulatorHost {
-    return '10.221.107.105';
+    return '192.168.0.120';
     final overrideHost = emulatorHostOverride.trim();
     if (overrideHost.isNotEmpty) {
       return overrideHost;
     }
 
     if (kIsWeb) {
-      return '10.116.167.105';
+      return '192.168.0.120';
     }
 
     if (defaultTargetPlatform == TargetPlatform.android) {
-      return '10.116.167.105';
+      return '192.168.0.120';
     }
 
-    return '10.116.167.105';
+    return '192.168.0.120';
   }
 
   /// Emulator ports (must match firebase.json)

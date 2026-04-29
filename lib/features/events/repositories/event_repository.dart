@@ -2,14 +2,25 @@ import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
-import 'package:sport_connect/core/interfaces/repositories/i_event_repository.dart';
 import 'package:sport_connect/core/models/location/location_point.dart';
+import 'package:sport_connect/core/services/firebase_service.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/features/events/models/event_model.dart';
 import 'package:sport_connect/features/messaging/models/message_model.dart';
 
-class EventRepository implements IEventRepository {
+part 'event_repository.g.dart';
+
+@Riverpod(keepAlive: true)
+EventRepository eventRepository(Ref ref) {
+  return EventRepository(
+    ref.watch(firebaseServiceProvider).firestore,
+    ref.watch(firebaseServiceProvider).storage,
+  );
+}
+
+class EventRepository {
   EventRepository(this._firestore, this._storage);
 
   final FirebaseFirestore _firestore;

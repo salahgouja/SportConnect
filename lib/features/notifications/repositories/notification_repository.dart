@@ -1,14 +1,19 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
-import 'package:sport_connect/core/interfaces/repositories/i_notification_repository.dart';
-import 'package:sport_connect/core/providers/repository_providers.dart';
+import 'package:sport_connect/core/services/firebase_service.dart';
+
 import 'package:sport_connect/features/notifications/models/notification_model.dart';
 
 part 'notification_repository.g.dart';
 
+@Riverpod(keepAlive: true)
+NotificationRepository notificationRepository(Ref ref) {
+  return NotificationRepository(ref.watch(firebaseServiceProvider).firestore);
+}
+
 /// Notification Repository for Firestore operations
-class NotificationRepository implements INotificationRepository {
+class NotificationRepository {
   NotificationRepository(this._firestore);
   final FirebaseFirestore _firestore;
 

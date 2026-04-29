@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 import 'dart:ui';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -35,6 +36,10 @@ class ActiveRideGeofenceService {
     required List<RideBooking> bookings,
     String? passengerId,
   }) async {
+    // native_geofence requires the location background mode in UIBackgroundModes
+    // on iOS, which was intentionally removed — geofencing is Android-only.
+    if (!Platform.isAndroid) return false;
+
     if (!_shouldMonitor(ride.status)) {
       await clearRideGeofences(ride.id);
       return false;
@@ -54,10 +59,10 @@ class ActiveRideGeofenceService {
       return true;
     }
 
-    final ready = await _ensureReady();
-    if (!ready) return false;
-
     try {
+      final ready = await _ensureReady();
+      if (!ready) return false;
+
       final manager = NativeGeofenceManager.instance;
       final registeredIds = await manager.getRegisteredGeofenceIds();
       final desiredIds = geofences.map((g) => g.id).toSet();
@@ -90,7 +95,7 @@ class ActiveRideGeofenceService {
   }
 
   Future<void> clearRideGeofences(String rideId) async {
-    if (rideId.isEmpty) return;
+    if (rideId.isEmpty || !Platform.isAndroid) return;
 
     _activeSignatures.removeWhere((key, _) => key.startsWith('$rideId:'));
 
@@ -108,14 +113,31 @@ class ActiveRideGeofenceService {
     }
   }
 
+  // Requests background ("always") location permission on Android. Call this
+  // from a UI context after showing the user a rationale.
+  static Future<bool> requestBackgroundPermission() async {
+    if (!Platform.isAndroid) return false;
+    final status = await Permission.locationAlways.request();
+    return status.isGranted;
+  }
+
   Future<bool> _ensureReady() async {
-    final location = await Permission.location.request();
+    final location = await Permission.location.status;
     if (!location.isGranted) return false;
 
-    final always = await Permission.locationAlways.request();
+    // Check (don't request) — requesting locationAlways here would silently
+    // open OS Settings mid-ride on Android 11+. The explicit request is done
+    // in the active-ride screen init flow with a rationale dialog.
+    final always = await Permission.locationAlways.status;
     if (!always.isGranted) return false;
 
-    await _ensureInitialized();
+    try {
+      await _ensureInitialized();
+    } on Object catch (e, st) {
+      debugPrint('Geofence manager init failed: $e');
+      debugPrintStack(stackTrace: st);
+      return false;
+    }
     return true;
   }
 

@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -7,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
@@ -21,6 +24,7 @@ import 'package:sport_connect/features/messaging/view_models/chat_view_model.dar
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
+import 'package:sport_connect/features/rides/services/active_ride_geofence_service.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/features/rides/views/widgets/ride_shared_widgets.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
@@ -58,19 +62,35 @@ class _DriverActiveRideScreenState
     if (rideId == null || rideId.isEmpty) return;
 
     final notifier = ref.read(activeRideViewModelProvider(rideId).notifier);
-    final initialResult = await notifier.initializeLocationTracking();
+    var result = await notifier.initializeLocationTracking();
 
-    if (!mounted ||
-        initialResult != ActiveRideLocationInitResult.permissionRequired) {
-      return;
+    if (!mounted) return;
+
+    if (result == ActiveRideLocationInitResult.permissionRequired) {
+      final accepted = await PermissionDialogHelper.showRideTrackingRationale(
+        context,
+      );
+      if (!mounted || !accepted) return;
+      result = await notifier.initializeLocationTracking(
+        requestPermission: true,
+      );
+      if (!mounted) return;
     }
 
-    final accepted = await PermissionDialogHelper.showRideTrackingRationale(
-      context,
-    );
-    if (!mounted || !accepted) return;
-
-    await notifier.initializeLocationTracking(requestPermission: true);
+    // Android only: request background ("always") location for geofencing.
+    // iOS intentionally omits the location UIBackgroundMode, so geofencing
+    // runs only on Android and we must not request locationAlways on iOS.
+    if (result == ActiveRideLocationInitResult.ready && Platform.isAndroid) {
+      final alwaysStatus = await Permission.locationAlways.status;
+      if (mounted && !alwaysStatus.isGranted) {
+        final accepted = await PermissionDialogHelper.showRideTrackingRationale(
+          context,
+        );
+        if (mounted && accepted) {
+          await ActiveRideGeofenceService.requestBackgroundPermission();
+        }
+      }
+    }
   }
 
   @override

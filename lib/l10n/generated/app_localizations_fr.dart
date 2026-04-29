@@ -6292,4 +6292,27 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get submitRating => 'Soumettre la note';
+
+  @override
+  String eventShareText(
+    String title,
+    String eventType,
+    String date,
+    String address,
+    String link,
+  ) {
+    return '$title — $eventType\n$date\n$address\n\nRejoignez-moi sur SportConnect !\n$link';
+  }
+
+  @override
+  String get receiptTitle => 'SportConnect - Reçu de trajet';
+
+  @override
+  String get receiptBaseFare => 'Tarif de base';
+
+  @override
+  String get receiptServiceFee => 'Frais de service';
+
+  @override
+  String get receiptRideId => 'ID du trajet';
 }

@@ -27,11 +27,6 @@ import 'package:sport_connect/features/vehicles/views/vehicle_management_screen.
 
 /// Profile and related features module routes
 class ProfileRoutes implements RouteConfig {
-  @override
-  String get moduleName => 'profile';
-
-  @override
-  String? get initialRoute => AppRoutes.profile.path;
 
   @override
   List<RouteBase> getRoutes() {

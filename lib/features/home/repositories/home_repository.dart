@@ -2,12 +2,18 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
-import 'package:sport_connect/core/interfaces/repositories/i_home_repository.dart';
-import 'package:sport_connect/core/providers/repository_providers.dart';
+import 'package:sport_connect/core/services/firebase_service.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 
+part 'home_repository.g.dart';
+
+@Riverpod(keepAlive: true)
+HomeRepository homeRepository(Ref ref) {
+  return HomeRepository(ref.watch(firebaseServiceProvider).firestore);
+}
+
 /// Repository for home screen data
-class HomeRepository implements IHomeRepository {
+class HomeRepository {
   HomeRepository(this._firestore);
   final FirebaseFirestore _firestore;
 

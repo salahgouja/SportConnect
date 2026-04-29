@@ -41,10 +41,9 @@ part of 'review_repository.dart';
 /// 3. Ride association: Link reviews to specific rides
 /// 4. Response feature: Reviewees can respond to reviews
 /// 5. Tag aggregation: Can compute tag statistics
-/// Provider to get reviews for a specific user
 
-@ProviderFor(userReviews)
-final userReviewsProvider = UserReviewsFamily._();
+@ProviderFor(reviewRepository)
+final reviewRepositoryProvider = ReviewRepositoryProvider._();
 
 /// Firestore Collection Structure for Reviews:
 ///
@@ -79,18 +78,15 @@ final userReviewsProvider = UserReviewsFamily._();
 /// 3. Ride association: Link reviews to specific rides
 /// 4. Response feature: Reviewees can respond to reviews
 /// 5. Tag aggregation: Can compute tag statistics
-/// Provider to get reviews for a specific user
 
-final class UserReviewsProvider
+final class ReviewRepositoryProvider
     extends
         $FunctionalProvider<
-          AsyncValue<List<ReviewModel>>,
-          List<ReviewModel>,
-          FutureOr<List<ReviewModel>>
+          ReviewRepository,
+          ReviewRepository,
+          ReviewRepository
         >
-    with
-        $FutureModifier<List<ReviewModel>>,
-        $FutureProvider<List<ReviewModel>> {
+    with $Provider<ReviewRepository> {
   /// Firestore Collection Structure for Reviews:
   ///
   /// /reviews/{reviewId}
@@ -124,6 +120,58 @@ final class UserReviewsProvider
   /// 3. Ride association: Link reviews to specific rides
   /// 4. Response feature: Reviewees can respond to reviews
   /// 5. Tag aggregation: Can compute tag statistics
+  ReviewRepositoryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'reviewRepositoryProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$reviewRepositoryHash();
+
+  @$internal
+  @override
+  $ProviderElement<ReviewRepository> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  ReviewRepository create(Ref ref) {
+    return reviewRepository(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(ReviewRepository value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<ReviewRepository>(value),
+    );
+  }
+}
+
+String _$reviewRepositoryHash() => r'9398c52571ecc5d400c5f3d8371891cdd65b0b21';
+
+/// Provider to get reviews for a specific user
+
+@ProviderFor(userReviews)
+final userReviewsProvider = UserReviewsFamily._();
+
+/// Provider to get reviews for a specific user
+
+final class UserReviewsProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<ReviewModel>>,
+          List<ReviewModel>,
+          FutureOr<List<ReviewModel>>
+        >
+    with
+        $FutureModifier<List<ReviewModel>>,
+        $FutureProvider<List<ReviewModel>> {
   /// Provider to get reviews for a specific user
   UserReviewsProvider._({
     required UserReviewsFamily super.from,
@@ -171,39 +219,6 @@ final class UserReviewsProvider
 
 String _$userReviewsHash() => r'60fec7c1ee2a44f2ea547a9903aa815138fcc207';
 
-/// Firestore Collection Structure for Reviews:
-///
-/// /reviews/{reviewId}
-///   - id: string
-///   - rideId: string
-///   - reviewerId: string
-///   - reviewerName: string
-///   - reviewerPhotoUrl: string?
-///   - revieweeId: string
-///   - revieweeName: string
-///   - revieweePhotoUrl: string?
-///   - type: string (driver/rider)
-///   - rating: number
-///   - comment: string?
-///   - tags: array<string>
-///   - isVisible: bool
-///   - response: string?
-///   - responseAt: timestamp?
-///   - createdAt: timestamp
-///   - updatedAt: timestamp?
-///
-/// Indexes needed:
-/// - reviews: revieweeId ASC, createdAt DESC
-/// - reviews: reviewerId ASC, createdAt DESC
-/// - reviews: rideId ASC
-/// - reviews: type ASC, revieweeId ASC, createdAt DESC
-///
-/// This design supports:
-/// 1. Many-to-many: A user can review many users, and be reviewed by many users
-/// 2. Efficient queries: Get all reviews for a user, or all reviews by a user
-/// 3. Ride association: Link reviews to specific rides
-/// 4. Response feature: Reviewees can respond to reviews
-/// 5. Tag aggregation: Can compute tag statistics
 /// Provider to get reviews for a specific user
 
 final class UserReviewsFamily extends $Family
@@ -217,39 +232,6 @@ final class UserReviewsFamily extends $Family
         isAutoDispose: true,
       );
 
-  /// Firestore Collection Structure for Reviews:
-  ///
-  /// /reviews/{reviewId}
-  ///   - id: string
-  ///   - rideId: string
-  ///   - reviewerId: string
-  ///   - reviewerName: string
-  ///   - reviewerPhotoUrl: string?
-  ///   - revieweeId: string
-  ///   - revieweeName: string
-  ///   - revieweePhotoUrl: string?
-  ///   - type: string (driver/rider)
-  ///   - rating: number
-  ///   - comment: string?
-  ///   - tags: array<string>
-  ///   - isVisible: bool
-  ///   - response: string?
-  ///   - responseAt: timestamp?
-  ///   - createdAt: timestamp
-  ///   - updatedAt: timestamp?
-  ///
-  /// Indexes needed:
-  /// - reviews: revieweeId ASC, createdAt DESC
-  /// - reviews: reviewerId ASC, createdAt DESC
-  /// - reviews: rideId ASC
-  /// - reviews: type ASC, revieweeId ASC, createdAt DESC
-  ///
-  /// This design supports:
-  /// 1. Many-to-many: A user can review many users, and be reviewed by many users
-  /// 2. Efficient queries: Get all reviews for a user, or all reviews by a user
-  /// 3. Ride association: Link reviews to specific rides
-  /// 4. Response feature: Reviewees can respond to reviews
-  /// 5. Tag aggregation: Can compute tag statistics
   /// Provider to get reviews for a specific user
 
   UserReviewsProvider call(String userId) =>

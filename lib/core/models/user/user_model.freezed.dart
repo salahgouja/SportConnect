@@ -449,9 +449,9 @@ class DriverModel extends UserModel {
 @JsonKey() final  UserPreferences preferences;
 // Expertise
 @override@JsonKey() final  Expertise expertise;
-// Driver-specific: Vehicle IDs (resolved through VehicleRepository)
+// Driver-specific: Vehicle IDs
  final  List<String> _vehicleIds;
-// Driver-specific: Vehicle IDs (resolved through VehicleRepository)
+// Driver-specific: Vehicle IDs
 @JsonKey() List<String> get vehicleIds {
   if (_vehicleIds is EqualUnmodifiableListView) return _vehicleIds;
   // ignore: implicit_dynamic_type

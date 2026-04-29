@@ -1,12 +1,13 @@
 import 'dart:async' show StreamSubscription, unawaited;
+
 import 'package:geolocator/geolocator.dart' show Position;
 import 'package:latlong2/latlong.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/core/services/location_service.dart';
 import 'package:sport_connect/core/services/push_notification_service.dart';
 import 'package:sport_connect/core/services/routing_service.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
+import 'package:sport_connect/features/profile/view_models/settings_view_model.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 
 part 'rider_home_view_model.g.dart';
@@ -256,12 +257,12 @@ class RiderHomeViewModel extends _$RiderHomeViewModel {
       return false;
     }
     if (!ref.mounted) return false;
-    final settings = await ref.read(settingsRepositoryProvider.future);
+    final settings = ref.read(settingsViewModelProvider);
     return !settings.notificationDialogShown;
   }
 
   Future<void> markNotificationDialogShown() async {
-    final settings = await ref.read(settingsRepositoryProvider.future);
+    final settings = ref.read(settingsViewModelProvider.notifier);
     await settings.setNotificationDialogShown();
   }
 

@@ -1,7 +1,7 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/features/notifications/models/notification_model.dart';
+import 'package:sport_connect/features/notifications/repositories/notification_repository.dart';
 
 part 'notification_view_model.g.dart';
 

@@ -38,7 +38,6 @@
 		<!-- Push Notifications -->
 		<key>UIBackgroundModes</key>
 		<array>
-			<string>location</string>
 			<string>remote-notification</string>
 		</array>
 
@@ -114,9 +113,7 @@
 		<key>ITSAppUsesNonExemptEncryption</key>
 		<false/>
 
-		<key>UIStatusBarHidden</key>
-		<true/>
 		<key>UIViewControllerBasedStatusBarAppearance</key>
-		<false/>
+		<true/>
 	</dict>
 </plist>

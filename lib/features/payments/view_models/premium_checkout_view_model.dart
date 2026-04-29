@@ -1,12 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/services/stripe_service.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/payments/models/premium_plan.dart';
 import 'package:sport_connect/features/payments/services/premium_iap_service.dart';
+import 'package:sport_connect/features/profile/repositories/profile_repository.dart';
 
 part 'premium_checkout_view_model.g.dart';
 

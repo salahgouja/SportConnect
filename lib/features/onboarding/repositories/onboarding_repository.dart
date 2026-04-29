@@ -1,8 +1,13 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:sport_connect/core/providers/repository_providers.dart';
+import 'package:sport_connect/core/repositories/settings_repository.dart';
 
 part 'onboarding_repository.g.dart';
+
+@Riverpod(keepAlive: true)
+Future<OnboardingRepository> onboardingRepository(Ref ref) async {
+  return OnboardingRepository(ref.watch(sharedPreferencesProvider));
+}
 
 /// Repository for onboarding preferences
 class OnboardingRepository {

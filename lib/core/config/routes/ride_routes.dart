@@ -25,11 +25,6 @@ import 'package:sport_connect/features/rides/views/shared/ride_completion_screen
 
 /// Ride module routes with type-safe parameters
 class RideRoutes implements RouteConfig {
-  @override
-  String get moduleName => 'rides';
-
-  @override
-  String? get initialRoute => AppRoutes.searchRides.path;
 
   @override
   List<RouteBase> getRoutes() {

@@ -42,7 +42,7 @@ class MapService {
   Future<List<SearchResult>> searchPlaces(
     String query, {
     LatLng? nearLocation,
-    String? countryCode,
+    String countryCode = 'fr',
     int limit = 10,
   }) async {
     try {
@@ -51,13 +51,13 @@ class MapService {
         'json',
         1,
         limit,
-        'en,fr,ar',
+        'en,fr',
         nearLocation?.latitude,
         nearLocation?.longitude,
         countryCode,
         AppConstants.userAgent,
       );
-      return data.map((item) => SearchResult.fromNominatim(item.json)).toList();
+      return data.map(SearchResult.fromNominatim).toList();
     } catch (e, st) {
       TalkerService.error('Place search failed', e, st);
       return [];
@@ -71,10 +71,10 @@ class MapService {
         location.longitude,
         'json',
         1,
-        'en,fr,ar',
+        'en,fr',
         AppConstants.userAgent,
       );
-      return SearchResult.fromNominatim(data.json);
+      return SearchResult.fromNominatim(data);
     } catch (e, st) {
       TalkerService.error('Reverse geocode failed', e, st);
       return null;

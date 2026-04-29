@@ -1,11 +1,11 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/models/driver_stats.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/repositories/driver_stats_repository.dart';
+import 'package:sport_connect/features/rides/repositories/ride_repository.dart';
 import 'package:sport_connect/features/rides/services/ride_request_service.dart';
 
 part 'driver_view_model.g.dart';

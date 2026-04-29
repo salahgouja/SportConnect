@@ -1,5 +1,4 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/features/onboarding/models/onboarding_model.dart';
 import 'package:sport_connect/features/onboarding/repositories/onboarding_repository.dart';
 

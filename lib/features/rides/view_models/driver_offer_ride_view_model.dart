@@ -3,18 +3,20 @@ import 'package:latlong2/latlong.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/models/location/location_point.dart';
 import 'package:sport_connect/core/models/value_objects/money.dart';
-import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/core/services/routing_service.dart'
     show routingServiceProvider;
 import 'package:sport_connect/features/events/models/event_model.dart';
+import 'package:sport_connect/features/events/repositories/event_repository.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_capacity.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_preferences.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_pricing.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_route.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_schedule.dart';
+import 'package:sport_connect/features/rides/repositories/ride_repository.dart';
 import 'package:sport_connect/features/rides/services/ride_service.dart';
 import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
+import 'package:sport_connect/features/vehicles/repositories/vehicle_repository.dart';
 import 'package:uuid/uuid.dart';
 
 part 'driver_offer_ride_view_model.g.dart';

@@ -44,7 +44,7 @@ final class AuthStateProvider
   }
 }
 
-String _$authStateHash() => r'3b4effbdb6e6e6fa30bc2685b825b567c0a41b7b';
+String _$authStateHash() => r'169a42479efd2b01fd3524bbea2d445a2dde7019';
 
 /// Current user data provider (Firestore User Model)
 ///
@@ -151,4 +151,4 @@ final class SelectedRoleIntentProvider
 }
 
 String _$selectedRoleIntentHash() =>
-    r'61ccbef58015d90eca5b5d2f1563c1472e198d5d';
+    r'099fc48bc57c3f498f56ed840eef1bb583aa9b99';

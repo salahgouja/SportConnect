@@ -1,7 +1,4 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
-import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
@@ -328,15 +325,16 @@ class RefundRequestSheet extends StatefulWidget {
     required this.onSubmit,
     super.key,
   });
+
   final String rideId;
   final int paidAmount;
-  final ValueChanged<RefundRequest> onSubmit;
+  final Future<void> Function(RefundRequest request) onSubmit;
 
   static Future<void> show(
     BuildContext context, {
     required String rideId,
     required int paidAmount,
-    required ValueChanged<RefundRequest> onSubmit,
+    required Future<void> Function(RefundRequest request) onSubmit,
   }) {
     return AppModalSheet.show<void>(
       context: context,
@@ -358,108 +356,298 @@ class _RefundRequestSheetState extends State<RefundRequestSheet> {
   RefundReason? _reason;
   final _detailsController = TextEditingController();
 
+  bool _isSubmitting = false;
+
   @override
   void dispose() {
     _detailsController.dispose();
     super.dispose();
   }
 
+  String? _errorMessage;
+
+  Future<void> _submitRefundRequest() async {
+    final selectedReason = _reason;
+    if (selectedReason == null || _isSubmitting) return;
+    HapticFeedback.mediumImpact();
+    setState(() {
+      _isSubmitting = true;
+      _errorMessage = null;
+    });
+    try {
+      await widget.onSubmit(
+        RefundRequest(
+          rideId: widget.rideId,
+          reason: selectedReason,
+          details: _detailsController.text.trim(),
+          amountInCents: widget.paidAmount,
+        ),
+      );
+      // caller handles navigation on success
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isSubmitting = false;
+        _errorMessage = 'Could not submit refund. Please try again.';
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Padding(
-      padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 32.h),
+    final amountText = '€${(widget.paidAmount / 100).toStringAsFixed(2)}';
+
+    return SingleChildScrollView(
+      padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 32.h),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Center(
-            child: Container(
-              width: 40.w,
-              height: 4.h,
-              decoration: BoxDecoration(
-                color: AppColors.border,
-                borderRadius: BorderRadius.circular(2.r),
+          // Amount + timeline banner
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+            decoration: BoxDecoration(
+              color: AppColors.warning.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(14.r),
+              border: Border.all(
+                color: AppColors.warning.withValues(alpha: 0.28),
               ),
             ),
-          ),
-          SizedBox(height: 16.h),
-          Text(
-            AppLocalizations.of(context).requestRefund,
-            style: TextStyle(
-              fontSize: 20.sp,
-              fontWeight: FontWeight.w700,
-              color: theme.colorScheme.onSurface,
-            ),
-          ),
-          SizedBox(height: 4.h),
-          Text(
-            AppLocalizations.of(
-              context,
-            ).amountPaid((widget.paidAmount / 100).toStringAsFixed(2)),
-            style: TextStyle(
-              fontSize: 14.sp,
-              color: theme.textTheme.bodySmall?.color,
-            ),
-          ),
-          SizedBox(height: 16.h),
-          Text(
-            AppLocalizations.of(context).reasonForRefund,
-            style: TextStyle(
-              fontSize: 14.sp,
-              fontWeight: FontWeight.w600,
-              color: theme.colorScheme.onSurface,
-            ),
-          ),
-          SizedBox(height: 8.h),
-          RadioGroup<RefundReason>(
-            groupValue: _reason,
-            onChanged: (v) => setState(() => _reason = v),
-            child: Column(
-              children: RefundReason.values
-                  .map(
-                    (reason) => RadioListTile<RefundReason>.adaptive(
-                      value: reason,
-                      title: Text(
-                        reason.localizedLabel(context),
-                        style: TextStyle(fontSize: 14.sp),
+            child: Row(
+              children: [
+                Container(
+                  width: 44.w,
+                  height: 44.w,
+                  decoration: BoxDecoration(
+                    color: AppColors.warning.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+                  child: Icon(
+                    Icons.undo_rounded,
+                    color: AppColors.warningDark,
+                    size: 22.sp,
+                  ),
+                ),
+                SizedBox(width: 14.w),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Refund amount',
+                        style: TextStyle(
+                          fontSize: 11.sp,
+                          color: AppColors.textSecondary,
+                        ),
                       ),
-                      dense: true,
-                      contentPadding: EdgeInsets.zero,
+                      SizedBox(height: 2.h),
+                      Text(
+                        amountText,
+                        style: TextStyle(
+                          fontSize: 22.sp,
+                          fontWeight: FontWeight.w800,
+                          color: theme.colorScheme.onSurface,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Icon(
+                      Icons.schedule_rounded,
+                      size: 13.sp,
+                      color: AppColors.textTertiary,
                     ),
-                  )
-                  .toList(),
+                    SizedBox(height: 2.h),
+                    Text(
+                      '5–10 business',
+                      style: TextStyle(
+                        fontSize: 10.sp,
+                        color: AppColors.textTertiary,
+                      ),
+                    ),
+                    Text(
+                      'days',
+                      style: TextStyle(
+                        fontSize: 10.sp,
+                        color: AppColors.textTertiary,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
-          SizedBox(height: 12.h),
+
+          SizedBox(height: 22.h),
+
+          // Section label
+          Text(
+            AppLocalizations.of(context).reasonForRefund.toUpperCase(),
+            style: TextStyle(
+              fontSize: 11.sp,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textTertiary,
+              letterSpacing: 0.9,
+            ),
+          ),
+          SizedBox(height: 10.h),
+
+          // Reason tiles with icons
+          ...RefundReason.values.map((reason) {
+            final selected = reason == _reason;
+            return Padding(
+              padding: EdgeInsets.only(bottom: 8.h),
+              child: GestureDetector(
+                onTap: _isSubmitting
+                    ? null
+                    : () => setState(() => _reason = reason),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 14.w,
+                    vertical: 12.h,
+                  ),
+                  decoration: BoxDecoration(
+                    color: selected
+                        ? AppColors.primary.withValues(alpha: 0.07)
+                        : theme.colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(12.r),
+                    border: Border.all(
+                      color: selected
+                          ? AppColors.primary
+                          : Colors.transparent,
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        reason.icon,
+                        size: 18.sp,
+                        color: selected
+                            ? AppColors.primary
+                            : AppColors.textSecondary,
+                      ),
+                      SizedBox(width: 12.w),
+                      Expanded(
+                        child: Text(
+                          reason.localizedLabel(context),
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            fontWeight: selected
+                                ? FontWeight.w600
+                                : FontWeight.normal,
+                            color: selected
+                                ? AppColors.primary
+                                : theme.colorScheme.onSurface,
+                          ),
+                        ),
+                      ),
+                      if (selected)
+                        Icon(
+                          Icons.check_circle_rounded,
+                          size: 18.sp,
+                          color: AppColors.primary,
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }),
+
+          SizedBox(height: 14.h),
+
+          // Details field
           TextFormField(
             controller: _detailsController,
+            enabled: !_isSubmitting,
             maxLines: 3,
             textCapitalization: TextCapitalization.sentences,
             decoration: InputDecoration(
-              hintText: AppLocalizations.of(context).additionalDetailsOptional,
+              hintText:
+                  AppLocalizations.of(context).additionalDetailsOptional,
               alignLabelWithHint: true,
             ),
           ),
+
+          // Inline error
+          if (_errorMessage != null) ...[
+            SizedBox(height: 10.h),
+            Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: 12.w,
+                vertical: 10.h,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.error.withValues(alpha: 0.07),
+                borderRadius: BorderRadius.circular(10.r),
+                border: Border.all(
+                  color: AppColors.error.withValues(alpha: 0.28),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.error_outline_rounded,
+                    size: 16.sp,
+                    color: AppColors.error,
+                  ),
+                  SizedBox(width: 8.w),
+                  Expanded(
+                    child: Text(
+                      _errorMessage!,
+                      style: TextStyle(
+                        fontSize: 13.sp,
+                        color: AppColors.error,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
           SizedBox(height: 20.h),
+
+          // Submit
           SizedBox(
             width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _reason == null
+            child: FilledButton(
+              onPressed: (_reason == null || _isSubmitting)
                   ? null
-                  : () {
-                      HapticFeedback.mediumImpact();
-                      widget.onSubmit(
-                        RefundRequest(
-                          rideId: widget.rideId,
-                          reason: _reason!,
-                          details: _detailsController.text.trim(),
-                          amountInCents: widget.paidAmount,
-                        ),
-                      );
-                      Navigator.of(context).pop();
-                    },
-              child: Text(AppLocalizations.of(context).submitRefundRequest),
+                  : _submitRefundRequest,
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.error,
+                disabledBackgroundColor:
+                    AppColors.error.withValues(alpha: 0.38),
+                padding: EdgeInsets.symmetric(vertical: 16.h),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14.r),
+                ),
+              ),
+              child: _isSubmitting
+                  ? SizedBox(
+                      width: 20.sp,
+                      height: 20.sp,
+                      child: const CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : Text(
+                      AppLocalizations.of(context).submitRefundRequest,
+                      style: TextStyle(
+                        fontSize: 15.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
             ),
           ),
         ],
@@ -493,6 +681,23 @@ extension RefundReasonL10n on RefundReason {
         return l10n.refundReasonCancelledByDriver;
       case RefundReason.other:
         return l10n.refundReasonOther;
+    }
+  }
+
+  IconData get icon {
+    switch (this) {
+      case RefundReason.driverNoShow:
+        return Icons.person_off_rounded;
+      case RefundReason.rideNotAsDescribed:
+        return Icons.info_outline_rounded;
+      case RefundReason.unsafeExperience:
+        return Icons.shield_outlined;
+      case RefundReason.overcharged:
+        return Icons.payments_outlined;
+      case RefundReason.cancelledByDriver:
+        return Icons.cancel_outlined;
+      case RefundReason.other:
+        return Icons.more_horiz_rounded;
     }
   }
 }

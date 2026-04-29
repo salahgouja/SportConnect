@@ -3,69 +3,12 @@ import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:sport_connect/core/providers/repository_providers.dart';
-import 'package:sport_connect/core/providers/settings_provider.dart';
-import 'package:sport_connect/core/services/analytics_service.dart';
+import 'package:sport_connect/core/services/firebase_service.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
+import 'package:sport_connect/features/auth/repositories/auth_repository.dart';
+import 'package:sport_connect/features/profile/repositories/profile_repository.dart';
 
 part 'auth_view_model.g.dart';
-
-class LoginUiState {
-  const LoginUiState({
-    this.savedEmail = '',
-    this.rememberMe = false,
-    this.obscurePassword = true,
-  });
-
-  final String savedEmail;
-  final bool rememberMe;
-  final bool obscurePassword;
-
-  LoginUiState copyWith({
-    String? savedEmail,
-    bool? rememberMe,
-    bool? obscurePassword,
-  }) {
-    return LoginUiState(
-      savedEmail: savedEmail ?? this.savedEmail,
-      rememberMe: rememberMe ?? this.rememberMe,
-      obscurePassword: obscurePassword ?? this.obscurePassword,
-    );
-  }
-}
-
-@riverpod
-class LoginUiViewModel extends _$LoginUiViewModel {
-  @override
-  LoginUiState build() {
-    final savedCredentials = ref.watch(savedCredentialsProvider);
-    final credentials = savedCredentials.asData?.value;
-
-    return LoginUiState(
-      savedEmail: credentials?.rememberMe == true
-          ? (credentials?.email ?? '')
-          : '',
-      rememberMe: credentials?.rememberMe ?? false,
-    );
-  }
-
-  void setRememberMe({required bool enabled}) {
-    state = state.copyWith(rememberMe: enabled);
-  }
-
-  void togglePasswordVisibility() {
-    state = state.copyWith(obscurePassword: !state.obscurePassword);
-  }
-
-  Future<void> persistCredentials(String email) async {
-    final notifier = ref.read(savedCredentialsProvider.notifier);
-    if (state.rememberMe) {
-      await notifier.save(email.trim());
-    } else {
-      await notifier.clear();
-    }
-  }
-}
 
 class SignupWizardUiState {
   const SignupWizardUiState({
@@ -185,21 +128,16 @@ class LoginViewModel extends _$LoginViewModel {
   @override
   AsyncValue<void> build() => const AsyncValue.data(null);
 
-  Future<bool> login(
-    String email,
-    String password, {
-    bool rememberMe = false,
-  }) async {
+  Future<bool> login(String email, String password) async {
     state = const AsyncValue.loading();
     try {
-      await ref
-          .read(authRepositoryProvider)
-          .signInWithEmail(email, password, rememberMe: rememberMe);
+      await ref.read(authRepositoryProvider).signInWithEmail(email, password);
       if (!ref.mounted) return false;
 
       final uid = ref.read(authRepositoryProvider).currentUserId;
-      if (uid != null) AnalyticsService.instance.setUserId(uid);
-      AnalyticsService.instance.logLogin('email');
+      final analyticsService = ref.read(firebaseServiceProvider);
+      if (uid != null) await analyticsService.setUserId(uid);
+      await analyticsService.logLogin('email');
       state = const AsyncValue.data(null);
       return true;
     } catch (e, st) {
@@ -254,8 +192,9 @@ class RegisterViewModel extends _$RegisterViewModel {
       if (!ref.mounted) return false;
 
       final uid = ref.read(authRepositoryProvider).currentUserId;
+      final analyticsService = ref.read(firebaseServiceProvider);
       if (uid != null) {
-        AnalyticsService.instance.setUserId(uid);
+        await analyticsService.setUserId(uid);
         if (expertise != Expertise.rookie) {
           await ref.read(profileRepositoryProvider).updateProfile(uid, {
             'expertise': expertise.name,
@@ -263,7 +202,7 @@ class RegisterViewModel extends _$RegisterViewModel {
           if (!ref.mounted) return false;
         }
       }
-      AnalyticsService.instance.logSignUp('email');
+      await analyticsService.logSignUp('email');
       state = const AsyncValue.data(null);
       return true;
     } catch (e, st) {
@@ -308,8 +247,9 @@ class AuthActionsViewModel extends _$AuthActionsViewModel {
     final result = await ref.read(authRepositoryProvider).signInWithGoogle();
     if (!ref.mounted) return result;
     final uid = ref.read(authRepositoryProvider).currentUserId;
-    if (uid != null) AnalyticsService.instance.setUserId(uid);
-    AnalyticsService.instance.logLogin('google');
+    final analyticsService = ref.read(firebaseServiceProvider);
+    if (uid != null) await analyticsService.setUserId(uid);
+    await analyticsService.logLogin('google');
     return result;
   }
 
@@ -317,8 +257,9 @@ class AuthActionsViewModel extends _$AuthActionsViewModel {
     final result = await ref.read(authRepositoryProvider).signInWithApple();
     if (!ref.mounted) return result;
     final uid = ref.read(authRepositoryProvider).currentUserId;
-    if (uid != null) AnalyticsService.instance.setUserId(uid);
-    AnalyticsService.instance.logLogin('apple');
+    final analyticsService = ref.read(firebaseServiceProvider);
+    if (uid != null) await analyticsService.setUserId(uid);
+    await analyticsService.logLogin('apple');
     return result;
   }
 

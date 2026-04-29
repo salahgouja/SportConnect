@@ -6,8 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
-import 'package:sport_connect/core/providers/repository_providers.dart';
-import 'package:sport_connect/core/providers/settings_provider.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/services/push_notification_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
@@ -19,8 +17,8 @@ import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 import 'package:sport_connect/features/auth/views/reauth_dialog.dart';
-import 'package:sport_connect/features/profile/view_models/driver_settings_view_model.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
+import 'package:sport_connect/features/profile/view_models/settings_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -34,37 +32,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _driverSectionExpanded = false;
 
   @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final localeAsync = ref.watch(localeProvider);
-    final currentLocale = localeAsync.value ?? Localizations.localeOf(context);
+    final settings = ref.watch(settingsViewModelProvider);
+    final settingsViewModel = ref.read(settingsViewModelProvider.notifier);
+    final currentLocale = settings.locale ?? Localizations.localeOf(context);
+
     final isDriver = ref.watch(
       currentUserProvider.select(
         (value) => value.value?.role == UserRole.driver,
       ),
     );
-
-    final notificationsEnabled =
-        ref.watch(notificationsEnabledProvider).value ?? true;
-    final rideReminders = ref.watch(rideRemindersProvider).value ?? true;
-    final chatNotifications =
-        ref.watch(chatNotificationsProvider).value ?? true;
-    final showLocation = ref.watch(showLocationProvider).value ?? true;
-    final publicProfile = ref.watch(publicProfileProvider).value ?? true;
-    final analyticsEnabled = ref.watch(analyticsEnabledProvider).value ?? true;
-    final mapStyle = ref.watch(mapStyleProvider).value ?? 'standard';
-
-    final driverSettings = isDriver
-        ? ref.watch(driverSettingsViewModelProvider)
-        : null;
-    final driverNotifier = isDriver
-        ? ref.read(driverSettingsViewModelProvider.notifier)
-        : null;
 
     return AdaptiveScaffold(
       appBar: AdaptiveAppBar(
@@ -82,8 +60,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       body: ListView(
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
         children: [
-          // ── Driver Settings (collapsible) ────────────────────
-          if (isDriver && driverSettings != null && driverNotifier != null) ...[
+          if (isDriver) ...[
             SizedBox(height: 32.h),
             _buildSectionHeader(
               l10n.driverSettings,
@@ -93,12 +70,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             SizedBox(height: 12.h),
             _buildDriverCard(
               l10n: l10n,
-              driverSettings: driverSettings,
-              driverNotifier: driverNotifier,
+              settings: settings,
+              settingsViewModel: settingsViewModel,
             ),
           ],
 
-          // ── Notifications ────────────────────────────────────
           SizedBox(height: 32.h),
           _buildSectionHeader(l10n.settingsNotifications, Icons.tune_rounded),
           SizedBox(height: 12.h),
@@ -106,30 +82,27 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             _buildSwitchTile(
               title: l10n.settingsPushNotifications,
               subtitle: l10n.settingsPushNotificationsDesc,
-              value: notificationsEnabled,
+              value: settings.notificationsEnabled,
               icon: Icons.notifications_outlined,
-              onChanged: (v) =>
-                  ref.read(notificationsEnabledProvider.notifier).setEnabled(v),
+              onChanged: settingsViewModel.setNotificationsEnabled,
             ),
             _buildDivider(),
             _buildSwitchTile(
               title: l10n.settingsRideReminders,
               subtitle: l10n.settingsRideRemindersDesc,
-              value: rideReminders,
+              value: settings.rideReminders,
               icon: Icons.alarm_outlined,
-              enabled: notificationsEnabled,
-              onChanged: (v) =>
-                  ref.read(rideRemindersProvider.notifier).setEnabled(v),
+              enabled: settings.notificationsEnabled,
+              onChanged: settingsViewModel.setRideReminders,
             ),
             _buildDivider(),
             _buildSwitchTile(
               title: l10n.settingsChatMessages,
               subtitle: l10n.settingsChatMessagesDesc,
-              value: chatNotifications,
+              value: settings.chatNotifications,
               icon: Icons.chat_bubble_outline_rounded,
-              enabled: notificationsEnabled,
-              onChanged: (v) =>
-                  ref.read(chatNotificationsProvider.notifier).setEnabled(v),
+              enabled: settings.notificationsEnabled,
+              onChanged: settingsViewModel.setChatNotifications,
             ),
             _buildDivider(),
             _buildNavTile(
@@ -140,29 +113,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           ]),
 
-          // ── Appearance ───────────────────────────────────────
           SizedBox(height: 32.h),
           _buildSectionHeader(l10n.settingsAppearance, Icons.palette_outlined),
           SizedBox(height: 12.h),
           _buildCard([
             _buildMapStyleTile(
-              currentStyle: mapStyle,
-              onChanged: (style) =>
-                  ref.read(mapStyleProvider.notifier).setMapStyle(style),
+              currentStyle: settings.mapStyle,
+              onChanged: settingsViewModel.setMapStyle,
             ),
             _buildDivider(),
             _buildLanguageTile(
               l10n: l10n,
               currentLocale: currentLocale,
               onChanged: (code) async {
-                if (code != null) {
-                  await ref.read(localeProvider.notifier).setLanguage(code);
-                }
+                if (code == null) return;
+
+                await settingsViewModel.setLanguage(code);
               },
             ),
           ]),
 
-          // ── Privacy & Security ───────────────────────────────
           SizedBox(height: 32.h),
           _buildSectionHeader(
             l10n.settingsPrivacySafety,
@@ -173,19 +143,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             _buildSwitchTile(
               title: l10n.settingsPublicProfile,
               subtitle: l10n.settingsPublicProfileDesc,
-              value: publicProfile,
+              value: settings.publicProfile,
               icon: Icons.person_outline_rounded,
-              onChanged: (v) =>
-                  ref.read(publicProfileProvider.notifier).setEnabled(v),
+              onChanged: settingsViewModel.setPublicProfile,
             ),
             _buildDivider(),
             _buildSwitchTile(
               title: l10n.settingsShowLocation,
               subtitle: l10n.settingsShowLocationDesc,
-              value: showLocation,
+              value: settings.showLocation,
               icon: Icons.location_on_outlined,
-              onChanged: (v) =>
-                  ref.read(showLocationProvider.notifier).setEnabled(v),
+              onChanged: settingsViewModel.setShowLocation,
             ),
             _buildDivider(),
             _buildNavTile(
@@ -198,11 +166,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             _buildSwitchTile(
               title: 'Analytics & Crash Reports',
               subtitle: 'Allow anonymous usage data and crash reports',
-              value: analyticsEnabled,
+              value: settings.analyticsEnabled,
               icon: Icons.analytics_outlined,
-              onChanged: (v) => ref
-                  .read(analyticsEnabledProvider.notifier)
-                  .setEnabled(enabled: v),
+              onChanged: (v) =>
+                  settingsViewModel.setAnalyticsEnabled(enabled: v),
             ),
             _buildDivider(),
             _buildNavTile(
@@ -227,7 +194,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           ]),
 
-          // ── Account ──────────────────────────────────────────
           SizedBox(height: 32.h),
           _buildSectionHeader(
             l10n.settingsAccount,
@@ -294,7 +260,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           ]),
 
-          // ── Support & Legal ──────────────────────────────────
           SizedBox(height: 32.h),
           _buildSectionHeader(l10n.settingsSupport, Icons.help_outline_rounded),
           SizedBox(height: 12.h),
@@ -340,7 +305,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           ]),
 
-          // ── Danger Zone ──────────────────────────────────────
           SizedBox(height: 32.h),
           _buildSectionHeader(
             l10n.accountActions,
@@ -356,7 +320,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               onTap: _showLogoutDialog,
               color: AppColors.warning,
             ),
-            // Delete separated with a stronger visual break
             Padding(
               padding: EdgeInsets.only(top: 8.h),
               child: Container(
@@ -378,7 +341,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           ]),
 
-          // ── Footer ───────────────────────────────────────────
           SizedBox(height: 48.h),
           _buildFooter(l10n),
           SizedBox(height: 32.h),
@@ -387,25 +349,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  // ── Driver collapsible card ──────────────────────────────────────────────────
-
   Widget _buildDriverCard({
     required AppLocalizations l10n,
-    required DriverSettingsState driverSettings,
-    required DriverSettingsViewModel driverNotifier,
+    required SettingsState settings,
+    required SettingsViewModel settingsViewModel,
   }) {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16.r),
-        border: const Border(
-          left: BorderSide(color: AppColors.secondary, width: 3),
+        borderRadius: BorderRadius.circular(22.r),
+        border: Border.all(
+          color: AppColors.secondary.withValues(alpha: 0.16),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -418,108 +378,197 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               setState(() => _driverSectionExpanded = !_driverSectionExpanded);
             },
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
-              child: Row(
+              padding: EdgeInsets.all(18.w),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
-                    Icons.drive_eta_rounded,
-                    color: AppColors.secondary,
-                    size: 20.sp,
-                  ),
-                  SizedBox(width: 12.w),
-                  Expanded(
-                    child: Text(
-                      'Driver Preferences',
-                      style: TextStyle(
-                        fontSize: 15.sp,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
+                  Row(
+                    children: [
+                      Container(
+                        width: 44.w,
+                        height: 44.w,
+                        decoration: BoxDecoration(
+                          color: AppColors.secondary.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(14.r),
+                        ),
+                        child: Icon(
+                          Icons.local_taxi_rounded,
+                          color: AppColors.secondary,
+                          size: 22.sp,
+                        ),
                       ),
-                    ),
+                      SizedBox(width: 14.w),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              l10n.driverSettings,
+                              style: TextStyle(
+                                fontSize: 16.sp,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.textPrimary,
+                                letterSpacing: -0.2,
+                              ),
+                            ),
+                            SizedBox(height: 3.h),
+                            Text(
+                              'Manage booking, pickup radius, payout, and map visibility',
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                height: 1.25,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        width: 34.w,
+                        height: 34.w,
+                        decoration: BoxDecoration(
+                          color: AppColors.background,
+                          borderRadius: BorderRadius.circular(10.r),
+                          border: Border.all(
+                            color: AppColors.border.withValues(alpha: 0.55),
+                          ),
+                        ),
+                        child: AnimatedRotation(
+                          turns: _driverSectionExpanded ? 0.5 : 0,
+                          duration: 200.ms,
+                          curve: Curves.easeOutCubic,
+                          child: Icon(
+                            Icons.keyboard_arrow_down_rounded,
+                            color: AppColors.textSecondary,
+                            size: 22.sp,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  AnimatedRotation(
-                    turns: _driverSectionExpanded ? 0.5 : 0,
-                    duration: 200.ms,
-                    child: Icon(
-                      Icons.keyboard_arrow_down_rounded,
-                      color: AppColors.textSecondary,
-                      size: 22.sp,
-                    ),
+                  SizedBox(height: 16.h),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildDriverStatusPill(
+                          icon: Icons.bolt_rounded,
+                          label: 'Booking',
+                          value: settings.driverAllowInstantBooking
+                              ? 'Instant'
+                              : 'Manual',
+                          active: settings.driverAllowInstantBooking,
+                        ),
+                      ),
+                      SizedBox(width: 10.w),
+                      Expanded(
+                        child: _buildDriverStatusPill(
+                          icon: Icons.social_distance_rounded,
+                          label: 'Radius',
+                          value: '${settings.driverMaxDistance.round()} mi',
+                          active: true,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
           ),
           AnimatedCrossFade(
-            duration: 250.ms,
+            duration: 240.ms,
+            sizeCurve: Curves.easeOutCubic,
             crossFadeState: _driverSectionExpanded
                 ? CrossFadeState.showSecond
                 : CrossFadeState.showFirst,
             firstChild: const SizedBox.shrink(),
             secondChild: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildDivider(),
-                _buildSubSectionLabel(l10n.ridePreferences),
-                _buildSwitchTile(
-                  title: l10n.allowInstantBooking,
-                  subtitle: l10n.letPassengersBookWithoutWaiting,
-                  value: driverSettings.allowInstantBooking,
-                  icon: Icons.bolt_outlined,
-                  onChanged: driverNotifier.setAllowInstantBooking,
-                ),
-                _buildDivider(),
-                _buildSliderTile(
-                  title: l10n.maximumPickupDistance,
-                  subtitle: l10n.onlyReceiveRequestsWithinThis,
-                  icon: Icons.social_distance_outlined,
-                  value: driverSettings.maxDistance,
-                  onChanged: driverNotifier.setMaxDistance,
-                  min: 5,
-                  max: 50,
-                  suffix: 'mi',
-                ),
-                _buildDivider(),
-                _buildSubSectionLabel(l10n.paymentSettings),
-                _buildNavTile(
-                  title: l10n.payoutMethod,
-                  subtitle: l10n.bankAccountEndingIn4532,
-                  icon: Icons.account_balance_outlined,
-                  onTap: () => context.pushNamed(
-                    AppRoutes.driverStripeOnboarding.name,
-                    queryParameters: {
-                      'mode': 'manage',
-                      'returnTo': AppRoutes.driverEarnings.name,
-                    },
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 18.w),
+                  child: Divider(
+                    height: 1,
+                    color: AppColors.border.withValues(alpha: 0.55),
                   ),
                 ),
-                // _buildDivider(),
-                // _buildNavTile(
-                //   title: l10n.taxDocuments,
-                //   subtitle: l10n.viewAndDownloadTaxForms,
-                //   icon: Icons.description_outlined,
-                //   onTap: () => context.push(AppRoutes.taxDocuments.path),
-                // ),
-                _buildDivider(),
-                _buildSubSectionLabel(l10n.navigationMap),
-                _buildSwitchTile(
-                  title: l10n.showOnDriverMap,
-                  subtitle: l10n.allowPassengersToSeeYour,
-                  value: driverSettings.showOnMap,
-                  icon: Icons.visibility_outlined,
-                  onChanged: driverNotifier.setShowOnMap,
+                SizedBox(height: 8.h),
+
+                _buildDriverPreferenceGroup(
+                  title: l10n.ridePreferences,
+                  icon: Icons.route_rounded,
+                  children: [
+                    _buildSwitchTile(
+                      title: l10n.allowInstantBooking,
+                      subtitle: l10n.letPassengersBookWithoutWaiting,
+                      value: settings.driverAllowInstantBooking,
+                      icon: Icons.bolt_outlined,
+                      onChanged: settingsViewModel.setDriverAllowInstantBooking,
+                    ),
+                    _buildDivider(),
+                    _buildSliderTile(
+                      title: l10n.maximumPickupDistance,
+                      subtitle: l10n.onlyReceiveRequestsWithinThis,
+                      icon: Icons.social_distance_outlined,
+                      value: settings.driverMaxDistance,
+                      onChanged: settingsViewModel.setDriverMaxDistance,
+                      min: 5,
+                      max: 50,
+                      suffix: 'mi',
+                    ),
+                  ],
                 ),
-                _buildDivider(),
-                _buildDropdownTile(
-                  title: l10n.preferredNavigationApp,
-                  icon: Icons.navigation_outlined,
-                  value: driverSettings.navigationApp,
-                  options: ['In-App', 'Google Maps', 'Waze', 'Apple Maps'],
-                  onChanged: (v) {
-                    if (v != null) driverNotifier.setNavigationApp(v);
-                  },
+
+                _buildDriverPreferenceGroup(
+                  title: l10n.paymentSettings,
+                  icon: Icons.account_balance_wallet_outlined,
+                  children: [
+                    _buildNavTile(
+                      title: l10n.payoutMethod,
+                      subtitle: l10n.bankAccountEndingIn4532,
+                      icon: Icons.account_balance_outlined,
+                      onTap: () => context.pushNamed(
+                        AppRoutes.driverStripeOnboarding.name,
+                        queryParameters: {
+                          'mode': 'manage',
+                          'returnTo': AppRoutes.driverEarnings.name,
+                        },
+                      ),
+                    ),
+                  ],
                 ),
-                SizedBox(height: 4.h),
+
+                _buildDriverPreferenceGroup(
+                  title: l10n.navigationMap,
+                  icon: Icons.map_outlined,
+                  children: [
+                    _buildSwitchTile(
+                      title: l10n.showOnDriverMap,
+                      subtitle: l10n.allowPassengersToSeeYour,
+                      value: settings.driverShowOnMap,
+                      icon: Icons.visibility_outlined,
+                      onChanged: settingsViewModel.setDriverShowOnMap,
+                    ),
+                    _buildDivider(),
+                    _buildDropdownTile(
+                      title: l10n.preferredNavigationApp,
+                      icon: Icons.navigation_outlined,
+                      value: settings.driverNavigationApp,
+                      options: const [
+                        'In-App',
+                        'Google Maps',
+                        'Waze',
+                        'Apple Maps',
+                      ],
+                      onChanged: (v) {
+                        if (v == null) return;
+                        settingsViewModel.setDriverNavigationApp(v);
+                      },
+                    ),
+                  ],
+                ),
+
+                SizedBox(height: 10.h),
               ],
             ),
           ),
@@ -528,25 +577,111 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  Widget _buildSubSectionLabel(String label) {
+  Widget _buildDriverStatusPill({
+    required IconData icon,
+    required String label,
+    required String value,
+    required bool active,
+  }) {
+    final color = active ? AppColors.secondary : AppColors.textSecondary;
+
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: active ? 0.10 : 0.07),
+        borderRadius: BorderRadius.circular(14.r),
+        border: Border.all(
+          color: color.withValues(alpha: active ? 0.18 : 0.10),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 16.sp, color: color),
+          SizedBox(width: 8.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 10.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                SizedBox(height: 1.h),
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDriverPreferenceGroup({
+    required String title,
+    required IconData icon,
+    required List<Widget> children,
+  }) {
     return Padding(
-      padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 2.h),
-      child: Text(
-        label.toUpperCase(),
-        style: TextStyle(
-          fontSize: 10.sp,
-          fontWeight: FontWeight.w700,
-          color: AppColors.secondary,
-          letterSpacing: 0.8,
+      padding: EdgeInsets.fromLTRB(12.w, 12.h, 12.w, 0),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.background.withValues(alpha: 0.55),
+          borderRadius: BorderRadius.circular(18.r),
+          border: Border.all(
+            color: AppColors.border.withValues(alpha: 0.45),
+          ),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(14.w, 12.h, 14.w, 4.h),
+              child: Row(
+                children: [
+                  Icon(
+                    icon,
+                    size: 16.sp,
+                    color: AppColors.secondary,
+                  ),
+                  SizedBox(width: 8.w),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 11.sp,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.secondary,
+                      letterSpacing: 0.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            ...children,
+          ],
         ),
       ),
     );
   }
 
-  // ── Section header ───────────────────────────────────────────────────────────
-
   Widget _buildSectionHeader(String title, IconData icon, {Color? color}) {
     final c = color ?? AppColors.primary;
+
     return Row(
       children: [
         Container(
@@ -570,8 +705,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       ],
     );
   }
-
-  // ── Cards ──────────────────────────────────────────────────────────────────
 
   Widget _buildCard(List<Widget> children) {
     return Container(
@@ -609,8 +742,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       child: Divider(height: 1, color: AppColors.border.withValues(alpha: 0.5)),
     );
   }
-
-  // ── Tiles ──────────────────────────────────────────────────────────────────
 
   Widget _buildSwitchTile({
     required String title,
@@ -679,6 +810,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     Color? color,
   }) {
     final c = color ?? AppColors.textSecondary;
+
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -874,6 +1006,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     required ValueChanged<String?> onChanged,
   }) {
     final options = {'en': l10n.languageEnglish, 'fr': l10n.languageFrench};
+
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
       child: Row(
@@ -953,6 +1086,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       'dark': Icons.dark_mode_outlined,
       'satellite': Icons.satellite_alt_outlined,
     };
+
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
       child: Row(
@@ -1009,10 +1143,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   )
                   .toList(),
               onChanged: (v) {
-                if (v != null) {
-                  HapticFeedback.selectionClick();
-                  onChanged(v);
-                }
+                if (v == null) return;
+
+                HapticFeedback.selectionClick();
+                onChanged(v);
               },
             ),
           ),
@@ -1020,8 +1154,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       ),
     );
   }
-
-  // ── Footer ─────────────────────────────────────────────────────────────────
 
   Widget _buildFooter(AppLocalizations l10n) {
     return Column(
@@ -1057,17 +1189,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  // ── Notification permission ────────────────────────────────────────────────
-
   Future<void> _resetAndRequestNotificationPermission(
     BuildContext context,
   ) async {
     final pns = ref.read(pushNotificationServiceProvider);
-    final settings = await ref.read(settingsRepositoryProvider.future);
-    await settings.setNotificationDialogShown(value: false);
+    final settingsViewModel = ref.read(settingsViewModelProvider.notifier);
 
-    if (await pns.hasPermission()) {
-      if (!context.mounted) return;
+    await settingsViewModel.setNotificationDialogShown(value: false);
+
+    final hasPermission = await pns.hasPermission();
+
+    if (!context.mounted) return;
+
+    if (hasPermission) {
       AdaptiveSnackBar.show(
         context,
         message: AppLocalizations.of(context).notificationsAlreadyEnabled,
@@ -1076,15 +1210,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       return;
     }
 
-    if (!context.mounted) return;
     final accepted = await PermissionDialogHelper.showNotificationRationale(
       context,
     );
-    await settings.setNotificationDialogShown();
+
+    if (!context.mounted) return;
+
+    await settingsViewModel.setNotificationDialogShown();
+
     if (!accepted) return;
 
     await pns.requestPermission();
+
     if (!context.mounted) return;
+
     AdaptiveSnackBar.show(
       context,
       message: AppLocalizations.of(context).notificationPermissionRequested,
@@ -1284,7 +1423,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     showDialog<void>(
       context: context,
       barrierLabel: AppLocalizations.of(context).withdrawConsent,
-      builder: (context) => AlertDialog.adaptive(
+      builder: (dialogContext) => AlertDialog.adaptive(
         backgroundColor: AppColors.surface.withValues(
           alpha: PlatformAdaptive.dialogAlpha,
         ),
@@ -1323,9 +1462,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => dialogContext.pop(),
             child: Text(
-              AppLocalizations.of(context).actionClose,
+              AppLocalizations.of(dialogContext).actionClose,
               style: const TextStyle(color: AppColors.primary),
             ),
           ),
@@ -1338,30 +1477,31 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     showDialog<void>(
       context: context,
       barrierLabel: AppLocalizations.of(context).settingsLogout,
-      builder: (context) => AlertDialog.adaptive(
+      builder: (dialogContext) => AlertDialog.adaptive(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
         ),
         title: Text(
-          AppLocalizations.of(context).settingsLogout,
+          AppLocalizations.of(dialogContext).settingsLogout,
           style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w600),
         ),
         content: Text(
-          AppLocalizations.of(context).areYouSureYouWant5,
+          AppLocalizations.of(dialogContext).areYouSureYouWant5,
           style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
-            onPressed: () => context.pop(),
-            child: Text(AppLocalizations.of(context).actionCancel),
+            onPressed: () => dialogContext.pop(),
+            child: Text(AppLocalizations.of(dialogContext).actionCancel),
           ),
           ElevatedButton(
             onPressed: () async {
-              context.pop();
+              dialogContext.pop();
+
               await ref.read(authActionsViewModelProvider.notifier).signOut();
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-            child: Text(AppLocalizations.of(context).settingsLogout),
+            child: Text(AppLocalizations.of(dialogContext).settingsLogout),
           ),
         ],
       ),
@@ -1370,11 +1510,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   void _showDeleteAccountDialog() {
     var confirmText = '';
+
     showDialog<void>(
       context: context,
       barrierLabel: AppLocalizations.of(context).settingsDeleteAccount,
       builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog.adaptive(
+        builder: (dialogContentContext, setDialogState) => AlertDialog.adaptive(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
           ),
@@ -1384,7 +1525,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               SizedBox(width: 8.w),
               Flexible(
                 child: Text(
-                  AppLocalizations.of(context).settingsDeleteAccount,
+                  AppLocalizations.of(
+                    dialogContentContext,
+                  ).settingsDeleteAccount,
                   style: TextStyle(
                     fontSize: 18.sp,
                     fontWeight: FontWeight.w600,
@@ -1400,7 +1543,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  AppLocalizations.of(context).thisActionCannotBeUndone2,
+                  AppLocalizations.of(
+                    dialogContentContext,
+                  ).thisActionCannotBeUndone2,
                   style: TextStyle(
                     fontSize: 14.sp,
                     color: AppColors.textSecondary,
@@ -1408,20 +1553,30 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
                 SizedBox(height: 12.h),
                 _buildDeleteWarningItem(
-                  AppLocalizations.of(context).rideHistoryAndBookings,
+                  AppLocalizations.of(
+                    dialogContentContext,
+                  ).rideHistoryAndBookings,
                 ),
                 _buildDeleteWarningItem(
-                  AppLocalizations.of(context).profileAndAchievements,
+                  AppLocalizations.of(
+                    dialogContentContext,
+                  ).profileAndAchievements,
                 ),
                 _buildDeleteWarningItem(
-                  AppLocalizations.of(context).messagesAndConnections,
+                  AppLocalizations.of(
+                    dialogContentContext,
+                  ).messagesAndConnections,
                 ),
                 _buildDeleteWarningItem(
-                  AppLocalizations.of(context).paymentInformation,
+                  AppLocalizations.of(
+                    dialogContentContext,
+                  ).paymentInformation,
                 ),
                 SizedBox(height: 16.h),
                 Text(
-                  AppLocalizations.of(context).typeDeleteToConfirm,
+                  AppLocalizations.of(
+                    dialogContentContext,
+                  ).typeDeleteToConfirm,
                   style: TextStyle(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w600,
@@ -1431,8 +1586,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 SizedBox(height: 8.h),
                 TextField(
                   decoration: InputDecoration(
-                    labelText: AppLocalizations.of(context).typeDeleteToConfirm,
-                    hintText: AppLocalizations.of(context).deleteKeyword,
+                    labelText: AppLocalizations.of(
+                      dialogContentContext,
+                    ).typeDeleteToConfirm,
+                    hintText: AppLocalizations.of(
+                      dialogContentContext,
+                    ).deleteKeyword,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12.r),
                     ),
@@ -1449,78 +1608,101 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           actions: [
             TextButton(
               onPressed: () => dialogContext.pop(),
-              child: Text(AppLocalizations.of(context).actionCancel),
+              child: Text(
+                AppLocalizations.of(dialogContentContext).actionCancel,
+              ),
             ),
             ElevatedButton(
               onPressed:
-                  confirmText == AppLocalizations.of(context).deleteKeyword
+                  confirmText ==
+                      AppLocalizations.of(
+                        dialogContentContext,
+                      ).deleteKeyword
                   ? () async {
                       dialogContext.pop();
-                      await showDialog<void>(
+
+                      if (!context.mounted) return;
+
+                      showDialog<void>(
                         context: context,
                         barrierDismissible: false,
                         builder: (_) => const Center(
                           child: CircularProgressIndicator.adaptive(),
                         ),
                       );
+
                       try {
                         await ref
                             .read(authActionsViewModelProvider.notifier)
                             .deleteAccount();
-                        if (context.mounted) context.pop();
+
+                        if (!context.mounted) return;
+
+                        context.pop();
                       } on AuthException catch (e) {
-                        if (context.mounted) {
-                          context.pop();
-                          if (e.code == 'requires-recent-login') {
-                            final ok = await showReauthDialog(context, ref);
-                            if (!ok || !context.mounted) {
-                              return;
-                            }
-                            await showDialog<void>(
-                              context: context,
-                              barrierDismissible: false,
-                              builder: (_) => const Center(
-                                child: CircularProgressIndicator.adaptive(),
-                              ),
+                        if (!context.mounted) return;
+
+                        context.pop();
+
+                        if (e.code == 'requires-recent-login') {
+                          final ok = await showReauthDialog(context, ref);
+
+                          if (!ok || !context.mounted) return;
+
+                          showDialog<void>(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (_) => const Center(
+                              child: CircularProgressIndicator.adaptive(),
+                            ),
+                          );
+
+                          try {
+                            await ref
+                                .read(
+                                  authActionsViewModelProvider.notifier,
+                                )
+                                .deleteAccount();
+
+                            if (!context.mounted) return;
+
+                            context.pop();
+                          } catch (error) {
+                            if (!context.mounted) return;
+
+                            context.pop();
+
+                            AdaptiveSnackBar.show(
+                              context,
+                              message: AppLocalizations.of(
+                                context,
+                              ).failedToDeleteAccountValue(error),
+                              type: AdaptiveSnackBarType.error,
                             );
-                            try {
-                              await ref
-                                  .read(authActionsViewModelProvider.notifier)
-                                  .deleteAccount();
-                              if (context.mounted) context.pop();
-                            } catch (e, st) {
-                              if (context.mounted) {
-                                context.pop();
-                                AdaptiveSnackBar.show(
-                                  context,
-                                  message: AppLocalizations.of(
-                                    context,
-                                  ).failedToDeleteAccountValue(e),
-                                  type: AdaptiveSnackBarType.error,
-                                );
-                              }
-                            }
-                            return;
                           }
-                          AdaptiveSnackBar.show(
-                            context,
-                            message: AppLocalizations.of(
-                              context,
-                            ).failedToDeleteAccountValue(e),
-                            type: AdaptiveSnackBarType.error,
-                          );
+
+                          return;
                         }
-                      } catch (e, st) {
-                        if (context.mounted) {
-                          context.pop();
-                          AdaptiveSnackBar.show(
+
+                        AdaptiveSnackBar.show(
+                          context,
+                          message: AppLocalizations.of(
                             context,
-                            message: AppLocalizations.of(
-                              context,
-                            ).failedToDeleteAccountValue(e),
-                            type: AdaptiveSnackBarType.error,
-                          );
-                        }
+                          ).failedToDeleteAccountValue(e),
+                          type: AdaptiveSnackBarType.error,
+                        );
+                      } catch (e) {
+                        if (!context.mounted) return;
+
+                        context.pop();
+
+                        AdaptiveSnackBar.show(
+                          context,
+                          message: AppLocalizations.of(
+                            context,
+                          ).failedToDeleteAccountValue(e),
+                          type: AdaptiveSnackBarType.error,
+                        );
                       }
                     }
                   : null,
@@ -1528,7 +1710,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 backgroundColor: AppColors.error,
                 disabledBackgroundColor: AppColors.error.withValues(alpha: 0.3),
               ),
-              child: Text(AppLocalizations.of(context).settingsDeleteAccount),
+              child: Text(
+                AppLocalizations.of(dialogContentContext).settingsDeleteAccount,
+              ),
             ),
           ],
         ),
@@ -1645,6 +1829,7 @@ class _BlockedUsersScreenState extends ConsumerState<_BlockedUsersScreen> {
           final filteredUsers = blockedUsers
               .where((user) {
                 if (normalizedQuery.isEmpty) return true;
+
                 return user.username.toLowerCase().contains(
                       normalizedQuery,
                     ) ||
@@ -1695,6 +1880,7 @@ class _BlockedUsersScreenState extends ConsumerState<_BlockedUsersScreen> {
                         onRefresh: () async {
                           ref.invalidate(blockedUsersProvider);
                           ref.invalidate(currentUserProvider);
+
                           await Future<void>.delayed(
                             const Duration(milliseconds: 250),
                           );
@@ -1811,6 +1997,7 @@ class _BlockedUsersScreenState extends ConsumerState<_BlockedUsersScreen> {
                                           ) ??
                                           false;
 
+                                      if (!context.mounted) return;
                                       if (!shouldUnblock) return;
 
                                       try {
@@ -1820,17 +2007,18 @@ class _BlockedUsersScreenState extends ConsumerState<_BlockedUsersScreen> {
                                                   .notifier,
                                             )
                                             .unblockCurrentUser(user.uid);
-                                        if (!context.mounted) {
-                                          return;
-                                        }
+
+                                        if (!context.mounted) return;
+
                                         ref.invalidate(blockedUsersProvider);
                                         ref.invalidate(currentUserProvider);
+
                                         AdaptiveSnackBar.show(
                                           context,
                                           message: l10n.userUnblocked,
                                           type: AdaptiveSnackBarType.success,
                                         );
-                                      } catch (e, st) {
+                                      } catch (_) {
                                         if (!context.mounted) return;
 
                                         AdaptiveSnackBar.show(

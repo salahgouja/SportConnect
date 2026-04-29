@@ -1,7 +1,7 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/features/reviews/models/review_model.dart';
+import 'package:sport_connect/features/reviews/repositories/review_repository.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 
 part 'driver_rate_passenger_view_model.g.dart';

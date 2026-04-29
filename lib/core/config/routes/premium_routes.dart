@@ -9,11 +9,6 @@ import 'package:sport_connect/features/payments/views/premium_subscribe_screen.d
 
 /// Premium module routes
 class PremiumRoutes implements RouteConfig {
-  @override
-  String get moduleName => 'premium';
-
-  @override
-  String? get initialRoute => null;
 
   @override
   List<RouteBase> getRoutes() {

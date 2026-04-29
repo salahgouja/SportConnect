@@ -2,29 +2,20 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
-import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/models/models.dart';
+import 'package:sport_connect/core/services/firebase_service.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/messaging/models/message_model.dart';
 
 part 'push_notification_service.g.dart';
-
-/// Top-level background message handler — must NOT be a class method.
-@pragma('vm:entry-point')
-Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  TalkerService.info('Background message received: ${message.messageId}');
-  // Local notification is shown automatically by FCM for data+notification
-  // messages when the app is in background/terminated.
-}
 
 /// Android notification channel IDs
 class NotificationChannels {
@@ -47,25 +38,32 @@ class NotificationChannels {
 ///
 /// Handles foreground display, navigation on tap, and FCM token management.
 class PushNotificationService {
-  PushNotificationService._();
+  PushNotificationService({
+    required FirebaseService firebaseService,
+    FlutterLocalNotificationsPlugin? localNotifications,
+  }) : _firebaseService = firebaseService,
+       _localNotifications =
+           localNotifications ?? FlutterLocalNotificationsPlugin();
 
-  static final PushNotificationService _instance = PushNotificationService._();
+  static final PushNotificationService _instance = PushNotificationService(
+    firebaseService: FirebaseService.instance,
+  );
+
   static PushNotificationService get instance => _instance;
 
-  final FirebaseMessaging _messaging = FirebaseMessaging.instance;
-  final FlutterLocalNotificationsPlugin _localNotifications =
-      FlutterLocalNotificationsPlugin();
+  final FirebaseService _firebaseService;
+  final FlutterLocalNotificationsPlugin _localNotifications;
 
-  CollectionReference<UserModel> get _usersCollection => FirebaseFirestore
-      .instance
+  CollectionReference<UserModel> get _usersCollection => _firebaseService
+      .firestore
       .collection(AppConstants.usersCollection)
       .withConverter<UserModel>(
         fromFirestore: (snap, _) => UserModel.fromJson(snap.data()!),
         toFirestore: (user, _) => user.toJson(),
       );
 
-  CollectionReference<ChatModel> get _chatsCollection => FirebaseFirestore
-      .instance
+  CollectionReference<ChatModel> get _chatsCollection => _firebaseService
+      .firestore
       .collection(AppConstants.chatsCollection)
       .withConverter<ChatModel>(
         fromFirestore: (snap, _) => ChatModel.fromJson(snap.data()!),
@@ -73,15 +71,17 @@ class PushNotificationService {
       );
 
   bool _isInitialized = false;
+  StreamSubscription<String>? _tokenRefreshSub;
 
   Future<bool> hasPermission() async {
-    final settings = await _messaging.getNotificationSettings();
+    final settings = await _firebaseService.messaging.getNotificationSettings();
     final s = settings.authorizationStatus;
     return s == AuthorizationStatus.authorized ||
         s == AuthorizationStatus.provisional;
   }
 
-  Future<void> requestPermission() => _messaging.requestPermission();
+  Future<void> requestPermission() =>
+      _firebaseService.messaging.requestPermission();
 
   /// Initialize the service — call once from main.
   Future<void> initialize() async {
@@ -95,11 +95,12 @@ class PushNotificationService {
     await _initLocalNotifications();
 
     // 3. Set foreground notification presentation (iOS)
-    await _messaging.setForegroundNotificationPresentationOptions(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
+    await _firebaseService.messaging
+        .setForegroundNotificationPresentationOptions(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
 
     // 4. Listen for foreground messages
     FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
@@ -108,7 +109,7 @@ class PushNotificationService {
     FirebaseMessaging.onMessageOpenedApp.listen(_handleNotificationTap);
 
     // 6. Check for initial message (app opened from terminated state)
-    final initialMessage = await _messaging.getInitialMessage();
+    final initialMessage = await _firebaseService.messaging.getInitialMessage();
     if (initialMessage != null) {
       // Defer navigation until the router is ready
       _pendingInitialMessage = initialMessage;
@@ -143,8 +144,10 @@ class PushNotificationService {
   /// sign-out. Firebase does not remove stale tokens automatically.
   Future<void> deleteFcmToken(String userId) async {
     try {
-      await _messaging.deleteToken();
-      await FirebaseFirestore.instance
+      await _tokenRefreshSub?.cancel();
+      _tokenRefreshSub = null;
+      await _firebaseService.messaging.deleteToken();
+      await _firebaseService.firestore
           .collection(AppConstants.usersCollection)
           .doc(userId)
           .update({'fcmToken': FieldValue.delete()});
@@ -160,7 +163,8 @@ class PushNotificationService {
       // permission before storing the token.  If permission was revoked after
       // initial grant the token stored in Firestore would be dead — skip it
       // so we don't accumulate stale tokens that waste FCM quota.
-      final settings = await _messaging.getNotificationSettings();
+      final settings = await _firebaseService.messaging
+          .getNotificationSettings();
       if (settings.authorizationStatus == AuthorizationStatus.denied) {
         TalkerService.info(
           'saveFcmToken: notification permission denied for $userId — skipping token save.',
@@ -168,7 +172,7 @@ class PushNotificationService {
         return;
       }
 
-      final token = await _messaging.getToken();
+      final token = await _firebaseService.messaging.getToken();
       if (token == null) {
         TalkerService.warning(
           'FCM getToken() returned null for user $userId — '
@@ -191,14 +195,21 @@ class PushNotificationService {
 
       TalkerService.info('FCM token saved for user $userId');
 
-      // Listen for token refreshes
-      _messaging.onTokenRefresh.listen((newToken) async {
-        await _usersCollection
-            .doc(userId)
-            .set(user!.copyWith(fcmToken: newToken), SetOptions(merge: true));
-        TalkerService.info('FCM token refreshed for user $userId');
-      });
-    } catch (e, st) {
+      // Cancel any previous listener before registering a new one
+      await _tokenRefreshSub?.cancel();
+      _tokenRefreshSub = _firebaseService.messaging.onTokenRefresh.listen(
+        (newToken) async {
+          try {
+            await _usersCollection
+                .doc(userId)
+                .set(user!.copyWith(fcmToken: newToken), SetOptions(merge: true));
+            TalkerService.info('FCM token refreshed for user $userId');
+          } catch (e) {
+            TalkerService.warning('FCM token refresh save failed: $e');
+          }
+        },
+      );
+    } on Exception catch (e) {
       TalkerService.error('Failed to save FCM token', e);
     }
   }
@@ -242,7 +253,7 @@ class PushNotificationService {
 
   Future<void> _initLocalNotifications() async {
     const androidSettings = AndroidInitializationSettings(
-      '@mipmap/ic_launcher',
+      '@drawable/ic_notification',
     );
     const darwinSettings = DarwinInitializationSettings(
       requestAlertPermission: false,
@@ -288,7 +299,7 @@ class PushNotificationService {
         android: AndroidNotificationDetails(
           channelId,
           _channelName(channelId),
-          icon: '@mipmap/ic_launcher',
+          icon: '@drawable/ic_notification',
           importance: Importance.high,
           priority: Priority.high,
         ),
@@ -333,10 +344,10 @@ class PushNotificationService {
 
     // FIX N-1: Auto-mark matching Firestore notification docs as read when
     // the user opens the notification, so the unread badge clears automatically.
-    final uid = FirebaseAuth.instance.currentUser?.uid;
+    final uid = _firebaseService.auth.currentUser?.uid;
     if (uid != null) {
       try {
-        final notifSnap = await FirebaseFirestore.instance
+        final notifSnap = await _firebaseService.firestore
             .collection(AppConstants.notificationsCollection)
             .where('userId', isEqualTo: uid)
             .where('referenceId', isEqualTo: referenceId)
@@ -430,7 +441,7 @@ class PushNotificationService {
     String? hintPhotoUrl,
   }) async {
     try {
-      final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+      final currentUserId = _firebaseService.auth.currentUser?.uid;
       final chat = await _chatsCollection
           .doc(chatId)
           .get()

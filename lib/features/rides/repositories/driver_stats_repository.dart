@@ -4,17 +4,21 @@ import 'dart:math' as math;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
-import 'package:sport_connect/core/interfaces/repositories/i_driver_stats_repository.dart';
-import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
+import 'package:sport_connect/core/services/firebase_service.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/models/driver_stats.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 
 part 'driver_stats_repository.g.dart';
 
+@Riverpod(keepAlive: true)
+DriverStatsRepository driverStatsRepository(Ref ref) {
+  return DriverStatsRepository(ref.watch(firebaseServiceProvider).firestore);
+}
+
 /// Driver Stats Repository
-class DriverStatsRepository implements IDriverStatsRepository {
+class DriverStatsRepository {
   DriverStatsRepository(this._firestore);
   final FirebaseFirestore _firestore;
 

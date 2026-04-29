@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/utils/payment_error_handler.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/features/payments/view_models/payment_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
@@ -113,6 +114,10 @@ class _DriverStripeOnboardingScreenState
           padding: EdgeInsets.all(20.w),
           child: Column(
             children: [
+              // Step progress indicator
+              _buildStepProgress(context),
+              SizedBox(height: 16.h),
+
               Expanded(
                 child: SingleChildScrollView(
                   child: Column(
@@ -200,82 +205,85 @@ class _DriverStripeOnboardingScreenState
                         ).benefitLowFeesDesc,
                         delay: 700,
                       ),
-
-                      if (onboardingState.errorMessage != null) ...[
-                        SizedBox(height: 20.h),
-                        Container(
-                          padding: EdgeInsets.all(16.w),
-                          decoration: BoxDecoration(
-                            color: AppColors.error.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(12.r),
-                            border: Border.all(
-                              color: AppColors.error.withValues(alpha: 0.3),
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.error_outline,
-                                color: AppColors.error,
-                              ),
-                              SizedBox(width: 12.w),
-                              Expanded(
-                                child: Text(
-                                  onboardingState.errorMessage!,
-                                  style: TextStyle(
-                                    color: AppColors.error,
-                                    fontSize: 14.sp,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-
-                      if (onboardingState.isVerifying) ...[
-                        SizedBox(height: 20.h),
-                        Container(
-                          padding: EdgeInsets.all(16.w),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(12.r),
-                          ),
-                          child: Row(
-                            children: [
-                              SizedBox(
-                                width: 20.w,
-                                height: 20.w,
-                                child: const CircularProgressIndicator.adaptive(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    AppColors.primary,
-                                  ),
-                                ),
-                              ),
-                              SizedBox(width: 12.w),
-                              Expanded(
-                                child: Text(
-                                  AppLocalizations.of(
-                                    context,
-                                  ).stripeVerifyingAccount,
-                                  style: TextStyle(
-                                    color: AppColors.primary,
-                                    fontSize: 14.sp,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
                     ],
                   ),
                 ),
               ),
 
+              // Error / verifying banners — always visible above the CTA
+              if (onboardingState.errorMessage != null) ...[
+                SizedBox(height: 12.h),
+                Container(
+                  padding: EdgeInsets.all(14.w),
+                  decoration: BoxDecoration(
+                    color: AppColors.error.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(12.r),
+                    border: Border.all(
+                      color: AppColors.error.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        color: AppColors.error,
+                        size: 20.sp,
+                      ),
+                      SizedBox(width: 12.w),
+                      Expanded(
+                        child: Text(
+                          PaymentErrorHandler.humanize(
+                            onboardingState.errorMessage!,
+                          ),
+                          style: TextStyle(
+                            color: AppColors.error,
+                            fontSize: 13.sp,
+                            height: 1.4,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ).animate().fadeIn().slideY(begin: 0.1),
+              ],
+
+              if (onboardingState.isVerifying) ...[
+                SizedBox(height: 12.h),
+                Container(
+                  padding: EdgeInsets.all(14.w),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: 18.w,
+                        height: 18.w,
+                        child: const CircularProgressIndicator.adaptive(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            AppColors.primary,
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 12.w),
+                      Expanded(
+                        child: Text(
+                          AppLocalizations.of(context).stripeVerifyingAccount,
+                          style: TextStyle(
+                            color: AppColors.primary,
+                            fontSize: 13.sp,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
               // CTA Button
-              SizedBox(height: 20.h),
+              SizedBox(height: 16.h),
               PremiumButton(
                 text: AppLocalizations.of(context).connectStripeAccount,
                 isLoading:
@@ -354,6 +362,66 @@ class _DriverStripeOnboardingScreenState
         ],
       ),
     ).animate().fadeIn(delay: Duration(milliseconds: delay)).slideX(begin: 0.1);
+  }
+
+  Widget _buildStepProgress(BuildContext context) {
+    const steps = ['Connect', 'Verify', 'Get Paid'];
+    return Row(
+      children: List.generate(steps.length * 2 - 1, (i) {
+        if (i.isOdd) {
+          return Expanded(
+            child: Container(
+              height: 2.h,
+              color: i == 1 ? AppColors.border : AppColors.border,
+            ),
+          );
+        }
+        final stepIndex = i ~/ 2;
+        final isActive = stepIndex == 0;
+        final isDone = stepIndex < 0;
+        return Column(
+          children: [
+            Container(
+              width: 28.w,
+              height: 28.w,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isActive || isDone
+                    ? AppColors.primary
+                    : AppColors.border.withValues(alpha: 0.5),
+              ),
+              child: Center(
+                child: isDone
+                    ? Icon(
+                        Icons.check_rounded,
+                        size: 14.sp,
+                        color: Colors.white,
+                      )
+                    : Text(
+                        '${stepIndex + 1}',
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w700,
+                          color: isActive
+                              ? Colors.white
+                              : AppColors.textTertiary,
+                        ),
+                      ),
+              ),
+            ),
+            SizedBox(height: 4.h),
+            Text(
+              steps[stepIndex],
+              style: TextStyle(
+                fontSize: 10.sp,
+                fontWeight: isActive ? FontWeight.w700 : FontWeight.w400,
+                color: isActive ? AppColors.primary : AppColors.textTertiary,
+              ),
+            ),
+          ],
+        );
+      }),
+    );
   }
 
   /// Start Stripe Connect onboarding process

@@ -3,8 +3,10 @@ import 'dart:io';
 
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/features/messaging/models/message_model.dart';
+import 'package:sport_connect/features/messaging/repositories/chat_repository.dart';
+import 'package:sport_connect/features/notifications/repositories/notification_repository.dart';
+import 'package:sport_connect/features/profile/repositories/profile_repository.dart';
 
 part 'chat_view_model.freezed.dart';
 part 'chat_view_model.g.dart';

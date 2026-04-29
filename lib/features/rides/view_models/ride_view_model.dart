@@ -8,13 +8,15 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sport_connect/core/models/location/location_point.dart';
 import 'package:sport_connect/core/models/value_objects/money.dart';
-import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/services/deep_link_service.dart';
 import 'package:sport_connect/core/services/map_service.dart';
 import 'package:sport_connect/core/services/routing_service.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/features/messaging/models/message_model.dart';
+import 'package:sport_connect/features/messaging/repositories/chat_repository.dart';
+import 'package:sport_connect/features/notifications/repositories/notification_repository.dart';
+import 'package:sport_connect/features/profile/repositories/profile_repository.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_capacity.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
@@ -24,9 +26,10 @@ import 'package:sport_connect/features/rides/models/ride/ride_route.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_schedule.dart';
 import 'package:sport_connect/features/rides/models/ride_search_filters.dart';
 import 'package:sport_connect/features/rides/repositories/booking_repository.dart'
-    show BookingRepository;
+    show BookingRepository, bookingRepositoryProvider;
 import 'package:sport_connect/features/rides/repositories/dispute_repository.dart'
-    show DisputeRepository;
+    show DisputeRepository, disputeRepositoryProvider;
+import 'package:sport_connect/features/rides/repositories/ride_repository.dart';
 import 'package:sport_connect/features/rides/services/active_ride_geofence_service.dart';
 import 'package:sport_connect/features/rides/services/ride_service.dart';
 import 'package:uuid/uuid.dart';
@@ -1517,6 +1520,7 @@ class RideDetailViewModel extends _$RideDetailViewModel {
           );
         }
       } catch (e, st) {
+        TalkerService.error('Failed to send booking notification', e, st);
         // Notification failure is non-fatal
       }
 
@@ -1526,6 +1530,7 @@ class RideDetailViewModel extends _$RideDetailViewModel {
         final profileRepo = ref.read(profileRepositoryProvider);
         await profileRepo.addXP(passengerId, 5);
       } catch (e, st) {
+        TalkerService.error('Failed to award XP for booking', e, st);
         // XP failure is non-fatal
       }
 
@@ -1534,6 +1539,7 @@ class RideDetailViewModel extends _$RideDetailViewModel {
       return true;
     } catch (e, st) {
       if (!ref.mounted) return false;
+      TalkerService.error('Failed to book ride', e, st);
       state = state.copyWith(isActing: false, actionError: e.toString());
       return false;
     }

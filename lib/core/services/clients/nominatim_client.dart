@@ -1,43 +1,72 @@
 import 'package:dio/dio.dart';
-import 'package:retrofit/retrofit.dart';
 
-part 'nominatim_client.g.dart';
+class NominatimClient {
+  NominatimClient(this._dio, {required this.baseUrl});
 
-@RestApi()
-abstract class NominatimClient {
-  factory NominatimClient(Dio dio, {String baseUrl}) = _NominatimClient;
+  final Dio _dio;
+  final String baseUrl;
 
-  @GET('/search')
-  Future<List<NominatimJsonDto>> searchPlaces(
-    @Query('q') String query,
-    @Query('format') String format,
-    @Query('addressdetails') int addressDetails,
-    @Query('limit') int limit,
-    @Query('accept-language') String acceptLanguage,
-    @Query('lat') double? latitude,
-    @Query('lon') double? longitude,
-    @Query('countrycodes') String? countryCode,
-    @Header('User-Agent') String userAgent,
-  );
+  Future<List<Map<String, dynamic>>> searchPlaces(
+    String query,
+    String format,
+    int addressDetails,
+    int limit,
+    String acceptLanguage,
+    double? latitude,
+    double? longitude,
+    String? countryCode,
+    String userAgent,
+  ) async {
+    final response = await _dio.get<List<dynamic>>(
+      '$baseUrl/search',
+      queryParameters: {
+        'q': query,
+        'format': format,
+        'addressdetails': addressDetails,
+        'limit': limit,
+        'accept-language': acceptLanguage,
+        if (latitude != null) 'lat': latitude,
+        if (longitude != null) 'lon': longitude,
+        if (countryCode != null && countryCode.isNotEmpty)
+          'countrycodes': countryCode,
+      },
+      options: Options(
+        headers: {
+          'User-Agent': userAgent,
+        },
+      ),
+    );
 
-  @GET('/reverse')
-  Future<NominatimJsonDto> reverseGeocode(
-    @Query('lat') double latitude,
-    @Query('lon') double longitude,
-    @Query('format') String format,
-    @Query('addressdetails') int addressDetails,
-    @Query('accept-language') String acceptLanguage,
-    @Header('User-Agent') String userAgent,
-  );
-}
+    return (response.data ?? const [])
+        .whereType<Map>()
+        .map((item) => Map<String, dynamic>.from(item))
+        .toList();
+  }
 
-class NominatimJsonDto {
-  const NominatimJsonDto(this.json);
+  Future<Map<String, dynamic>> reverseGeocode(
+    double latitude,
+    double longitude,
+    String format,
+    int addressDetails,
+    String acceptLanguage,
+    String userAgent,
+  ) async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '$baseUrl/reverse',
+      queryParameters: {
+        'lat': latitude,
+        'lon': longitude,
+        'format': format,
+        'addressdetails': addressDetails,
+        'accept-language': acceptLanguage,
+      },
+      options: Options(
+        headers: {
+          'User-Agent': userAgent,
+        },
+      ),
+    );
 
-  factory NominatimJsonDto.fromJson(Map<String, dynamic> json) =>
-      NominatimJsonDto(json);
-
-  final Map<String, dynamic> json;
-
-  Map<String, dynamic> toJson() => json;
+    return response.data ?? <String, dynamic>{};
+  }
 }

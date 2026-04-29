@@ -78,7 +78,7 @@ class StripeService {
         e.message ?? 'Function call failed',
         code: e.code,
       );
-    } catch (e, st) {
+    } catch (e) {
       TalkerService.error('Error calling function $name: $e');
       throw StripePaymentException('Failed to call function: $e');
     }
@@ -117,7 +117,7 @@ class StripeService {
       });
 
       return response;
-    } catch (e, st) {
+    } catch (e) {
       TalkerService.error('Error creating payment intent: $e');
       if (e is StripePaymentException) rethrow;
       throw StripePaymentException('Failed to create payment: $e');
@@ -225,7 +225,7 @@ class StripeService {
       }
       TalkerService.error('Stripe error: $msg');
       throw StripePaymentException(msg.isNotEmpty ? msg : 'Payment failed');
-    } catch (e, st) {
+    } catch (e) {
       TalkerService.error('Payment error: $e');
       throw StripePaymentException('Payment processing failed');
     }
@@ -251,66 +251,41 @@ class StripeService {
       });
 
       return response;
-    } catch (e, st) {
+    } catch (e) {
       TalkerService.error('Error creating/getting customer: $e');
       if (e is StripePaymentException) rethrow;
       throw StripePaymentException('Failed to create customer: $e');
     }
   }
 
-  /// Create Connected Account for driver (Stripe Connect)
-  /// Uses Firebase Cloud Functions - Express accounts for easy onboarding
-  ///
-  /// Prefills individual info (name, phone, DOB, address) from user profile
-  /// to reduce onboarding friction. Stripe won't ask for prefilled fields.
+  /// Create Connected Account for driver (Stripe Connect).
+  /// Server uses France-only Express onboarding; Stripe collects KYC fields.
   Future<Map<String, dynamic>> createDriverConnectedAccount({
     required String userId,
     required String email,
-    required String country, // ISO country code (e.g., 'US', 'FR', 'TN')
-    String? firstName,
-    String? lastName,
-    String? phone,
-    DateTime? dateOfBirth,
-    String? addressLine1,
-    String? city,
   }) async {
     try {
       final response = await _callFunction('createConnectedAccount', {
         'userId': userId,
         'email': email,
-        'country': country,
-        'firstName': ?firstName,
-        'lastName': ?lastName,
-        'phone': ?phone,
-        if (dateOfBirth != null) 'dateOfBirth': dateOfBirth.toIso8601String(),
-        'addressLine1': ?addressLine1,
-        'city': ?city,
       });
 
       return response;
-    } catch (e, st) {
+    } catch (e) {
       TalkerService.error('Error creating connected account: $e');
       if (e is StripePaymentException) rethrow;
       throw StripePaymentException('Failed to create account: $e');
     }
   }
 
-  /// Create Account Onboarding Link
-  /// Uses Firebase Cloud Functions
-  Future<Map<String, dynamic>> createAccountLink({
-    required String accountId,
-    required String refreshUrl,
-    required String returnUrl,
-  }) async {
+  /// Create Account Onboarding Link.
+  /// Server reads accountId from Firestore and uses hardcoded return URLs.
+  Future<Map<String, dynamic>> createAccountLink() async {
     try {
-      final response = await _callFunction('createAccountLink', {
-        'accountId': accountId,
-        'refreshUrl': refreshUrl,
-        'returnUrl': returnUrl,
-      });
+      final response = await _callFunction('createAccountLink', {});
 
       return response;
-    } catch (e, st) {
+    } catch (e) {
       TalkerService.error('Error creating account link: $e');
       if (e is StripePaymentException) rethrow;
       throw StripePaymentException('Failed to create account link: $e');
@@ -335,10 +310,28 @@ class StripeService {
       });
 
       return response;
-    } catch (e, st) {
+    } catch (e) {
       TalkerService.error('Error creating instant payout: $e');
       if (e is StripePaymentException) rethrow;
       throw StripePaymentException('Payout failed: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> cancelInstantPayout({
+    required String payoutDocId,
+    required String stripePayoutId,
+  }) async {
+    try {
+      final response = await _callFunction('cancelInstantPayout', {
+        'payoutDocId': payoutDocId,
+        'stripePayoutId': stripePayoutId,
+      });
+
+      return response;
+    } catch (e) {
+      TalkerService.error('Error cancelling instant payout: $e');
+      if (e is StripePaymentException) rethrow;
+      throw StripePaymentException('Payout cancellation failed: $e');
     }
   }
 
@@ -357,7 +350,7 @@ class StripeService {
       });
 
       return response;
-    } catch (e, st) {
+    } catch (e) {
       TalkerService.error('Error processing refund: $e');
       if (e is StripePaymentException) rethrow;
       throw StripePaymentException('Refund failed: $e');

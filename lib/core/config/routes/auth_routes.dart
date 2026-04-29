@@ -15,27 +15,8 @@ import 'package:sport_connect/features/auth/views/signup_wizard_screen.dart';
 import 'package:sport_connect/features/auth/views/splash_screen.dart';
 import 'package:sport_connect/features/onboarding/views/onboarding_screen.dart';
 
-part 'auth_routes.g.dart';
-
-@TypedGoRoute<TypedLoginRoute>(path: '/login', name: 'login')
-class TypedLoginRoute extends GoRouteData with $TypedLoginRoute {
-  const TypedLoginRoute();
-
-  @override
-  Page<void> buildPage(BuildContext context, GoRouterState state) =>
-      PlatformInfo.isIOS
-      ? CupertinoPage(key: state.pageKey, child: const LoginScreen())
-      : MaterialPage(key: state.pageKey, child: const LoginScreen());
-}
-
 /// Auth module routes
 class AuthRoutes implements RouteConfig {
-  @override
-  String get moduleName => 'auth';
-
-  @override
-  String? get initialRoute => null;
-
   @override
   List<RouteBase> getRoutes() {
     return [
@@ -53,7 +34,13 @@ class AuthRoutes implements RouteConfig {
             ? CupertinoPage(key: state.pageKey, child: const OnboardingScreen())
             : MaterialPage(key: state.pageKey, child: const OnboardingScreen()),
       ),
-      $typedLoginRoute,
+      GoRoute(
+        path: AppRoutes.login.path,
+        name: AppRoutes.login.name,
+        pageBuilder: (context, state) => PlatformInfo.isIOS
+            ? CupertinoPage(key: state.pageKey, child: const LoginScreen())
+            : MaterialPage(key: state.pageKey, child: const LoginScreen()),
+      ),
       GoRoute(
         path: AppRoutes.signupWizard.path,
         name: AppRoutes.signupWizard.name,

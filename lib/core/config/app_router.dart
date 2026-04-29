@@ -16,7 +16,7 @@ import 'package:sport_connect/core/config/routes/profile_routes.dart';
 import 'package:sport_connect/core/config/routes/reviews_routes.dart';
 import 'package:sport_connect/core/config/routes/ride_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
-import 'package:sport_connect/core/services/analytics_service.dart';
+import 'package:sport_connect/core/services/firebase_service.dart';
 import 'package:sport_connect/core/services/route_guard_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/main_wrapper.dart';
@@ -34,7 +34,41 @@ import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 part 'app_router.g.dart';
 
-final rootNavigatorKey = GlobalKey<NavigatorState>();
+final rootNavigatorKey = GlobalKey<NavigatorState>(
+  debugLabel: 'rootNavigatorKey',
+);
+
+final _riderHomeNavigatorKey = GlobalKey<NavigatorState>(
+  debugLabel: 'riderHomeNavigatorKey',
+);
+final _riderRidesNavigatorKey = GlobalKey<NavigatorState>(
+  debugLabel: 'riderRidesNavigatorKey',
+);
+final _riderEventsNavigatorKey = GlobalKey<NavigatorState>(
+  debugLabel: 'riderEventsNavigatorKey',
+);
+final _riderChatNavigatorKey = GlobalKey<NavigatorState>(
+  debugLabel: 'riderChatNavigatorKey',
+);
+final _riderProfileNavigatorKey = GlobalKey<NavigatorState>(
+  debugLabel: 'riderProfileNavigatorKey',
+);
+
+final _driverHomeNavigatorKey = GlobalKey<NavigatorState>(
+  debugLabel: 'driverHomeNavigatorKey',
+);
+final _driverRidesNavigatorKey = GlobalKey<NavigatorState>(
+  debugLabel: 'driverRidesNavigatorKey',
+);
+final _driverEarningsNavigatorKey = GlobalKey<NavigatorState>(
+  debugLabel: 'driverEarningsNavigatorKey',
+);
+final _driverChatNavigatorKey = GlobalKey<NavigatorState>(
+  debugLabel: 'driverChatNavigatorKey',
+);
+final _driverProfileNavigatorKey = GlobalKey<NavigatorState>(
+  debugLabel: 'driverProfileNavigatorKey',
+);
 
 const _enableRouterDiagnostics = bool.fromEnvironment(
   'SPORT_CONNECT_DEBUG_INSTRUMENTATION',
@@ -46,6 +80,7 @@ GoRouter appRouter(Ref ref) {
   // Use ref.listen (NOT ref.watch) to avoid full router disposal/recreation
   // on every auth state change. The refreshListenable triggers redirect
   // re-evaluation without rebuilding the entire GoRouter instance.
+  final analyticsService = ref.read(firebaseServiceProvider);
   final routerListenable = _AuthChangeNotifier();
 
   ref.listen(currentUserProvider, (previous, next) {
@@ -88,8 +123,8 @@ GoRouter appRouter(Ref ref) {
     refreshListenable: routerListenable,
     requestFocus: false,
     observers: [
-      if (AnalyticsService.instance.isInitialized)
-        AnalyticsService.instance.navigatorObserver,
+      if (analyticsService.isInitialized)
+        analyticsService.analyticsNavigatorObserver,
     ],
     redirect: (context, state) {
       final userState = ref.read(currentUserProvider);
@@ -98,6 +133,7 @@ GoRouter appRouter(Ref ref) {
       final connectedAccountState = ref.read(
         currentDriverConnectedAccountProvider,
       );
+
       final isFirestoreStillLoading =
           firebaseUser != null &&
           userState.value == null &&
@@ -150,6 +186,7 @@ String? _handleRedirect(
     selectedRoleIntent: selectedRoleIntent,
     currentDriverConnectedAccount: connectedAccountState.value,
   );
+
   return guard.getRedirect(state.uri);
 }
 
@@ -195,65 +232,65 @@ StatefulShellRoute _buildMainShell() {
 List<StatefulShellBranch> _buildRiderBranches() {
   return [
     StatefulShellBranch(
+      navigatorKey: _riderHomeNavigatorKey,
       routes: [
         GoRoute(
           path: AppRoutes.home.path,
           name: AppRoutes.home.name,
           pageBuilder: (context, state) => _shellPage(
             state: state,
-            keyValue: AppRoutes.home.name,
             child: const RiderHomeScreen(),
           ),
         ),
       ],
     ),
     StatefulShellBranch(
+      navigatorKey: _riderRidesNavigatorKey,
       routes: [
         GoRoute(
           path: AppRoutes.riderMyRides.path,
           name: AppRoutes.riderMyRides.name,
           pageBuilder: (context, state) => _shellPage(
             state: state,
-            keyValue: AppRoutes.riderMyRides.name,
             child: const RiderMyRidesScreen(),
           ),
         ),
       ],
     ),
     StatefulShellBranch(
+      navigatorKey: _riderEventsNavigatorKey,
       routes: [
         GoRoute(
           path: AppRoutes.events.path,
           name: AppRoutes.events.name,
           pageBuilder: (context, state) => _shellPage(
             state: state,
-            keyValue: AppRoutes.events.name,
             child: const EventListScreen(),
           ),
         ),
       ],
     ),
     StatefulShellBranch(
+      navigatorKey: _riderChatNavigatorKey,
       routes: [
         GoRoute(
           path: AppRoutes.chat.path,
           name: AppRoutes.chat.name,
           pageBuilder: (context, state) => _shellPage(
             state: state,
-            keyValue: AppRoutes.chat.name,
             child: const ChatListScreen(),
           ),
         ),
       ],
     ),
     StatefulShellBranch(
+      navigatorKey: _riderProfileNavigatorKey,
       routes: [
         GoRoute(
           path: AppRoutes.profile.path,
           name: AppRoutes.profile.name,
           pageBuilder: (context, state) => _shellPage(
             state: state,
-            keyValue: AppRoutes.profile.name,
             child: const ProfileScreen(),
           ),
         ),
@@ -265,65 +302,65 @@ List<StatefulShellBranch> _buildRiderBranches() {
 List<StatefulShellBranch> _buildDriverBranches() {
   return [
     StatefulShellBranch(
+      navigatorKey: _driverHomeNavigatorKey,
       routes: [
         GoRoute(
           path: AppRoutes.driverHome.path,
           name: AppRoutes.driverHome.name,
           pageBuilder: (context, state) => _shellPage(
             state: state,
-            keyValue: AppRoutes.driverHome.name,
             child: const DriverHomeScreen(),
           ),
         ),
       ],
     ),
     StatefulShellBranch(
+      navigatorKey: _driverRidesNavigatorKey,
       routes: [
         GoRoute(
           path: AppRoutes.driverRides.path,
           name: AppRoutes.driverRides.name,
           pageBuilder: (context, state) => _shellPage(
             state: state,
-            keyValue: AppRoutes.driverRides.name,
             child: const DriverMyRidesScreen(),
           ),
         ),
       ],
     ),
     StatefulShellBranch(
+      navigatorKey: _driverEarningsNavigatorKey,
       routes: [
         GoRoute(
           path: AppRoutes.driverEarnings.path,
           name: AppRoutes.driverEarnings.name,
           pageBuilder: (context, state) => _shellPage(
             state: state,
-            keyValue: AppRoutes.driverEarnings.name,
             child: const DriverEarningsScreen(),
           ),
         ),
       ],
     ),
     StatefulShellBranch(
+      navigatorKey: _driverChatNavigatorKey,
       routes: [
         GoRoute(
           path: AppRoutes.driverChat.path,
           name: AppRoutes.driverChat.name,
           pageBuilder: (context, state) => _shellPage(
             state: state,
-            keyValue: AppRoutes.driverChat.name,
             child: const ChatListScreen(),
           ),
         ),
       ],
     ),
     StatefulShellBranch(
+      navigatorKey: _driverProfileNavigatorKey,
       routes: [
         GoRoute(
           path: AppRoutes.driverProfileTab.path,
           name: AppRoutes.driverProfileTab.name,
           pageBuilder: (context, state) => _shellPage(
             state: state,
-            keyValue: AppRoutes.driverProfileTab.name,
             child: const ProfileScreen(),
           ),
         ),
@@ -334,20 +371,17 @@ List<StatefulShellBranch> _buildDriverBranches() {
 
 Page<void> _shellPage({
   required GoRouterState state,
-  required String keyValue,
   required Widget child,
 }) {
-  final key = ValueKey<String>('shell-tab-$keyValue');
-
   if (PlatformInfo.isIOS) {
     return CupertinoPage<void>(
-      key: key,
+      key: state.pageKey,
       child: child,
     );
   }
 
   return MaterialPage<void>(
-    key: key,
+    key: state.pageKey,
     child: child,
   );
 }
@@ -365,10 +399,15 @@ class _AuthChangeNotifier extends ChangeNotifier {
 
   void notify() {
     if (_notifyScheduled || _disposed) return;
+
     _notifyScheduled = true;
+
     scheduleMicrotask(() {
       _notifyScheduled = false;
-      if (!_disposed) notifyListeners();
+
+      if (!_disposed) {
+        notifyListeners();
+      }
     });
   }
 
@@ -381,6 +420,7 @@ class _AuthChangeNotifier extends ChangeNotifier {
 
 String _routeUserStateKey(AsyncValue<UserModel?>? state) {
   if (state == null) return 'none';
+
   return '${state.isLoading}:${state.hasError}:${_routeUserKey(state.value)}';
 }
 
@@ -390,6 +430,7 @@ String _routeConnectedAccountStateKey(
   if (state == null) return 'none';
 
   final account = state.value;
+
   if (account == null) {
     return '${state.isLoading}:${state.hasError}:null';
   }
@@ -408,6 +449,7 @@ String _routeConnectedAccountStateKey(
 
 String _routeRoleIntentStateKey(AsyncValue<UserRole?>? state) {
   if (state == null) return 'none';
+
   return '${state.isLoading}:${state.hasError}:${state.value?.name ?? 'null'}';
 }
 
@@ -430,7 +472,11 @@ Widget _buildErrorPage(BuildContext context, GoRouterState state) {
     child: Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Icon(Icons.error_outline, size: 64, color: AppColors.error),
+        const Icon(
+          Icons.error_outline,
+          size: 64,
+          color: AppColors.error,
+        ),
         const SizedBox(height: 16),
         Text(
           AppLocalizations.of(context).pageNotFound,

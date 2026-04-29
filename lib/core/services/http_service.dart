@@ -2,6 +2,9 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:dio/dio.dart';
+import 'package:dio_cache_interceptor/dio_cache_interceptor.dart';
+import 'package:http_cache_hive_store/http_cache_hive_store.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
@@ -10,10 +13,14 @@ part 'http_service.g.dart';
 
 /// Singleton HTTP client shared across all services.
 ///
-/// Interceptors applied in order:
-///   1. TalkerDioLogger               — structured request/response logging
-///   2. _RetryInterceptor             — exponential back-off (3 retries) on 5xx/timeouts
-///   3. _NominatimRateLimitInterceptor — serialises Nominatim calls to ≤ 1 req/s (OSMF ToS)
+/// [dio] is the default uncached client. Use it for mutations, payment flows,
+/// Cloud Functions, Stripe, booking writes, OTP writes, auth-sensitive calls,
+/// and anything that must never be served from cache.
+///
+/// [cachedDio] is a separate client for safe read-only GET APIs such as:
+/// - Nominatim search
+/// - Nominatim reverse geocoding
+/// - OSRM routing
 class HttpService {
   HttpService._()
     : _dio = Dio(
@@ -22,10 +29,7 @@ class HttpService {
           receiveTimeout: AppConstants.httpReceiveTimeout,
         ),
       ) {
-    _dio
-      ..addTalkerInterceptor()
-      ..interceptors.add(_RetryInterceptor(_dio))
-      ..interceptors.add(_NominatimRateLimitInterceptor());
+    _configureBaseDio(_dio);
   }
 
   static HttpService? _instance;
@@ -37,7 +41,84 @@ class HttpService {
 
   final Dio _dio;
 
+  Dio? _cachedDio;
+  Future<Dio>? _cachedDioFuture;
+
+  /// Default uncached Dio client.
   Dio get dio => _dio;
+
+  /// Cached Dio client for safe read-only GET requests.
+  ///
+  /// Do not use this for payments, Stripe, Cloud Functions mutations, booking
+  /// writes, OTP writes, premium checks, auth-sensitive calls, or security
+  /// decisions.
+  Future<Dio> get cachedDio {
+    final cached = _cachedDio;
+    if (cached != null) return Future.value(cached);
+
+    return _cachedDioFuture ??= _createCachedDio();
+  }
+
+  Future<Dio> _createCachedDio() async {
+    try {
+      final dio = Dio(
+        BaseOptions(
+          connectTimeout: AppConstants.httpConnectTimeout,
+          receiveTimeout: AppConstants.httpReceiveTimeout,
+        ),
+      );
+
+      _configureBaseDio(dio);
+
+      final cacheDir = await getTemporaryDirectory();
+
+      final cacheOptions = CacheOptions(
+        store: HiveCacheStore(
+          cacheDir.path,
+          hiveBoxName: 'sportconnect_http_cache',
+        ),
+        policy: CachePolicy.request,
+        hitCacheOnNetworkFailure: true,
+        hitCacheOnErrorCodes: const [500, 502, 503, 504],
+        maxStale: const Duration(days: 7),
+        allowPostMethod: false,
+      );
+
+      final cacheInterceptor = DioCacheInterceptor(options: cacheOptions);
+
+      // Insert the cache interceptor after TalkerDioLogger if verbose logging is
+      // enabled, otherwise insert it first.
+      //
+      // Verbose on:
+      //   0. TalkerDioLogger
+      //   1. DioCacheInterceptor
+      //   2. _RetryInterceptor
+      //   3. _NominatimRateLimitInterceptor
+      //
+      // Verbose off:
+      //   0. DioCacheInterceptor
+      //   1. _RetryInterceptor
+      //   2. _NominatimRateLimitInterceptor
+      const cacheIndex = TalkerService.isVerboseLoggingEnabled ? 1 : 0;
+      dio.interceptors.insert(cacheIndex, cacheInterceptor);
+
+      _cachedDio = dio;
+      return dio;
+    } catch (_) {
+      _cachedDioFuture = null;
+      rethrow;
+    }
+  }
+
+  void _configureBaseDio(Dio dio) {
+    if (TalkerService.isVerboseLoggingEnabled) {
+      dio.interceptors.add(TalkerService.dioLogger);
+    }
+
+    dio
+      ..interceptors.add(_RetryInterceptor(dio))
+      ..interceptors.add(_NominatimRateLimitInterceptor());
+  }
 }
 
 @Riverpod(keepAlive: true)
@@ -47,8 +128,8 @@ HttpService httpService(Ref ref) => HttpService.instance;
 // Retry interceptor — exponential back-off with ±25 % jitter
 //
 // Retries on: connection errors, send/receive/connect timeouts, 429, 5xx.
-// Respects Retry-After response header (seconds only).
-// Does NOT retry 4xx (except 429) — those are caller errors.
+// Respects Retry-After response header, seconds only.
+// Does NOT retry 4xx except 429 — those are caller errors.
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _RetryInterceptor extends Interceptor {
@@ -58,7 +139,8 @@ class _RetryInterceptor extends Interceptor {
 
   static const _maxRetries = 3;
   static const _retryKey = '_retryCount';
-  // Base back-off: 1 s → 2 s → 4 s
+
+  // Base back-off: 1 s → 2 s → 4 s.
   static const _baseDelaysMs = [1000, 2000, 4000];
 
   @override
@@ -76,7 +158,8 @@ class _RetryInterceptor extends Interceptor {
     final baseMs =
         retryAfterMs ??
         _baseDelaysMs[retryCount.clamp(0, _baseDelaysMs.length - 1)];
-    // Jitter multiplier in [0.75, 1.25] to spread concurrent retries
+
+    // Jitter multiplier in [0.75, 1.25] to spread concurrent retries.
     final jitter = Random().nextDouble() * 0.5 + 0.75;
     final delayMs = (baseMs * jitter).round();
 
@@ -114,10 +197,13 @@ class _RetryInterceptor extends Interceptor {
     }
   }
 
-  /// Parses `Retry-After: <seconds>` → milliseconds. Returns null if absent.
+  /// Parses `Retry-After: <seconds>` into milliseconds.
+  ///
+  /// Returns null if the header is absent or not a plain second value.
   int? _parseRetryAfterMs(Headers? headers) {
     final raw = headers?.value('retry-after');
     if (raw == null) return null;
+
     final seconds = int.tryParse(raw.trim());
     return seconds != null ? seconds * 1000 : null;
   }
@@ -126,9 +212,9 @@ class _RetryInterceptor extends Interceptor {
 // ─────────────────────────────────────────────────────────────────────────────
 // Nominatim rate-limit interceptor
 //
-// OSMF Nominatim ToS cap: 1 request / second from a single IP.
-// All Nominatim requests are serialised with a minimum 1.1 s gap.
-// Non-Nominatim requests pass through immediately — no queuing.
+// OSMF Nominatim public service policy caps clients at 1 request / second
+// from a single IP. All Nominatim requests are serialised with a minimum
+// 1.1 s gap. Non-Nominatim requests pass through immediately.
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _NominatimRateLimitInterceptor extends Interceptor {
@@ -148,12 +234,14 @@ class _NominatimRateLimitInterceptor extends Interceptor {
     }
 
     final now = DateTime.now();
+
     if (_lastCall != null) {
       final elapsed = now.difference(_lastCall!);
       if (elapsed < _minGap) {
         await Future<void>.delayed(_minGap - elapsed);
       }
     }
+
     _lastCall = DateTime.now();
     handler.next(options);
   }

@@ -8,29 +8,21 @@ part of 'firebase_service.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Riverpod provider for Firebase service
 
 @ProviderFor(firebaseService)
 final firebaseServiceProvider = FirebaseServiceProvider._();
 
-/// Riverpod provider for Firebase service
-
 final class FirebaseServiceProvider
     extends
-        $FunctionalProvider<
-          IFirebaseService,
-          IFirebaseService,
-          IFirebaseService
-        >
-    with $Provider<IFirebaseService> {
-  /// Riverpod provider for Firebase service
+        $FunctionalProvider<FirebaseService, FirebaseService, FirebaseService>
+    with $Provider<FirebaseService> {
   FirebaseServiceProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
         name: r'firebaseServiceProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -40,21 +32,21 @@ final class FirebaseServiceProvider
 
   @$internal
   @override
-  $ProviderElement<IFirebaseService> $createElement($ProviderPointer pointer) =>
+  $ProviderElement<FirebaseService> $createElement($ProviderPointer pointer) =>
       $ProviderElement(pointer);
 
   @override
-  IFirebaseService create(Ref ref) {
+  FirebaseService create(Ref ref) {
     return firebaseService(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(IFirebaseService value) {
+  Override overrideWithValue(FirebaseService value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<IFirebaseService>(value),
+      providerOverride: $SyncValueProvider<FirebaseService>(value),
     );
   }
 }
 
-String _$firebaseServiceHash() => r'd992ad78be9e141dccaa9ccda194dd220b339177';
+String _$firebaseServiceHash() => r'6bf3a3546d85c7b275f16f33c236cbc3df63ee29';

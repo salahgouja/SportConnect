@@ -101,7 +101,18 @@ class RideCompletionUiViewModel extends _$RideCompletionUiViewModel {
     }
   }
 
-  Future<void> shareReceipt(RideModel ride) async {
+  Future<void> shareReceipt(
+    RideModel ride, {
+    required String receiptTitle,
+    required String fromLabel,
+    required String toLabel,
+    required String dateLabel,
+    required String driverLabel,
+    required String baseFareLabel,
+    required String serviceFeeLabel,
+    required String totalLabel,
+    required String rideIdLabel,
+  }) async {
     if (state.isGeneratingPdf) return;
     state = state.copyWith(isGeneratingPdf: true, clearError: true);
 
@@ -156,19 +167,20 @@ class RideCompletionUiViewModel extends _$RideCompletionUiViewModel {
         final serviceFee = (baseFare * 0.10).round();
         final total = baseFare + serviceFee;
 
-        final receipt =
-            '''SportConnect - Trip Receipt
+        final receipt = '''
+$receiptTitle
 ${'=' * 30}
-From: ${ride.origin.address}
-To: ${ride.destination.address}
-Date: ${DateFormat('MMM d, yyyy h:mm a').format(ride.departureTime)}
-Driver: $driverName
+$fromLabel: ${ride.origin.address}
+$toLabel: ${ride.destination.address}
+$dateLabel: ${DateFormat('MMM d, yyyy h:mm a').format(ride.departureTime)}
+$driverLabel: $driverName
 
-Base Fare: €${(baseFare / 100).toStringAsFixed(2)}
-Service Fee: €${(serviceFee / 100).toStringAsFixed(2)}
-Total: €${(total / 100).toStringAsFixed(2)}
+$baseFareLabel: €${(baseFare / 100).toStringAsFixed(2)}
+$serviceFeeLabel: €${(serviceFee / 100).toStringAsFixed(2)}
+$totalLabel: €${(total / 100).toStringAsFixed(2)}
 ${'=' * 30}
-Ride ID: ${ride.id}''';
+$rideIdLabel: ${ride.id}'''
+            .trimLeft();
 
         await SharePlus.instance.share(ShareParams(text: receipt));
         if (!ref.mounted) return;

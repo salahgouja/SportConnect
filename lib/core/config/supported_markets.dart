@@ -1,10 +1,9 @@
 // lib/core/config/supported_markets.dart
 
 abstract final class SupportedMarkets {
-  static const tunisiaStripeCountry = 'TN';
   static const franceStripeCountry = 'FR';
 
-  static const defaultStripeCountry = franceStripeCountry;
+  static const String defaultStripeCountry = franceStripeCountry;
 
   static const addressCountryCodes = 'tn,fr';
 
@@ -15,7 +14,6 @@ abstract final class SupportedMarkets {
       return defaultStripeCountry;
     }
 
-    if (normalized.startsWith('+216')) return tunisiaStripeCountry;
     if (normalized.startsWith('+33')) return franceStripeCountry;
 
     return defaultStripeCountry;

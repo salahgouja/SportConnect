@@ -1,12 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
-import 'package:sport_connect/core/interfaces/repositories/i_review_repository.dart';
 import 'package:sport_connect/core/models/models.dart';
-import 'package:sport_connect/core/providers/repository_providers.dart';
+import 'package:sport_connect/core/services/firebase_service.dart';
 import 'package:sport_connect/features/reviews/models/review_model.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:uuid/uuid.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'review_repository.g.dart';
 
@@ -44,6 +43,11 @@ part 'review_repository.g.dart';
 /// 4. Response feature: Reviewees can respond to reviews
 /// 5. Tag aggregation: Can compute tag statistics
 
+@Riverpod(keepAlive: true)
+ReviewRepository reviewRepository(Ref ref) {
+  return ReviewRepository(ref.watch(firebaseServiceProvider).firestore);
+}
+
 /// Provider to get reviews for a specific user
 @riverpod
 Future<List<ReviewModel>> userReviews(Ref ref, String userId) async {
@@ -79,7 +83,7 @@ Stream<List<ReviewModel>> userReviewsStream(Ref ref, String userId) {
   return repo.watchReviewsForUser(userId);
 }
 
-class ReviewRepository implements IReviewRepository {
+class ReviewRepository {
   ReviewRepository(this._firestore);
   final FirebaseFirestore _firestore;
   final _uuid = const Uuid();

@@ -3,8 +3,6 @@ import 'dart:async';
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_crashlytics/firebase_crashlytics.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -12,12 +10,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_devtools_tracker/riverpod_devtools_tracker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 // Config & Services
 import 'package:sport_connect/core/config/app_router.dart';
 import 'package:sport_connect/core/config/stripe_config.dart';
-import 'package:sport_connect/core/providers/settings_provider.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
-import 'package:sport_connect/core/services/analytics_service.dart';
+import 'package:sport_connect/core/repositories/settings_repository.dart';
 import 'package:sport_connect/core/services/deep_link_service.dart';
 import 'package:sport_connect/core/services/firebase_service.dart';
 import 'package:sport_connect/core/services/push_notification_service.dart';
@@ -25,7 +23,7 @@ import 'package:sport_connect/core/services/stripe_service.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/core/theme/cupertino_app_theme.dart';
 import 'package:sport_connect/core/theme/material_app_theme.dart';
-// Localization
+import 'package:sport_connect/features/profile/view_models/settings_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:upgrader/upgrader.dart';
 
@@ -37,9 +35,12 @@ void main() async {
   // 1. Ensure bindings are initialized first
   WidgetsFlutterBinding.ensureInitialized();
 
+  final firebaseService = await FirebaseService.instance.initialize();
+  TalkerService.info('✅ Firebase initialized');
+
   // 2. Set up error handling BEFORE initializing services
   FlutterError.onError = (details) async {
-    await FirebaseCrashlytics.instance.recordFlutterFatalError(details);
+    await firebaseService.crashlytics.recordFlutterFatalError(details);
     TalkerService.error(
       'FlutterError: ${details.exceptionAsString()}',
       details.exception,
@@ -48,10 +49,12 @@ void main() async {
   };
 
   PlatformDispatcher.instance.onError = (error, stack) {
-    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    firebaseService.crashlytics.recordError(error, stack, fatal: true);
     TalkerService.error('PlatformDispatcher error', error, stack);
     return true;
   };
+
+  final prefs = await SharedPreferences.getInstance();
 
   // 3. Initialize with safety catch to prevent Splash Screen freeze
   try {
@@ -60,23 +63,18 @@ void main() async {
     TalkerService.error('🚨 CRITICAL INITIALIZATION FAILURE', e, st);
   }
 
-  _runApp();
+  _runApp(prefs);
 }
 
 Future<void> _initializeApp() async {
   TalkerService.info('🚀 Starting SportConnect App...');
 
-  // Core Firebase
-  await FirebaseService.instance.initialize();
-  TalkerService.info('✅ Firebase initialized');
-
   if (!kIsWeb) {
-    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    // FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
     await PushNotificationService.instance.initialize();
     TalkerService.info('✅ Push notifications initialized');
   }
 
-  await AnalyticsService.instance.initialize();
   await _initializeStripe();
 }
 
@@ -95,9 +93,12 @@ Future<void> _initializeStripe() async {
   }
 }
 
-void _runApp() {
+void _runApp(SharedPreferences prefs) {
   runApp(
     ProviderScope(
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs),
+      ],
       observers: [
         if (kDebugMode && _enableDebugInstrumentation) ...[
           TalkerService.riverpodObserver,
@@ -165,7 +166,9 @@ class _SportConnectAppState extends ConsumerState<SportConnectApp> {
 
     final context = rootNavigatorKey.currentContext;
     if (context != null && mounted) {
-      PushNotificationService.instance.handlePendingInitialMessage(context);
+      ref
+          .read(pushNotificationServiceProvider)
+          .handlePendingInitialMessage(context);
     }
   }
 
@@ -175,14 +178,14 @@ class _SportConnectAppState extends ConsumerState<SportConnectApp> {
     final authUser = ref.read(authStateProvider).value;
     if (authUser != null) {
       _fcmTokenSaved = true;
-      PushNotificationService.instance.saveFcmToken(authUser.uid);
+      ref.read(pushNotificationServiceProvider).saveFcmToken(authUser.uid);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final router = ref.watch(appRouterProvider);
-    final localeAsync = ref.watch(localeProvider);
+    final localeAsync = ref.watch(settingsViewModelProvider).locale;
 
     return ScreenUtilInit(
       designSize: const Size(375, 812),
@@ -191,7 +194,7 @@ class _SportConnectAppState extends ConsumerState<SportConnectApp> {
       builder: (context, child) {
         return AdaptiveApp.router(
           title: 'SportConnect',
-          locale: localeAsync.value,
+          locale: localeAsync,
           localizationsDelegates: const [
             AppLocalizations.delegate,
             GlobalMaterialLocalizations.delegate,

@@ -13,6 +13,7 @@ import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
 import 'package:sport_connect/core/theme/platform_adaptive.dart';
+import 'package:sport_connect/core/utils/payment_error_handler.dart';
 import 'package:sport_connect/core/widgets/analytics_payment_widgets.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/core/widgets/skeleton_loader.dart';
@@ -178,6 +179,11 @@ class DriverEarningsScreen extends ConsumerWidget {
             MultiSliver(
               children: [
                 SliverToBoxAdapter(
+                  child: _SectionHeader(
+                    title: AppLocalizations.of(context).earningsOverview,
+                  ),
+                ),
+                SliverToBoxAdapter(
                   child: _buildPeriodSelector(context, ref, selectedPeriod),
                 ),
                 SliverToBoxAdapter(
@@ -220,7 +226,17 @@ class DriverEarningsScreen extends ConsumerWidget {
             // ── Payout + Transactions group ───────────────────
             MultiSliver(
               children: [
+                SliverToBoxAdapter(
+                  child: _SectionHeader(
+                    title: AppLocalizations.of(context).setUpPayouts,
+                  ),
+                ),
                 SliverToBoxAdapter(child: _buildPayoutSection(context, ref)),
+                SliverToBoxAdapter(
+                  child: _SectionHeader(
+                    title: AppLocalizations.of(context).recentTransactions,
+                  ),
+                ),
                 SliverToBoxAdapter(
                   child: _buildRecentTransactions(context, ref, transactions),
                 ),
@@ -971,8 +987,9 @@ class DriverEarningsScreen extends ConsumerWidget {
                                         ).availableBalance,
                                       ),
                                       content: const Text(
-                                        'Available Balance is what Stripe has settled and is ready to withdraw to your bank.\n\n'
-                                        'Total Earnings (shown above) is your lifetime trip revenue — some may still be processing through Stripe.',
+                                        'Withdrawable Now is your instant-available balance — you can transfer this to your bank immediately.\n\n'
+                                        'Processing is money that has reached Stripe but is not yet eligible for instant withdrawal.\n\n'
+                                        'Total Earnings (shown above) is your lifetime trip revenue.',
                                       ),
                                       actions: [
                                         TextButton(
@@ -1049,7 +1066,7 @@ class DriverEarningsScreen extends ConsumerWidget {
                   ),
                   SizedBox(height: 12.h),
                   Text(
-                    'Only withdrawable now can be transferred. Processing funds have reached Stripe but are not settled yet.',
+                    "Withdrawable Now is your instant-available balance. Processing funds are in Stripe's pipeline and not yet eligible for instant withdrawal.",
                     style: TextStyle(
                       fontSize: 11.sp,
                       color: AppColors.textSecondary,
@@ -1157,22 +1174,20 @@ class DriverEarningsScreen extends ConsumerWidget {
       } else {
         if (!context.mounted) return;
         final payoutState = ref.read(driverPayoutViewModelProvider);
-        final detailedError = payoutState.hasError
-            ? payoutState.error.toString()
-            : null;
+        final message = payoutState.hasError
+            ? PaymentErrorHandler.humanize(payoutState.error!)
+            : AppLocalizations.of(context).payoutFailedPleaseTryAgain;
         AdaptiveSnackBar.show(
           context,
-          message:
-              detailedError ??
-              AppLocalizations.of(context).payoutFailedPleaseTryAgain,
+          message: message,
           type: AdaptiveSnackBarType.error,
         );
       }
-    } catch (e) {
+    } on Object catch (e) {
       if (!context.mounted) return;
       AdaptiveSnackBar.show(
         context,
-        message: AppLocalizations.of(context).errorValue(e),
+        message: PaymentErrorHandler.humanize(e),
         type: AdaptiveSnackBarType.error,
       );
     }
@@ -1211,7 +1226,8 @@ class DriverEarningsScreen extends ConsumerWidget {
     if (stripeAccountId == null || stripeAccountId.isEmpty) {
       AdaptiveSnackBar.show(
         context,
-        message: AppLocalizations.of(context).tryAgain,
+        message:
+            'Your Stripe account ID is missing. Please reconnect your payout account.',
         type: AdaptiveSnackBarType.error,
       );
       return;
@@ -1245,18 +1261,6 @@ class DriverEarningsScreen extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20.w),
-          child: Text(
-            AppLocalizations.of(context).recentTransactions,
-            style: TextStyle(
-              fontSize: 16.sp,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-            ),
-          ),
-        ),
-        SizedBox(height: 12.h),
         transactionsAsync.when(
           data: (transactions) {
             if (transactions.isEmpty) {
@@ -1341,6 +1345,40 @@ class DriverEarningsScreen extends ConsumerWidget {
         ),
       ],
     ).animate().fadeIn(delay: 400.ms);
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.title});
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(20.w, 24.h, 20.w, 10.h),
+      child: Row(
+        children: [
+          Container(
+            width: 3.w,
+            height: 16.h,
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: BorderRadius.circular(2.r),
+            ),
+          ),
+          SizedBox(width: 10.w),
+          Text(
+            title.toUpperCase(),
+            style: TextStyle(
+              fontSize: 11.sp,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textTertiary,
+              letterSpacing: 1.0,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

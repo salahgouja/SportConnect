@@ -1,11 +1,19 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
-import 'package:sport_connect/core/interfaces/repositories/i_booking_repository.dart';
+import 'package:sport_connect/core/services/firebase_service.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
+
+part 'booking_repository.g.dart';
+
+@Riverpod(keepAlive: true)
+BookingRepository bookingRepository(Ref ref) {
+  return BookingRepository(ref.watch(firebaseServiceProvider).firestore);
+}
 
 /// Repository for managing ride bookings
 /// Bookings are now stored separately from rides for better scalability
-class BookingRepository implements IBookingRepository {
+class BookingRepository {
   BookingRepository(this._firestore);
   final FirebaseFirestore _firestore;
 

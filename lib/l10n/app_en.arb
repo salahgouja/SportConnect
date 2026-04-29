@@ -4833,4 +4833,18 @@
   ,"showBestRatedDriversFirst": "Show best-rated drivers first"
   ,"showFastestRoutesFirst": "Show fastest routes first"
   ,"submitRating": "Submit Rating"
+  ,"eventShareText": "{title} — {eventType}\n{date}\n{address}\n\nJoin me on SportConnect!\n{link}"
+  ,"@eventShareText": {
+    "placeholders": {
+      "title": {"type": "String"},
+      "eventType": {"type": "String"},
+      "date": {"type": "String"},
+      "address": {"type": "String"},
+      "link": {"type": "String"}
+    }
+  }
+  ,"receiptTitle": "SportConnect - Trip Receipt"
+  ,"receiptBaseFare": "Base Fare"
+  ,"receiptServiceFee": "Service Fee"
+  ,"receiptRideId": "Ride ID"
 }

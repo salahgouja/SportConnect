@@ -446,17 +446,19 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
             size: 22.sp,
           ),
           onPressed: () async {
+            final l10n = AppLocalizations.of(context);
             final dateStr = DateFormat(
               'EEE, MMM d · h:mm a',
             ).format(event.startsAt);
             await SharePlus.instance.share(
               ShareParams(
-                text:
-                    '${event.title} — ${event.type.label}\n'
-                    '$dateStr\n'
-                    '${event.location.address}\n\n'
-                    'Join me on SportConnect!\n'
-                    'https://sportconnect.app/events/${event.id}',
+                text: l10n.eventShareText(
+                  event.title,
+                  event.type.label,
+                  dateStr,
+                  event.location.address,
+                  'https://sportconnect.app/events/${event.id}',
+                ),
               ),
             );
           },

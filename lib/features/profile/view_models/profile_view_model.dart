@@ -2,10 +2,12 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/widgets/address_autocomplete_field.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
+import 'package:sport_connect/features/auth/repositories/auth_repository.dart';
+import 'package:sport_connect/features/profile/repositories/profile_repository.dart';
+import 'package:sport_connect/features/profile/repositories/support_repository.dart';
 import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
 
 part 'profile_view_model.g.dart';
@@ -83,7 +85,9 @@ class ProfileEditState {
       dateOfBirth: dateOfBirth ?? this.dateOfBirth,
       gender: gender ?? this.gender,
       expertise: expertise ?? this.expertise,
-      addressResult: clearAddressResult ? null : (addressResult ?? this.addressResult),
+      addressResult: clearAddressResult
+          ? null
+          : (addressResult ?? this.addressResult),
       newPhotoFile: clearNewPhotoFile
           ? null
           : (newPhotoFile ?? this.newPhotoFile),

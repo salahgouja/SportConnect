@@ -2,16 +2,27 @@ import 'dart:math' as math;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_database/firebase_database.dart' hide Query;
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
-import 'package:sport_connect/core/interfaces/repositories/i_ride_repository.dart';
+import 'package:sport_connect/core/services/firebase_service.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
-import 'package:sport_connect/features/rides/repositories/booking_repository.dart'
-    show BookingRepository;
+import 'package:sport_connect/features/rides/repositories/booking_repository.dart';
+
+part 'ride_repository.g.dart';
+
+@Riverpod(keepAlive: true)
+RideRepository rideRepository(Ref ref) {
+  return RideRepository(
+    ref.watch(firebaseServiceProvider).firestore,
+    ref.watch(firebaseServiceProvider).database,
+  );
+}
 
 /// Ride Repository for Firestore operations
-class RideRepository implements IRideRepository {
-  RideRepository(this._firestore);
+class RideRepository {
+  RideRepository(this._firestore, this._database);
+  final FirebaseDatabase _database;
   final FirebaseFirestore _firestore;
 
   Map<String, dynamic> _bookingCreateMap(RideBooking booking) {
@@ -55,7 +66,7 @@ class RideRepository implements IRideRepository {
       );
 
   /// Create a new ride
-  @override
+
   Future<String> createRide(RideModel ride) async {
     final docRef = _ridesCollection.doc();
     final rideWithId = ride.copyWith(
@@ -68,20 +79,20 @@ class RideRepository implements IRideRepository {
   }
 
   /// Get ride by ID
-  @override
+
   Future<RideModel?> getRideById(String rideId) async {
     final doc = await _ridesCollection.doc(rideId).get();
     return doc.data();
   }
 
   /// Stream ride by ID (real-time updates)
-  @override
+
   Stream<RideModel?> streamRideById(String rideId) {
     return _ridesCollection.doc(rideId).snapshots().map((doc) => doc.data());
   }
 
   /// Update ride
-  @override
+
   Future<void> updateRide(RideModel ride) async {
     final json = ride.toJson()
       ..remove('id')
@@ -91,7 +102,7 @@ class RideRepository implements IRideRepository {
   }
 
   /// Update ride with map (helper method)
-  @override
+
   Future<void> updateRideFields(
     String rideId,
     Map<String, dynamic> updates,
@@ -101,14 +112,13 @@ class RideRepository implements IRideRepository {
   }
 
   /// Delete ride
-  @override
+
   Future<void> deleteRide(String rideId) async {
     await _ridesCollection.doc(rideId).delete();
   }
 
   // ==================== INTERFACE IMPLEMENTATIONS ====================
 
-  @override
   Stream<List<RideModel>> getActiveRides(String userId) {
     return _ridesCollection
         .where('status', isEqualTo: 'active')
@@ -120,7 +130,6 @@ class RideRepository implements IRideRepository {
         .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
   }
 
-  @override
   Stream<List<RideModel>> getRideHistory(String userId) {
     return _ridesCollection
         .where('driverId', isEqualTo: userId)
@@ -131,7 +140,6 @@ class RideRepository implements IRideRepository {
         .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
   }
 
-  @override
   Future<String> createRideRequest(String rideId, RideBooking booking) async {
     // Unified flow: creating a "request" simply creates a pending booking.
     final bookingId = booking.id.isNotEmpty
@@ -145,7 +153,6 @@ class RideRepository implements IRideRepository {
     return bookingId;
   }
 
-  @override
   Future<List<RideModel>> searchRides({
     required double originLat,
     required double originLng,
@@ -202,20 +209,22 @@ class RideRepository implements IRideRepository {
     return rides;
   }
 
-  @override
   Future<void> cancelRide(String rideId, String reason) async {
-    await _ridesCollection.doc(rideId).update({
-      'status': RideStatus.cancelled.name,
-      'cancellationReason': reason,
-      'updatedAt': DateTime.now(),
-    });
-    await clearLiveLocation(rideId);
+    try {
+      await _ridesCollection.doc(rideId).update({
+        'status': RideStatus.cancelled.name,
+        'cancellationReason': reason,
+        'updatedAt': DateTime.now(),
+      });
+    } finally {
+      await clearLiveLocation(rideId);
+    }
   }
 
   // ==================== EXISTING METHODS ====================
 
   /// Get rides by driver
-  @override
+
   Future<List<RideModel>> getRidesByDriver(String driverId) async {
     final query = await _ridesCollection
         .where('driverId', isEqualTo: driverId)
@@ -227,7 +236,7 @@ class RideRepository implements IRideRepository {
   }
 
   /// Check if a vehicle is associated with any non-terminal ride.
-  @override
+
   Future<bool> hasActiveRidesForVehicle(String vehicleId) async {
     final snapshot = await _ridesCollection
         .where('vehicleId', isEqualTo: vehicleId)
@@ -238,7 +247,7 @@ class RideRepository implements IRideRepository {
   }
 
   /// Stream rides by driver (real-time)
-  @override
+
   Stream<List<RideModel>> streamRidesByDriver(String driverId) {
     return _ridesCollection
         .where('driverId', isEqualTo: driverId)
@@ -252,7 +261,7 @@ class RideRepository implements IRideRepository {
   ///
   /// Queries the bookings collection via [BookingRepository] to find
   /// rides the user is booked on, then fetches the ride documents.
-  @override
+
   Stream<List<RideModel>> streamRidesAsPassenger(String userId) {
     return _rideBookingsCollection
         .where('passengerId', isEqualTo: userId)
@@ -337,7 +346,7 @@ class RideRepository implements IRideRepository {
   /// query. We apply the departure-time inequality in Firestore (the most
   /// selective filter) and then post-filter by latitude/longitude in memory
   /// using the Haversine formula so we don't need a composite index.
-  @override
+
   Stream<List<RideModel>> streamNearbyRides({
     required double latitude,
     required double longitude,
@@ -367,7 +376,7 @@ class RideRepository implements IRideRepository {
   }
 
   /// Stream all active rides (for search screen)
-  @override
+
   Stream<List<RideModel>> streamActiveRides() {
     return _ridesCollection
         .where('status', isEqualTo: 'active')
@@ -385,7 +394,7 @@ class RideRepository implements IRideRepository {
   /// the driver accepts the booking (via [updateBookingStatus] with
   /// [BookingStatus.accepted]). This prevents over-restricting seat
   /// availability for rides that use manual acceptance.
-  @override
+
   Future<void> bookRide({
     required String rideId,
     required RideBooking booking,
@@ -446,7 +455,7 @@ class RideRepository implements IRideRepository {
   /// TOCTOU race condition. Capacity is only freed when the booking was
   /// previously `accepted` (seats were actually reserved). Rejecting or
   /// cancelling a still-pending booking must NOT decrement capacity.
-  @override
+
   Future<void> updateBookingStatus({
     required String rideId,
     required String bookingId,
@@ -570,7 +579,7 @@ class RideRepository implements IRideRepository {
   }
 
   /// Cancels a booking by delegating to [updateBookingStatus].
-  @override
+
   Future<void> cancelBooking({
     required String rideId,
     required String bookingId,
@@ -626,7 +635,7 @@ class RideRepository implements IRideRepository {
   /// Uses a transaction to atomically validate that at least one accepted
   /// booking exists, set the ride status to inProgress, record the actual
   /// departure time, and set the initial ride phase.
-  @override
+
   Future<void> startRide(String rideId) async {
     await _firestore.runTransaction((transaction) async {
       final rideRef = _ridesCollection.doc(rideId);
@@ -660,7 +669,7 @@ class RideRepository implements IRideRepository {
   ///
   /// Writes `arrivalTime` inside the `schedule` sub-object to match the
   /// `RideSchedule` model structure (not at the document root level).
-  @override
+
   Future<void> completeRide(String rideId) async {
     // R-4: Warn if any accepted passenger was never picked up (OTP not confirmed).
     final rideDoc = await _firestore
@@ -698,7 +707,7 @@ class RideRepository implements IRideRepository {
 
   /// Updates the driver's ride phase (pickingUp, enRoute, arriving, completed).
   /// This is persisted so passengers can see granular progress.
-  @override
+
   Future<void> updateRidePhase(String rideId, String phase) async {
     await _ridesCollection.doc(rideId).update({
       'ridePhase': phase,
@@ -707,7 +716,7 @@ class RideRepository implements IRideRepository {
   }
 
   /// Streams the driver's current ride phase from the ride document.
-  @override
+
   Stream<String?> streamRidePhase(String rideId) {
     return _firestore.collection('rides').doc(rideId).snapshots().map((
       snapshot,
@@ -722,14 +731,14 @@ class RideRepository implements IRideRepository {
   /// - ~10x cheaper (charged per GB transferred, not per write operation)
   /// - ~50-150ms latency vs Firestore's ~300-1000ms for real-time
   /// - Designed for high-frequency data; no per-write billing pressure
-  @override
+
   Future<void> updateLiveLocation(
     String rideId,
     double latitude,
     double longitude, {
     double heading = 0,
   }) async {
-    final rtdbRef = FirebaseDatabase.instance.ref('liveLocations/$rideId');
+    final rtdbRef = _database.ref('liveLocations/$rideId');
     // Register server-side auto-remove once per ride session.
     // If the device disconnects ungracefully the RTDB node is cleaned up automatically.
     if (!_disconnectRegistered.contains(rideId)) {
@@ -749,18 +758,17 @@ class RideRepository implements IRideRepository {
     });
   }
 
-  @override
   Future<void> clearLiveLocation(String rideId) async {
     _disconnectRegistered.remove(rideId);
-    await FirebaseDatabase.instance.ref('liveLocations/$rideId').remove();
+    await _database.ref('liveLocations/$rideId').remove();
   }
 
   /// Streams the driver's live GPS location from Firebase Realtime Database.
-  @override
+
   Stream<({double latitude, double longitude})?> streamLiveLocation(
     String rideId,
   ) {
-    return FirebaseDatabase.instance.ref('liveLocations/$rideId').onValue.map((
+    return _database.ref('liveLocations/$rideId').onValue.map((
       event,
     ) {
       final data = event.snapshot.value as Map<dynamic, dynamic>?;
@@ -775,7 +783,7 @@ class RideRepository implements IRideRepository {
   // ==================== REAL-TIME EXTRA FIELDS ====================
 
   /// Streams the list of passenger IDs the driver has confirmed as picked up.
-  @override
+
   Stream<List<String>> streamPickedUpPassengers(String rideId) {
     return _firestore
         .collection('rides')
@@ -816,7 +824,7 @@ class RideRepository implements IRideRepository {
   }
 
   /// Stream rides linked to a specific event by eventId.
-  @override
+
   Stream<List<RideModel>> streamRidesByEventId(String eventId) {
     return _ridesCollection
         .where('eventId', isEqualTo: eventId)
@@ -828,7 +836,6 @@ class RideRepository implements IRideRepository {
 
   // ==================== 7A: PICKUP ORDER ====================
 
-  @override
   Future<void> updatePickupOrder(
     String rideId,
     List<String> passengerIds,
@@ -839,7 +846,6 @@ class RideRepository implements IRideRepository {
     });
   }
 
-  @override
   Future<void> markPassengerPickedUp(String rideId, String passengerId) async {
     await _ridesCollection.doc(rideId).update({
       'pickedUpPassengers': FieldValue.arrayUnion([passengerId]),
@@ -849,7 +855,6 @@ class RideRepository implements IRideRepository {
 
   // ==================== 7B: NO-SHOW ====================
 
-  @override
   Future<void> markPassengerNoShow({
     required String rideId,
     required String bookingId,
@@ -881,7 +886,6 @@ class RideRepository implements IRideRepository {
 
   // ==================== 7E: MID-RIDE STOPS ====================
 
-  @override
   Future<void> addMidRideStop(
     String rideId,
     Map<String, dynamic> waypoint,
@@ -904,7 +908,6 @@ class RideRepository implements IRideRepository {
     });
   }
 
-  @override
   Future<void> removeMidRideStop(String rideId, int waypointIndex) async {
     final ride = await getRideById(rideId);
     if (ride == null) return;
@@ -926,7 +929,6 @@ class RideRepository implements IRideRepository {
 
   // ==================== 7F: FARE ADJUSTMENT ====================
 
-  @override
   Future<void> recordActualDistance(String rideId, double distanceKm) async {
     await _ridesCollection.doc(rideId).update({
       'actualDistanceKm': distanceKm,
@@ -936,7 +938,6 @@ class RideRepository implements IRideRepository {
 
   // ==================== 7H: RETURN RIDE ====================
 
-  @override
   Future<String> createReturnRide(String originalRideId) async {
     final original = await getRideById(originalRideId);
     if (original == null) throw ArgumentError('Original ride not found');

@@ -1,21 +1,18 @@
-import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
-import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
-import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 // ─── Data Models ──────────────────────────────────────────────────────────────
 
+/// French phone input with +33 prefix, formatting, and validation.
+///
 /// Features:
-/// - Tunisia and France only
-/// - Searchable country picker bottom sheet with empty state
-/// - Per-country min/max digit length validation
+/// - France-only phone number input
+/// - 9-digit French national number validation
 /// - Real-time validation with visual feedback
 /// - Trailing checkmark when valid; red border when invalid
-/// - Defaults to device locale when it is TN/FR, otherwise Tunisia
 /// - Accessible labels and semantics
 class PhoneNumber {
   const PhoneNumber({
@@ -77,7 +74,7 @@ class IntlPhoneInput extends StatefulWidget {
   const IntlPhoneInput({
     super.key,
     this.initialValue,
-    this.initialCountryCode = '',
+    this.initialCountryCode = 'FR',
     this.label,
     this.hint,
     this.enabled = true,
@@ -90,8 +87,7 @@ class IntlPhoneInput extends StatefulWidget {
 
   final String? initialValue;
 
-  /// ISO country code to pre-select. Defaults to device locale country,
-  /// falling back to 'TN' if unresolvable.
+  /// ISO country code to pre-select. Defaults to France.
   final String initialCountryCode;
   final String? label;
   final String? hint;
@@ -143,19 +139,7 @@ class IntlPhoneInputState extends State<IntlPhoneInput> {
     super.initState();
 
     // Auto-detect country from device locale; fall back to TN.
-    final localeCountry =
-        WidgetsBinding.instance.platformDispatcher.locale.countryCode ?? 'TN';
-    final resolvedCode = widget.initialCountryCode.isNotEmpty
-        ? widget.initialCountryCode
-        : localeCountry;
-
-    _selectedCountry = countries.firstWhere(
-      (c) => c.code == resolvedCode,
-      orElse: () => countries.firstWhere(
-        (c) => c.code == 'TN',
-        orElse: () => countries.first,
-      ),
-    );
+    _selectedCountry = france;
 
     _controller = TextEditingController(text: widget.initialValue ?? '');
   }
@@ -175,29 +159,6 @@ class IntlPhoneInputState extends State<IntlPhoneInput> {
       // Rebuild to update valid/invalid visual state.
       setState(() {});
     }
-  }
-
-  void _setCountry(Country country) {
-    setState(() => _selectedCountry = country);
-    _onPhoneChanged('');
-  }
-
-  void _showCountryPicker() {
-    final accent = widget.accentColor ?? AppColors.primary;
-    AppModalSheet.show<void>(
-      context: context,
-      title: 'Country',
-      forceMaxHeight: true,
-      maxHeightFactor: 0.82,
-      child: _CountryPickerSheet(
-        accent: accent,
-        selectedCode: _selectedCountry.code,
-        onSelected: (country) {
-          _setCountry(country);
-          Navigator.pop(context);
-        },
-      ),
-    );
   }
 
   @override
@@ -245,11 +206,9 @@ class IntlPhoneInputState extends State<IntlPhoneInput> {
           child: Row(
             children: [
               // Country picker button
-              _CountryPickerButton(
+              _CountryPrefix(
                 country: _selectedCountry,
                 accent: accent,
-                enabled: widget.enabled,
-                onTap: _showCountryPicker,
               ),
               Container(
                 width: 1,
@@ -347,225 +306,31 @@ class IntlPhoneInputState extends State<IntlPhoneInput> {
 }
 
 // ─── Country Picker Button ────────────────────────────────────────────────────
-
-class _CountryPickerButton extends StatelessWidget {
-  const _CountryPickerButton({
+class _CountryPrefix extends StatelessWidget {
+  const _CountryPrefix({
     required this.country,
     required this.accent,
-    required this.enabled,
-    required this.onTap,
   });
 
   final Country country;
   final Color accent;
-  final bool enabled;
-  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: enabled ? onTap : null,
-        borderRadius: BorderRadius.horizontal(left: Radius.circular(14.r)),
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(country.flag, style: TextStyle(fontSize: 22.sp)),
-              SizedBox(width: 6.w),
-              Text(
-                '+${country.dialCode}',
-                style: TextStyle(
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w700,
-                  color: accent,
-                ),
-              ),
-              SizedBox(width: 4.w),
-              Icon(
-                Icons.keyboard_arrow_down_rounded,
-                size: 18.sp,
-                color: accent.withValues(alpha: 0.6),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ─── Country Picker Sheet ─────────────────────────────────────────────────────
-
-class _CountryPickerSheet extends StatefulWidget {
-  const _CountryPickerSheet({
-    required this.accent,
-    required this.selectedCode,
-    required this.onSelected,
-  });
-
-  final Color accent;
-  final String selectedCode;
-  final ValueChanged<Country> onSelected;
-
-  @override
-  State<_CountryPickerSheet> createState() => _CountryPickerSheetState();
-}
-
-class _CountryPickerSheetState extends State<_CountryPickerSheet> {
-  String _search = '';
-  final _searchController = TextEditingController();
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  List<Country> get _filtered {
-    if (_search.isEmpty) return countries;
-    final q = _search.toLowerCase();
-    return countries
-        .where(
-          (c) =>
-              c.name.toLowerCase().contains(q) ||
-              c.dialCode.contains(q) ||
-              c.code.toLowerCase().contains(q),
-        )
-        .toList();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final filtered = _filtered;
-
-    return ColoredBox(
-      color: AppColors.background,
-      child: Column(
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Padding(
-            padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 12.h),
-            child: Container(
-              decoration: BoxDecoration(
-                color: AppColors.surfaceVariant,
-                borderRadius: BorderRadius.circular(14.r),
-                border: Border.all(
-                  color: AppColors.border.withValues(alpha: 0.6),
-                ),
-              ),
-              child: TextField(
-                controller: _searchController,
-                autofocus: true,
-                onChanged: (v) => setState(() => _search = v),
-                style: TextStyle(fontSize: 15.sp),
-                decoration: InputDecoration(
-                  hintText: AppLocalizations.of(context).searchCountryOrCode,
-                  hintStyle: TextStyle(
-                    fontSize: 14.sp,
-                    color: AppColors.textTertiary,
-                  ),
-                  prefixIcon: const Icon(
-                    Icons.search_rounded,
-                    color: AppColors.textTertiary,
-                  ),
-                  suffixIcon: _search.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(
-                            Icons.clear_rounded,
-                            color: AppColors.textTertiary,
-                          ),
-                          onPressed: () {
-                            _searchController.clear();
-                            setState(() => _search = '');
-                          },
-                        )
-                      : null,
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(
-                    horizontal: 16.w,
-                    vertical: 14.h,
-                  ),
-                ),
-              ),
+          Text(country.flag, style: TextStyle(fontSize: 22.sp)),
+          SizedBox(width: 6.w),
+          Text(
+            '+${country.dialCode}',
+            style: TextStyle(
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w700,
+              color: accent,
             ),
-          ),
-          Expanded(
-            child: filtered.isEmpty
-                ? Center(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 48.h),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.search_off_rounded,
-                            size: 40.sp,
-                            color: AppColors.textTertiary,
-                          ),
-                          SizedBox(height: 12.h),
-                          Text(
-                            'No country found for "$_search"',
-                            style: TextStyle(
-                              fontSize: 14.sp,
-                              color: AppColors.textSecondary,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          SizedBox(height: 8.h),
-                          TextButton(
-                            onPressed: () {
-                              _searchController.clear();
-                              setState(() => _search = '');
-                            },
-                            child: Text(
-                              'Clear search',
-                              style: TextStyle(color: widget.accent),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  )
-                : ListView.builder(
-                    itemCount: filtered.length,
-                    itemBuilder: (context, index) {
-                      final country = filtered[index];
-                      final isSelected = country.code == widget.selectedCode;
-                      return AdaptiveListTile(
-                        leading: Text(
-                          country.flag,
-                          style: TextStyle(fontSize: 26.sp),
-                        ),
-                        title: Text(
-                          country.name,
-                          style: TextStyle(
-                            fontSize: 15.sp,
-                            fontWeight: isSelected
-                                ? FontWeight.w700
-                                : FontWeight.w500,
-                            color: isSelected
-                                ? widget.accent
-                                : AppColors.textPrimary,
-                          ),
-                        ),
-                        trailing: Text(
-                          '+${country.dialCode}',
-                          style: TextStyle(
-                            fontSize: 14.sp,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                        selected: isSelected,
-                        onTap: () {
-                          HapticFeedback.selectionClick();
-                          widget.onSelected(country);
-                        },
-                      );
-                    },
-                  ),
           ),
         ],
       ),
@@ -573,26 +338,12 @@ class _CountryPickerSheetState extends State<_CountryPickerSheet> {
   }
 }
 
-// ─── Country Data ─────────────────────────────────────────────────────────────
-
-/// All supported countries with dial codes and flag emojis.
-const List<Country> countries = [
-  Country(
-    code: 'FR',
-    name: 'France',
-    dialCode: '33',
-    flag: '🇫🇷',
-    example: '6 12 34 56 78',
-    minLength: 9,
-    maxLength: 9,
-  ),
-  Country(
-    code: 'TN',
-    name: 'Tunisia',
-    dialCode: '216',
-    flag: '🇹🇳',
-    example: '20 123 456',
-    minLength: 8,
-    maxLength: 8,
-  ),
-];
+const Country france = Country(
+  code: 'FR',
+  name: 'France',
+  dialCode: '33',
+  flag: '🇫🇷',
+  example: '6 12 34 56 78',
+  minLength: 9,
+  maxLength: 9,
+);

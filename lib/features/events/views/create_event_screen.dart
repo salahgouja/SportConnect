@@ -21,18 +21,6 @@ import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Full-screen event creation — navigated to via GoRouter.
 /// Returns [EventModel] via context.pop(created) on success.
-///
-/// Add to your router:
-/// ```dart
-/// GoRoute(
-///   path: AppRoutes.createEvent.path,
-///   parentNavigatorKey: rootNavigatorKey,
-///   pageBuilder: (context, state) => SlideUpTransitionPage(
-///     key: state.pageKey,
-///     child: const CreateEventScreen(),
-///   ),
-/// ),
-/// ```
 class CreateEventScreen extends ConsumerStatefulWidget {
   const CreateEventScreen({super.key});
 

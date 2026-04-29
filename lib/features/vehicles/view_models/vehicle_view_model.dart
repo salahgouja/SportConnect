@@ -1,8 +1,8 @@
 import 'dart:io';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
+import 'package:sport_connect/features/rides/repositories/ride_repository.dart';
 import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
 import 'package:sport_connect/features/vehicles/repositories/vehicle_repository.dart';
 

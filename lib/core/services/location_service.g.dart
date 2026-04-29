@@ -17,12 +17,8 @@ final locationServiceProvider = LocationServiceProvider._();
 
 final class LocationServiceProvider
     extends
-        $FunctionalProvider<
-          ILocationService,
-          ILocationService,
-          ILocationService
-        >
-    with $Provider<ILocationService> {
+        $FunctionalProvider<LocationService, LocationService, LocationService>
+    with $Provider<LocationService> {
   /// Riverpod provider for location service
   LocationServiceProvider._()
     : super(
@@ -40,21 +36,21 @@ final class LocationServiceProvider
 
   @$internal
   @override
-  $ProviderElement<ILocationService> $createElement($ProviderPointer pointer) =>
+  $ProviderElement<LocationService> $createElement($ProviderPointer pointer) =>
       $ProviderElement(pointer);
 
   @override
-  ILocationService create(Ref ref) {
+  LocationService create(Ref ref) {
     return locationService(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(ILocationService value) {
+  Override overrideWithValue(LocationService value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<ILocationService>(value),
+      providerOverride: $SyncValueProvider<LocationService>(value),
     );
   }
 }
 
-String _$locationServiceHash() => r'6ca7959dfb24f9332d30de11e503fefab7db998f';
+String _$locationServiceHash() => r'18d7171a0b3f2c121100f2de35a6e38e772aabc7';

@@ -11,7 +11,6 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
-import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/services/location_service.dart';
 import 'package:sport_connect/core/services/push_notification_service.dart';
@@ -23,6 +22,7 @@ import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/home/view_models/driver_location_view_model.dart';
 import 'package:sport_connect/features/messaging/view_models/chat_view_model.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
+import 'package:sport_connect/features/profile/view_models/settings_view_model.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/models/driver_stats.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
@@ -72,7 +72,8 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
       if (await pns.hasPermission()) return;
       if (!mounted) return;
 
-      final settings = await ref.read(settingsRepositoryProvider.future);
+      final settings = ref.read(settingsViewModelProvider);
+      final settingsNotifier = ref.read(settingsViewModelProvider.notifier);
       if (!mounted) return;
       if (settings.notificationDialogShown) return;
 
@@ -83,7 +84,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
         context,
       );
       if (!mounted) return;
-      await settings.setNotificationDialogShown();
+      await settingsNotifier.setNotificationDialogShown();
       if (!accepted) return;
 
       await pns.requestPermission();

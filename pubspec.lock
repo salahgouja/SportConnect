@@ -221,10 +221,10 @@ packages:
     dependency: transitive
     description:
       name: build
-      sha256: aadd943f4f8cc946882c954c187e6115a84c98c81ad1d9c6cbf0895a8c85da9c
+      sha256: a156715e7cd728130c592f30552575908aae5b100005fbc1f0fb16b3c03a3d10
       url: "https://pub.dev"
     source: hosted
-    version: "4.0.5"
+    version: "4.0.6"
   build_config:
     dependency: transitive
     description:
@@ -245,10 +245,10 @@ packages:
     dependency: "direct dev"
     description:
       name: build_runner
-      sha256: "4425a87d87d0d1303540f867994303f5b141ad2f6ecac7ac2cf8851f41c0cef1"
+      sha256: "22fdcc3cfeb9d974d7408718c4be15ec5e9b1b350088f3a6c88f154e74dd700d"
       url: "https://pub.dev"
     source: hosted
-    version: "2.14.0"
+    version: "2.14.1"
   built_collection:
     dependency: transitive
     description:
@@ -545,6 +545,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.9.2"
+  dio_cache_interceptor:
+    dependency: "direct main"
+    description:
+      name: dio_cache_interceptor
+      sha256: "3644ce3e0c9ba21885cbb0578b3d2ffe022c8badc6f6f4042cb56ecdbe90a7ad"
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.0.6"
   dio_web_adapter:
     dependency: transitive
     description:
@@ -1107,6 +1115,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.1.3"
+  flutter_staggered_grid_view:
+    dependency: transitive
+    description:
+      name: flutter_staggered_grid_view
+      sha256: "19e7abb550c96fbfeb546b23f3ff356ee7c59a019a651f8f102a4ba9b7349395"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.7.0"
   flutter_stripe:
     dependency: "direct main"
     description:
@@ -1301,14 +1317,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "17.2.2"
-  go_router_builder:
-    dependency: "direct dev"
-    description:
-      name: go_router_builder
-      sha256: "52c0403e3fc80db4058d44088f28227f4ecf046f9b8ccbea0e325d3c7b4bb7f5"
-      url: "https://pub.dev"
-    source: hosted
-    version: "4.3.0"
   google_identity_services_web:
     dependency: transitive
     description:
@@ -1389,6 +1397,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.0"
+  hive_ce:
+    dependency: transitive
+    description:
+      name: hive_ce
+      sha256: "8e9980e68643afb1e765d3af32b47996552a64e190d03faf622cea07c1294418"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.19.3"
   hooks:
     dependency: transitive
     description:
@@ -1397,14 +1413,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.3"
-  hotreloader:
-    dependency: transitive
-    description:
-      name: hotreloader
-      sha256: "66871df468fc24eee81f1a0a7cb98acc104716f9b7376d355437b48d633c4ebf"
-      url: "https://pub.dev"
-    source: hosted
-    version: "4.4.0"
   html:
     dependency: transitive
     description:
@@ -1421,6 +1429,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.6.0"
+  http_cache_core:
+    dependency: transitive
+    description:
+      name: http_cache_core
+      sha256: ff0b6e6c3766d774d59b806f928b39e6a48f7b2c47ae1fe27410bfd792bee511
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.3"
+  http_cache_hive_store:
+    dependency: "direct main"
+    description:
+      name: http_cache_hive_store
+      sha256: "074518de4b4548d4e18bd799700fa2d58179931cec2520dfe190b6fb60983682"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.1.0"
   http_multi_server:
     dependency: transitive
     description:
@@ -1441,10 +1465,10 @@ packages:
     dependency: transitive
     description:
       name: idb_shim
-      sha256: "6cd94b71a33f1223b01ea2b359c3a6fde5980872b23b31d176a64c74d4dede57"
+      sha256: "86d4045b2ebf19748dfbd166e818406ed74db50e323eb661f9ddc7c9387f616b"
       url: "https://pub.dev"
     source: hosted
-    version: "2.8.5+2"
+    version: "2.9.0"
   image:
     dependency: transitive
     description:
@@ -1565,6 +1589,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.5"
+  infinite_scroll_pagination:
+    dependency: "direct main"
+    description:
+      name: infinite_scroll_pagination
+      sha256: b0d28e37cd8f62490ff6aef63f9db93d4c78b7f11b7c6b26f33c69d8476fda78
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.1.1"
   intl:
     dependency: "direct main"
     description:
@@ -1581,6 +1613,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.5"
+  isolate_channel:
+    dependency: transitive
+    description:
+      name: isolate_channel
+      sha256: a9d3d620695bc984244dafae00b95e4319d6974b2d77f4b9e1eb4f2efe099094
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.6.1"
   jni:
     dependency: transitive
     description:
@@ -1645,14 +1685,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.2"
-  lean_builder:
-    dependency: transitive
-    description:
-      name: lean_builder
-      sha256: "4f3d70c34c52cc5034e8cc6f53d35aa3a32fb373b78fb4c29cf45cd1dcf06942"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.1.5"
   lints:
     dependency: transitive
     description:
@@ -2021,14 +2053,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.0"
-  protobuf:
-    dependency: transitive
-    description:
-      name: protobuf
-      sha256: "75ec242d22e950bdcc79ee38dd520ce4ee0bc491d7fadc4ea47694604d22bf06"
-      url: "https://pub.dev"
-    source: hosted
-    version: "6.0.0"
   provider:
     dependency: transitive
     description:
@@ -2149,22 +2173,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.7"
-  retrofit:
-    dependency: "direct main"
-    description:
-      name: retrofit
-      sha256: "0f629ed26b2c48c66fe54bd548313c6fdf7955be18bff37e08a46dd3f97f8eaf"
-      url: "https://pub.dev"
-    source: hosted
-    version: "4.9.2"
-  retrofit_generator:
-    dependency: "direct dev"
-    description:
-      name: retrofit_generator
-      sha256: fed2c4e4ed6dab084c00d25c739988aa3cec1acd2b168771136188cced8d967d
-      url: "https://pub.dev"
-    source: hosted
-    version: "10.2.1"
   riverpod:
     dependency: "direct main"
     description:
@@ -2566,18 +2574,18 @@ packages:
     dependency: transitive
     description:
       name: talker
-      sha256: c364edc0fbd6c648e1a78e6edd89cccd64df2150ca96d899ecd486b76c185042
+      sha256: f1a14d623f1d1bec42bb3bb77674eb766ffe8d26e5f79af652d85cb097c3e757
       url: "https://pub.dev"
     source: hosted
-    version: "5.1.16"
+    version: "5.1.17"
   talker_dio_logger:
     dependency: "direct main"
     description:
       name: talker_dio_logger
-      sha256: "0c2b6e30c4e32b0d746cf2053874bf496043c62e67b9a0271e8c0b3eca65cdaa"
+      sha256: "6dba5c29afb566c6efe1a2c1b676488ea7c727b486bda0654d965a1cfad6ea9b"
       url: "https://pub.dev"
     source: hosted
-    version: "5.1.16"
+    version: "5.1.17"
   talker_flutter:
     dependency: "direct main"
     description:
@@ -2590,18 +2598,18 @@ packages:
     dependency: transitive
     description:
       name: talker_logger
-      sha256: cea1b8283a28c2118a0b197057fc5beb5b0672c75e40a48725e5e452c0278ff3
+      sha256: "459205c3e571f97ecc6be6e1b1b7e6b97b853e78ea458894650be407596e3216"
       url: "https://pub.dev"
     source: hosted
-    version: "5.1.16"
+    version: "5.1.17"
   talker_riverpod_logger:
     dependency: "direct main"
     description:
       name: talker_riverpod_logger
-      sha256: "92367978861476e9fd9cbd03cab2dc33481f5c6bf559445739f6a7d66ffbb0c8"
+      sha256: "0d2e3c436122a602e7f3cfa572c418b96b63dd9b9b6b51871e828501693550c6"
       url: "https://pub.dev"
     source: hosted
-    version: "5.1.16"
+    version: "5.1.17"
   term_glyph:
     dependency: transitive
     description:
@@ -2906,14 +2914,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.6.1"
-  xxh3:
-    dependency: transitive
-    description:
-      name: xxh3
-      sha256: "399a0438f5d426785723c99da6b16e136f4953fb1e9db0bf270bd41dd4619916"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.2.0"
   yaml:
     dependency: transitive
     description:

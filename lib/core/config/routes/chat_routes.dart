@@ -11,12 +11,6 @@ import 'package:sport_connect/features/messaging/views/chat_detail_screen.dart';
 /// Chat module routes
 class ChatRoutes implements RouteConfig {
   @override
-  String get moduleName => 'chat';
-
-  @override
-  String? get initialRoute => null;
-
-  @override
   List<RouteBase> getRoutes() {
     UserModel fallbackReceiver(GoRouterState state) {
       final receiverId = state.params.getQueryOrDefault('receiverId', '');

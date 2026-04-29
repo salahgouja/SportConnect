@@ -3,13 +3,15 @@ import 'dart:math' as math;
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/models/location/location_point.dart';
-import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/services/location_service.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/events/models/event_model.dart';
+import 'package:sport_connect/features/events/repositories/event_repository.dart';
+import 'package:sport_connect/features/notifications/repositories/notification_repository.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
+import 'package:sport_connect/features/rides/repositories/ride_repository.dart';
 
 part 'event_view_model.g.dart';
 

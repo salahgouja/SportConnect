@@ -3,13 +3,12 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:sport_connect/core/config/supported_markets.dart';
-import 'package:sport_connect/core/providers/repository_providers.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/services/stripe_service.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/payments/models/payment_model.dart';
+import 'package:sport_connect/features/payments/payments.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 
 part 'payment_view_model.freezed.dart';
@@ -323,18 +322,9 @@ class DriverOnboardingViewModel extends _$DriverOnboardingViewModel {
   FutureOr<void> build() {}
 
   /// Creates a connected account via Stripe and persists it via the repository.
-  ///
-  /// Prefills individual info to reduce onboarding friction.
-  /// Returns the saved [ConnectedAccountCreationResult] on success, or null on failure.
   Future<ConnectedAccountCreationResult?> createConnectedAccount({
     required String userId,
     required String email,
-    required String country,
-    String? firstName,
-    String? lastName,
-    String? phone,
-    DateTime? dateOfBirth,
-    String? addressLine1,
   }) async {
     state = const AsyncValue.loading();
 
@@ -343,12 +333,6 @@ class DriverOnboardingViewModel extends _$DriverOnboardingViewModel {
       final account = await paymentRepo.createConnectedAccount(
         userId: userId,
         email: email,
-        country: country,
-        firstName: firstName,
-        lastName: lastName,
-        phone: phone,
-        dateOfBirth: dateOfBirth,
-        addressLine1: addressLine1,
       );
 
       if (!ref.mounted) return account;
@@ -402,36 +386,11 @@ class DriverStripeOnboardingFlowViewModel
     );
 
     try {
-      final country = _detectUserCountry(user);
-      final nameParts = user.username.trim().split(RegExp(r'\s+'));
-      final firstName = nameParts.first;
-      final lastName = nameParts.length > 1
-          ? nameParts.sublist(1).join(' ')
-          : null;
-
       final result = await ref
           .read(driverOnboardingViewModelProvider.notifier)
           .createConnectedAccount(
             userId: user.uid,
             email: user.email,
-            country: country,
-            firstName: firstName,
-            lastName: lastName,
-            phone: switch (user) {
-              final RiderModel rider => rider.phoneNumber,
-              final DriverModel driver => driver.phoneNumber,
-              _ => null,
-            },
-            dateOfBirth: switch (user) {
-              final RiderModel rider => rider.dateOfBirth,
-              final DriverModel driver => driver.dateOfBirth,
-              _ => null,
-            },
-            addressLine1: switch (user) {
-              final RiderModel rider => rider.address,
-              final DriverModel driver => driver.address,
-              _ => null,
-            },
           );
 
       if (!ref.mounted) return;
@@ -587,15 +546,6 @@ class DriverStripeOnboardingFlowViewModel
     state = state.copyWith(clearError: true, clearSuccess: true);
   }
 
-  String _detectUserCountry(UserModel user) {
-    final phone = switch (user) {
-      final RiderModel rider => rider.phoneNumber,
-      final DriverModel driver => driver.phoneNumber,
-      _ => null,
-    };
-
-    return SupportedMarkets.stripeCountryFromPhone(phone);
-  }
 }
 
 /// Rider Payment History Provider
@@ -717,14 +667,17 @@ class DriverPayoutViewModel extends _$DriverPayoutViewModel {
     }
   }
 
-  /// Cancels a pending payout.
-  Future<bool> cancelPayout(String payoutId) async {
+  /// Cancels a pending instant payout via Stripe then updates Firestore.
+  Future<bool> cancelPayout(
+    String payoutDocId, {
+    required String stripePayoutId,
+  }) async {
     state = const AsyncValue.loading();
     try {
-      final paymentRepo = ref.read(paymentRepositoryProvider);
-      await paymentRepo.updatePayoutStatus(
-        payoutId: payoutId,
-        status: PayoutStatus.cancelled,
+      final stripeService = ref.read(stripeServiceProvider);
+      await stripeService.cancelInstantPayout(
+        payoutDocId: payoutDocId,
+        stripePayoutId: stripePayoutId,
       );
 
       if (!ref.mounted) return true;
@@ -763,10 +716,21 @@ abstract class DriverStripeStatus with _$DriverStripeStatus {
 /// Provider to get current driver's Stripe status
 @riverpod
 Future<DriverStripeStatus> driverStripeStatus(Ref ref) async {
-  final paymentRepo = ref.watch(paymentRepositoryProvider);
-  final stripeService = ref.watch(stripeServiceProvider);
+  // Keep the result cached for 5 minutes so navigating away and back (or any
+  // unrelated provider rebuild) does not hammer the getAccountStatus function.
+  final link = ref.keepAlive();
+  Timer(const Duration(minutes: 5), link.close);
+
+  // Watch only authState — the correct trigger (login / logout / ~hourly token
+  // refresh). Do NOT watch currentUserProvider: it is a live Firestore stream
+  // that fires on every user-document field update, which would call
+  // getAccountStatus on every location update, ride status change, etc.
   final authUser = ref.watch(authStateProvider).value;
-  final userModel = ref.watch(currentUserProvider).value;
+
+  // Read services and user model once — no reactive dependency needed.
+  final paymentRepo = ref.read(paymentRepositoryProvider);
+  final stripeService = ref.read(stripeServiceProvider);
+  final userModel = ref.read(currentUserProvider).value;
 
   if (authUser == null) return const DriverStripeStatus();
 

@@ -1,18 +1,16 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
-import 'package:sport_connect/core/providers/repository_providers.dart';
+import 'package:sport_connect/core/services/firebase_service.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
-import 'package:sport_connect/features/auth/repositories/auth_repository.dart'
-    show AuthRepository;
+import 'package:sport_connect/features/auth/repositories/auth_repository.dart';
 
 part 'user_providers.g.dart';
 
 /// Auth state changes provider (Firebase User)
 @Riverpod(keepAlive: true)
 Stream<User?> authState(Ref ref) {
-  return FirebaseAuth.instance.userChanges();
+  return ref.watch(firebaseServiceProvider).auth.userChanges();
 }
 
 /// Current user data provider (Firestore User Model)
@@ -47,7 +45,9 @@ Stream<UserRole?> selectedRoleIntent(Ref ref) async* {
     return;
   }
 
-  yield* FirebaseFirestore.instance
+  yield* ref
+      .read(firebaseServiceProvider)
+      .firestore
       .collection(AppConstants.usersCollection)
       .doc(authUser.uid)
       .snapshots()

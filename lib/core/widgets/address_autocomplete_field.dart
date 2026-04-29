@@ -9,10 +9,10 @@ import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/map_location_picker.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
-/// Address autocomplete input with Nominatim search + map picker.
+/// France-only address autocomplete input with Nominatim search + map picker.
 ///
 /// Features:
-/// - Real-time address suggestions via Nominatim
+/// - Real-time French address suggestions via Nominatim
 /// - Debounced search (500ms) to reduce API calls
 /// - Optional map picker button to open full MapLocationPicker
 /// - Supports initial value and location
@@ -110,10 +110,23 @@ class AddressAutocompleteFieldState
 
     if (mounted) setState(() => _isSearching = true);
     try {
-      return ref.read(mapServiceProvider).searchPlaces(query, limit: 6);
+      final results = await ref
+          .read(mapServiceProvider)
+          .searchPlaces(
+            query,
+            limit: 8,
+            countryCode: 'fr',
+          );
+
+      return results.where(_isFranceResult).take(6).toList();
     } finally {
       if (mounted) setState(() => _isSearching = false);
     }
+  }
+
+  bool _isFranceResult(SearchResult result) {
+    final display = result.displayName.toLowerCase();
+    return display.contains('france') || display.endsWith(', fr');
   }
 
   void _selectSuggestion(SearchResult result) {
@@ -136,6 +149,14 @@ class AddressAutocompleteFieldState
     }
   }
 
+  bool _isLocationInFrance(LatLng location) {
+    // Rough metropolitan France bounding box.
+    return location.latitude >= 41.0 &&
+        location.latitude <= 51.5 &&
+        location.longitude >= -5.5 &&
+        location.longitude <= 10.0;
+  }
+
   Future<void> _openMapPicker() async {
     _focusNode.unfocus();
 
@@ -146,6 +167,13 @@ class AddressAutocompleteFieldState
     );
 
     if (result != null && mounted) {
+      if (!_isLocationInFrance(result.location)) {
+        setState(() {
+          _errorText = 'Please select a location in France';
+        });
+        return;
+      }
+
       _controller.text = result.address;
       _selectedLocation = result.location;
 

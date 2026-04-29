@@ -12,11 +12,6 @@ import 'package:sport_connect/features/reviews/views/submit_review_screen.dart';
 
 /// Reviews module routes
 class ReviewsRoutes implements RouteConfig {
-  @override
-  String get moduleName => 'reviews';
-
-  @override
-  String? get initialRoute => null;
 
   @override
   List<RouteBase> getRoutes() {

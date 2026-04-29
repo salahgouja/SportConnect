@@ -174,6 +174,7 @@ const _$PaymentStatusEnumMap = {
   PaymentStatus.cancelled: 'cancelled',
   PaymentStatus.refunding: 'refunding',
   PaymentStatus.refunded: 'refunded',
+  PaymentStatus.refundFailed: 'refundFailed',
   PaymentStatus.partiallyRefunded: 'partiallyRefunded',
 };
 

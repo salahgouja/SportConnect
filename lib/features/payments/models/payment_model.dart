@@ -13,6 +13,7 @@ enum PaymentStatus {
   cancelled,
   refunding,
   refunded,
+  refundFailed,
   partiallyRefunded,
 }
 
@@ -132,6 +133,7 @@ abstract class PaymentTransaction with _$PaymentTransaction {
 
   bool get canBeRefunded =>
       status == PaymentStatus.succeeded &&
+      stripePaymentIntentId != null &&
       stripeRefundId == null &&
       createdAt != null &&
       DateTime.now().difference(createdAt!).inDays <= 30;

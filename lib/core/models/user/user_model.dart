@@ -95,7 +95,7 @@ sealed class UserModel with _$UserModel {
     // Expertise
     @Default(Expertise.rookie) Expertise expertise,
 
-    // Driver-specific: Vehicle IDs (resolved through VehicleRepository)
+    // Driver-specific: Vehicle IDs
     @Default([]) List<String> vehicleIds,
 
     // Driver-specific: Stripe Connect

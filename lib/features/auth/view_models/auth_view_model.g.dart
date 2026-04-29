@@ -9,58 +9,6 @@ part of 'auth_view_model.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 
-@ProviderFor(LoginUiViewModel)
-final loginUiViewModelProvider = LoginUiViewModelProvider._();
-
-final class LoginUiViewModelProvider
-    extends $NotifierProvider<LoginUiViewModel, LoginUiState> {
-  LoginUiViewModelProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'loginUiViewModelProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$loginUiViewModelHash();
-
-  @$internal
-  @override
-  LoginUiViewModel create() => LoginUiViewModel();
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(LoginUiState value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<LoginUiState>(value),
-    );
-  }
-}
-
-String _$loginUiViewModelHash() => r'89cad85fa9df2e67088bd14049ab2e41aa1602e1';
-
-abstract class _$LoginUiViewModel extends $Notifier<LoginUiState> {
-  LoginUiState build();
-  @$mustCallSuper
-  @override
-  void runBuild() {
-    final ref = this.ref as $Ref<LoginUiState, LoginUiState>;
-    final element =
-        ref.element
-            as $ClassProviderElement<
-              AnyNotifier<LoginUiState, LoginUiState>,
-              LoginUiState,
-              Object?,
-              Object?
-            >;
-    element.handleCreate(ref, build);
-  }
-}
-
 @ProviderFor(SignupWizardUiViewModel)
 final signupWizardUiViewModelProvider = SignupWizardUiViewModelProvider._();
 
@@ -151,7 +99,7 @@ final class LoginViewModelProvider
   }
 }
 
-String _$loginViewModelHash() => r'fcc3fed8bbd698bcab72866df54b39442f94ede3';
+String _$loginViewModelHash() => r'40fa21f7a78bc1baf1988441c00374bf8c83050b';
 
 /// Login view model
 
@@ -209,7 +157,7 @@ final class RegisterViewModelProvider
   }
 }
 
-String _$registerViewModelHash() => r'9cc3ad806f87127526671ac0a7ca8fe3fa9a9456';
+String _$registerViewModelHash() => r'41ee1507b207eeba81e38a4a8de793955876afad';
 
 /// Register view model
 
@@ -280,7 +228,7 @@ final class AuthActionsViewModelProvider
 }
 
 String _$authActionsViewModelHash() =>
-    r'565ca7f9bcbe23e215cfb8682d123ef1b12c9c3f';
+    r'6142f78e1d9eba3eccdc211ffbd9862ed71b491b';
 
 /// Provides shared auth actions (sign-out, social sign-in, role management).
 ///

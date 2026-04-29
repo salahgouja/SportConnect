@@ -45,7 +45,7 @@ final class RiderHomeViewModelProvider
 }
 
 String _$riderHomeViewModelHash() =>
-    r'2ad3eae1f54078c12406c3f3ff6ec218cb079373';
+    r'd6cf8ac71897db4e1ffcaecb846f50aa1bc149c4';
 
 /// ViewModel for RiderHomeScreen with all business logic
 

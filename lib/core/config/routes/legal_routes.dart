@@ -9,12 +9,6 @@ import 'package:sport_connect/features/legal/views/legal_screen.dart';
 /// Legal module routes
 class LegalRoutes implements RouteConfig {
   @override
-  String get moduleName => 'legal';
-
-  @override
-  String? get initialRoute => null;
-
-  @override
   List<RouteBase> getRoutes() {
     return [
       GoRoute(

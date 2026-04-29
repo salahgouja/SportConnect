@@ -11355,6 +11355,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Submit Rating'**
   String get submitRating;
+
+  /// No description provided for @eventShareText.
+  ///
+  /// In en, this message translates to:
+  /// **'{title} — {eventType}\n{date}\n{address}\n\nJoin me on SportConnect!\n{link}'**
+  String eventShareText(
+    String title,
+    String eventType,
+    String date,
+    String address,
+    String link,
+  );
+
+  /// No description provided for @receiptTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'SportConnect - Trip Receipt'**
+  String get receiptTitle;
+
+  /// No description provided for @receiptBaseFare.
+  ///
+  /// In en, this message translates to:
+  /// **'Base Fare'**
+  String get receiptBaseFare;
+
+  /// No description provided for @receiptServiceFee.
+  ///
+  /// In en, this message translates to:
+  /// **'Service Fee'**
+  String get receiptServiceFee;
+
+  /// No description provided for @receiptRideId.
+  ///
+  /// In en, this message translates to:
+  /// **'Ride ID'**
+  String get receiptRideId;
 }
 
 class _AppLocalizationsDelegate

@@ -37,6 +37,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   final FocusNode _emailFocus = FocusNode();
   final FocusNode _passwordFocus = FocusNode();
 
+  bool _obscurePassword = true;
+
   @override
   void initState() {
     super.initState();
@@ -65,11 +67,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     _animationController.forward();
   }
 
-  Future<void> _saveCredentials() async {
-    final email = (_form.control('email').value as String? ?? '').trim();
-    await ref.read(loginUiViewModelProvider.notifier).persistCredentials(email);
-  }
-
   @override
   void dispose() {
     _animationController.dispose();
@@ -84,13 +81,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
     final email = (_form.control('email').value as String).trim();
     final password = _form.control('password').value as String;
-    final rememberMe = ref.read(loginUiViewModelProvider).rememberMe;
-    final success = await ref
-        .read(loginViewModelProvider.notifier)
-        .login(email, password, rememberMe: rememberMe);
-    if (success) {
-      await _saveCredentials();
-    }
+    await ref.read(loginViewModelProvider.notifier).login(email, password);
   }
 
   void _handleGoogleSignIn() {
@@ -105,8 +96,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   Widget build(BuildContext context) {
     final loginState = ref.watch(loginViewModelProvider);
     final socialState = ref.watch(socialAuthViewModelProvider);
-    final loginUiState = ref.watch(loginUiViewModelProvider);
-    final savedEmail = loginUiState.savedEmail;
 
     ref.listen(loginViewModelProvider, (previous, next) {
       if (next.hasError && previous?.error != next.error) {
@@ -139,11 +128,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                   SizedBox(height: 20.h),
                   _buildWelcomeText(),
                   SizedBox(height: 32.h),
-                  _buildEmailField(savedEmail),
+                  _buildEmailField(),
                   SizedBox(height: 16.h),
-                  _buildPasswordField(loginUiState),
+                  _buildPasswordField(),
                   SizedBox(height: 14.h),
-                  _buildOptionsRow(loginUiState),
+                  _buildOptionsRow(),
                   SizedBox(height: 12.h),
                   _buildSignInButton(loginState, socialState),
                   SizedBox(height: 24.h),
@@ -241,15 +230,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     );
   }
 
-  Widget _buildEmailField(String savedEmail) {
+  Widget _buildEmailField() {
     final emailLabel = AppLocalizations.of(context).email;
     final emailHint = AppLocalizations.of(context).enterYourEmail;
-
-    // Set initial value from saved credentials once
-    if (savedEmail.isNotEmpty &&
-        (_form.control('email').value as String? ?? '').isEmpty) {
-      _form.control('email').value = savedEmail;
-    }
 
     // The prefixIcon is purely decorative — excluded so SR does not read it.
     return ReactiveTextField<String>(
@@ -269,19 +252,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     ).animate().fadeIn(duration: 400.ms, delay: 350.ms);
   }
 
-  Widget _buildPasswordField(LoginUiState loginUiState) {
+  Widget _buildPasswordField() {
     final passwordLabel = AppLocalizations.of(context).password;
     final passwordHint = AppLocalizations.of(context).enterYourPassword;
-    // Dynamic label reflects the current state so SR users know what the
-    // button will do before they activate it.
-    final toggleLabel = loginUiState.obscurePassword
+
+    final toggleLabel = _obscurePassword
         ? AppLocalizations.of(context).showPasswordTooltip
         : AppLocalizations.of(context).hidePasswordTooltip;
 
     return ReactiveTextField<String>(
       formControlName: 'password',
       focusNode: _passwordFocus,
-      obscureText: loginUiState.obscurePassword,
+      obscureText: _obscurePassword,
       textInputAction: TextInputAction.done,
       validationMessages: {
         ValidationMessage.required: (_) => 'Password is required',
@@ -295,14 +277,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           child: Icon(Icons.lock_outline_rounded),
         ),
         suffixIcon: IconButton(
-          // `tooltip` is used by both TalkBack and VoiceOver as the button's
-          // accessible name. Dynamic string keeps the state accurate.
           tooltip: toggleLabel,
-          onPressed: () => ref
-              .read(loginUiViewModelProvider.notifier)
-              .togglePasswordVisibility(),
+          onPressed: () {
+            setState(() {
+              _obscurePassword = !_obscurePassword;
+            });
+          },
           icon: Icon(
-            loginUiState.obscurePassword
+            _obscurePassword
                 ? Icons.visibility_outlined
                 : Icons.visibility_off_outlined,
           ),
@@ -311,44 +293,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     ).animate().fadeIn(duration: 400.ms, delay: 400.ms);
   }
 
-  Widget _buildOptionsRow(LoginUiState loginUiState) {
-    final rememberMeLabel = AppLocalizations.of(context).rememberMe;
-
+  Widget _buildOptionsRow() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        // MergeSemantics combines the Checkbox/Switch and its sibling Text
-        // into ONE focusable node: "Remember me, checkbox, checked".
-        // This avoids two separate focus stops for what is logically one
-        // control, without suppressing interactivity.
-        MergeSemantics(
-          child: Padding(
-            padding: EdgeInsets.symmetric(vertical: 12.h),
-            child: Row(
-              children: [
-                AdaptiveCheckbox(
-                  value: loginUiState.rememberMe,
-                  onChanged: (value) {
-                    HapticFeedback.selectionClick();
-                    ref
-                        .read(loginUiViewModelProvider.notifier)
-                        .setRememberMe(enabled: value ?? false);
-                  },
-                ),
-                SizedBox(width: 8.w),
-                Text(
-                  rememberMeLabel,
-                  style: TextStyle(
-                    fontSize: 13.sp,
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-
         // Forgot password button — interactive, label is already descriptive.
         TextButton(
           onPressed: () => context.push(AppRoutes.forgotPassword.path),

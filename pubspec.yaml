@@ -56,7 +56,6 @@ dependencies:
 
   # Networking & HTTP
   dio: ^5.9.0
-  retrofit: ^4.9.2
 
   # WebView (Stripe onboarding)
   flutter_inappwebview: ^6.1.5
@@ -143,6 +142,9 @@ dependencies:
   upgrader: ^13.1.0
   adaptive_platform_ui: ^0.1.105
   native_geofence: ^1.2.1
+  infinite_scroll_pagination: ^5.1.1
+  dio_cache_interceptor: ^4.0.6
+  http_cache_hive_store: ^5.1.0
 
 dev_dependencies:
   flutter_test:
@@ -150,13 +152,10 @@ dev_dependencies:
   flutter_lints: ^6.0.0
 
   # Code Generation
-  build_runner: ^2.10.4
   freezed: ^3.1.0
   json_serializable: ^6.11.2
   riverpod_generator: ^4.0.0
   riverpod_lint: ^3.1.0
-  go_router_builder: ^4.2.1
-  retrofit_generator: ^10.2.1
   custom_lint: ^0.8.1
 
   # Secrets Management
@@ -174,6 +173,7 @@ dev_dependencies:
 
   # Development Tools
   very_good_analysis: ^10.2.0
+  build_runner: ^2.14.1
 
 flutter:
   uses-material-design: true
@@ -182,8 +182,6 @@ flutter:
   assets:
     - assets/images/
     - assets/icons/
-    - assets/animations/
-    - shorebird.yaml
 
 # Flutter Native Splash Configuration
 flutter_native_splash:

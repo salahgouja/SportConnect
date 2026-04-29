@@ -12,11 +12,6 @@ import 'package:sport_connect/features/events/views/my_events_screen.dart';
 
 /// Events module routes
 class EventsRoutes implements RouteConfig {
-  @override
-  String get moduleName => 'events';
-
-  @override
-  String? get initialRoute => null;
 
   @override
   List<RouteBase> getRoutes() {

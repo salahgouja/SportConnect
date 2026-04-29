@@ -1,11 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sport_connect/core/services/firebase_service.dart';
 
-/// Repository for user settings persistence
+part 'settings_repository.g.dart';
+
+@Riverpod(keepAlive: true)
+SharedPreferences sharedPreferences(Ref ref) {
+  throw UnimplementedError(
+    'Override sharedPreferencesProvider in ProviderScope.',
+  );
+}
+
+@Riverpod(keepAlive: true)
+SettingsRepository settingsRepository(Ref ref) {
+  return SettingsRepository(
+    ref.watch(sharedPreferencesProvider),
+    ref.watch(firebaseServiceProvider),
+  );
+}
+
+/// Repository for user settings persistence.
 ///
-/// Manages app-wide settings like language, theme, and preferences.
+/// Manages app-wide settings like language, map style, notification settings,
+/// privacy settings, analytics preferences, and saved login credentials.
 class SettingsRepository {
-  SettingsRepository(this._prefs);
+  SettingsRepository(this._prefs, this._analyticsService);
+
   static const String _languageCodeKey = 'language_code';
   static const String _notificationsEnabledKey = 'notifications_enabled';
   static const String _rideRemindersKey = 'ride_reminders';
@@ -13,42 +34,34 @@ class SettingsRepository {
   static const String _marketingEmailsKey = 'marketing_emails';
   static const String _showLocationKey = 'show_location';
   static const String _publicProfileKey = 'public_profile';
-  static const String _savedEmailKey = 'saved_email';
-  static const String _rememberMeKey = 'remember_me';
   static const String _mapStyleKey = 'map_style';
   static const String _notificationDialogShownKey = 'notification_dialog_shown';
   static const String _analyticsEnabledKey = 'analytics_enabled';
   static const String _premiumPromptPrefix = 'premium_prompt_seen_';
+  static const String _driverShowOnMapKey = 'driver_show_on_map';
+  static const String _driverAllowInstantBookingKey =
+      'driver_allow_instant_booking';
+  static const String _driverMaxDistanceKey = 'driver_max_distance';
+  static const String _driverNavigationAppKey = 'driver_navigation_app';
 
   final SharedPreferences _prefs;
-
+  final FirebaseService _analyticsService;
   // ============================================================
   // Language Settings
   // ============================================================
 
-  /// Get the saved language code (e.g., 'en', 'fr')
-  ///
-  /// Returns null if no language has been saved (use system default)
-  String? get languageCode {
-    return _prefs.getString(_languageCodeKey);
-  }
+  String? get languageCode => _prefs.getString(_languageCodeKey);
 
-  /// Get locale from saved language code
-  ///
-  /// Returns null if no language has been saved (use system default)
   Locale? get locale {
     final code = languageCode;
     return code != null ? Locale(code) : null;
   }
 
-  /// Save language preference
-  ///
-  /// Pass language code like 'en' or 'fr'
-  Future<void> setLanguage(String languageCode) async {
+  Future<Locale> setLanguage(String languageCode) async {
     await _prefs.setString(_languageCodeKey, languageCode);
+    return Locale(languageCode);
   }
 
-  /// Clear language preference (use system default)
   Future<void> clearLanguage() async {
     await _prefs.remove(_languageCodeKey);
   }
@@ -57,134 +70,162 @@ class SettingsRepository {
   // Notification Settings
   // ============================================================
 
-  /// Whether push notifications are enabled (defaults to true)
   bool get notificationsEnabled {
     return _prefs.getBool(_notificationsEnabledKey) ?? true;
   }
 
-  /// Save push notifications preference
-  Future<void> setNotificationsEnabled(bool enabled) async {
+  Future<bool> setNotificationsEnabled(bool enabled) async {
     await _prefs.setBool(_notificationsEnabledKey, enabled);
+    return enabled;
   }
 
-  /// Whether ride reminders are enabled (defaults to true)
   bool get rideReminders {
     return _prefs.getBool(_rideRemindersKey) ?? true;
   }
 
-  /// Save ride reminders preference
-  Future<void> setRideReminders(bool enabled) async {
+  Future<bool> setRideReminders(bool enabled) async {
     await _prefs.setBool(_rideRemindersKey, enabled);
+    return enabled;
   }
 
-  /// Whether chat notifications are enabled (defaults to true)
   bool get chatNotifications {
     return _prefs.getBool(_chatNotificationsKey) ?? true;
   }
 
-  /// Save chat notifications preference
-  Future<void> setChatNotifications(bool enabled) async {
+  Future<bool> setChatNotifications(bool enabled) async {
     await _prefs.setBool(_chatNotificationsKey, enabled);
+    return enabled;
   }
 
-  /// Whether marketing emails are enabled (defaults to false)
   bool get marketingEmails {
     return _prefs.getBool(_marketingEmailsKey) ?? false;
   }
 
-  /// Save marketing emails preference
-  Future<void> setMarketingEmails(bool enabled) async {
+  Future<bool> setMarketingEmails(bool enabled) async {
     await _prefs.setBool(_marketingEmailsKey, enabled);
+    return enabled;
   }
 
   // ============================================================
   // Privacy & Safety Settings
   // ============================================================
 
-  /// Whether to show real-time location during rides (defaults to true)
   bool get showLocation {
     return _prefs.getBool(_showLocationKey) ?? true;
   }
 
-  /// Save show location preference
-  Future<void> setShowLocation(bool enabled) async {
+  Future<bool> setShowLocation(bool enabled) async {
     await _prefs.setBool(_showLocationKey, enabled);
+    return enabled;
   }
 
-  /// Whether profile is public (defaults to true)
   bool get publicProfile {
     return _prefs.getBool(_publicProfileKey) ?? true;
   }
 
-  /// Save public profile preference
-  Future<void> setPublicProfile(bool enabled) async {
+  Future<bool> setPublicProfile(bool enabled) async {
     await _prefs.setBool(_publicProfileKey, enabled);
+    return enabled;
   }
 
   // ============================================================
   // Appearance Settings
-  // ============================================================  /// Get map style preference ('standard', 'dark', 'satellite', defaults to 'standard')
+  // ============================================================
+
   String get mapStyle {
     return _prefs.getString(_mapStyleKey) ?? 'standard';
   }
 
-  /// Save map style preference
-  Future<void> setMapStyle(String style) async {
+  Future<String> setMapStyle(String style) async {
+    if (!const {'standard', 'dark', 'satellite'}.contains(style)) {
+      throw ArgumentError.value(
+        style,
+        'style',
+        'Expected one of: standard, dark, satellite',
+      );
+    }
+
     await _prefs.setString(_mapStyleKey, style);
-  }
-
-  // ============================================================
-  // Login Credentials
-  // ============================================================
-
-  /// Last email saved by the "remember me" feature.
-  String? get savedEmail => _prefs.getString(_savedEmailKey);
-
-  /// Whether the user opted to have their email pre-filled on next login.
-  bool get rememberMe => _prefs.getBool(_rememberMeKey) ?? false;
-
-  /// Persists the [email] and sets the remember-me flag to true.
-  Future<void> saveCredentials({required String email}) async {
-    await _prefs.setString(_savedEmailKey, email);
-    await _prefs.setBool(_rememberMeKey, true);
-  }
-
-  /// Clears saved credentials and resets the remember-me flag.
-  Future<void> clearCredentials() async {
-    await _prefs.remove(_savedEmailKey);
-    await _prefs.setBool(_rememberMeKey, false);
+    return style;
   }
 
   // ============================================================
   // Analytics & Crash Reporting
   // ============================================================
 
-  /// Whether Firebase Analytics and Crashlytics collection is enabled (defaults to true)
-  bool get analyticsEnabled => _prefs.getBool(_analyticsEnabledKey) ?? true;
+  bool get analyticsEnabled {
+    return _prefs.getBool(_analyticsEnabledKey) ?? true;
+  }
 
-  Future<void> setAnalyticsEnabled({required bool enabled}) async {
+  Future<bool> setAnalyticsEnabled({required bool enabled}) async {
     await _prefs.setBool(_analyticsEnabledKey, enabled);
+    await _analyticsService.setCollectionEnabled(enabled: enabled);
+    return enabled;
   }
 
   // ============================================================
   // Notification Dialog
   // ============================================================
 
-  bool get notificationDialogShown =>
-      _prefs.getBool(_notificationDialogShownKey) ?? false;
+  bool get notificationDialogShown {
+    return _prefs.getBool(_notificationDialogShownKey) ?? false;
+  }
 
-  Future<void> setNotificationDialogShown({bool value = true}) async {
+  Future<bool> setNotificationDialogShown({bool value = true}) async {
     await _prefs.setBool(_notificationDialogShownKey, value);
+    return value;
   }
 
   // ============================================================
   // Premium Prompt
   // ============================================================
 
-  bool premiumPromptSeenFor(String uid) =>
-      _prefs.getBool('$_premiumPromptPrefix$uid') ?? false;
+  bool premiumPromptSeenFor(String uid) {
+    return _prefs.getBool('$_premiumPromptPrefix$uid') ?? false;
+  }
 
   Future<void> setPremiumPromptSeen(String uid) async {
     await _prefs.setBool('$_premiumPromptPrefix$uid', true);
+  }
+
+  // ============================================================
+  // Driver Settings
+  // ============================================================
+
+  bool get driverAllowInstantBooking {
+    return _prefs.getBool(_driverAllowInstantBookingKey) ?? true;
+  }
+
+  Future<bool> setDriverAllowInstantBooking(bool value) async {
+    await _prefs.setBool(_driverAllowInstantBookingKey, value);
+    return value;
+  }
+
+  double get driverMaxDistance {
+    return _prefs.getDouble(_driverMaxDistanceKey) ?? 25.0;
+  }
+
+  Future<double> setDriverMaxDistance(double value) async {
+    final clampedValue = value.clamp(5.0, 50.0).toDouble();
+    await _prefs.setDouble(_driverMaxDistanceKey, clampedValue);
+    return clampedValue;
+  }
+
+  bool get driverShowOnMap {
+    return _prefs.getBool(_driverShowOnMapKey) ?? true;
+  }
+
+  Future<bool> setDriverShowOnMap(bool value) async {
+    await _prefs.setBool(_driverShowOnMapKey, value);
+    return value;
+  }
+
+  String get driverNavigationApp {
+    return _prefs.getString(_driverNavigationAppKey) ?? 'In-App';
+  }
+
+  Future<String> setDriverNavigationApp(String value) async {
+    await _prefs.setString(_driverNavigationAppKey, value);
+    return value;
   }
 }

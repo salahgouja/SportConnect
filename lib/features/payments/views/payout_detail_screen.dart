@@ -1,25 +1,33 @@
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/utils/payment_error_handler.dart';
 import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/features/payments/models/payment_model.dart';
 import 'package:sport_connect/features/payments/view_models/payment_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
-/// Detailed view of a single driver payout with status, amountInCents, and timeline.
-class PayoutDetailScreen extends ConsumerWidget {
+class PayoutDetailScreen extends ConsumerStatefulWidget {
   const PayoutDetailScreen({required this.payoutId, super.key});
 
   final String payoutId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PayoutDetailScreen> createState() => _PayoutDetailScreenState();
+}
+
+class _PayoutDetailScreenState extends ConsumerState<PayoutDetailScreen> {
+  bool _cancelling = false;
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final payoutAsync = ref.watch(payoutDetailProvider(payoutId));
+    final payoutAsync = ref.watch(payoutDetailProvider(widget.payoutId));
 
     return AdaptiveScaffold(
       appBar: AdaptiveAppBar(
@@ -30,260 +38,22 @@ class PayoutDetailScreen extends ConsumerWidget {
         ),
       ),
       body: payoutAsync.when(
-        loading: () =>
-            const SkeletonLoader(type: SkeletonType.compactTile, itemCount: 4),
-        error: (_, _) => _buildErrorView(context, l10n, ref),
+        loading: () => const Padding(
+          padding: EdgeInsets.all(20),
+          child: SkeletonLoader(type: SkeletonType.rideCard),
+        ),
+        error: (e, _) => _ErrorView(
+          message: PaymentErrorHandler.humanize(e),
+          onRetry: () => ref.invalidate(payoutDetailProvider(widget.payoutId)),
+        ),
         data: (payout) => payout == null
-            ? _buildNotFoundView(context, l10n)
-            : _buildPayoutContent(context, l10n, ref, payout),
-      ),
-    );
-  }
-
-  Widget _buildPayoutContent(
-    BuildContext context,
-    AppLocalizations l10n,
-    WidgetRef ref,
-    DriverPayout payout,
-  ) {
-    final dateFormat = DateFormat('MMM dd, yyyy HH:mm');
-
-    return RefreshIndicator.adaptive(
-      onRefresh: () async {
-        ref.invalidate(payoutDetailProvider(payoutId));
-      },
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.all(20.w),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Amount Card
-            _buildAmountCard(context, l10n, payout),
-            SizedBox(height: 20.h),
-
-            // Status Card
-            _buildStatusCard(context, l10n, payout),
-            SizedBox(height: 20.h),
-
-            // Details Section
-            _buildDetailsSection(context, l10n, payout, dateFormat),
-            SizedBox(height: 20.h),
-
-            // Actions
-            if (payout.isPending)
-              _buildCancelButton(context, l10n, ref, payout),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAmountCard(
-    BuildContext context,
-    AppLocalizations l10n,
-    DriverPayout payout,
-  ) {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(24.w),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppColors.primary, AppColors.primary.withValues(alpha: 0.8)],
-        ),
-        borderRadius: BorderRadius.circular(20.r),
-      ),
-      child: Column(
-        children: [
-          Text(
-            l10n.payoutAmount,
-            style: TextStyle(
-              fontSize: 14.sp,
-              color: Colors.white.withValues(alpha: 0.8),
-            ),
-          ),
-          SizedBox(height: 8.h),
-          Text(
-            '€${(payout.amountInCents / 100).toStringAsFixed(2)}',
-            style: TextStyle(
-              fontSize: 36.sp,
-              fontWeight: FontWeight.w800,
-              color: Colors.white,
-            ),
-          ),
-          if (payout.isInstantPayout == true) ...[
-            SizedBox(height: 8.h),
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(12.r),
+            ? _NotFoundView(l10n: l10n)
+            : _PayoutContent(
+                payout: payout,
+                payoutId: widget.payoutId,
+                cancelling: _cancelling,
+                onCancel: () => _confirmCancel(context, l10n, payout),
               ),
-              child: Text(
-                l10n.instantPayout,
-                style: TextStyle(
-                  fontSize: 12.sp,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatusCard(
-    BuildContext context,
-    AppLocalizations l10n,
-    DriverPayout payout,
-  ) {
-    final statusInfo = _getPayoutStatusInfo(l10n, payout.status);
-
-    return Container(
-      padding: EdgeInsets.all(20.w),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: statusInfo.color.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: EdgeInsets.all(12.w),
-            decoration: BoxDecoration(
-              color: statusInfo.color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12.r),
-            ),
-            child: Icon(statusInfo.icon, color: statusInfo.color, size: 24.sp),
-          ),
-          SizedBox(width: 16.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  statusInfo.label,
-                  style: TextStyle(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                SizedBox(height: 4.h),
-                Text(
-                  statusInfo.description,
-                  style: TextStyle(
-                    fontSize: 13.sp,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDetailsSection(
-    BuildContext context,
-    AppLocalizations l10n,
-    DriverPayout payout,
-    DateFormat dateFormat,
-  ) {
-    return Container(
-      padding: EdgeInsets.all(20.w),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16.r),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            l10n.payoutDetailsSection,
-            style: TextStyle(
-              fontSize: 16.sp,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          SizedBox(height: 16.h),
-          if (payout.createdAt != null)
-            _buildDetailRow(l10n.date, dateFormat.format(payout.createdAt!)),
-          if (payout.expectedArrivalDate != null)
-            _buildDetailRow(
-              l10n.expectedArrival,
-              dateFormat.format(payout.expectedArrivalDate!),
-            ),
-          if (payout.arrivedAt != null)
-            _buildDetailRow(
-              l10n.arrivedAt,
-              dateFormat.format(payout.arrivedAt!),
-            ),
-          if (payout.stripePayoutId != null)
-            _buildDetailRow(
-              l10n.transactionId,
-              payout.stripePayoutId!.length > 20
-                  ? '${payout.stripePayoutId!.substring(0, 20)}...'
-                  : payout.stripePayoutId!,
-            ),
-          if (payout.failureReason != null)
-            _buildDetailRow(l10n.failureReason, payout.failureReason!),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDetailRow(String label, String value) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 8.h),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
-          ),
-          Flexible(
-            child: Text(
-              value,
-              style: TextStyle(
-                fontSize: 14.sp,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
-              textAlign: TextAlign.end,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCancelButton(
-    BuildContext context,
-    AppLocalizations l10n,
-    WidgetRef ref,
-    DriverPayout payout,
-  ) {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: () => _confirmCancel(context, l10n, ref, payout),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.error.withValues(alpha: 0.1),
-          foregroundColor: AppColors.error,
-          padding: EdgeInsets.symmetric(vertical: 16.h),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12.r),
-          ),
-        ),
-        child: Text(l10n.cancelPayout),
       ),
     );
   }
@@ -291,9 +61,17 @@ class PayoutDetailScreen extends ConsumerWidget {
   Future<void> _confirmCancel(
     BuildContext context,
     AppLocalizations l10n,
-    WidgetRef ref,
     DriverPayout payout,
   ) async {
+    if (payout.stripePayoutId == null) {
+      AdaptiveSnackBar.show(
+        context,
+        message: 'This payout cannot be cancelled — no Stripe reference found.',
+        type: AdaptiveSnackBarType.error,
+      );
+      return;
+    }
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog.adaptive(
@@ -313,39 +91,747 @@ class PayoutDetailScreen extends ConsumerWidget {
       ),
     );
 
-    if (confirmed != true) return;
-    if (!context.mounted) return;
+    if (confirmed != true || !context.mounted) return;
 
-    final success = await ref
-        .read(driverPayoutViewModelProvider.notifier)
-        .cancelPayout(payout.id);
+    setState(() => _cancelling = true);
 
-    if (!context.mounted) return;
+    try {
+      final success = await ref
+          .read(driverPayoutViewModelProvider.notifier)
+          .cancelPayout(
+            payout.id,
+            stripePayoutId: payout.stripePayoutId!,
+          );
 
-    if (success) {
-      ref.invalidate(payoutDetailProvider(payoutId));
+      if (!context.mounted) return;
+
+      if (success) {
+        ref.invalidate(payoutDetailProvider(widget.payoutId));
+        AdaptiveSnackBar.show(
+          context,
+          message: l10n.payoutCancelled,
+          type: AdaptiveSnackBarType.success,
+        );
+      } else {
+        final error = ref.read(driverPayoutViewModelProvider).error;
+        AdaptiveSnackBar.show(
+          context,
+          message: error != null
+              ? PaymentErrorHandler.humanize(error)
+              : l10n.payoutCancelFailed,
+          type: AdaptiveSnackBarType.error,
+        );
+      }
+    } on Object catch (e) {
+      if (!context.mounted) return;
       AdaptiveSnackBar.show(
         context,
-        message: l10n.payoutCancelled,
-        type: AdaptiveSnackBarType.success,
-      );
-    } else {
-      AdaptiveSnackBar.show(
-        context,
-        message: l10n.payoutCancelFailed,
+        message: PaymentErrorHandler.humanize(e),
         type: AdaptiveSnackBarType.error,
       );
+    } finally {
+      if (mounted) setState(() => _cancelling = false);
     }
   }
+}
 
-  Widget _buildNotFoundView(BuildContext context, AppLocalizations l10n) {
+// ─── Content ─────────────────────────────────────────────────────────────────
+
+class _PayoutContent extends StatelessWidget {
+  const _PayoutContent({
+    required this.payout,
+    required this.payoutId,
+    required this.cancelling,
+    required this.onCancel,
+  });
+
+  final DriverPayout payout;
+  final String payoutId;
+  final bool cancelling;
+  final VoidCallback onCancel;
+
+  @override
+  Widget build(BuildContext context) {
+    return RefreshIndicator.adaptive(
+      onRefresh: () async =>
+          ProviderScope.containerOf(context).invalidate(
+            payoutDetailProvider(payoutId),
+          ),
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 40.h),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _AmountCard(payout: payout)
+                .animate()
+                .fadeIn(duration: 300.ms)
+                .slideY(begin: -0.05),
+            SizedBox(height: 20.h),
+
+            _PayoutTimeline(status: payout.status, payout: payout)
+                .animate()
+                .fadeIn(delay: 100.ms, duration: 300.ms)
+                .slideY(begin: 0.05),
+            SizedBox(height: 20.h),
+
+            if (payout.failureReason != null) ...[
+              _FailureBanner(reason: payout.failureReason!)
+                  .animate()
+                  .fadeIn(delay: 150.ms)
+                  .shakeX(hz: 2, amount: 3),
+              SizedBox(height: 20.h),
+            ],
+
+            _DetailsCard(payout: payout)
+                .animate()
+                .fadeIn(delay: 200.ms, duration: 300.ms)
+                .slideY(begin: 0.05),
+
+            if (payout.isPending) ...[
+              SizedBox(height: 24.h),
+              Text(
+                'Instant payouts can be cancelled while still pending. Once in transit, your bank is already processing the transfer.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 11.sp,
+                  color: AppColors.textTertiary,
+                  height: 1.5,
+                ),
+              ),
+              SizedBox(height: 12.h),
+              _CancelButton(cancelling: cancelling, onCancel: onCancel)
+                  .animate()
+                  .fadeIn(delay: 300.ms),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Amount Card ──────────────────────────────────────────────────────────────
+
+class _AmountCard extends StatelessWidget {
+  const _AmountCard({required this.payout});
+  final DriverPayout payout;
+
+  Color get _gradientStart => switch (payout.status) {
+        PayoutStatus.paid => AppColors.success,
+        PayoutStatus.failed => AppColors.error,
+        PayoutStatus.cancelled => AppColors.textSecondary,
+        PayoutStatus.inTransit || PayoutStatus.pending => AppColors.primary,
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(28.w),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            _gradientStart,
+            _gradientStart.withValues(alpha: 0.75),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(24.r),
+        boxShadow: [
+          BoxShadow(
+            color: _gradientStart.withValues(alpha: 0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Text(
+            l10n.payoutAmount,
+            style: TextStyle(
+              fontSize: 13.sp,
+              color: Colors.white.withValues(alpha: 0.8),
+              letterSpacing: 0.5,
+            ),
+          ),
+          SizedBox(height: 10.h),
+          Text(
+            '€${(payout.amountInCents / 100).toStringAsFixed(2)}',
+            style: TextStyle(
+              fontSize: 44.sp,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+              letterSpacing: -1,
+            ),
+          ),
+          SizedBox(height: 12.h),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (payout.isInstantPayout)
+                _Pill(
+                  icon: Icons.bolt_rounded,
+                  label: l10n.instantPayout,
+                ),
+              if (payout.isInstantPayout) SizedBox(width: 8.w),
+              _Pill(
+                icon: _statusIcon(payout.status),
+                label: _statusLabel(l10n, payout.status),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  IconData _statusIcon(PayoutStatus s) => switch (s) {
+        PayoutStatus.paid => Icons.check_circle_rounded,
+        PayoutStatus.failed => Icons.error_rounded,
+        PayoutStatus.cancelled => Icons.cancel_rounded,
+        PayoutStatus.inTransit => Icons.local_shipping_rounded,
+        PayoutStatus.pending => Icons.schedule_rounded,
+      };
+
+  String _statusLabel(AppLocalizations l, PayoutStatus s) => switch (s) {
+        PayoutStatus.paid => l.payoutPaid,
+        PayoutStatus.failed => l.statusFailed,
+        PayoutStatus.cancelled => l.statusCancelled,
+        PayoutStatus.inTransit => l.payoutInTransit,
+        PayoutStatus.pending => l.statusPending,
+      };
+}
+
+class _Pill extends StatelessWidget {
+  const _Pill({required this.icon, required this.label});
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 5.h),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(20.r),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13.sp, color: Colors.white),
+          SizedBox(width: 5.w),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12.sp,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Timeline ─────────────────────────────────────────────────────────────────
+
+class _PayoutTimeline extends StatelessWidget {
+  const _PayoutTimeline({required this.status, required this.payout});
+  final PayoutStatus status;
+  final DriverPayout payout;
+
+  @override
+  Widget build(BuildContext context) {
+    final steps = _buildSteps(context);
+
+    return Container(
+      padding: EdgeInsets.all(20.w),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20.r),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 3.w,
+                height: 18.h,
+                decoration: BoxDecoration(
+                  color: switch (status) {
+                    PayoutStatus.paid => AppColors.success,
+                    PayoutStatus.failed => AppColors.error,
+                    PayoutStatus.cancelled => AppColors.textSecondary,
+                    PayoutStatus.inTransit ||
+                    PayoutStatus.pending =>
+                      AppColors.primary,
+                  },
+                  borderRadius: BorderRadius.circular(2.r),
+                ),
+              ),
+              SizedBox(width: 10.w),
+              Text(
+                'Payout Progress',
+                style: TextStyle(
+                  fontSize: 15.sp,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 20.h),
+          ...List.generate(steps.length, (i) {
+            final step = steps[i];
+            final isLast = i == steps.length - 1;
+            return _TimelineStep(
+              step: step,
+              isLast: isLast,
+              animDelay: 100 * i,
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  List<_StepData> _buildSteps(BuildContext context) {
+    final fmt = DateFormat('MMM d, h:mm a');
+
+    final isFailed = status == PayoutStatus.failed;
+    final isCancelled = status == PayoutStatus.cancelled;
+    final isInTransit =
+        status == PayoutStatus.inTransit || status == PayoutStatus.paid;
+    final isPaid = status == PayoutStatus.paid;
+
+    return [
+      _StepData(
+        title: 'Payout Requested',
+        subtitle: payout.createdAt != null
+            ? fmt.format(payout.createdAt!)
+            : 'Initiated',
+        state: _StepState.done,
+        icon: Icons.send_rounded,
+      ),
+      _StepData(
+        title: 'Processing',
+        subtitle: isFailed
+            ? 'Could not complete'
+            : isCancelled
+                ? 'Cancelled'
+                : 'Stripe is preparing your transfer',
+        state: isFailed || isCancelled
+            ? _StepState.failed
+            : _StepState.done,
+        icon: isFailed || isCancelled
+            ? Icons.close_rounded
+            : Icons.autorenew_rounded,
+      ),
+      _StepData(
+        title: 'In Transit to Bank',
+        subtitle: isInTransit
+            ? (payout.expectedArrivalDate != null
+                  ? 'Expected ${fmt.format(payout.expectedArrivalDate!)}'
+                  : 'On its way to your bank')
+            : isFailed || isCancelled
+                ? '—'
+                : 'Waiting for processing to complete',
+        state: isPaid
+            ? _StepState.done
+            : isInTransit
+                ? _StepState.active
+                : isFailed || isCancelled
+                    ? _StepState.skipped
+                    : _StepState.waiting,
+        icon: Icons.account_balance_rounded,
+      ),
+      _StepData(
+        title: 'Funds Arrived',
+        subtitle: isPaid && payout.arrivedAt != null
+            ? fmt.format(payout.arrivedAt!)
+            : isPaid
+                ? 'Deposited to your account'
+                : '—',
+        state: isPaid ? _StepState.done : _StepState.waiting,
+        icon: Icons.check_circle_rounded,
+      ),
+    ];
+  }
+}
+
+enum _StepState { done, active, waiting, failed, skipped }
+
+class _StepData {
+  const _StepData({
+    required this.title,
+    required this.subtitle,
+    required this.state,
+    required this.icon,
+  });
+  final String title;
+  final String subtitle;
+  final _StepState state;
+  final IconData icon;
+}
+
+class _TimelineStep extends StatelessWidget {
+  const _TimelineStep({
+    required this.step,
+    required this.isLast,
+    required this.animDelay,
+  });
+  final _StepData step;
+  final bool isLast;
+  final int animDelay;
+
+  Color get _color => switch (step.state) {
+        _StepState.done => AppColors.success,
+        _StepState.active => AppColors.primary,
+        _StepState.failed => AppColors.error,
+        _StepState.waiting => AppColors.border,
+        _StepState.skipped => AppColors.border,
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Icon + connector line
+        Column(
+          children: [
+            Container(
+              width: 36.w,
+              height: 36.w,
+              decoration: BoxDecoration(
+                color: step.state == _StepState.waiting ||
+                        step.state == _StepState.skipped
+                    ? AppColors.border.withValues(alpha: 0.4)
+                    : _color.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+                border: Border.all(color: _color, width: 2),
+              ),
+              child: step.state == _StepState.active
+                  ? Padding(
+                      padding: EdgeInsets.all(8.w),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation(_color),
+                      ),
+                    )
+                  : Icon(
+                      step.icon,
+                      size: 16.sp,
+                      color: step.state == _StepState.waiting ||
+                              step.state == _StepState.skipped
+                          ? AppColors.textTertiary
+                          : _color,
+                    ),
+            ),
+            if (!isLast)
+              Container(
+                width: 2.w,
+                height: 32.h,
+                color: _color.withValues(alpha: 0.3),
+              ),
+          ],
+        ),
+        SizedBox(width: 14.w),
+        Expanded(
+          child: Padding(
+            padding: EdgeInsets.only(top: 6.h, bottom: isLast ? 0 : 20.h),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  step.title,
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w600,
+                    color: step.state == _StepState.waiting ||
+                            step.state == _StepState.skipped
+                        ? AppColors.textTertiary
+                        : AppColors.textPrimary,
+                  ),
+                ),
+                SizedBox(height: 3.h),
+                Text(
+                  step.subtitle,
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    ).animate().fadeIn(delay: Duration(milliseconds: animDelay)).slideX(begin: 0.05);
+  }
+}
+
+// ─── Failure Banner ───────────────────────────────────────────────────────────
+
+class _FailureBanner extends StatelessWidget {
+  const _FailureBanner({required this.reason});
+  final String reason;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: AppColors.error.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: AppColors.error.withValues(alpha: 0.25)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.error_outline_rounded, color: AppColors.error, size: 20.sp),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Why did this fail?',
+                  style: TextStyle(
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.error,
+                  ),
+                ),
+                SizedBox(height: 4.h),
+                Text(
+                  PaymentErrorHandler.humanize(reason),
+                  style: TextStyle(
+                    fontSize: 13.sp,
+                    color: AppColors.error.withValues(alpha: 0.85),
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Details Card ─────────────────────────────────────────────────────────────
+
+class _DetailsCard extends StatelessWidget {
+  const _DetailsCard({required this.payout});
+  final DriverPayout payout;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final fmt = DateFormat('MMM dd, yyyy  HH:mm');
+
+    final rows = <({String label, String value})>[
+      if (payout.createdAt != null)
+        (label: l10n.date, value: fmt.format(payout.createdAt!)),
+      if (payout.expectedArrivalDate != null)
+        (
+          label: l10n.expectedArrival,
+          value: fmt.format(payout.expectedArrivalDate!),
+        ),
+      if (payout.arrivedAt != null)
+        (label: l10n.arrivedAt, value: fmt.format(payout.arrivedAt!)),
+      (
+        label: 'Method',
+        value: payout.method == PayoutMethod.instant
+            ? 'Instant (usually minutes)'
+            : 'Standard (1–3 business days)',
+      ),
+      if (payout.destination != null)
+        (label: 'Destination', value: '••••  ${payout.destination!.length > 4 ? payout.destination!.substring(payout.destination!.length - 4) : payout.destination!}'),
+      if (payout.stripePayoutId != null)
+        (
+          label: l10n.transactionId,
+          value: payout.stripePayoutId!.length > 24
+              ? '${payout.stripePayoutId!.substring(0, 24)}…'
+              : payout.stripePayoutId!,
+        ),
+    ];
+
+    return Container(
+      padding: EdgeInsets.all(20.w),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20.r),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l10n.payoutDetailsSection,
+            style: TextStyle(
+              fontSize: 15.sp,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          SizedBox(height: 16.h),
+          ...rows.map(
+            (r) => Padding(
+              padding: EdgeInsets.symmetric(vertical: 9.h),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                    width: 130.w,
+                    child: Text(
+                      r.label,
+                      style: TextStyle(
+                        fontSize: 13.sp,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      r.value,
+                      textAlign: TextAlign.end,
+                      style: TextStyle(
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Cancel Button ────────────────────────────────────────────────────────────
+
+class _CancelButton extends StatelessWidget {
+  const _CancelButton({required this.cancelling, required this.onCancel});
+  final bool cancelling;
+  final VoidCallback onCancel;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return SizedBox(
+      width: double.infinity,
+      height: 52.h,
+      child: ElevatedButton(
+        onPressed: cancelling ? null : onCancel,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.error.withValues(alpha: 0.1),
+          foregroundColor: AppColors.error,
+          disabledBackgroundColor: AppColors.error.withValues(alpha: 0.05),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14.r),
+            side: BorderSide(color: AppColors.error.withValues(alpha: 0.3)),
+          ),
+        ),
+        child: cancelling
+            ? SizedBox(
+                width: 20.w,
+                height: 20.w,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: const AlwaysStoppedAnimation(AppColors.error),
+                ),
+              )
+            : Text(
+                l10n.cancelPayout,
+                style: TextStyle(
+                  fontSize: 15.sp,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+      ),
+    );
+  }
+}
+
+// ─── Error / Not Found ────────────────────────────────────────────────────────
+
+class _ErrorView extends StatelessWidget {
+  const _ErrorView({required this.message, required this.onRetry});
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(32.w),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.wifi_off_rounded,
+              size: 56.sp,
+              color: AppColors.textTertiary,
+            ).animate().scale(duration: 400.ms, curve: Curves.elasticOut),
+            SizedBox(height: 16.h),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 15.sp,
+                color: AppColors.textSecondary,
+                height: 1.5,
+              ),
+            ),
+            SizedBox(height: 24.h),
+            FilledButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh_rounded),
+              label: Text(AppLocalizations.of(context).retry),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NotFoundView extends StatelessWidget {
+  const _NotFoundView({required this.l10n});
+  final AppLocalizations l10n;
+
+  @override
+  Widget build(BuildContext context) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
             Icons.receipt_long_outlined,
-            size: 48.sp,
+            size: 56.sp,
             color: AppColors.textTertiary,
           ),
           SizedBox(height: 12.h),
@@ -357,89 +843,4 @@ class PayoutDetailScreen extends ConsumerWidget {
       ),
     );
   }
-
-  Widget _buildErrorView(
-    BuildContext context,
-    AppLocalizations l10n,
-    WidgetRef ref,
-  ) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.error_outline_rounded,
-            size: 48.sp,
-            color: AppColors.textTertiary,
-          ),
-          SizedBox(height: 12.h),
-          Text(
-            l10n.payoutNotFound,
-            style: TextStyle(fontSize: 16.sp, color: AppColors.textSecondary),
-          ),
-          SizedBox(height: 16.h),
-          TextButton(
-            onPressed: () => ref.invalidate(payoutDetailProvider(payoutId)),
-            child: Text(l10n.retry),
-          ),
-        ],
-      ),
-    );
-  }
-
-  _PayoutStatusInfo _getPayoutStatusInfo(
-    AppLocalizations l10n,
-    PayoutStatus status,
-  ) {
-    switch (status) {
-      case PayoutStatus.pending:
-        return _PayoutStatusInfo(
-          label: l10n.statusPending,
-          description: l10n.payoutPendingDesc,
-          icon: Icons.schedule_rounded,
-          color: AppColors.warning,
-        );
-      case PayoutStatus.inTransit:
-        return _PayoutStatusInfo(
-          label: l10n.payoutInTransit,
-          description: l10n.payoutInTransitDesc,
-          icon: Icons.local_shipping_rounded,
-          color: AppColors.info,
-        );
-      case PayoutStatus.paid:
-        return _PayoutStatusInfo(
-          label: l10n.payoutPaid,
-          description: l10n.payoutPaidDesc,
-          icon: Icons.check_circle_rounded,
-          color: AppColors.success,
-        );
-      case PayoutStatus.failed:
-        return _PayoutStatusInfo(
-          label: l10n.statusFailed,
-          description: l10n.payoutFailedDesc,
-          icon: Icons.error_rounded,
-          color: AppColors.error,
-        );
-      case PayoutStatus.cancelled:
-        return _PayoutStatusInfo(
-          label: l10n.statusCancelled,
-          description: l10n.payoutCancelledDesc,
-          icon: Icons.cancel_rounded,
-          color: AppColors.textSecondary,
-        );
-    }
-  }
-}
-
-class _PayoutStatusInfo {
-  const _PayoutStatusInfo({
-    required this.label,
-    required this.description,
-    required this.icon,
-    required this.color,
-  });
-  final String label;
-  final String description;
-  final IconData icon;
-  final Color color;
 }

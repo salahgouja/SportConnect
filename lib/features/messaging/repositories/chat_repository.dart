@@ -2,11 +2,22 @@ import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
-import 'package:sport_connect/core/interfaces/repositories/i_chat_repository.dart';
+import 'package:sport_connect/core/services/firebase_service.dart';
 import 'package:sport_connect/features/messaging/models/message_model.dart';
 
-class ChatRepository implements IChatRepository {
+part 'chat_repository.g.dart';
+
+@Riverpod(keepAlive: true)
+ChatRepository chatRepository(Ref ref) {
+  return ChatRepository(
+    ref.watch(firebaseServiceProvider).firestore,
+    ref.watch(firebaseServiceProvider).storage,
+  );
+}
+
+class ChatRepository {
   ChatRepository(this._firestore, this._storage);
 
   final FirebaseFirestore _firestore;
@@ -670,6 +681,4 @@ class ChatRepository implements IChatRepository {
     final snapshot = await query.get();
     return snapshot.docs.map((d) => d.data()).toList();
   }
-
-  
 }

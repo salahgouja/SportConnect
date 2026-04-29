@@ -1,18 +1,17 @@
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:sport_connect/core/interfaces/services/i_location_service.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 
 part 'location_service.g.dart';
 
 /// Injectable location service implementation
-class LocationServiceImpl implements ILocationService {
-  LocationServiceImpl._();
+class LocationService {
+  LocationService._();
 
-  static LocationServiceImpl? _instance;
-  static LocationServiceImpl get instance {
-    _instance ??= LocationServiceImpl._();
+  static LocationService? _instance;
+  static LocationService get instance {
+    _instance ??= LocationService._();
     return _instance!;
   }
 
@@ -161,6 +160,6 @@ class LocationServiceImpl implements ILocationService {
 
 /// Riverpod provider for location service
 @riverpod
-ILocationService locationService(Ref ref) {
-  return LocationServiceImpl.instance;
+LocationService locationService(Ref ref) {
+  return LocationService.instance;
 }

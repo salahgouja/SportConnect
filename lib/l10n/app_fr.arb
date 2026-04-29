@@ -4669,4 +4669,18 @@
   ,"showBestRatedDriversFirst": "Afficher d'abord les conducteurs les mieux notés"
   ,"showFastestRoutesFirst": "Afficher d'abord les itinéraires les plus rapides"
   ,"submitRating": "Soumettre la note"
+  ,"eventShareText": "{title} — {eventType}\n{date}\n{address}\n\nRejoignez-moi sur SportConnect !\n{link}"
+  ,"@eventShareText": {
+    "placeholders": {
+      "title": {"type": "String"},
+      "eventType": {"type": "String"},
+      "date": {"type": "String"},
+      "address": {"type": "String"},
+      "link": {"type": "String"}
+    }
+  }
+  ,"receiptTitle": "SportConnect - Reçu de trajet"
+  ,"receiptBaseFare": "Tarif de base"
+  ,"receiptServiceFee": "Frais de service"
+  ,"receiptRideId": "ID du trajet"
 }

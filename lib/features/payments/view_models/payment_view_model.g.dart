@@ -332,7 +332,7 @@ final class DriverOnboardingViewModelProvider
 }
 
 String _$driverOnboardingViewModelHash() =>
-    r'5c2b35c1c7c576ed0113b6259ab4485444a3c18f';
+    r'3932b47bae2034ed165324084c1d201e4095e4d9';
 
 /// Driver Onboarding View Model
 ///
@@ -398,7 +398,7 @@ final class DriverStripeOnboardingFlowViewModelProvider
 }
 
 String _$driverStripeOnboardingFlowViewModelHash() =>
-    r'f7aa66088230bb0f839d899cb305757216356e72';
+    r'6f948fae3b2f2aac00ab104dcd5ab95b465592c3';
 
 abstract class _$DriverStripeOnboardingFlowViewModel
     extends $Notifier<DriverStripeOnboardingFlowState> {
@@ -1105,7 +1105,7 @@ final class DriverPayoutViewModelProvider
 }
 
 String _$driverPayoutViewModelHash() =>
-    r'3f379e8399213ebdb304890446479f0fa0a77470';
+    r'8c70a941f91e0ad6cebae322800accde0b44f36e';
 
 /// Driver Payout View Model
 
@@ -1172,7 +1172,7 @@ final class DriverStripeStatusProvider
 }
 
 String _$driverStripeStatusHash() =>
-    r'3eb01e9dafedd1744a51ab6b251ad5855aade3e6';
+    r'796f7669834556ebc4864f1d40cbe4b7194c0d0d';
 
 @ProviderFor(currentDriverConnectedAccount)
 final currentDriverConnectedAccountProvider =
