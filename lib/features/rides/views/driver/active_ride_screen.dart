@@ -1,5 +1,3 @@
-import 'dart:io' show Platform;
-
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,7 +7,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
@@ -24,7 +21,6 @@ import 'package:sport_connect/features/messaging/view_models/chat_view_model.dar
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
-import 'package:sport_connect/features/rides/services/active_ride_geofence_service.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/features/rides/views/widgets/ride_shared_widgets.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
@@ -41,8 +37,10 @@ class DriverActiveRideScreen extends ConsumerStatefulWidget {
 }
 
 class _DriverActiveRideScreenState
-    extends ConsumerState<DriverActiveRideScreen> {
+    extends ConsumerState<DriverActiveRideScreen>
+    with SingleTickerProviderStateMixin {
   final MapController _mapController = MapController();
+  late final AnimationController _geofencePulseController;
   bool _hasCenteredInitialLocation = false;
 
   // Controls the bottom sheet programmatically for auto-expansion
@@ -52,6 +50,10 @@ class _DriverActiveRideScreenState
   @override
   void initState() {
     super.initState();
+    _geofencePulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2400),
+    )..repeat(reverse: true);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _initializeRideSession();
     });
@@ -77,24 +79,11 @@ class _DriverActiveRideScreenState
       if (!mounted) return;
     }
 
-    // Android only: request background ("always") location for geofencing.
-    // iOS intentionally omits the location UIBackgroundMode, so geofencing
-    // runs only on Android and we must not request locationAlways on iOS.
-    if (result == ActiveRideLocationInitResult.ready && Platform.isAndroid) {
-      final alwaysStatus = await Permission.locationAlways.status;
-      if (mounted && !alwaysStatus.isGranted) {
-        final accepted = await PermissionDialogHelper.showRideTrackingRationale(
-          context,
-        );
-        if (mounted && accepted) {
-          await ActiveRideGeofenceService.requestBackgroundPermission();
-        }
-      }
-    }
   }
 
   @override
   void dispose() {
+    _geofencePulseController.dispose();
     _sheetController.dispose();
     super.dispose();
   }
@@ -484,6 +473,42 @@ class _DriverActiveRideScreenState
           TileLayer(
             urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
             userAgentPackageName: 'com.sportconnect.app',
+          ),
+
+          // Proximity zones — 150 m pickup, 180 m destination.
+          // Radii match _checkProximity thresholds in ActiveRideViewModel.
+          // AnimatedBuilder rebuilds only this layer on each pulse tick.
+          AnimatedBuilder(
+            animation: _geofencePulseController,
+            builder: (context, _) {
+              final t = Curves.easeInOut.transform(
+                _geofencePulseController.value,
+              );
+              return CircleLayer(
+                circles: [
+                  CircleMarker(
+                    point: pickupLocation,
+                    radius: 150.0 + t * 10,
+                    useRadiusInMeter: true,
+                    color: AppColors.primary.withValues(alpha: 0.08 + t * 0.09),
+                    borderColor: AppColors.primary.withValues(
+                      alpha: 0.42 + t * 0.38,
+                    ),
+                    borderStrokeWidth: 2.5,
+                  ),
+                  CircleMarker(
+                    point: dropoffLocation,
+                    radius: 180.0 + t * 10,
+                    useRadiusInMeter: true,
+                    color: AppColors.error.withValues(alpha: 0.06 + t * 0.07),
+                    borderColor: AppColors.error.withValues(
+                      alpha: 0.32 + t * 0.33,
+                    ),
+                    borderStrokeWidth: 2.5,
+                  ),
+                ],
+              );
+            },
           ),
 
           // Route Line — remaining route from driver's current position, or full route as fallback

@@ -10421,13 +10421,13 @@ abstract class AppLocalizations {
   /// No description provided for @permissionRideNavigationTitle.
   ///
   /// In en, this message translates to:
-  /// **'Ride Navigation'**
+  /// **'Background Location Required'**
   String get permissionRideNavigationTitle;
 
   /// No description provided for @permissionRideNavigationMessage.
   ///
   /// In en, this message translates to:
-  /// **'Location access is needed to track your ride in real-time, provide turn-by-turn navigation, and share your progress with fellow riders for safety.'**
+  /// **'SportConnect accesses your location in the background — even when the app is closed — to detect when you enter pickup and drop-off zones during an active ride and notify your passengers in time. This is used only while a ride is in progress.'**
   String get permissionRideNavigationMessage;
 
   /// No description provided for @permissionCameraPhotosTitle.

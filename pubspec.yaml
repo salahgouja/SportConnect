@@ -141,7 +141,7 @@ dependencies:
   flutter_secure_storage: ^10.0.0
   upgrader: ^13.1.0
   adaptive_platform_ui: ^0.1.105
-  native_geofence: ^1.2.1
+  geo_fence_utils: ^2.0.1
   infinite_scroll_pagination: ^5.1.1
   dio_cache_interceptor: ^4.0.6
   http_cache_hive_store: ^5.1.0

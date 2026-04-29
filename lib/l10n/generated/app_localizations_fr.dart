@@ -5762,11 +5762,12 @@ class AppLocalizationsFr extends AppLocalizations {
       'Votre position actuelle sera partagée dans cette discussion pour que les autres participants puissent vous localiser. Votre position n\'est partagée que lorsque vous choisissez de l\'envoyer.';
 
   @override
-  String get permissionRideNavigationTitle => 'Navigation du trajet';
+  String get permissionRideNavigationTitle =>
+      'Localisation en arrière-plan requise';
 
   @override
   String get permissionRideNavigationMessage =>
-      'L\'accès à la localisation est nécessaire pour suivre votre trajet en temps réel, fournir la navigation détaillée et partager votre progression avec les autres passagers pour plus de sécurité.';
+      'SportConnect accède à votre localisation en arrière-plan — même lorsque l\'application est fermée — pour détecter lorsque vous entrez dans les zones de prise en charge et de dépose pendant un trajet actif, et notifier vos passagers à temps. Cet accès n\'est utilisé que pendant un trajet en cours.';
 
   @override
   String get permissionCameraPhotosTitle => 'Caméra et photos';

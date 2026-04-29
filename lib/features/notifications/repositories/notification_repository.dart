@@ -351,6 +351,25 @@ class NotificationRepository {
     );
   }
 
+  Future<void> sendDriverArrivingAtDestination({
+    required String toUserId,
+    required String driverName,
+    required String rideId,
+    required String rideName,
+  }) async {
+    await createNotification(
+      NotificationModel(
+        id: '',
+        userId: toUserId,
+        type: NotificationType.rideUpdated,
+        title: 'Almost there! 📍',
+        body: '$driverName is arriving at the destination for $rideName.',
+        priority: NotificationPriority.high,
+        data: {'rideId': rideId},
+      ),
+    );
+  }
+
   /// Send event cancelled notification to a participant.
   @override
   Future<void> sendEventCancelled({

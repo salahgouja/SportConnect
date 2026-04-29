@@ -83,8 +83,6 @@
 		<!-- Location permissions -->
 		<key>NSLocationWhenInUseUsageDescription</key>
 		<string>SportConnect needs your location to find nearby rides, show live trip progress, and detect pickup and dropoff arrival.</string>
-		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-		<string>SportConnect needs background location during active rides to detect pickup and dropoff arrival even if the app is not open.</string>
 
 		<key>UILaunchStoryboardName</key>
 		<string>LaunchScreen</string>

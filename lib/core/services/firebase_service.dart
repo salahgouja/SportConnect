@@ -70,15 +70,8 @@ class FirebaseService {
         options: DefaultFirebaseOptions.currentPlatform,
       );
 
-      // RTDB offline persistence is intentionally disabled.
-      // Live location data (the only RTDB use-case) is inherently online-only;
-      // caching stale GPS coordinates has no value. More critically, enabling
-      // persistence sets a flag on the native FirebaseDatabase singleton.
-      // When the native_geofence foreground service starts a background Dart
-      // isolate and registers firebase_database via DartPluginRegistrant, the
-      // plugin calls FirebaseDatabase.getInstance() and sees persistence=true,
-      // then tries to open the same SQLite file the main process already holds
-      // exclusively → SQLITE_BUSY → FATAL DatabaseException crash.
+      // RTDB offline persistence is intentionally disabled — live location data
+      // is inherently online-only; caching stale GPS coordinates has no value.
       // Firestore persistence (100 MB, below) covers all durable offline state.
 
       await FirebaseAppCheck.instance.activate(

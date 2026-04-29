@@ -29,8 +29,8 @@ import 'package:sport_connect/features/rides/repositories/booking_repository.dar
     show BookingRepository, bookingRepositoryProvider;
 import 'package:sport_connect/features/rides/repositories/dispute_repository.dart'
     show DisputeRepository, disputeRepositoryProvider;
+import 'package:geo_fence_utils/geo_fence_utils.dart';
 import 'package:sport_connect/features/rides/repositories/ride_repository.dart';
-import 'package:sport_connect/features/rides/services/active_ride_geofence_service.dart';
 import 'package:sport_connect/features/rides/services/ride_service.dart';
 import 'package:uuid/uuid.dart';
 
@@ -1744,6 +1744,9 @@ class ActiveRideState {
     this.hasNotifiedDelay = false,
     // E4: Last driver location update time (for unavailable banner)
     this.lastDriverLocationUpdate,
+    // Proximity detection one-shot flags
+    this.pickupProximityFired = false,
+    this.destinationProximityFired = false,
   });
   static const _unset = Object();
 
@@ -1799,6 +1802,8 @@ class ActiveRideState {
   final bool hasNotifiedDelay;
   // E4: Last driver location update time (for unavailable banner)
   final DateTime? lastDriverLocationUpdate;
+  final bool pickupProximityFired;
+  final bool destinationProximityFired;
 
   RideModel? get currentRide => ride.value;
 
@@ -1847,6 +1852,8 @@ class ActiveRideState {
     int? rideDelayMinutes,
     bool? hasNotifiedDelay,
     Object? lastDriverLocationUpdate = _unset,
+    bool? pickupProximityFired,
+    bool? destinationProximityFired,
   }) => ActiveRideState(
     ride: ride ?? this.ride,
     bookings: bookings ?? this.bookings,
@@ -1924,6 +1931,9 @@ class ActiveRideState {
     lastDriverLocationUpdate: lastDriverLocationUpdate == _unset
         ? this.lastDriverLocationUpdate
         : lastDriverLocationUpdate as DateTime?,
+    pickupProximityFired: pickupProximityFired ?? this.pickupProximityFired,
+    destinationProximityFired:
+        destinationProximityFired ?? this.destinationProximityFired,
   );
 }
 
@@ -1947,13 +1957,11 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
 
   @override
   ActiveRideState build(String rideId) {
-    final geofenceService = ActiveRideGeofenceService.instance;
     ref.onDispose(() {
       final positionStreamSubscription = _positionStreamSubscription;
       if (positionStreamSubscription != null) {
         unawaited(positionStreamSubscription.cancel());
       }
-      unawaited(geofenceService.clearRideGeofences(rideId));
     });
 
     ref.listen(rideStreamProvider(rideId), (_, next) {
@@ -2230,6 +2238,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
             );
           }),
     );
+    _checkProximity(position);
   }
 
   void toggleNavigationExpanded() {
@@ -2485,11 +2494,11 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
         if (aLoc == null && bLoc == null) return 0;
         if (aLoc == null) return 1;
         if (bLoc == null) return -1;
-        final aDist = _haversineKm(
+        final aDist = _distKm(
           driverLoc,
           LatLng(aLoc.latitude, aLoc.longitude),
         );
-        final bDist = _haversineKm(
+        final bDist = _distKm(
           driverLoc,
           LatLng(bLoc.latitude, bLoc.longitude),
         );
@@ -2660,7 +2669,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
     final prevPos = state.currentLocation;
     if (prevPos == null) return;
 
-    final segmentKm = _haversineKm(prevPos, newPosition);
+    final segmentKm = _distKm(prevPos, newPosition);
     // Only count reasonable segments (filter GPS jumps > 5km)
     if (segmentKm > 0.001 && segmentKm < 5.0) {
       state = state.copyWith(
@@ -2871,7 +2880,6 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
     if (ride == null) {
       _clearDynamicEta();
       _clearPassengerRouteTracking();
-      unawaited(ActiveRideGeofenceService.instance.clearRideGeofences(rideId));
       return;
     }
 
@@ -2884,7 +2892,6 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
     _updateDynamicEta(ride);
     _computeWaypointEtas(ride);
     _updatePassengerRouteTracking(ride, state.driverLiveLocation);
-    unawaited(_syncActiveRideGeofences());
   }
 
   void _handleBookingsUpdate(List<RideBooking> bookings) {
@@ -2898,24 +2905,6 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
     state = state.copyWith(
       bookings: bookings,
       pickedUpPassengerIds: pickedUpPassengerIds,
-    );
-    unawaited(_syncActiveRideGeofences());
-  }
-
-  Future<void> _syncActiveRideGeofences() async {
-    final ride = state.currentRide;
-    final user = ref.read(currentUserProvider).value;
-    if (ride == null || user == null) return;
-
-    final role = ride.driverId == user.uid
-        ? ActiveRideGeofenceRole.driver
-        : ActiveRideGeofenceRole.passenger;
-
-    await ActiveRideGeofenceService.instance.syncForRide(
-      role: role,
-      ride: ride,
-      bookings: state.bookings,
-      passengerId: role == ActiveRideGeofenceRole.passenger ? user.uid : null,
     );
   }
 
@@ -3061,7 +3050,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
     var minimumDistance = double.infinity;
     var closestIndex = 0;
     for (var index = 0; index < routePoints.length; index++) {
-      final distance = _haversineKm(effectiveLocation, routePoints[index]);
+      final distance = _distKm(effectiveLocation, routePoints[index]);
       if (!distance.isFinite) continue;
       if (distance < minimumDistance) {
         minimumDistance = distance;
@@ -3074,12 +3063,12 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
       return;
     }
 
-    var remainingDistance = _haversineKm(
+    var remainingDistance = _distKm(
       effectiveLocation,
       routePoints[closestIndex],
     );
     for (var index = closestIndex; index < routePoints.length - 1; index++) {
-      remainingDistance += _haversineKm(
+      remainingDistance += _distKm(
         routePoints[index],
         routePoints[index + 1],
       );
@@ -3183,7 +3172,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
     if (effectivePos != null) {
       var minDist = double.infinity;
       for (var i = 0; i < routePoints.length; i++) {
-        final d = _haversineKm(effectivePos, routePoints[i]);
+        final d = _distKm(effectivePos, routePoints[i]);
         if (d < minDist) {
           minDist = d;
           driverNearestIdx = i;
@@ -3196,7 +3185,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
     for (var i = driverNearestIdx + 1; i < routePoints.length; i++) {
       cumulativeFromDriver.add(
         cumulativeFromDriver.last +
-            _haversineKm(routePoints[i - 1], routePoints[i]),
+            _distKm(routePoints[i - 1], routePoints[i]),
       );
     }
     final remainingRouteKm = cumulativeFromDriver.last;
@@ -3223,7 +3212,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
       var nearestRouteIdx = driverNearestIdx;
       var minWpDist = double.infinity;
       for (var i = driverNearestIdx; i < routePoints.length; i++) {
-        final d = _haversineKm(wpLatLng, routePoints[i]);
+        final d = _distKm(wpLatLng, routePoints[i]);
         if (d < minWpDist) {
           minWpDist = d;
           nearestRouteIdx = i;
@@ -3272,7 +3261,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
       if (d < minDistMeters) minDistMeters = d;
     }
     // Also check the final point
-    final lastDist = _haversineKm(currentLocation, routePoints.last) * 1000;
+    final lastDist = _distKm(currentLocation, routePoints.last) * 1000;
     if (lastDist < minDistMeters) minDistMeters = lastDist;
 
     // Adaptive threshold: scales with average segment length so that long
@@ -3280,7 +3269,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
     double totalRouteMeters = 0;
     for (var i = 0; i < routePoints.length - 1; i++) {
       totalRouteMeters +=
-          _haversineKm(routePoints[i], routePoints[i + 1]) * 1000;
+          _distKm(routePoints[i], routePoints[i + 1]) * 1000;
     }
     final avgSegmentMeters = totalRouteMeters / (routePoints.length - 1);
     // Threshold: 40% of avg segment length, clamped between 150 m and 400 m.
@@ -3314,7 +3303,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
     final segLenSq = bx * bx + by * by;
     if (segLenSq < 1.0) {
       // Degenerate (zero-length) segment — fall back to point distance.
-      return _haversineKm(p, a) * 1000;
+      return _distKm(p, a) * 1000;
     }
 
     final t = ((px * bx + py * by) / segLenSq).clamp(0.0, 1.0);
@@ -3385,12 +3374,12 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
       final d = _perpDistToSegmentMeters(driverPosition, pts[i], pts[i + 1]);
       if (d < minimumDistanceMeters) minimumDistanceMeters = d;
     }
-    final lastPtDist = _haversineKm(driverPosition, pts.last) * 1000;
+    final lastPtDist = _distKm(driverPosition, pts.last) * 1000;
     if (lastPtDist < minimumDistanceMeters) minimumDistanceMeters = lastPtDist;
 
     double totalMeters = 0;
     for (var i = 0; i < pts.length - 1; i++) {
-      totalMeters += _haversineKm(pts[i], pts[i + 1]) * 1000;
+      totalMeters += _distKm(pts[i], pts[i + 1]) * 1000;
     }
     final avgSeg = totalMeters / (pts.length - 1);
     final threshold = (avgSeg * 0.4).clamp(150.0, 400.0);
@@ -3435,7 +3424,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
     var driverIndex = 0;
     var minimumDriverDistance = double.infinity;
     for (var index = 0; index < routePoints.length; index++) {
-      final distance = _haversineKm(driverPosition, routePoints[index]);
+      final distance = _distKm(driverPosition, routePoints[index]);
       if (distance < minimumDriverDistance) {
         minimumDriverDistance = distance;
         driverIndex = index;
@@ -3457,7 +3446,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
       var nearestWaypointIndex = 0;
       var minimumWaypointDistance = double.infinity;
       for (var routeIndex = 0; routeIndex < routePoints.length; routeIndex++) {
-        final distance = _haversineKm(waypointLatLng, routePoints[routeIndex]);
+        final distance = _distKm(waypointLatLng, routePoints[routeIndex]);
         if (distance < minimumWaypointDistance) {
           minimumWaypointDistance = distance;
           nearestWaypointIndex = routeIndex;
@@ -3513,22 +3502,95 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
     return speed * 3.6;
   }
 
-  double _haversineKm(LatLng origin, LatLng destination) {
-    const earthRadiusKm = 6371.0;
-    final deltaLat = _degToRad(destination.latitude - origin.latitude);
-    final deltaLon = _degToRad(destination.longitude - origin.longitude);
-    final sinLat = math.sin(deltaLat / 2);
-    final sinLon = math.sin(deltaLon / 2);
-    final haversine =
-        sinLat * sinLat +
-        math.cos(_degToRad(origin.latitude)) *
-            math.cos(_degToRad(destination.latitude)) *
-            sinLon *
-            sinLon;
-    return 2 * earthRadiusKm * math.asin(math.sqrt(haversine));
+  double _distKm(LatLng a, LatLng b) =>
+      GeoDistanceService.calculateDistance(
+        GeoPoint(latitude: a.latitude, longitude: a.longitude),
+        GeoPoint(latitude: b.latitude, longitude: b.longitude),
+      ) / 1000.0;
+
+  void _checkProximity(Position position) {
+    final ride = state.currentRide;
+    if (ride == null) return;
+    final driver = GeoPoint(
+      latitude: position.latitude,
+      longitude: position.longitude,
+    );
+    if (!state.pickupProximityFired &&
+        GeoCircleService.isInsideCircle(
+          point: driver,
+          circle: GeoCircle(
+            center: GeoPoint(
+              latitude: ride.origin.latitude,
+              longitude: ride.origin.longitude,
+            ),
+            radius: 150,
+          ),
+        )) {
+      unawaited(_onEnterPickupZone());
+    }
+    if (!state.destinationProximityFired &&
+        GeoCircleService.isInsideCircle(
+          point: driver,
+          circle: GeoCircle(
+            center: GeoPoint(
+              latitude: ride.destination.latitude,
+              longitude: ride.destination.longitude,
+            ),
+            radius: 180,
+          ),
+        )) {
+      unawaited(_onEnterDestinationZone());
+    }
   }
 
-  double _degToRad(double degrees) => degrees * math.pi / 180;
+  Future<void> _onEnterPickupZone() async {
+    state = state.copyWith(pickupProximityFired: true);
+    final ride = state.currentRide;
+    if (ride == null) return;
+    final driver = ref.read(currentUserProvider).value;
+    final driverName = driver?.username ?? 'Driver';
+    final driverPhoto = driver?.photoUrl;
+    final rideName =
+        '${ride.origin.city ?? ride.origin.address} → ${ride.destination.city ?? ride.destination.address}';
+    final notificationRepo = ref.read(notificationRepositoryProvider);
+    for (final booking in state.bookings) {
+      try {
+        await notificationRepo.sendDriverArrivedAtPickup(
+          toUserId: booking.passengerId,
+          driverName: driverName,
+          rideId: ride.id,
+          rideName: rideName,
+          driverPhoto: driverPhoto,
+        );
+      } on Exception catch (e, st) {
+        TalkerService.error('Pickup arrival notification failed', e, st);
+      }
+    }
+  }
+
+  Future<void> _onEnterDestinationZone() async {
+    state = state.copyWith(destinationProximityFired: true);
+    transitionToArriving();
+    final ride = state.currentRide;
+    if (ride == null) return;
+    final driver = ref.read(currentUserProvider).value;
+    final driverName = driver?.username ?? 'Driver';
+    final rideName =
+        '${ride.origin.city ?? ride.origin.address} → ${ride.destination.city ?? ride.destination.address}';
+    final notificationRepo = ref.read(notificationRepositoryProvider);
+    for (final booking in state.bookings) {
+      try {
+        await notificationRepo.sendDriverArrivingAtDestination(
+          toUserId: booking.passengerId,
+          driverName: driverName,
+          rideId: ride.id,
+          rideName: rideName,
+        );
+      } on Exception catch (e, st) {
+        TalkerService.error('Destination arrival notification failed', e, st);
+      }
+    }
+  }
 }
 
 /// User's Rides Provider (as driver)

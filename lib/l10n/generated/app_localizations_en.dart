@@ -5641,11 +5641,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your current location will be shared with this chat so other participants can see where you are. Your location is only shared when you choose to send it.';
 
   @override
-  String get permissionRideNavigationTitle => 'Ride Navigation';
+  String get permissionRideNavigationTitle => 'Background Location Required';
 
   @override
   String get permissionRideNavigationMessage =>
-      'Location access is needed to track your ride in real-time, provide turn-by-turn navigation, and share your progress with fellow riders for safety.';
+      'SportConnect accesses your location in the background — even when the app is closed — to detect when you enter pickup and drop-off zones during an active ride and notify your passengers in time. This is used only while a ride is in progress.';
 
   @override
   String get permissionCameraPhotosTitle => 'Camera & Photos';
