@@ -22,15 +22,8 @@ class EmailVerificationScreen extends ConsumerWidget {
 
     ref.listen(emailVerificationViewModelProvider, (previous, next) {
       if (next.isEmailVerified && !(previous?.isEmailVerified ?? false)) {
-        final currentUser = ref.read(currentUserProvider).value;
-        if (currentUser is DriverModel && currentUser.vehicleIds.isEmpty) {
-          context.go('${AppRoutes.driverOnboarding.path}?skipProfile=true');
-          return;
-        }
-
-        context.go(AppRoutes.login.path);
+        context.go(AppRoutes.splash.path);
       }
-
       if (next.errorMessage != null &&
           next.errorMessage != previous?.errorMessage) {
         AdaptiveSnackBar.show(

@@ -135,6 +135,22 @@ class RouteGuardService {
       }
     }
 
+    if (_isLegalRoute(currentPath)) return null;
+
+    if (isLoggedIn &&
+        hasVerifiableEmail &&
+        isEmailVerified &&
+        currentPath == AppRoutes.emailVerification.path) {
+      return _getDashboardRoute();
+    }
+
+    if (isLoggedIn &&
+        hasVerifiableEmail &&
+        !isEmailVerified &&
+        currentPath != AppRoutes.emailVerification.path) {
+      return AppRoutes.emailVerification.path;
+    }
+
     if (currentPath == AppRoutes.roleSelection.path && isLoggedIn) {
       if (needsRoleSelection || _isPendingUser) {
         return _pendingIntentRoute;
@@ -160,25 +176,18 @@ class RouteGuardService {
         AppRoutes.driverOnboarding,
         AppRoutes.driverStripeOnboarding,
         AppRoutes.riderOnboarding,
-        AppRoutes.emailVerification,
       };
+
       final isAllowed = allowedDuringSetup.any((r) => r.path == currentPath);
       if (!isAllowed) return AppRoutes.roleSelection.path;
       return null;
     }
-
-    if (_isLegalRoute(currentPath)) return null;
 
     if (_isPublicRoute(currentPath)) {
       if (isLoggedIn) {
         if (currentPath == AppRoutes.login.path) {
           final redirectTarget = _getValidatedRedirectTarget(currentUri);
           if (redirectTarget != null) return redirectTarget;
-        }
-        if (hasVerifiableEmail &&
-            !isEmailVerified &&
-            currentPath != AppRoutes.emailVerification.path) {
-          return AppRoutes.emailVerification.path;
         }
         return _getDashboardRoute();
       }
@@ -188,12 +197,6 @@ class RouteGuardService {
     if (!isLoggedIn) {
       final encodedTarget = Uri.encodeComponent(currentUri.toString());
       return '${AppRoutes.login.path}?redirect=$encodedTarget';
-    }
-
-    if (hasVerifiableEmail &&
-        !isEmailVerified &&
-        currentPath != AppRoutes.emailVerification.path) {
-      return AppRoutes.emailVerification.path;
     }
 
     if (_isDriverRoute(currentPath) && !isDriver) {

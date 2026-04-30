@@ -72,35 +72,35 @@ class EmailVerificationViewModel extends _$EmailVerificationViewModel {
     );
   }
 
-  Future<void> checkEmailVerified() async {
+Future<void> checkEmailVerified() async {
+  if (!ref.mounted) return;
+
+  try {
+    final authActions = ref.read(authActionsViewModelProvider.notifier);
+    final user = authActions.currentUser;
+    if (user == null) return;
+
+    await authActions.reloadUser();
     if (!ref.mounted) return;
 
-    try {
-      final authActions = ref.read(authActionsViewModelProvider.notifier);
-      final user = authActions.currentUser;
-      if (user == null) return;
+    final verified = await authActions.isEmailVerified();
+    if (!ref.mounted) return;
 
-      await authActions.reloadUser();
-      if (!ref.mounted) return;
+    if (verified) {
+      _pollTimer?.cancel();
 
-      final verified = await authActions.isEmailVerified();
-      if (!ref.mounted) return;
+      // Refresh router-visible auth state before the screen navigates.
+      ref.invalidate(authStateProvider);
 
-      if (verified) {
-        _pollTimer?.cancel();
-        state = state.copyWith(isEmailVerified: true);
-
-        // Small grace period so the UI can show the verified animation
-        // before the auth state change triggers navigation.
-        await Future<void>.delayed(const Duration(seconds: 2));
-        if (!ref.mounted) return;
-
-        ref.invalidate(authStateProvider);
-      }
-    } catch (e, st) {
-      TalkerService.debug('Email verification poll error: $e');
+      state = state.copyWith(
+        isEmailVerified: true,
+        clearError: true,
+      );
     }
+  } catch (e, st) {
+    TalkerService.debug('Email verification poll error: $e\n$st');
   }
+}
 
   // ── Resend ──────────────────────────────────────────────────────────
 
