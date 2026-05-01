@@ -8,6 +8,7 @@ import 'package:sport_connect/core/config/routes/route_params.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/views/driver/active_ride_screen.dart'
     as driver_active;
+import 'package:sport_connect/features/rides/views/driver/driver_my_rides_screen.dart';
 import 'package:sport_connect/features/rides/views/driver/driver_offer_ride_screen.dart';
 import 'package:sport_connect/features/rides/views/driver/driver_rate_passenger_screen.dart';
 import 'package:sport_connect/features/rides/views/driver/driver_requests_screen.dart';
@@ -18,6 +19,7 @@ import 'package:sport_connect/features/rides/views/passenger/ride_booking_pendin
 import 'package:sport_connect/features/rides/views/passenger/ride_countdown_screen.dart';
 import 'package:sport_connect/features/rides/views/passenger/ride_detail_screen.dart';
 import 'package:sport_connect/features/rides/views/passenger/ride_search_screen.dart';
+import 'package:sport_connect/features/rides/views/passenger/rider_my_rides_screen.dart';
 import 'package:sport_connect/features/rides/views/passenger/rider_view_ride_screen.dart';
 import 'package:sport_connect/features/rides/views/shared/cancellation_reason_screen.dart';
 import 'package:sport_connect/features/rides/views/shared/dispute_screen.dart';
@@ -25,7 +27,6 @@ import 'package:sport_connect/features/rides/views/shared/ride_completion_screen
 
 /// Ride module routes with type-safe parameters
 class RideRoutes implements RouteConfig {
-
   @override
   List<RouteBase> getRoutes() {
     return [
@@ -79,9 +80,15 @@ class RideRoutes implements RouteConfig {
           // rideId is required — if absent the route was navigated to incorrectly
           final rideId = params.getQuery('rideId') ?? '';
           if (rideId.isEmpty) {
-            throw ArgumentError(
-              'riderActiveRide requires a non-empty rideId query param',
-            );
+            return PlatformInfo.isIOS
+                ? CupertinoPage(
+                    key: state.pageKey,
+                    child: const RiderMyRidesScreen(),
+                  )
+                : MaterialPage(
+                    key: state.pageKey,
+                    child: const RiderMyRidesScreen(),
+                  );
           }
           return PlatformInfo.isIOS
               ? CupertinoPage(
@@ -128,11 +135,15 @@ class RideRoutes implements RouteConfig {
           final existingRide = state.extra is RideModel
               ? state.extra! as RideModel
               : null;
+          final prefill = state.extra is DriverRidePrefill
+              ? state.extra! as DriverRidePrefill
+              : null;
           return PlatformInfo.isIOS
               ? CupertinoPage(
                   key: state.pageKey,
                   child: DriverOfferRideScreen(
                     existingRide: existingRide,
+                    prefill: prefill,
                     isEditMode: existingRide != null,
                   ),
                 )
@@ -140,6 +151,7 @@ class RideRoutes implements RouteConfig {
                   key: state.pageKey,
                   child: DriverOfferRideScreen(
                     existingRide: existingRide,
+                    prefill: prefill,
                     isEditMode: existingRide != null,
                   ),
                 );
@@ -203,9 +215,15 @@ class RideRoutes implements RouteConfig {
           // rideId is required — if absent the route was navigated to incorrectly
           final rideId = params.getQuery('rideId') ?? '';
           if (rideId.isEmpty) {
-            throw ArgumentError(
-              'driverActiveRide requires a non-empty rideId query param',
-            );
+            return PlatformInfo.isIOS
+                ? CupertinoPage(
+                    key: state.pageKey,
+                    child: const DriverMyRidesScreen(),
+                  )
+                : MaterialPage(
+                    key: state.pageKey,
+                    child: const DriverMyRidesScreen(),
+                  );
           }
           return PlatformInfo.isIOS
               ? CupertinoPage(

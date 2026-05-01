@@ -335,8 +335,9 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                     : AppLocalizations.of(context).unread,
                 AppLocalizations.of(context).all,
               ],
-          selectedColor: Colors.white,
-          backgroundColor: AppColors.primary,              children: [
+              selectedColor: Colors.white,
+              backgroundColor: AppColors.primary,
+              children: [
                 _buildNotificationsList(unreadNotifications, userId),
                 _buildNotificationsList(allNotifications, userId),
               ],
@@ -523,17 +524,40 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     // Navigate based on notification type
     switch (notification.type) {
       case NotificationType.rideBookingRequest:
+        context.push(AppRoutes.driverRequests.path);
+        return;
       case NotificationType.rideBookingAccepted:
+        if (notification.referenceId != null) {
+          context.push(
+            AppRoutes.rideBookingPending.path.replaceFirst(
+              ':rideId',
+              notification.referenceId!,
+            ),
+          );
+        }
+        return;
+      case NotificationType.eventCancelled:
+        if (notification.referenceId != null) {
+          context.pushNamed(
+            AppRoutes.eventDetail.name,
+            pathParameters: {'id': notification.referenceId!},
+          );
+        }
+        return;
+      case NotificationType.rideBookingCancelled:
       case NotificationType.rideBookingRejected:
       case NotificationType.rideStartingSoon:
       case NotificationType.rideStarted:
       case NotificationType.rideCompleted:
+      case NotificationType.rideCancelled:
+      case NotificationType.rideUpdated:
         if (notification.referenceId != null) {
           context.pushNamed(
             AppRoutes.rideDetail.name,
             pathParameters: {'id': notification.referenceId!},
           );
         }
+        return;
       case NotificationType.newMessage:
       case NotificationType.newGroupMessage:
         if (notification.referenceId != null) {
@@ -541,14 +565,16 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
           // We need to fetch the chat to get participant info, then navigate
           _navigateToChatFromNotification(notification.referenceId!);
         }
+        return;
       case NotificationType.newFollower:
       case NotificationType.followAccepted:
         if (notification.senderId != null) {
           context.pushNamed(
-            AppRoutes.profile.name,
-            pathParameters: {'userId': notification.senderId!},
+            AppRoutes.userProfile.name,
+            pathParameters: {'id': notification.senderId!},
           );
         }
+        return;
       default:
         break;
     }

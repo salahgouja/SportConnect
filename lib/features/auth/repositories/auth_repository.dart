@@ -225,7 +225,7 @@ class AuthRepository {
     try {
       final uid = _firebaseService.auth.currentUser?.uid;
       if (uid != null) {
-        unawaited(_pushNotificationService.deleteFcmToken(uid));
+        await _pushNotificationService.deleteFcmToken(uid);
       }
       await _firebaseService.auth.signOut();
       unawaited(_signOutGoogleBestEffort());

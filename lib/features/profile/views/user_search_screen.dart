@@ -371,12 +371,12 @@ class UserSearchScreen extends ConsumerWidget {
             if (user.role == UserRole.driver) {
               context.pushNamed(
                 AppRoutes.driverProfile.name,
-                pathParameters: {'userId': user.uid},
+                pathParameters: {'id': user.uid},
               );
             } else {
               context.pushNamed(
-                AppRoutes.profile.name,
-                pathParameters: {'userId': user.uid},
+                AppRoutes.userProfile.name,
+                pathParameters: {'id': user.uid},
               );
             }
           }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:sport_connect/core/config/routes/route_params.dart';
 import 'package:sport_connect/core/models/location/location_point.dart';
 import 'package:sport_connect/core/models/value_objects/money.dart';
 import 'package:sport_connect/core/services/routing_service.dart'
@@ -535,6 +536,20 @@ class DriverOfferRideViewModel extends _$DriverOfferRideViewModel {
       routeDurationMinutes: ride.route.durationMinutes,
     );
     _triggerRoutePreview();
+  }
+
+  void initializeFromPrefill(DriverRidePrefill prefill) {
+    state = state.copyWith(
+      eventId: prefill.eventId,
+      eventName: prefill.eventName,
+      fromLocation: prefill.origin,
+      fromAddress: prefill.origin?.address,
+      toLocation: prefill.destination,
+      toAddress: prefill.destination?.address,
+    );
+    if (prefill.origin != null && prefill.destination != null) {
+      _triggerRoutePreview();
+    }
   }
 
   // --- Submission ---

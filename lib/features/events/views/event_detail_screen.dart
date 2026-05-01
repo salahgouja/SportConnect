@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/config/routes/route_params.dart';
 import 'package:sport_connect/core/models/location/location_point.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
@@ -104,7 +105,8 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
 
     return AdaptiveScaffold(
       body: eventAsync.when(
-        loading: () => const SkeletonLoader(type: SkeletonType.rideCard, itemCount: 4),
+        loading: () =>
+            const SkeletonLoader(type: SkeletonType.rideCard, itemCount: 4),
         error: (e, _) => _ErrorBody(message: e.toString()),
         data: (event) {
           if (event == null) {
@@ -398,13 +400,15 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                         HapticFeedback.lightImpact();
                         await context.push(
                           AppRoutes.driverOfferRide.path,
-                          extra: {
-                            'eventId': event.id,
-                            'eventName': event.title,
-                            'destinationAddress': event.location.address,
-                            'destinationLat': event.location.latitude,
-                            'destinationLng': event.location.longitude,
-                          },
+                          extra: DriverRidePrefill(
+                            eventId: event.id,
+                            eventName: event.title,
+                            destination: LocationPoint(
+                              latitude: event.location.latitude,
+                              longitude: event.location.longitude,
+                              address: event.location.address,
+                            ),
+                          ),
                         );
                       },
                     ).animate().fadeIn(delay: 480.ms, duration: 350.ms),
@@ -639,7 +643,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
               children: [
                 Expanded(
                   child: OutlinedButton(
-                  onPressed: () => Navigator.of(context).pop(false),
+                    onPressed: () => Navigator.of(context).pop(false),
                     child: const Text('Keep Event'),
                   ),
                 ),
@@ -650,7 +654,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                       backgroundColor: AppColors.error,
                       foregroundColor: Colors.white,
                     ),
-                  onPressed: () => Navigator.of(context).pop(true),
+                    onPressed: () => Navigator.of(context).pop(true),
                     child: const Text('Cancel Event'),
                   ),
                 ),

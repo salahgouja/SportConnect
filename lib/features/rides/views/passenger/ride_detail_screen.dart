@@ -817,8 +817,8 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
         onTap: () {
           HapticFeedback.lightImpact();
           context.pushNamed(
-            AppRoutes.profile.name,
-            pathParameters: {'userId': ride.driverId},
+            AppRoutes.driverProfile.name,
+            pathParameters: {'id': ride.driverId},
           );
         },
         child: PremiumCard(

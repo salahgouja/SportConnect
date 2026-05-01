@@ -147,6 +147,15 @@ class RouteGuardService {
     if (isLoggedIn &&
         hasVerifiableEmail &&
         !isEmailVerified &&
+        isDriver &&
+        !hasCompletedDriverVehicleStep &&
+        currentPath == AppRoutes.driverOnboarding.path) {
+      return null;
+    }
+
+    if (isLoggedIn &&
+        hasVerifiableEmail &&
+        !isEmailVerified &&
         currentPath != AppRoutes.emailVerification.path) {
       return AppRoutes.emailVerification.path;
     }

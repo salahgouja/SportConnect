@@ -212,13 +212,34 @@ class _SportConnectAppState extends ConsumerState<SportConnectApp> {
             final appChild = child ?? const SizedBox.shrink();
 
             if (!_isFirebaseInitialized) {
-              return appChild;
+              return _DismissKeyboardOnTap(child: appChild);
             }
 
-            return UpgradeAlert(child: appChild);
+            return _DismissKeyboardOnTap(
+              child: UpgradeAlert(child: appChild),
+            );
           },
         );
       },
+    );
+  }
+}
+
+class _DismissKeyboardOnTap extends StatelessWidget {
+  const _DismissKeyboardOnTap({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: (_) {
+        final currentFocus = FocusManager.instance.primaryFocus;
+        if (currentFocus == null || !currentFocus.hasFocus) return;
+        currentFocus.unfocus();
+      },
+      child: child,
     );
   }
 }

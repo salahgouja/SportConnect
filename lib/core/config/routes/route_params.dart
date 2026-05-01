@@ -1,4 +1,19 @@
 import 'package:go_router/go_router.dart';
+import 'package:sport_connect/core/models/location/location_point.dart';
+
+class DriverRidePrefill {
+  const DriverRidePrefill({
+    this.eventId,
+    this.eventName,
+    this.origin,
+    this.destination,
+  });
+
+  final String? eventId;
+  final String? eventName;
+  final LocationPoint? origin;
+  final LocationPoint? destination;
+}
 
 /// Type-safe parameter extractors for routes
 class RouteParams {

@@ -13,6 +13,7 @@ import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:sport_connect/core/animations/feedback_animations.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/config/routes/route_params.dart';
 import 'package:sport_connect/core/models/location/location_point.dart';
 import 'package:sport_connect/core/models/user/user_model.dart';
 import 'package:sport_connect/core/models/user/user_enums.dart';
@@ -35,9 +36,11 @@ class DriverOfferRideScreen extends ConsumerStatefulWidget {
     super.key,
     this.existingRide,
     this.existingRideId,
+    this.prefill,
     this.isEditMode = false,
   });
   final RideModel? existingRide;
+  final DriverRidePrefill? prefill;
 
   /// When provided the screen fetches the ride by ID so the edit route
   /// works correctly even after a hot-restart or deep-link (no state.extra).
@@ -126,6 +129,12 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
           }
         }),
       );
+    } else if (widget.prefill != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref
+            .read(driverOfferRideViewModelProvider.notifier)
+            .initializeFromPrefill(widget.prefill!);
+      });
     }
   }
 
