@@ -204,9 +204,9 @@ class _SportConnectAppState extends ConsumerState<SportConnectApp> {
           supportedLocales: AppLocalizations.supportedLocales,
           themeMode: ThemeMode.light,
           materialLightTheme: AppMaterialTheme.lightTheme,
-          materialDarkTheme: AppMaterialTheme.darkTheme,
+          materialDarkTheme: AppMaterialTheme.lightTheme,
           cupertinoLightTheme: AppCupertinoTheme.lightTheme,
-          cupertinoDarkTheme: AppCupertinoTheme.darkTheme,
+          cupertinoDarkTheme: AppCupertinoTheme.lightTheme,
           routerConfig: router,
           builder: (context, child) {
             final appChild = child ?? const SizedBox.shrink();

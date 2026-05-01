@@ -11,6 +11,7 @@ import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/address_autocomplete_field.dart';
+import 'package:sport_connect/core/widgets/expertise_picker.dart';
 import 'package:sport_connect/core/widgets/glass_panel.dart';
 import 'package:sport_connect/core/widgets/intl_phone_input.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
@@ -958,20 +959,12 @@ class _DriverOnboardingScreenState
             // ── Section: Driving Details ─────────────────────────────────
             _sectionLabel('Driving Details'),
 
-            ReactiveDropdownField<Expertise>(
+            ReactiveExpertisePicker(
                   formControlName: _PF.expertise,
-                  decoration: InputDecoration(
-                    labelText: l10n.expertiseLevel,
-                    prefixIcon: const Icon(Icons.workspace_premium_rounded),
-                  ),
-                  items: Expertise.values
-                      .map(
-                        (e) => DropdownMenuItem(
-                          value: e,
-                          child: Text(e.displayName),
-                        ),
-                      )
-                      .toList(),
+                  label: l10n.expertiseLevel,
+                  accent: AppColors.primary,
+                  textColor: AppColors.textPrimary,
+                  cardBg: AppColors.surface,
                   validationMessages: {
                     ValidationMessage.required: (_) =>
                         l10n.expertiseLevelRequired,

@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,6 +13,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:reactive_forms/reactive_forms.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/widgets/expertise_picker.dart';
 import 'package:sport_connect/core/widgets/intl_phone_input.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
@@ -721,34 +721,15 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
           SizedBox(height: 16.h),
 
           // Expertise level
-          ReactiveDropdownField<Expertise>(
+          ReactiveExpertisePicker(
             formControlName: 'expertise',
-            decoration: InputDecoration(
-              labelText: AppLocalizations.of(context).expertiseLevel,
-              prefixIcon: Icon(
-                Icons.workspace_premium_rounded,
-                color: theme.accent,
-              ),
-              filled: true,
-              fillColor: theme.accent.withOpacity(0.06),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14.r),
-                borderSide: BorderSide.none,
-              ),
-            ),
-            onChanged: (control) {
-              final e = control.value;
-              if (e != null) {
-                ref
-                    .read(signupWizardUiViewModelProvider.notifier)
-                    .setExpertise(e);
-              }
-            },
-            items: Expertise.values
-                .map(
-                  (e) => DropdownMenuItem(value: e, child: Text(e.displayName)),
-                )
-                .toList(),
+            label: AppLocalizations.of(context).expertiseLevel,
+            accent: theme.accent,
+            textColor: theme.text,
+            cardBg: theme.card,
+            onChanged: (expertise) => ref
+                .read(signupWizardUiViewModelProvider.notifier)
+                .setExpertise(expertise),
           ),
           SizedBox(height: 16.h),
         ],

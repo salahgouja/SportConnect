@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -5,11 +8,13 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/custom_button.dart';
 import 'package:sport_connect/core/widgets/gamification_widgets.dart';
+import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/core/widgets/rating_and_profile_widgets.dart';
 import 'package:sport_connect/core/widgets/safety_widgets.dart';
@@ -211,7 +216,7 @@ class ProfileScreen extends ConsumerWidget {
 
         // Profile header section
         SliverToBoxAdapter(
-          child: _buildProfileHeader(context, user)
+          child: _buildProfileHeader(context, ref, user)
               .animate()
               .fadeIn(duration: 400.ms)
               .slideY(begin: 0.1, curve: Curves.easeOutCubic),
@@ -309,8 +314,48 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
+  Future<void> _changeProfilePhoto(
+    BuildContext context,
+    WidgetRef ref,
+    UserModel user,
+  ) async {
+    final accepted = await PermissionDialogHelper.showCameraRationale(
+      context,
+      customMessage:
+          'Access to your photo library is needed to update your profile picture.',
+    );
+    if (!accepted) return;
+
+    final image = await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (image == null || !context.mounted) return;
+
+    try {
+      await ref
+          .read(profileActionsViewModelProvider.notifier)
+          .updateProfilePhoto(user.uid, File(image.path));
+      ref.invalidate(currentUserProvider);
+      if (!context.mounted) return;
+      AdaptiveSnackBar.show(
+        context,
+        message: AppLocalizations.of(context).profileUpdated,
+        type: AdaptiveSnackBarType.success,
+      );
+    } on Object catch (error) {
+      if (!context.mounted) return;
+      AdaptiveSnackBar.show(
+        context,
+        message: AppLocalizations.of(context).errorValue(error.toString()),
+        type: AdaptiveSnackBarType.error,
+      );
+    }
+  }
+
   /// Profile header with avatar, name, rating, and member since
-  Widget _buildProfileHeader(BuildContext context, UserModel user) {
+  Widget _buildProfileHeader(
+    BuildContext context,
+    WidgetRef ref,
+    UserModel user,
+  ) {
     final rating = switch (user) {
       final RiderModel rider =>
         rider.asRider?.rating ?? const RatingBreakdown(),
@@ -342,8 +387,8 @@ class ProfileScreen extends ConsumerWidget {
               if (_isOwnProfile)
                 GestureDetector(
                   onTap: () async {
-                    HapticFeedback.lightImpact();
-                    await context.push<void>(AppRoutes.editProfile.path);
+                    unawaited(HapticFeedback.lightImpact());
+                    await _changeProfilePhoto(context, ref, user);
                   },
                   child: Container(
                     padding: EdgeInsets.all(8.w),
@@ -936,58 +981,60 @@ class ProfileScreen extends ConsumerWidget {
 
   /// Shows a confirmation dialog to block a user
   void _showBlockUserDialog(BuildContext context, WidgetRef ref) {
-    showDialog<void>(
-      context: context,
-      barrierLabel: AppLocalizations.of(context).blockUserDialogTitle,
-      builder: (ctx) => AlertDialog.adaptive(
-        title: Text(AppLocalizations.of(context).blockUserDialogTitle),
-        content: Text(
-          AppLocalizations.of(context).blockUserDialogMessageGeneric,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(AppLocalizations.of(context).actionCancel),
+    unawaited(
+      showDialog<void>(
+        context: context,
+        barrierLabel: AppLocalizations.of(context).blockUserDialogTitle,
+        builder: (ctx) => AlertDialog.adaptive(
+          title: Text(AppLocalizations.of(context).blockUserDialogTitle),
+          content: Text(
+            AppLocalizations.of(context).blockUserDialogMessageGeneric,
           ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              foregroundColor: Colors.white,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(AppLocalizations.of(context).actionCancel),
             ),
-            onPressed: () async {
-              Navigator.pop(ctx);
-              try {
-                final currentUser = ref.read(currentUserProvider).value;
-                if (currentUser == null) return;
-                await ref
-                    .read(
-                      socialActionsViewModelProvider(
-                        currentUser.uid,
-                        userId!,
-                      ).notifier,
-                    )
-                    .toggleBlock();
-                if (context.mounted) {
-                  AdaptiveSnackBar.show(
-                    context,
-                    message: AppLocalizations.of(context).userBlocked,
-                    type: AdaptiveSnackBarType.success,
-                  );
-                  context.pop();
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.error,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () async {
+                Navigator.pop(ctx);
+                try {
+                  final currentUser = ref.read(currentUserProvider).value;
+                  if (currentUser == null) return;
+                  await ref
+                      .read(
+                        socialActionsViewModelProvider(
+                          currentUser.uid,
+                          userId!,
+                        ).notifier,
+                      )
+                      .toggleBlock();
+                  if (context.mounted) {
+                    AdaptiveSnackBar.show(
+                      context,
+                      message: AppLocalizations.of(context).userBlocked,
+                      type: AdaptiveSnackBarType.success,
+                    );
+                    context.pop();
+                  }
+                } on Exception {
+                  if (context.mounted) {
+                    AdaptiveSnackBar.show(
+                      context,
+                      message: AppLocalizations.of(context).somethingWentWrong,
+                      type: AdaptiveSnackBarType.error,
+                    );
+                  }
                 }
-              } on Exception {
-                if (context.mounted) {
-                  AdaptiveSnackBar.show(
-                    context,
-                    message: AppLocalizations.of(context).somethingWentWrong,
-                    type: AdaptiveSnackBarType.error,
-                  );
-                }
-              }
-            },
-            child: Text(AppLocalizations.of(context).actionBlock),
-          ),
-        ],
+              },
+              child: Text(AppLocalizations.of(context).actionBlock),
+            ),
+          ],
+        ),
       ),
     );
   }
