@@ -238,7 +238,6 @@ class PaymentRepository {
     return 0;
   }
 
-  @override
   Future<DriverConnectedAccount?> refreshConnectedAccountFromServer({
     required String driverId,
     required String accountId,
@@ -257,7 +256,7 @@ class PaymentRepository {
   }
 
   /// Create payment transaction record
-  @override
+
   Future<String> createPaymentTransaction(PaymentTransaction payment) async {
     try {
       final docRef = _paymentsCollection.doc();
@@ -288,7 +287,7 @@ class PaymentRepository {
   };
 
   /// Update payment transaction status — enforces valid state machine.
-  @override
+
   Future<void> updatePaymentStatus({
     required String paymentId,
     required PaymentStatus status,
@@ -311,7 +310,7 @@ class PaymentRepository {
       await _paymentsCollection.doc(paymentId).update({
         'status': status.name,
         'updatedAt': DateTime.now(),
-        'failureReason': ?failureReason,
+        if (failureReason != null) 'failureReason': failureReason,
         if (completedAt != null) 'completedAt': Timestamp.fromDate(completedAt),
       });
 
@@ -330,7 +329,7 @@ class PaymentRepository {
   /// ID), so [paymentId] may be either the Firestore doc ID or the Stripe
   /// paymentIntentId (pi_xxx). We try the doc lookup first (fast path), then
   /// fall back to a field query.
-  @override
+
   Future<PaymentTransaction?> getPaymentById(String paymentId) async {
     try {
       // Fast path: try direct document lookup (works if caller has Firestore ID)
@@ -359,12 +358,13 @@ class PaymentRepository {
   }
 
   /// Get payments by ride
-  @override
+
   Future<List<PaymentTransaction>> getPaymentsByRide(String rideId) async {
     try {
       final snapshot = await _paymentsCollection
           .where('rideId', isEqualTo: rideId)
           .orderBy('createdAt', descending: true)
+          .limit(50)
           .get();
 
       return snapshot.docs.map((doc) => doc.data()).toList();
@@ -375,7 +375,7 @@ class PaymentRepository {
   }
 
   /// Get rider's payment history
-  @override
+
   Future<List<PaymentTransaction>> getRiderPaymentHistory({
     required String riderId,
     int limit = 20,
@@ -395,7 +395,7 @@ class PaymentRepository {
   }
 
   /// Stream rider's payment history
-  @override
+
   Stream<List<PaymentTransaction>> streamRiderPaymentHistory({
     required String riderId,
     int limit = 20,
@@ -409,7 +409,7 @@ class PaymentRepository {
   }
 
   /// Get driver's earnings transactions
-  @override
+
   Future<List<PaymentTransaction>> getDriverEarnings({
     required String driverId,
     DateTime? startDate,
@@ -452,7 +452,7 @@ class PaymentRepository {
   /// Cloud Functions `recomputeDriverStats` keeps it up to date after every
   /// payment success and every refund.  Falls back to a full payments scan
   /// only when the doc doesn't exist yet (first-time / cold-start scenario).
-  @override
+
   Future<EarningsSummary> calculateEarningsSummary(String driverId) async {
     try {
       // Fast path: read the pre-aggregated driver_stats document.
@@ -542,6 +542,7 @@ class PaymentRepository {
       final allPayments = await _paymentsCollection
           .where('driverId', isEqualTo: driverId)
           .where('status', isEqualTo: PaymentStatus.succeeded.name)
+          .limit(500)
           .get();
 
       final payments = allPayments.docs.map((doc) => doc.data()).toList();
@@ -607,7 +608,7 @@ class PaymentRepository {
   }
 
   /// Create payout record
-  @override
+
   Future<String> createPayout(DriverPayout payout) async {
     try {
       final docRef = _payoutsCollection.doc();
@@ -626,7 +627,7 @@ class PaymentRepository {
   }
 
   /// Update payout status
-  @override
+
   Future<void> updatePayoutStatus({
     required String payoutId,
     required PayoutStatus status,
@@ -637,7 +638,7 @@ class PaymentRepository {
       await _payoutsCollection.doc(payoutId).update({
         'status': status.name,
         'updatedAt': DateTime.now(),
-        'failureReason': ?failureReason,
+        if (failureReason != null) 'failureReason': failureReason,
         if (arrivedAt != null) 'arrivedAt': Timestamp.fromDate(arrivedAt),
       });
 
@@ -649,7 +650,7 @@ class PaymentRepository {
   }
 
   /// Get driver payouts
-  @override
+
   Future<List<DriverPayout>> getDriverPayouts({
     required String driverId,
     int limit = 20,
@@ -669,7 +670,7 @@ class PaymentRepository {
   }
 
   /// Save driver connected account
-  @override
+
   Future<void> saveConnectedAccount(DriverConnectedAccount account) async {
     try {
       await refreshConnectedAccountFromServer(
@@ -686,7 +687,7 @@ class PaymentRepository {
   }
 
   /// Get driver connected account
-  @override
+
   Future<DriverConnectedAccount?> getConnectedAccount(String driverId) async {
     try {
       final doc = await _connectedAccountsCollection.doc(driverId).get();
@@ -700,7 +701,7 @@ class PaymentRepository {
   }
 
   /// Update connected account status
-  @override
+
   Future<void> updateConnectedAccountStatus({
     required String driverId,
     required bool chargesEnabled,
@@ -730,7 +731,7 @@ class PaymentRepository {
   }
 
   /// Process refund
-  @override
+
   Future<void> processRefund({
     required String paymentId,
     int? amountInCents,
@@ -760,7 +761,7 @@ class PaymentRepository {
   }
 
   /// Get payout by ID
-  @override
+
   Future<DriverPayout?> getPayoutById(String payoutId) async {
     try {
       final doc = await _payoutsCollection.doc(payoutId).get();
@@ -773,7 +774,7 @@ class PaymentRepository {
   }
 
   /// Create driver connected account via Stripe and persist it to Firestore.
-  @override
+
   Future<ConnectedAccountCreationResult?> createConnectedAccount({
     required String userId,
     required String email,
@@ -814,7 +815,6 @@ class PaymentRepository {
     }
   }
 
-  @override
   Stream<DriverConnectedAccount?> streamConnectedAccount(String driverId) {
     return _connectedAccountsCollection.doc(driverId).snapshots().map((doc) {
       if (!doc.exists) return null;

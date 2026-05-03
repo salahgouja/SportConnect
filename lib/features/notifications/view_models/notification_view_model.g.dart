@@ -45,7 +45,7 @@ final class NotificationViewModelProvider
 }
 
 String _$notificationViewModelHash() =>
-    r'b2e1e77d56d6bf7e8a890f1c41443ca0a1fb23e6';
+    r'3ae7a4434e3526c6ad62dbae84dd90d42b062cc8';
 
 /// ViewModel for notifications screen
 
@@ -111,7 +111,7 @@ final class UserNotificationsProvider
   }
 }
 
-String _$userNotificationsHash() => r'0c4331a54eda8511ad8c5c3b60c1e3f942bca3a6';
+String _$userNotificationsHash() => r'9898eec51299a56db7d31259fc73e87d47303316';
 
 /// Provider for unread notification count
 
@@ -150,4 +150,4 @@ final class UnreadNotificationCountProvider
 }
 
 String _$unreadNotificationCountHash() =>
-    r'f3eb8f9f3a662e844296935e76a14a2217dc1737';
+    r'5360dfd1118f92d04fd307d0bdf90051c3697ebe';

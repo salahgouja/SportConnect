@@ -29,11 +29,7 @@ class RiderMyRidesScreen extends ConsumerStatefulWidget {
 class _RiderMyRidesScreenState extends ConsumerState<RiderMyRidesScreen> {
   @override
   Widget build(BuildContext context) {
-    final userIdAsync = ref.watch(
-      currentUserProvider.select(
-        (value) => value.whenData((user) => user?.uid),
-      ),
-    );
+    final userIdAsync = ref.watch(currentAuthUidProvider);
 
     return userIdAsync.when(
       loading: () => const _RidesLoadingShell(),
@@ -252,7 +248,7 @@ class _ActiveSection extends StatelessWidget {
       child: Padding(
         padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 0),
         child: Column(
-          children: rides.map((r) => _ActiveRideCard(ride: r)).toList(),
+          children: [for (final r in rides) _ActiveRideCard(ride: r)],
         ),
       ),
     );

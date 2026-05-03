@@ -24,6 +24,7 @@ import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/features/vehicles/repositories/vehicle_repository.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:sport_connect/core/widgets/app_map_tile_layer.dart';
 
 /// Active Ride Screen  - shows real-time ride status from Firestore
 class PassengerActiveRideScreen extends ConsumerStatefulWidget {
@@ -320,6 +321,7 @@ class _PassengerActiveRideScreenState
   }
 
   Widget _buildRideNotFound() {
+    final l10n = AppLocalizations.of(context);
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -331,7 +333,7 @@ class _PassengerActiveRideScreenState
           ),
           SizedBox(height: 16.h),
           Text(
-            AppLocalizations.of(context).rideNotFound,
+            l10n.rideNotFound,
             style: TextStyle(
               fontSize: 20.sp,
               fontWeight: FontWeight.w600,
@@ -340,12 +342,12 @@ class _PassengerActiveRideScreenState
           ),
           SizedBox(height: 8.h),
           Text(
-            AppLocalizations.of(context).thisRideMayHaveBeen,
+            l10n.thisRideMayHaveBeen,
             style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
           ),
           SizedBox(height: 24.h),
           PremiumButton(
-            text: AppLocalizations.of(context).goHome,
+            text: l10n.goHome,
             onPressed: () => context.go(AppRoutes.splash.path),
           ),
         ],
@@ -435,7 +437,10 @@ class _PassengerActiveRideScreenState
               child: driverAsync
                   .when(
                     data: (driver) => _buildDriverInfo(context, driver, ride),
-                    loading: () => const SkeletonLoader(type: SkeletonType.profileCard, itemCount: 1),
+                    loading: () => const SkeletonLoader(
+                      type: SkeletonType.profileCard,
+                      itemCount: 1,
+                    ),
                     error: (_, _) => const SizedBox.shrink(),
                   )
                   .animate()
@@ -509,7 +514,7 @@ class _PassengerActiveRideScreenState
             if (ride.status == RideStatus.completed &&
                 !rideState.hasSkippedReview &&
                 rideState.pickedUpPassengerIds.contains(
-                  ref.read(currentUserProvider).value?.uid ?? '',
+                  ref.read(currentAuthUidProvider).value ?? '',
                 ))
               SliverToBoxAdapter(
                 child:
@@ -601,10 +606,7 @@ class _PassengerActiveRideScreenState
             mapController: _liveMapController,
             options: MapOptions(initialCenter: driverLatLng, initialZoom: 15),
             children: [
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.sportconnect.app',
-              ),
+              const AppMapTileLayer(),
               PolylineLayer(
                 polylines: [
                   Polyline(
@@ -764,7 +766,7 @@ class _PassengerActiveRideScreenState
         // ── Route loading indicator ──
         if (rideState.osrmRoutePoints == null)
           Positioned(
-            top: MediaQuery.of(context).padding.top + 64.h,
+            top: MediaQuery.paddingOf(context).top + 64.h,
             left: 0,
             right: 0,
             child: Center(
@@ -852,7 +854,7 @@ class _PassengerActiveRideScreenState
 
         // ── Live indicator ──
         Positioned(
-          top: MediaQuery.of(context).padding.top + 56.h,
+          top: MediaQuery.paddingOf(context).top + 56.h,
           right: 12.w,
           child: Container(
             padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
@@ -891,7 +893,7 @@ class _PassengerActiveRideScreenState
         // AR-5: "Waiting for driver location" overlay when driver GPS is absent
         if (driverLoc == null)
           Positioned(
-            top: MediaQuery.of(context).padding.top + 56.h,
+            top: MediaQuery.paddingOf(context).top + 56.h,
             left: 12.w,
             right: 12.w,
             child: Container(
@@ -959,7 +961,7 @@ class _PassengerActiveRideScreenState
         // ── Night safety banner ──
         if (_isNightTime)
           Positioned(
-            top: MediaQuery.of(context).padding.top + 56.h,
+            top: MediaQuery.paddingOf(context).top + 56.h,
             left: 12.w,
             right: 80.w,
             child: _buildNightSafetyBanner(
@@ -971,7 +973,7 @@ class _PassengerActiveRideScreenState
         if (rideState.isOffRoute)
           Positioned(
             top:
-                MediaQuery.of(context).padding.top +
+                MediaQuery.paddingOf(context).top +
                 (_isNightTime ? 120.h : 56.h),
             left: 20.w,
             right: 20.w,
@@ -989,7 +991,7 @@ class _PassengerActiveRideScreenState
                 5)
           Positioned(
             top:
-                MediaQuery.of(context).padding.top +
+                MediaQuery.paddingOf(context).top +
                 (_isNightTime ? 160.h : 100.h),
             left: 20.w,
             right: 20.w,
@@ -1027,14 +1029,49 @@ class _PassengerActiveRideScreenState
           snap: true,
           snapSizes: const [0.15, 0.38, 0.80],
           builder: (context, scrollController) {
-            return _buildRideInfoSheet(
-              context,
-              ride,
-              rideState,
-              driverAsync,
-              etaMinutes,
-              distToDest,
-              scrollController,
+            // Consumer isolates bottom sheet from driver GPS updates (driverLiveLocation/routePoints)
+            return Consumer(
+              builder: (context, ref, _) {
+                ref.watch(
+                  activeRideViewModelProvider(widget.rideId).select(
+                    (s) => (
+                      s.phase,
+                      s.remainingEtaMinutes,
+                      s.remainingDistanceKm,
+                      s.isConnected,
+                      s.isOffRoute,
+                      s.latestQuickMessage,
+                      s.rideDelayMinutes,
+                      s.rideTimeoutMinutes,
+                      s.hasShownTimeoutWarning,
+                      s.bookings,
+                      s.pickedUpPassengerIds,
+                      s.pickupOrder,
+                      s.waypointEtaMinutes,
+                      s.passedWaypointIndices,
+                      s.currentSpeedKmh.toStringAsFixed(0),
+                    ),
+                  ),
+                );
+                final latestState = ref.read(
+                  activeRideViewModelProvider(widget.rideId),
+                );
+                final etaMins =
+                    latestState.remainingEtaMinutes ??
+                    ride.durationMinutes ??
+                    30;
+                final dist =
+                    latestState.remainingDistanceKm ?? ride.distanceKm ?? 0;
+                return _buildRideInfoSheet(
+                  context,
+                  ride,
+                  latestState,
+                  driverAsync,
+                  etaMins,
+                  dist,
+                  scrollController,
+                );
+              },
             );
           },
         ),
@@ -1134,7 +1171,7 @@ class _PassengerActiveRideScreenState
   ) {
     final driver = driverAsync.value;
     final l10n = AppLocalizations.of(context);
-    final bottomPadding = MediaQuery.of(context).padding.bottom;
+    final bottomPadding = MediaQuery.paddingOf(context).bottom;
 
     return Container(
       decoration: BoxDecoration(
@@ -1236,38 +1273,40 @@ class _PassengerActiveRideScreenState
           SizedBox(height: 20.h),
 
           // ETA, distance and speed tiles
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20.w),
-            child: Row(
-              children: [
-                _buildInfoTile(
-                  icon: Icons.access_time_rounded,
-                  label: AppLocalizations.of(context).eta,
-                  value: etaMinutes < 1
-                      ? 'Arriving'
-                      : '${etaMinutes}m · ${_formatArrivalTime(etaMinutes)}',
-                  color: AppColors.primary,
-                ),
-                SizedBox(width: 12.w),
-                _buildInfoTile(
-                  icon: Icons.straighten_rounded,
-                  label: AppLocalizations.of(context).distance,
-                  value: distToDest < 1
-                      ? '${(distToDest * 1000).toInt()} m'
-                      : '${distToDest.toStringAsFixed(1)} km',
-                  color: AppColors.warning,
-                ),
-                SizedBox(width: 12.w),
-                _buildInfoTile(
-                  icon: Icons.speed_rounded,
-                  label: AppLocalizations.of(context).speed,
-                  value: '${rideState.currentSpeedKmh.toStringAsFixed(0)} km/h',
-                  color: AppColors.success,
-                ),
-              ],
+          RepaintBoundary(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20.w),
+              child: Row(
+                children: [
+                  _buildInfoTile(
+                    icon: Icons.access_time_rounded,
+                    label: l10n.eta,
+                    value: etaMinutes < 1
+                        ? 'Arriving'
+                        : '${etaMinutes}m · ${_formatArrivalTime(etaMinutes)}',
+                    color: AppColors.primary,
+                  ),
+                  SizedBox(width: 12.w),
+                  _buildInfoTile(
+                    icon: Icons.straighten_rounded,
+                    label: l10n.distance,
+                    value: distToDest < 1
+                        ? '${(distToDest * 1000).toInt()} m'
+                        : '${distToDest.toStringAsFixed(1)} km',
+                    color: AppColors.warning,
+                  ),
+                  SizedBox(width: 12.w),
+                  _buildInfoTile(
+                    icon: Icons.speed_rounded,
+                    label: l10n.speed,
+                    value:
+                        '${rideState.currentSpeedKmh.toStringAsFixed(0)} km/h',
+                    color: AppColors.success,
+                  ),
+                ],
+              ),
             ),
           ),
-
           // Pickup queue position badge (7A)
           if (rideState.phase == ActiveRidePhase.pickingUp &&
               rideState.pickupOrder.isNotEmpty) ...[
@@ -1945,6 +1984,7 @@ class _PassengerActiveRideScreenState
     RideModel ride,
     ActiveRideState rideState,
   ) {
+    final l10n = AppLocalizations.of(context);
     final originLatLng = LatLng(ride.origin.latitude, ride.origin.longitude);
     final destLatLng = LatLng(
       ride.destination.latitude,
@@ -1982,10 +2022,7 @@ class _PassengerActiveRideScreenState
                 ),
               ),
               children: [
-                TileLayer(
-                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'com.sportconnect.app',
-                ),
+                const AppMapTileLayer(),
                 PolylineLayer(
                   polylines: [
                     Polyline(
@@ -2149,8 +2186,8 @@ class _PassengerActiveRideScreenState
                 ),
                 child: Text(
                   ride.status == RideStatus.completed
-                      ? AppLocalizations.of(context).rideCompleted
-                      : AppLocalizations.of(context).routeDetails,
+                      ? l10n.rideCompleted
+                      : l10n.routeDetails,
                   style: TextStyle(
                     fontSize: 11.sp,
                     fontWeight: FontWeight.w600,
@@ -2166,6 +2203,7 @@ class _PassengerActiveRideScreenState
   }
 
   Widget _buildHeader(BuildContext context, RideModel ride) {
+    final l10n = AppLocalizations.of(context);
     return Container(
       decoration: const BoxDecoration(gradient: AppColors.heroGradient),
       child: SafeArea(
@@ -2178,7 +2216,7 @@ class _PassengerActiveRideScreenState
               Row(
                 children: [
                   IconButton(
-                    tooltip: AppLocalizations.of(context).goBackTooltip,
+                    tooltip: l10n.goBackTooltip,
                     onPressed: () => context.pop(),
                     icon: Icon(Icons.adaptive.arrow_back, color: Colors.white),
                   ),
@@ -2188,7 +2226,7 @@ class _PassengerActiveRideScreenState
               ),
               SizedBox(height: 16.h),
               Text(
-                AppLocalizations.of(context).activeRide,
+                l10n.activeRide,
                 style: TextStyle(
                   fontSize: 28.sp,
                   fontWeight: FontWeight.w700,
@@ -2276,6 +2314,7 @@ class _PassengerActiveRideScreenState
     RideModel ride,
     ActiveRideState rideState,
   ) {
+    final l10n = AppLocalizations.of(context);
     final phase = rideState.phase;
     final isInProgress = ride.status == RideStatus.inProgress;
     final isEnRouteOrLater =
@@ -2306,13 +2345,13 @@ class _PassengerActiveRideScreenState
       child: Column(
         children: [
           _buildStatusStep(
-            AppLocalizations.of(context).rideConfirmed,
+            l10n.rideConfirmed,
             ride.status.index >= RideStatus.active.index,
             Icons.check_circle,
           ),
           _buildStatusDivider(isEnRouteOrLater || isCompleted),
           _buildStatusStep(
-            AppLocalizations.of(context).driverOnTheWay,
+            l10n.driverOnTheWay,
             isEnRouteOrLater || isCompleted,
             Icons.directions_car,
           ),
@@ -2324,7 +2363,7 @@ class _PassengerActiveRideScreenState
           ),
           _buildStatusDivider(isCompleted),
           _buildStatusStep(
-            AppLocalizations.of(context).rideCompleted,
+            l10n.rideCompleted,
             isCompleted,
             Icons.flag,
           ),
@@ -2390,6 +2429,7 @@ class _PassengerActiveRideScreenState
     UserModel? driver,
     RideModel ride,
   ) {
+    final l10n = AppLocalizations.of(context);
     if (driver == null) return const SizedBox.shrink();
 
     return Container(
@@ -2475,7 +2515,7 @@ class _PassengerActiveRideScreenState
           Row(
             children: [
               IconButton(
-                tooltip: AppLocalizations.of(context).messageDriver,
+                tooltip: l10n.messageDriver,
                 onPressed: () => _sendMessage(driver.uid),
                 icon: Container(
                   padding: EdgeInsets.all(10.w),
@@ -2491,7 +2531,7 @@ class _PassengerActiveRideScreenState
                 ),
               ),
               IconButton(
-                tooltip: AppLocalizations.of(context).callDriver,
+                tooltip: l10n.callDriver,
                 onPressed: driver.asDriver?.phoneNumber != null
                     ? () => _callDriver(driver.asDriver!.phoneNumber)
                     : null,
@@ -2522,6 +2562,7 @@ class _PassengerActiveRideScreenState
   }
 
   Widget _buildRouteDetails(BuildContext context, RideModel ride) {
+    final l10n = AppLocalizations.of(context);
     final passedWaypoints = ref
         .watch(activeRideViewModelProvider(widget.rideId))
         .passedWaypointIndices;
@@ -2544,7 +2585,7 @@ class _PassengerActiveRideScreenState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            AppLocalizations.of(context).routeDetails,
+            l10n.routeDetails,
             style: TextStyle(
               fontSize: 16.sp,
               fontWeight: FontWeight.w600,
@@ -2574,7 +2615,7 @@ class _PassengerActiveRideScreenState
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      AppLocalizations.of(context).pickup,
+                      l10n.pickup,
                       style: TextStyle(
                         fontSize: 12.sp,
                         color: AppColors.textTertiary,
@@ -2735,7 +2776,7 @@ class _PassengerActiveRideScreenState
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      AppLocalizations.of(context).destination,
+                      l10n.destination,
                       style: TextStyle(
                         fontSize: 12.sp,
                         color: AppColors.textTertiary,
@@ -2804,19 +2845,19 @@ class _PassengerActiveRideScreenState
                 value: AppLocalizations.of(
                   context,
                 ).value5((ride.pricePerSeatInCents / 100).toStringAsFixed(2)),
-                label: AppLocalizations.of(context).perSeat2,
+                label: l10n.perSeat2,
               ),
               InfoItem(
                 icon: Icons.event_seat,
                 value: AppLocalizations.of(
                   context,
                 ).valueValue(ride.remainingSeats, ride.availableSeats),
-                label: AppLocalizations.of(context).seatsLeft,
+                label: l10n.seatsLeft,
               ),
               InfoItem(
                 icon: Icons.access_time,
                 value: _formatTime(ride.departureTime),
-                label: AppLocalizations.of(context).departure,
+                label: l10n.departure,
               ),
             ],
           ),
@@ -2826,6 +2867,7 @@ class _PassengerActiveRideScreenState
   }
 
   Widget _buildPassengersList(BuildContext context, RideModel ride) {
+    final l10n = AppLocalizations.of(context);
     final passengers = ride.acceptedBookings;
 
     if (passengers.isEmpty) {
@@ -2844,7 +2886,7 @@ class _PassengerActiveRideScreenState
             ),
             SizedBox(height: 12.h),
             Text(
-              AppLocalizations.of(context).noPassengersYet,
+              l10n.noPassengersYet,
               style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
             ),
           ],
@@ -2863,7 +2905,7 @@ class _PassengerActiveRideScreenState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            AppLocalizations.of(context).passengersValue(passengers.length),
+            l10n.passengersValue(passengers.length),
             style: TextStyle(
               fontSize: 16.sp,
               fontWeight: FontWeight.w600,
@@ -3050,6 +3092,7 @@ class _PassengerActiveRideScreenState
   }
 
   Widget _buildActionButtons(BuildContext context, RideModel ride) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: EdgeInsets.all(20.w),
       child: Column(
@@ -3057,14 +3100,14 @@ class _PassengerActiveRideScreenState
           if (ride.status == RideStatus.draft ||
               ride.status == RideStatus.active)
             PremiumButton(
-              text: AppLocalizations.of(context).cancelRide2,
+              text: l10n.cancelRide2,
               icon: Icons.cancel_outlined,
               onPressed: () => _showCancelDialog(context, ride),
               style: PremiumButtonStyle.outline,
             ),
           if (ride.status == RideStatus.completed)
             PremiumButton(
-              text: AppLocalizations.of(context).rateAndReview,
+              text: l10n.rateAndReview,
               icon: Icons.star_outline,
               onPressed: () => _showRatingDialog(context, ride),
             ),
@@ -3074,6 +3117,7 @@ class _PassengerActiveRideScreenState
   }
 
   Future<void> _sendMessage(String recipientId) async {
+    final l10n = AppLocalizations.of(context);
     final currentUser = ref.read(currentUserProvider).value;
     if (currentUser == null) return;
 
@@ -3116,17 +3160,18 @@ class _PassengerActiveRideScreenState
       if (!mounted) return;
       AdaptiveSnackBar.show(
         context,
-        message: AppLocalizations.of(context).failedToOpenChatTryAgain,
+        message: l10n.failedToOpenChatTryAgain,
         type: AdaptiveSnackBarType.error,
       );
     }
   }
 
   Future<void> _callDriver(String? phoneNumber) async {
+    final l10n = AppLocalizations.of(context);
     if (phoneNumber == null) {
       AdaptiveSnackBar.show(
         context,
-        message: AppLocalizations.of(context).phoneNumberNotAvailable,
+        message: l10n.phoneNumberNotAvailable,
         type: AdaptiveSnackBarType.error,
       );
       return;
@@ -3140,7 +3185,7 @@ class _PassengerActiveRideScreenState
         if (mounted) {
           AdaptiveSnackBar.show(
             context,
-            message: AppLocalizations.of(context).cannotMakePhoneCalls,
+            message: l10n.cannotMakePhoneCalls,
           );
         }
       }
@@ -3148,7 +3193,7 @@ class _PassengerActiveRideScreenState
       if (mounted) {
         AdaptiveSnackBar.show(
           context,
-          message: AppLocalizations.of(context).failedToLaunchDialer,
+          message: l10n.failedToLaunchDialer,
           type: AdaptiveSnackBarType.error,
         );
       }
@@ -3156,16 +3201,17 @@ class _PassengerActiveRideScreenState
   }
 
   Future<void> _showCancelDialog(BuildContext context, RideModel ride) async {
+    final l10n = AppLocalizations.of(context);
     await showDialog<void>(
       context: context,
-      barrierLabel: AppLocalizations.of(context).cancelRide,
+      barrierLabel: l10n.cancelRide,
       builder: (ctx) => AlertDialog.adaptive(
-        title: Text(AppLocalizations.of(context).cancelRide2),
-        content: Text(AppLocalizations.of(context).areYouSureYouWant9),
+        title: Text(l10n.cancelRide2),
+        content: Text(l10n.areYouSureYouWant9),
         actions: [
           TextButton(
             onPressed: () => ctx.pop(),
-            child: Text(AppLocalizations.of(context).keepRide),
+            child: Text(l10n.keepRide),
           ),
           TextButton(
             onPressed: () async {
@@ -3173,7 +3219,7 @@ class _PassengerActiveRideScreenState
               await _cancelRide(ride);
             },
             style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            child: Text(AppLocalizations.of(context).cancelRide2),
+            child: Text(l10n.cancelRide2),
           ),
         ],
       ),
@@ -3181,6 +3227,7 @@ class _PassengerActiveRideScreenState
   }
 
   Future<void> _cancelRide(RideModel ride) async {
+    final l10n = AppLocalizations.of(context);
     try {
       final currentUser = ref.read(currentUserProvider).value;
       if (currentUser == null) return;
@@ -3197,7 +3244,7 @@ class _PassengerActiveRideScreenState
       if (myBooking == null) {
         AdaptiveSnackBar.show(
           context,
-          message: AppLocalizations.of(context).bookingNotFoundTryAgain,
+          message: l10n.bookingNotFoundTryAgain,
           type: AdaptiveSnackBarType.error,
         );
         return;
@@ -3214,7 +3261,7 @@ class _PassengerActiveRideScreenState
       if (mounted) {
         AdaptiveSnackBar.show(
           context,
-          message: AppLocalizations.of(context).rideCancelledSuccessfully,
+          message: l10n.rideCancelledSuccessfully,
           type: AdaptiveSnackBarType.success,
         );
         context.pop();
@@ -3223,7 +3270,7 @@ class _PassengerActiveRideScreenState
       if (mounted) {
         AdaptiveSnackBar.show(
           context,
-          message: AppLocalizations.of(context).failedToCancelRideValue(e),
+          message: l10n.failedToCancelRideValue(e),
           type: AdaptiveSnackBarType.error,
         );
       }

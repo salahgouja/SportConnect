@@ -30,7 +30,7 @@ class DriverMyRidesScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final activeRide = ref.watch(activeDriverRideProvider).value;
+    final activeRide = ref.watch(activeDriverRideProvider.select((a) => a.value));
     final pendingRequests = ref.watch(pendingRideRequestsProvider);
     final upcomingRides = ref.watch(upcomingDriverRidesProvider);
 
@@ -277,7 +277,7 @@ class _PulsingDot extends StatelessWidget {
 // PENDING REQUESTS SECTION
 // ─────────────────────────────────────────────────────────────────
 
-class _PendingRequestsSection extends ConsumerWidget {
+class _PendingRequestsSection extends StatelessWidget {
   const _PendingRequestsSection({
     required this.requestsAsync,
   });
@@ -285,7 +285,7 @@ class _PendingRequestsSection extends ConsumerWidget {
   final AsyncValue<List<RideBooking>> requestsAsync;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return Padding(
       padding: EdgeInsets.fromLTRB(16.w, 20.h, 16.w, 0),
@@ -335,11 +335,10 @@ class _PendingRequestsSection extends ConsumerWidget {
                 );
               }
               return Column(
-                children: requests.map((request) {
-                  return _PendingRequestCard(
-                    request: request,
-                  );
-                }).toList(),
+                children: [
+                  for (final request in requests)
+                    _PendingRequestCard(request: request),
+                ],
               );
             },
           ),
@@ -363,8 +362,8 @@ class _PendingRequestCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final profile = ref.watch(userProfileProvider(request.passengerId)).value;
-    final ride = ref.watch(requestCardRideProvider(request.rideId)).value;
+    final profile = ref.watch(userProfileProvider(request.passengerId).select((a) => a.value));
+    final ride = ref.watch(requestCardRideProvider(request.rideId).select((a) => a.value));
 
     final passengerName = profile?.username ?? '…';
     final passengerPhoto = profile?.photoUrl;

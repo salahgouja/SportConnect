@@ -217,7 +217,7 @@ final class UserReviewsProvider
   }
 }
 
-String _$userReviewsHash() => r'60fec7c1ee2a44f2ea547a9903aa815138fcc207';
+String _$userReviewsHash() => r'66cff536143702ac5eca7dbd1fbc6189b6b4cb80';
 
 /// Provider to get reviews for a specific user
 

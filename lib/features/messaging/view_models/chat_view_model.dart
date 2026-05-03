@@ -60,6 +60,7 @@ class ChatListState {
 
 /// Plain-class wrapper for one-shot chat operations (upload, mute, block, etc.)
 /// that don't require reactive state of their own.
+// keepAlive: action-only VM - accessed from notification/background contexts.
 @Riverpod(keepAlive: true)
 class ChatActionsViewModel extends _$ChatActionsViewModel {
   @override
@@ -456,7 +457,7 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
     state = state.copyWith(isLoadingMore: true, error: null);
     try {
       if (!ref.mounted) return;
-      final olderMessages = await ref
+      final (:messages, :hasMore) = await ref
           .read(chatRepositoryProvider)
           .loadMoreMessagesForUser(
             chatId: chatId,
@@ -465,9 +466,9 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
           );
       if (!ref.mounted) return;
       state = state.copyWith(
-        messages: [...state.messages, ...olderMessages],
+        messages: [...state.messages, ...messages],
         isLoadingMore: false,
-        hasMoreMessages: olderMessages.length >= 20,
+        hasMoreMessages: hasMore,
       );
     } catch (e, st) {
       if (!ref.mounted) return;

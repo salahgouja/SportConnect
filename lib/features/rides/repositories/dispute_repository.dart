@@ -28,7 +28,7 @@ class DisputeRepository {
   static const _maxFilesPerUpload = 5;
 
   /// Submits a new dispute and returns the document ID.
-  @override
+
   Future<String> submitDispute({
     required String rideId,
     required String userId,
@@ -75,7 +75,7 @@ class DisputeRepository {
   }
 
   /// Uploads attachment files and updates the dispute document.
-  @override
+
   Future<List<String>> uploadAttachments({
     required String disputeId,
     required List<File> files,

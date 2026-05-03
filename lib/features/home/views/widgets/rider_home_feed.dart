@@ -34,9 +34,7 @@ class RiderHomeFeed extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final homeState = ref.watch(homeViewModelProvider);
-    final user = homeState.user;
-    final vmState = ref.watch(riderHomeViewModelProvider);
+    final user = ref.watch(homeViewModelProvider.select((s) => s.user));
 
     return CustomScrollView(
       slivers: [
@@ -55,7 +53,7 @@ class RiderHomeFeed extends ConsumerWidget {
           children: [
             const SliverToBoxAdapter(child: _NextRideSection()),
             const SliverToBoxAdapter(child: _EventsNearYouSection()),
-            SliverToBoxAdapter(child: _NearbyRidesSection(vmState: vmState)),
+            const SliverToBoxAdapter(child: _NearbyRidesSection()),
           ],
         ),
 
@@ -269,9 +267,7 @@ class _NextRideSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final userId = ref.watch(
-      currentUserProvider.select((value) => value.value?.uid),
-    );
+    final userId = ref.watch(currentAuthUidProvider).value;
     if (userId == null) return const SizedBox.shrink();
 
     final bookingsAsync = ref.watch(bookingsByPassengerProvider(userId));
@@ -764,18 +760,19 @@ class _EventCard extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────
 
 class _NearbyRidesSection extends ConsumerWidget {
-  const _NearbyRidesSection({required this.vmState});
-
-  final RiderHomeState vmState;
+  const _NearbyRidesSection();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final anchor =
-        vmState.nearbyQueryAnchor ??
-        vmState.currentLocation ??
-        const LatLng(0, 0);
-    final searchRadius = vmState.searchRadius;
+    final (anchor, searchRadius) = ref.watch(
+      riderHomeViewModelProvider.select(
+        (s) => (
+          s.nearbyQueryAnchor ?? s.currentLocation ?? const LatLng(0, 0),
+          s.searchRadius,
+        ),
+      ),
+    );
     final nearbyRides = ref.watch(
       nearbyRidesStreamProvider(anchor, searchRadius),
     );

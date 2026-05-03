@@ -1109,7 +1109,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
         builder: (context, ref, child) {
           final searchState = ref.watch(rideSearchViewModelProvider);
           return Container(
-            height: MediaQuery.of(context).size.height * 0.75,
+            height: MediaQuery.sizeOf(context).height * 0.75,
             decoration: BoxDecoration(
               color: AppColors.cardBg,
               borderRadius: BorderRadius.only(
@@ -2120,7 +2120,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
                 ],
               ),
             ),
-            SizedBox(height: MediaQuery.of(context).padding.bottom),
+            SizedBox(height: MediaQuery.paddingOf(context).bottom),
           ],
         ),
       ),

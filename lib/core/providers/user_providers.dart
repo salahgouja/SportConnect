@@ -23,14 +23,21 @@ Stream<User?> authState(Ref ref) {
 @Riverpod(keepAlive: true)
 Stream<UserModel?> currentUser(Ref ref) async* {
   final repository = ref.watch(authRepositoryProvider);
-  final authUser = await ref.watch(authStateProvider.future);
+  final uid = await ref.watch(currentAuthUidProvider.future);
 
-  if (authUser == null) {
+  if (uid == null) {
     yield null;
     return;
   }
 
-  yield* repository.getUserDataStream(authUser.uid);
+  yield* repository.getUserDataStream(uid);
+}
+
+@Riverpod(keepAlive: true)
+Future<String?> currentAuthUid(Ref ref) {
+  return ref.watch(
+    authStateProvider.selectAsync((user) => user?.uid),
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -50,8 +57,8 @@ class PremiumMetadata {
 
 @riverpod
 Stream<PremiumMetadata> premiumMetadata(Ref ref) async* {
-  final authUser = await ref.watch(authStateProvider.future);
-  if (authUser == null) {
+  final uid = await ref.watch(currentAuthUidProvider.future);
+  if (uid == null) {
     yield const PremiumMetadata(isPremium: false);
     return;
   }
@@ -60,7 +67,7 @@ Stream<PremiumMetadata> premiumMetadata(Ref ref) async* {
       .read(firebaseServiceProvider)
       .firestore
       .collection(AppConstants.usersCollection)
-      .doc(authUser.uid)
+      .doc(uid)
       .snapshots()
       .map((doc) {
         final data = doc.data();
@@ -82,9 +89,9 @@ Stream<PremiumMetadata> premiumMetadata(Ref ref) async* {
 /// can resume onboarding on the correct screen before role finalization.
 @riverpod
 Stream<UserRole?> selectedRoleIntent(Ref ref) async* {
-  final authUser = await ref.watch(authStateProvider.future);
+  final uid = await ref.watch(currentAuthUidProvider.future);
 
-  if (authUser == null) {
+  if (uid == null) {
     yield null;
     return;
   }
@@ -93,7 +100,7 @@ Stream<UserRole?> selectedRoleIntent(Ref ref) async* {
       .read(firebaseServiceProvider)
       .firestore
       .collection(AppConstants.usersCollection)
-      .doc(authUser.uid)
+      .doc(uid)
       .snapshots()
       .map((doc) {
         final raw = doc.data()?['selectedRoleIntent'];

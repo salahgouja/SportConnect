@@ -185,7 +185,7 @@ class _SportConnectAppState extends ConsumerState<SportConnectApp> {
   @override
   Widget build(BuildContext context) {
     final router = ref.watch(appRouterProvider);
-    final localeAsync = ref.watch(settingsViewModelProvider).locale;
+    final locale = ref.watch(settingsViewModelProvider.select((s) => s.locale));
 
     return ScreenUtilInit(
       designSize: const Size(375, 812),
@@ -194,7 +194,7 @@ class _SportConnectAppState extends ConsumerState<SportConnectApp> {
       builder: (context, child) {
         return AdaptiveApp.router(
           title: 'SportConnect',
-          locale: localeAsync,
+          locale: locale,
           localizationsDelegates: const [
             AppLocalizations.delegate,
             GlobalMaterialLocalizations.delegate,

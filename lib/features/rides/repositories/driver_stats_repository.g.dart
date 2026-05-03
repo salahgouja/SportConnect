@@ -94,7 +94,7 @@ final class DriverStatsProvider
   }
 }
 
-String _$driverStatsHash() => r'8b75c4bff18085448eb37bb0e7a31ba7f50dc858';
+String _$driverStatsHash() => r'2eb778ee2a49c5066daded2513d6676772d82740';
 
 @ProviderFor(pendingRideRequests)
 final pendingRideRequestsProvider = PendingRideRequestsProvider._();
@@ -136,7 +136,7 @@ final class PendingRideRequestsProvider
 }
 
 String _$pendingRideRequestsHash() =>
-    r'766497f0447b8f2bd60b56876b0ff58f56b436ed';
+    r'cbab37c01f2d85e418bc4b1e9b8a49bf9e5279fc';
 
 @ProviderFor(acceptedRideRequests)
 final acceptedRideRequestsProvider = AcceptedRideRequestsProvider._();
@@ -178,7 +178,7 @@ final class AcceptedRideRequestsProvider
 }
 
 String _$acceptedRideRequestsHash() =>
-    r'c059295ec24ad978801821e07c50fa5f3307f078';
+    r'b068445d6b2383ec0573231bab5b170938fd73f4';
 
 @ProviderFor(rejectedRideRequests)
 final rejectedRideRequestsProvider = RejectedRideRequestsProvider._();
@@ -220,7 +220,7 @@ final class RejectedRideRequestsProvider
 }
 
 String _$rejectedRideRequestsHash() =>
-    r'1ca2b7bf32922f81e6e14238fff714fbac7e8988';
+    r'837e9f0452f3ec89e81815a8c21871dc80b6ea18';
 
 @ProviderFor(upcomingDriverRides)
 final upcomingDriverRidesProvider = UpcomingDriverRidesProvider._();
@@ -260,7 +260,7 @@ final class UpcomingDriverRidesProvider
 }
 
 String _$upcomingDriverRidesHash() =>
-    r'38abf09b754596e28d058e3174cdbcd67ce5d093';
+    r'89ed11a6849ea34d8fb80938a21272355057ac2d';
 
 @ProviderFor(earningsTransactions)
 final earningsTransactionsProvider = EarningsTransactionsProvider._();
@@ -302,4 +302,4 @@ final class EarningsTransactionsProvider
 }
 
 String _$earningsTransactionsHash() =>
-    r'2994d8065c1a5de47125a8391fc7019f081222b1';
+    r'ecb3ee1bced7940656b3886bf17ea951ebcc304a';

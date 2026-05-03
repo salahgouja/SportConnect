@@ -37,6 +37,7 @@ import 'package:sport_connect/features/rides/views/passenger/rider_view_ride_scr
 import 'package:sport_connect/features/rides/views/widgets/ride_shared_widgets.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:sport_connect/core/widgets/app_map_tile_layer.dart';
 
 /// Full ride detail screen with map, route visualization, and booking flow.
 ///
@@ -189,8 +190,9 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
   Widget _buildContent(RideModel ride, List<RideBooking> bookings) {
     final uiState = _uiState;
     // Check if current user is the driver
-    final currentUser = ref.watch(currentUserProvider).value;
-    final isDriver = currentUser?.uid == ride.driverId;
+    final currentUser = ref.watch(currentUserProvider.select((a) => a.value));
+    final currentUserId = ref.watch(currentAuthUidProvider).value;
+    final isDriver = currentUserId == ride.driverId;
 
     return Stack(
       children: [
@@ -304,7 +306,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                         distanceMeters: const Distance().as(
                           LengthUnit.Meter,
                           LatLng(
-                            currentUser!.asRider!.latitude!,
+                            currentUser.asRider!.latitude!,
                             currentUser.asRider!.longitude!,
                           ),
                           LatLng(ride.origin.latitude, ride.origin.longitude),
@@ -495,10 +497,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                 ),
               ),
               children: [
-                TileLayer(
-                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'com.sportconnect.app',
-                ),
+                const AppMapTileLayer(),
                 if (uiState.routeInfo != null)
                   PolylineLayer(
                     polylines: [

@@ -43,7 +43,14 @@ class AppModalSheet {
         top: false,
         child: forceMaxHeight
             ? SizedBox(
-                height: MediaQuery.sizeOf(context).height * maxHeightFactor,
+                height: _resolvedContentHeight(
+                  context,
+                  title: title,
+                  showCloseButton: showCloseButton,
+                  leadingNavBarWidget: leadingNavBarWidget,
+                  trailingNavBarWidget: trailingNavBarWidget,
+                  maxHeightFactor: maxHeightFactor,
+                ),
                 child: child,
               )
             : ConstrainedBox(
@@ -55,6 +62,32 @@ class AppModalSheet {
               ),
       ),
     );
+  }
+
+  static double _resolvedContentHeight(
+    BuildContext context, {
+    required String? title,
+    required bool showCloseButton,
+    required Widget? leadingNavBarWidget,
+    required Widget? trailingNavBarWidget,
+    required double maxHeightFactor,
+  }) {
+    final screenHeight = MediaQuery.sizeOf(context).height;
+    final maxHeight = screenHeight * maxHeightFactor;
+    final hasTopBar =
+        title != null ||
+        showCloseButton ||
+        leadingNavBarWidget != null ||
+        trailingNavBarWidget != null;
+    final reservedHeight =
+        (hasTopBar ? 64.h : 0) +
+        MediaQuery.paddingOf(context).bottom +
+        MediaQuery.viewInsetsOf(context).bottom;
+    final resolvedHeight = maxHeight - reservedHeight;
+    final minHeight = screenHeight < 600 ? 240.0 : 320.0;
+
+    if (resolvedHeight >= minHeight) return resolvedHeight;
+    return maxHeight < minHeight ? maxHeight : minHeight;
   }
 
   static SliverWoltModalSheetPage sliverPage({

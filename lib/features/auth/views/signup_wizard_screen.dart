@@ -465,7 +465,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
   }
 
   Widget _buildStepContent(_StepTheme theme) {
-    final currentStep = ref.watch(signupWizardUiViewModelProvider).currentStep;
+    final currentStep = ref.watch(signupWizardUiViewModelProvider.select((s) => s.currentStep));
     return IndexedStack(
       index: currentStep,
       children: [
@@ -864,7 +864,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
     AsyncValue<void> registerState,
     SocialAuthState socialState,
   ) {
-    final currentStep = ref.watch(signupWizardUiViewModelProvider).currentStep;
+    final currentStep = ref.watch(signupWizardUiViewModelProvider.select((s) => s.currentStep));
     final isLast = currentStep == 2; // UX FIX: 3 steps total
     final isLoading = registerState.isLoading;
     final isDisabled = registerState.isLoading || socialState.isLoading;
@@ -1525,6 +1525,9 @@ class _GoogleButton extends StatelessWidget {
 }
 
 class _PasswordStrengthBar extends StatelessWidget {
+  static final _upperCaseRegExp = RegExp('[A-Z]');
+  static final _digitRegExp = RegExp('[0-9]');
+  static final _specialCharRegExp = RegExp(r'[!@#$%^&*(),.?":{}|<>]');
   const _PasswordStrengthBar({required this.password, required this.accent});
   final String password;
   final Color accent;
@@ -1534,9 +1537,9 @@ class _PasswordStrengthBar extends StatelessWidget {
     final pw = password;
     var s = 0;
     if (pw.length >= 8) s++;
-    if (pw.contains(RegExp('[A-Z]'))) s++;
-    if (pw.contains(RegExp('[0-9]'))) s++;
-    if (pw.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) s++;
+    if (pw.contains(_upperCaseRegExp)) s++;
+    if (pw.contains(_digitRegExp)) s++;
+    if (pw.contains(_specialCharRegExp)) s++;
     final colors = [Colors.red, Colors.orange, Colors.lightBlue, Colors.green];
     final labels = ['Weak', 'Fair', 'Good', 'Strong'];
     return Column(

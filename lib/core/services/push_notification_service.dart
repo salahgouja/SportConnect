@@ -72,6 +72,8 @@ class PushNotificationService {
 
   bool _isInitialized = false;
   StreamSubscription<String>? _tokenRefreshSub;
+  StreamSubscription<RemoteMessage>? _foregroundMessageSub;
+  StreamSubscription<RemoteMessage>? _notificationOpenedSub;
 
   Future<bool> hasPermission() async {
     final settings = await _firebaseService.messaging.getNotificationSettings();
@@ -103,10 +105,10 @@ class PushNotificationService {
         );
 
     // 4. Listen for foreground messages
-    FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
+    _foregroundMessageSub = FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
 
     // 5. Listen for notification taps (app was in background)
-    FirebaseMessaging.onMessageOpenedApp.listen(_handleNotificationTap);
+    _notificationOpenedSub = FirebaseMessaging.onMessageOpenedApp.listen(_handleNotificationTap);
 
     // 6. Check for initial message (app opened from terminated state)
     final initialMessage = await _firebaseService.messaging.getInitialMessage();
@@ -146,6 +148,10 @@ class PushNotificationService {
     try {
       await _tokenRefreshSub?.cancel();
       _tokenRefreshSub = null;
+      await _foregroundMessageSub?.cancel();
+      _foregroundMessageSub = null;
+      await _notificationOpenedSub?.cancel();
+      _notificationOpenedSub = null;
       await _firebaseService.messaging.deleteToken();
       await _firebaseService.firestore
           .collection(AppConstants.usersCollection)

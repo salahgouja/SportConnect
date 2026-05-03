@@ -7,7 +7,6 @@ import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/services/stripe_service.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
-import 'package:sport_connect/features/payments/models/payment_model.dart';
 import 'package:sport_connect/features/payments/payments.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 
@@ -80,7 +79,7 @@ class PaymentHistoryFilterState {
   }
 }
 
-@Riverpod(keepAlive: true)
+@riverpod
 class PaymentHistoryFilterViewModel extends _$PaymentHistoryFilterViewModel {
   @override
   PaymentHistoryFilterState build() => const PaymentHistoryFilterState();
@@ -153,7 +152,7 @@ class DriverEarningsPeriodState {
   }
 }
 
-@Riverpod(keepAlive: true)
+@riverpod
 class DriverEarningsPeriodViewModel extends _$DriverEarningsPeriodViewModel {
   @override
   DriverEarningsPeriodState build() => const DriverEarningsPeriodState();
@@ -545,7 +544,6 @@ class DriverStripeOnboardingFlowViewModel
   void clearMessages() {
     state = state.copyWith(clearError: true, clearSuccess: true);
   }
-
 }
 
 /// Rider Payment History Provider
@@ -725,18 +723,18 @@ Future<DriverStripeStatus> driverStripeStatus(Ref ref) async {
   // refresh). Do NOT watch currentUserProvider: it is a live Firestore stream
   // that fires on every user-document field update, which would call
   // getAccountStatus on every location update, ride status change, etc.
-  final authUser = ref.watch(authStateProvider).value;
+  final authuserUID = await ref.watch(currentAuthUidProvider.future);
 
   // Read services and user model once — no reactive dependency needed.
   final paymentRepo = ref.read(paymentRepositoryProvider);
   final stripeService = ref.read(stripeServiceProvider);
   final userModel = ref.read(currentUserProvider).value;
 
-  if (authUser == null) return const DriverStripeStatus();
+  if (authuserUID == null) return const DriverStripeStatus();
 
   try {
     final connectedAccount = await paymentRepo.getConnectedAccount(
-      authUser.uid,
+      authuserUID,
     );
     final driver = userModel is DriverModel ? userModel : null;
 
@@ -821,14 +819,23 @@ Future<DriverStripeStatus> driverStripeStatus(Ref ref) async {
 }
 
 @Riverpod(keepAlive: true)
-Stream<DriverConnectedAccount?> currentDriverConnectedAccount(Ref ref) {
-  final user = ref.watch(currentUserProvider).value;
+Stream<DriverConnectedAccount?> currentDriverConnectedAccount(Ref ref) async* {
+  final userUIDFuture = ref.watch(
+    currentUserProvider.selectAsync((user) {
+      if (user == null) return null;
+      if (user.role != UserRole.driver) return null;
+      return user.uid;
+    }),
+  );
+
   final paymentRepo = ref.watch(paymentRepositoryProvider);
 
-  final driver = user is DriverModel ? user : null;
-  if (driver == null) {
-    return Stream<DriverConnectedAccount?>.value(null);
+  final userUID = await userUIDFuture;
+
+  if (userUID == null) {
+    yield null;
+    return;
   }
 
-  return paymentRepo.streamConnectedAccount(driver.uid);
+  yield* paymentRepo.streamConnectedAccount(userUID);
 }

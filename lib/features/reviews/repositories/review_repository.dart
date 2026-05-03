@@ -52,7 +52,8 @@ ReviewRepository reviewRepository(Ref ref) {
 @riverpod
 Future<List<ReviewModel>> userReviews(Ref ref, String userId) async {
   final repo = ref.watch(reviewRepositoryProvider);
-  return repo.getReviewsForUser(userId);
+  final result = await repo.getReviewsForUser(userId);
+  return result.reviews;
 }
 
 /// Provider to get reviews left by a specific user
@@ -110,7 +111,7 @@ class ReviewRepository {
       );
 
   /// Create a new review
-  @override
+
   Future<ReviewModel> createReview(
     String? userId,
     CreateReviewRequest request,
@@ -188,35 +189,44 @@ class ReviewRepository {
     return review;
   }
 
-  /// Get all reviews for a user (reviews they received)
-  @override
-  Future<List<ReviewModel>> getReviewsForUser(
+  /// Get all reviews for a user (reviews they received).
+  ///
+  /// Returns a record with the page of reviews and a cursor for the next page.
+  /// Pass [startAfterDoc] (the [nextCursor] from the previous call) to fetch
+  /// subsequent pages. Uses [limit]+1 fetch to detect whether a next page exists.
+
+  Future<({List<ReviewModel> reviews, DocumentSnapshot? nextCursor})>
+  getReviewsForUser(
     String userId, {
     ReviewType? type,
     int limit = 50,
-    DateTime? startAfter,
+    DocumentSnapshot? startAfterDoc,
   }) async {
     var query = _reviewsCollection
         .where('revieweeId', isEqualTo: userId)
         .where('isVisible', isEqualTo: true)
         .orderBy('createdAt', descending: true);
 
-    if (startAfter != null) {
-      query = query.startAfter([Timestamp.fromDate(startAfter)]);
-    }
-
-    query = query.limit(limit);
-
     if (type != null) {
       query = query.where('type', isEqualTo: type.name);
     }
 
+    if (startAfterDoc != null) {
+      query = query.startAfterDocument(startAfterDoc);
+    }
+
+    query = query.limit(limit + 1);
+
     final snapshot = await query.get();
-    return snapshot.docs.map((doc) => doc.data()).toList();
+    final isLastPage = snapshot.docs.length <= limit;
+    return (
+      reviews: snapshot.docs.take(limit).map((d) => d.data()).toList(),
+      nextCursor: isLastPage ? null : snapshot.docs[limit],
+    );
   }
 
   /// Get all reviews left by a user
-  @override
+
   Future<List<ReviewModel>> getReviewsByUser(
     String userId, {
     int limit = 50,
@@ -231,18 +241,19 @@ class ReviewRepository {
   }
 
   /// Get reviews for a specific ride
-  @override
+
   Future<List<ReviewModel>> getReviewsForRide(String rideId) async {
     final snapshot = await _reviewsCollection
         .where('rideId', isEqualTo: rideId)
         .orderBy('createdAt', descending: true)
+        .limit(50)
         .get();
 
     return snapshot.docs.map((doc) => doc.data()).toList();
   }
 
   /// Watch reviews for a user (real-time updates)
-  @override
+
   Stream<List<ReviewModel>> watchReviewsForUser(String userId) {
     return _reviewsCollection
         .where('revieweeId', isEqualTo: userId)
@@ -254,14 +265,14 @@ class ReviewRepository {
   }
 
   /// Get rating stats for a user
-  @override
+
   Future<RatingStats> getRatingStatsForUser(String userId) async {
-    final reviews = await getReviewsForUser(userId);
-    return RatingStats.fromReviews(reviews);
+    final result = await getReviewsForUser(userId);
+    return RatingStats.fromReviews(result.reviews);
   }
 
   /// Add response to a review (by the reviewee)
-  @override
+
   Future<void> respondToReview(
     String userId,
     String reviewId,
@@ -294,7 +305,7 @@ class ReviewRepository {
   }
 
   /// Delete a review (by reviewer or admin)
-  @override
+
   Future<void> deleteReview(String userId, String reviewId) async {
     final currentUser = await _usersCollection
         .doc(userId)
@@ -326,8 +337,8 @@ class ReviewRepository {
 
   /// Update user's aggregated rating stats
   Future<void> _updateUserRatingStats(String userId) async {
-    final reviews = await getReviewsForUser(userId);
-    final stats = RatingStats.fromReviews(reviews);
+    final result = await getReviewsForUser(userId);
+    final stats = RatingStats.fromReviews(result.reviews);
 
     // Update the user document with new stats
     await _usersCollection.doc(userId).update({
@@ -344,7 +355,7 @@ class ReviewRepository {
   }
 
   /// Check if user can review another user for a specific ride
-  @override
+
   Future<bool> canReview(
     String userId, {
     required String rideId,
@@ -367,7 +378,7 @@ class ReviewRepository {
   }
 
   /// Get pending reviews (rides that user participated in but hasn't reviewed)
-  @override
+
   Future<List<Map<String, dynamic>>> getPendingReviews(String userId) async {
     final currentUser = await _usersCollection
         .doc(userId)

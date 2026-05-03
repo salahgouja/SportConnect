@@ -66,7 +66,6 @@ class ChatRepository {
 
   // ── Chat CRUD ─────────────────────────────────────────────────────────────
 
-  @override
   Future<String> createChat(ChatModel chat) async {
     final docRef = _chatsCollection.doc();
     final now = DateTime.now();
@@ -81,7 +80,6 @@ class ChatRepository {
     return docRef.id;
   }
 
-  @override
   Future<ChatModel> getOrCreatePrivateChat({
     required String userId1,
     required String userId2,
@@ -93,6 +91,7 @@ class ChatRepository {
     final query = await _chatsCollection
         .where('type', isEqualTo: ChatType.private.name)
         .where('participantIds', arrayContains: userId1)
+        .limit(100)
         .get();
 
     for (final doc in query.docs) {
@@ -123,7 +122,6 @@ class ChatRepository {
     return newChat.copyWith(id: chatId);
   }
 
-  @override
   Future<ChatModel> createRideChat({
     required String rideId,
     required String driverId,
@@ -151,7 +149,6 @@ class ChatRepository {
     return chat.copyWith(id: chatId);
   }
 
-  @override
   Future<ChatModel> createEventChat({
     required String eventId,
     required String creatorId,
@@ -179,13 +176,11 @@ class ChatRepository {
     return chat.copyWith(id: chatId);
   }
 
-  @override
   Future<ChatModel?> getChatById(String chatId) async {
     final doc = await _chatsCollection.doc(chatId).get();
     return doc.exists ? doc.data() : null;
   }
 
-  @override
   Future<ChatModel?> getChatByRideId(String rideId) async {
     final query = await _chatsCollection
         .where('type', isEqualTo: ChatType.rideGroup.name)
@@ -195,10 +190,10 @@ class ChatRepository {
     return query.docs.isEmpty ? null : query.docs.first.data();
   }
 
-  @override
   Stream<List<ChatModel>> streamUserChats(String userId) => _chatsCollection
       .where('participantIds', arrayContains: userId)
       .orderBy('lastMessageAt', descending: true)
+      .limit(50)
       .snapshots()
       .map(
         (snap) => snap.docs
@@ -207,7 +202,6 @@ class ChatRepository {
             .toList(),
       );
 
-  @override
   Future<ChatModel?> getOrCreateDirectChat(
     String userId1,
     String userId2,
@@ -215,6 +209,7 @@ class ChatRepository {
     final query = await _chatsCollection
         .where('type', isEqualTo: ChatType.private.name)
         .where('participantIds', arrayContains: userId1)
+        .limit(100)
         .get();
 
     for (final doc in query.docs) {
@@ -225,7 +220,7 @@ class ChatRepository {
   }
 
   // ── Participant management ────────────────────────────────────────────────
-  @override
+
   Future<void> addParticipant({
     required String chatId,
     required ChatParticipant participant,
@@ -246,7 +241,7 @@ class ChatRepository {
   /// the [Transaction.get] return-type ambiguity in some cloud_firestore
   /// versions where [DocumentSnapshot.data] is typed as [Object?] rather than
   /// [Map<String, dynamic>?], causing a compile error on the `[]` operator.
-  @override
+
   Future<void> ensureParticipant({
     required String chatId,
     required String userId,
@@ -272,7 +267,6 @@ class ChatRepository {
     await _chatsCollection.doc(chatId).update(updates);
   }
 
-  @override
   Future<void> removeParticipant({
     required String chatId,
     required String userId,
@@ -292,7 +286,6 @@ class ChatRepository {
 
   // ── Chat settings ─────────────────────────────────────────────────────────
 
-  @override
   Future<void> toggleMute({
     required String chatId,
     required String userId,
@@ -304,7 +297,6 @@ class ChatRepository {
     });
   }
 
-  @override
   Future<void> togglePin({
     required String chatId,
     required String userId,
@@ -316,7 +308,6 @@ class ChatRepository {
     });
   }
 
-  @override
   Future<void> clearChat({
     required String chatId,
     required String userId,
@@ -328,7 +319,6 @@ class ChatRepository {
     });
   }
 
-  @override
   Future<void> clearChatHistoryForUser({
     required String chatId,
     required String userId,
@@ -342,7 +332,6 @@ class ChatRepository {
 
   // ── Messages ──────────────────────────────────────────────────────────────
 
-  @override
   Future<String> sendMessage(MessageModel message) async {
     // Enforce message length to prevent Firestore document size abuse.
     if (message.content.length > 2000) {
@@ -445,7 +434,6 @@ class ChatRepository {
     return parts.length == 2 ? parts : const [];
   }
 
-  @override
   Stream<List<MessageModel>> streamMessages(String chatId, {int limit = 50}) =>
       _messagesCollection(chatId)
           .where('isDeleted', isEqualTo: false)
@@ -454,7 +442,6 @@ class ChatRepository {
           .snapshots()
           .map((snap) => snap.docs.map((d) => d.data()).toList());
 
-  @override
   Stream<List<MessageModel>> streamMessagesForUser({
     required String chatId,
     required String userId,
@@ -483,26 +470,28 @@ class ChatRepository {
     });
   }
 
-  @override
-  Future<List<MessageModel>> loadMoreMessages({
+  Future<({List<MessageModel> messages, bool hasMore})> loadMoreMessages({
     required String chatId,
     required DateTime beforeTimestamp,
     int limit = 20,
   }) async {
-    final query = await _messagesCollection(chatId)
+    final snapshot = await _messagesCollection(chatId)
         .where('isDeleted', isEqualTo: false)
         .where('createdAt', isLessThan: Timestamp.fromDate(beforeTimestamp))
         .orderBy('createdAt', descending: true)
-        .limit(limit)
+        .limit(limit + 1)
         .get();
 
-    return query.docs.map((d) => d.data()).toList();
+    return (
+      messages: snapshot.docs.take(limit).map((d) => d.data()).toList(),
+      hasMore: snapshot.docs.length > limit,
+    );
   }
 
   // FIX: Was using `whereNotIn: [userId]` which checks the scalar field value
   // rather than array membership — always returned nothing or threw.
   // Replaced with a client-side filter after a bounded fetch.
-  @override
+
   Future<void> markAsRead(String chatId, String userId) async {
     final snapshot = await _messagesCollection(chatId)
         .where('isDeleted', isEqualTo: false)
@@ -528,7 +517,6 @@ class ChatRepository {
     await batch.commit();
   }
 
-  @override
   Future<void> deleteMessage({
     required String chatId,
     required String messageId,
@@ -537,7 +525,6 @@ class ChatRepository {
     'content': 'This message was deleted',
   });
 
-  @override
   Future<void> editMessage({
     required String chatId,
     required String messageId,
@@ -549,7 +536,6 @@ class ChatRepository {
     'editedAt': FieldValue.serverTimestamp(),
   });
 
-  @override
   Future<void> addReaction({
     required String chatId,
     required String messageId,
@@ -570,7 +556,6 @@ class ChatRepository {
 
   // ── Typing indicators ─────────────────────────────────────────────────────
 
-  @override
   Future<void> setTyping({
     required String chatId,
     required String userId,
@@ -600,7 +585,6 @@ class ChatRepository {
     }
   }
 
-  @override
   Stream<List<TypingIndicator>> streamTypingIndicators(String chatId) =>
       _firestore
           .collection(AppConstants.chatsCollection)
@@ -618,7 +602,6 @@ class ChatRepository {
 
   static const int _maxUploadBytes = 5 * 1024 * 1024; // 5 MB
 
-  @override
   Future<String> uploadChatImage({
     required String chatId,
     required File imageFile,
@@ -638,7 +621,6 @@ class ChatRepository {
     return ref.getDownloadURL();
   }
 
-  @override
   Future<String> uploadAudioMessage({
     required String chatId,
     required File audioFile,
@@ -653,8 +635,8 @@ class ChatRepository {
     return ref.getDownloadURL();
   }
 
-  @override
-  Future<List<MessageModel>> loadMoreMessagesForUser({
+  Future<({List<MessageModel> messages, bool hasMore})>
+  loadMoreMessagesForUser({
     required String chatId,
     required String userId,
     required DateTime beforeTimestamp,
@@ -667,7 +649,7 @@ class ChatRepository {
         .where('isDeleted', isEqualTo: false)
         .where('createdAt', isLessThan: Timestamp.fromDate(beforeTimestamp))
         .orderBy('createdAt', descending: true)
-        .limit(limit);
+        .limit(limit + 1);
 
     if (clearedAt != null) {
       query = _messagesCollection(chatId)
@@ -675,10 +657,13 @@ class ChatRepository {
           .where('createdAt', isGreaterThan: Timestamp.fromDate(clearedAt))
           .where('createdAt', isLessThan: Timestamp.fromDate(beforeTimestamp))
           .orderBy('createdAt', descending: true)
-          .limit(limit);
+          .limit(limit + 1);
     }
 
     final snapshot = await query.get();
-    return snapshot.docs.map((d) => d.data()).toList();
+    return (
+      messages: snapshot.docs.take(limit).map((d) => d.data()).toList(),
+      hasMore: snapshot.docs.length > limit,
+    );
   }
 }

@@ -51,11 +51,7 @@ class PaymentHistoryScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final userIdAsync = ref.watch(
-      currentUserProvider.select(
-        (value) => value.whenData((user) => user?.uid),
-      ),
-    );
+    final userIdAsync = ref.watch(currentAuthUidProvider);
     final selectedFilter = ref
         .watch(paymentHistoryFilterViewModelProvider)
         .selectedFilter;
@@ -744,7 +740,9 @@ class PaymentHistoryScreen extends ConsumerWidget {
               if (payment.paymentMethodLast4 != null)
                 _buildDetailRow(
                   AppLocalizations.of(context).card,
-                  AppLocalizations.of(context).value7(payment.paymentMethodLast4!),
+                  AppLocalizations.of(
+                    context,
+                  ).value7(payment.paymentMethodLast4!),
                 ),
               if (payment.stripePaymentIntentId != null)
                 _buildDetailRow(
@@ -753,12 +751,18 @@ class PaymentHistoryScreen extends ConsumerWidget {
                 ),
               if (payment.failureReason != null &&
                   payment.failureReason!.isNotEmpty)
-                _buildDetailRow('Failure reason', payment.failureReason!,
-                    valueColor: AppColors.error),
+                _buildDetailRow(
+                  'Failure reason',
+                  payment.failureReason!,
+                  valueColor: AppColors.error,
+                ),
               if (payment.refundReason != null &&
                   payment.refundReason!.isNotEmpty)
-                _buildDetailRow('Refund reason', payment.refundReason!,
-                    valueColor: AppColors.info),
+                _buildDetailRow(
+                  'Refund reason',
+                  payment.refundReason!,
+                  valueColor: AppColors.info,
+                ),
             ]),
             SizedBox(height: 28.h),
 
@@ -775,7 +779,8 @@ class PaymentHistoryScreen extends ConsumerWidget {
                     origin: payment.rideId,
                     destination: '',
                     rideDate: payment.createdAt ?? DateTime.now(),
-                    baseFare: payment.amountInCents -
+                    baseFare:
+                        payment.amountInCents -
                         payment.platformFeeInCents -
                         payment.stripeFeeInCents,
                     serviceFeeInCents: payment.platformFeeInCents,
@@ -816,8 +821,9 @@ class PaymentHistoryScreen extends ConsumerWidget {
                       context.pop(); // close detail sheet
                       AdaptiveSnackBar.show(
                         context,
-                        message: AppLocalizations.of(context)
-                            .refundRequestSubmitted,
+                        message: AppLocalizations.of(
+                          context,
+                        ).refundRequestSubmitted,
                         type: AdaptiveSnackBarType.success,
                       );
                     },
@@ -994,5 +1000,3 @@ class PaymentHistoryScreen extends ConsumerWidget {
     );
   }
 }
-
-

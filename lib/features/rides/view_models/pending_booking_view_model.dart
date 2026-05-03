@@ -153,13 +153,15 @@ class PendingBookingViewModel extends _$PendingBookingViewModel {
 
   @override
   PendingBookingState build(String rideId) {
-    final currentUserId = ref.watch(
-      currentUserProvider.select((value) => value.value?.uid),
-    );
+    final currentUserId = ref.watch(currentAuthUidProvider).value;
     final initialRideState = ref.watch(rideDetailViewModelProvider(rideId));
     final initialBookings = currentUserId == null
         ? const <RideBooking>[]
-        : (ref.watch(bookingsByPassengerProvider(currentUserId)).value ??
+        : (ref.watch(
+                bookingsByPassengerProvider(
+                  currentUserId,
+                ).select((a) => a.value),
+              ) ??
               const <RideBooking>[]);
     final initialBooking = _latestBookingForRide(initialBookings, rideId);
     final initialExpiresAt = initialBooking?.createdAt?.add(

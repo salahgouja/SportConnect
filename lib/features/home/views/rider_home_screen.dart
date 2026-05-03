@@ -27,6 +27,7 @@ import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
+import 'package:sport_connect/core/widgets/app_map_tile_layer.dart';
 
 class RiderHomeScreen extends ConsumerStatefulWidget {
   const RiderHomeScreen({super.key});
@@ -130,12 +131,16 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final vmState = ref.watch(riderHomeViewModelProvider);
+    // Select only route-switching fields — GPS data flows via ref.listen, not widget rebuild
+    ref.watch(
+      riderHomeViewModelProvider.select(
+        (s) => (s.locationState, s.showMapView),
+      ),
+    );
+    final vmState = ref.read(riderHomeViewModelProvider);
     final locationState = vmState.locationState;
 
-    final userId = ref.watch(
-      currentUserProvider.select((value) => value.value?.uid),
-    );
+    final userId = ref.watch(currentAuthUidProvider).value;
     if (userId != null) unawaited(_checkForActiveRide(userId));
 
     // Auto-follow map when location changes (only when map is visible)
@@ -695,6 +700,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
   // ─────────────────────────────────────────────────────────────
 
   Widget _buildMapHome(RiderHomeState vmState) {
+    final l10n = AppLocalizations.of(context);
     // Extract state from ViewModel
     final loc = vmState.currentLocation ?? const LatLng(0, 0);
     final queryAnchor = vmState.nearbyQueryAnchor ?? loc;
@@ -716,8 +722,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
       (rides) =>
           ref.read(riderHomeViewModelProvider.notifier).applyFilter(rides),
     );
-    final homeVmState = ref.watch(homeViewModelProvider);
-    final user = homeVmState.user;
+    final user = ref.watch(homeViewModelProvider.select((s) => s.user));
 
     return Stack(
       children: [
@@ -736,9 +741,8 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
             },
           ),
           children: [
-            TileLayer(
+            AppMapTileLayer(
               urlTemplate: _mapStyles[selectedMapStyle],
-              userAgentPackageName: 'com.sportconnect.app',
             ),
             const CurrentLocationLayer(),
 
@@ -897,7 +901,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
                     ),
                     SizedBox(width: 12.w),
                     Text(
-                      AppLocalizations.of(context).loadingRoute,
+                      l10n.loadingRoute,
                       style: TextStyle(
                         fontSize: 13.sp,
                         color: AppColors.textSecondary,
@@ -951,7 +955,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
                   ),
                   SizedBox(width: 6.w),
                   Text(
-                    AppLocalizations.of(context).navHome,
+                    l10n.navHome,
                     style: TextStyle(
                       fontSize: 13.sp,
                       fontWeight: FontWeight.w600,
@@ -1084,9 +1088,12 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
         const LatLng(0, 0);
     final searchRadius = vmState.searchRadius;
     final selectedFilter = vmState.selectedFilter;
-    final allRides =
-        ref.watch(nearbyRidesStreamProvider(queryAnchor, searchRadius)).value ??
-        [];
+    final allRides = ref.watch(
+      nearbyRidesStreamProvider(
+        queryAnchor,
+        searchRadius,
+      ).select((a) => a.value ?? const []),
+    );
 
     final filters = [
       {
@@ -1515,6 +1522,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
   }
 
   Widget _buildQuickStatsBar(AsyncValue<List<RideModel>> nearbyRides) {
+    final l10n = AppLocalizations.of(context);
     return Positioned(
       left: 16.w,
       bottom: 16.h,
@@ -1538,16 +1546,16 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
               children: [
                 _buildStatItem(
                   Icons.directions_car,
-                  AppLocalizations.of(context).value2(rides.length),
-                  AppLocalizations.of(context).rides,
+                  l10n.value2(rides.length),
+                  l10n.rides,
                 ),
                 SizedBox(width: 16.w),
                 Container(width: 1, height: 24.h, color: AppColors.border),
                 SizedBox(width: 16.w),
                 _buildStatItem(
                   Icons.event_seat,
-                  AppLocalizations.of(context).value2(seats),
-                  AppLocalizations.of(context).seats,
+                  l10n.value2(seats),
+                  l10n.seats,
                 ),
               ],
             ),
@@ -1696,8 +1704,11 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
   }
 
   Widget _buildStyleOption(String id, String label, IconData icon) {
-    final vmState = ref.watch(riderHomeViewModelProvider);
-    final isSelected = vmState.selectedMapStyle == id;
+    final isSelected =
+        ref.watch(
+          riderHomeViewModelProvider.select((s) => s.selectedMapStyle),
+        ) ==
+        id;
     return Expanded(
       child: GestureDetector(
         onTap: () {
@@ -2119,7 +2130,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
                               ),
                               SizedBox(height: 12.h),
                               Text(
-                                AppLocalizations.of(context).failedToLoadRides,
+                                l10n.failedToLoadRides,
                                 style: TextStyle(
                                   fontSize: 14.sp,
                                   color: AppColors.textSecondary,
@@ -2148,6 +2159,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
   // ─────────────────────────────────────────────────────────────
 
   Widget _buildSearchRideCard(RideModel ride, BuildContext sheetCtx) {
+    final l10n = AppLocalizations.of(context);
     final time = _formatTime(ride.departureTime);
     return GestureDetector(
       onTap: () {
@@ -2303,7 +2315,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
                       Text(
                         ride.origin.address.isNotEmpty
                             ? ride.origin.address
-                            : AppLocalizations.of(context).pickupPoint,
+                            : l10n.pickupPoint,
                         style: TextStyle(
                           fontSize: 13.sp,
                           color: AppColors.textPrimary,
@@ -2315,7 +2327,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
                       Text(
                         ride.destination.address.isNotEmpty
                             ? ride.destination.address
-                            : AppLocalizations.of(context).destination,
+                            : l10n.destination,
                         style: TextStyle(
                           fontSize: 13.sp,
                           color: AppColors.textPrimary,
@@ -2333,14 +2345,14 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
               children: [
                 _buildSearchChip(
                   Icons.event_seat,
-                  AppLocalizations.of(context).valueSeats(ride.availableSeats),
+                  l10n.valueSeats(ride.availableSeats),
                   AppColors.primary,
                 ),
                 if (ride.isEco) ...[
                   SizedBox(width: 8.w),
                   _buildSearchChip(
                     Icons.eco_rounded,
-                    AppLocalizations.of(context).eco,
+                    l10n.eco,
                     AppColors.success,
                   ),
                 ],
@@ -2348,7 +2360,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
                   SizedBox(width: 8.w),
                   _buildSearchChip(
                     Icons.star_rounded,
-                    AppLocalizations.of(context).premium,
+                    l10n.premium,
                     AppColors.starFilled,
                   ),
                 ],
@@ -2390,10 +2402,11 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
   // ─────────────────────────────────────────────────────────────
 
   void _showRideDetails(RideModel ride) {
+    final l10n = AppLocalizations.of(context);
     HapticFeedback.mediumImpact();
     AppModalSheet.show<void>(
       context: context,
-      title: AppLocalizations.of(context).rideDetails,
+      title: l10n.rideDetails,
       maxHeightFactor: 0.82,
       child: SingleChildScrollView(
         child: Container(
@@ -2443,7 +2456,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
                           Text(
                             ride.origin.address.isNotEmpty
                                 ? ride.origin.address
-                                : AppLocalizations.of(context).pickupLocation,
+                                : l10n.pickupLocation,
                             style: TextStyle(
                               fontSize: 13.sp,
                               color: AppColors.textPrimary,
@@ -2455,7 +2468,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
                           Text(
                             ride.destination.address.isNotEmpty
                                 ? ride.destination.address
-                                : AppLocalizations.of(context).destination,
+                                : l10n.destination,
                             style: TextStyle(
                               fontSize: 13.sp,
                               color: AppColors.textPrimary,
@@ -2540,7 +2553,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
                         ),
                         SizedBox(height: 4.h),
                         Text(
-                          AppLocalizations.of(context).perSeat,
+                          l10n.perSeat,
                           style: TextStyle(
                             fontSize: 11.sp,
                             color: AppColors.textSecondary,
@@ -2566,13 +2579,13 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
                   if (ride.isEco)
                     _buildRideInfoChip(
                       Icons.eco,
-                      AppLocalizations.of(context).eco,
+                      l10n.eco,
                       color: AppColors.success,
                     ),
                   if (ride.isPremium)
                     _buildRideInfoChip(
                       Icons.star,
-                      AppLocalizations.of(context).premium,
+                      l10n.premium,
                       color: AppColors.starFilled,
                     ),
                 ],
@@ -2598,7 +2611,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
                     ),
                   ),
                   child: Text(
-                    AppLocalizations.of(context).bookThisRide,
+                    l10n.bookThisRide,
                     style: TextStyle(
                       fontSize: 16.sp,
                       fontWeight: FontWeight.w600,
@@ -2681,12 +2694,13 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
   // ─────────────────────────────────────────────────────────────
 
   String _formatDateShort(DateTime date) {
+    final l10n = AppLocalizations.of(context);
     final today = DateTime.now();
     final d = DateTime(date.year, date.month, date.day);
     final t = DateTime(today.year, today.month, today.day);
-    if (d == t) return AppLocalizations.of(context).today;
+    if (d == t) return l10n.today;
     if (d == t.add(const Duration(days: 1))) {
-      return AppLocalizations.of(context).tomorrow;
+      return l10n.tomorrow;
     }
     return '${date.day}/${date.month}';
   }
@@ -2746,12 +2760,14 @@ class _ActiveTripBanner extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final userId = ref.watch(
-      currentUserProvider.select((value) => value.value?.uid),
-    );
+    final userId = ref.watch(currentAuthUidProvider).value;
     if (userId == null) return const SizedBox.shrink();
 
-    final bookings = ref.watch(bookingsByPassengerProvider(userId)).value ?? [];
+    final bookings = ref.watch(
+      bookingsByPassengerProvider(
+        userId,
+      ).select((a) => a.value ?? const <RideBooking>[]),
+    );
 
     final accepted =
         bookings.where((b) => b.status == BookingStatus.accepted).toList()
@@ -2768,7 +2784,9 @@ class _ActiveTripBanner extends ConsumerWidget {
 
     if (accepted.isNotEmpty) {
       final booking = accepted.first;
-      final ride = ref.watch(rideStreamProvider(booking.rideId)).value;
+      final ride = ref.watch(
+        rideStreamProvider(booking.rideId).select((a) => a.value),
+      );
 
       if (ride != null &&
           (ride.status == RideStatus.completed ||

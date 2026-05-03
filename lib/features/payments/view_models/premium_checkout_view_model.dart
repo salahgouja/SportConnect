@@ -1,4 +1,3 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/services/stripe_service.dart';
@@ -17,6 +16,7 @@ class PremiumCheckoutState {
     this.isCompleted = false,
     this.errorMessage,
   });
+
   final PremiumPlan selectedPlan;
   final bool isProcessing;
   final bool isCompleted;
@@ -33,7 +33,7 @@ class PremiumCheckoutState {
       selectedPlan: selectedPlan ?? this.selectedPlan,
       isProcessing: isProcessing ?? this.isProcessing,
       isCompleted: isCompleted ?? this.isCompleted,
-      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      errorMessage: clearError ? null : errorMessage ?? this.errorMessage,
     );
   }
 }
@@ -41,15 +41,23 @@ class PremiumCheckoutState {
 @riverpod
 class PremiumCheckoutViewModel extends _$PremiumCheckoutViewModel {
   @override
-  PremiumCheckoutState build() => const PremiumCheckoutState();
+  PremiumCheckoutState build() {
+    return const PremiumCheckoutState();
+  }
 
   void selectPlan(PremiumPlan plan) {
     if (state.isProcessing || plan == state.selectedPlan) return;
-    state = state.copyWith(selectedPlan: plan, clearError: true);
+
+    state = state.copyWith(
+      selectedPlan: plan,
+      isCompleted: false,
+      clearError: true,
+    );
   }
 
   void clearError() {
     if (state.errorMessage == null) return;
+
     state = state.copyWith(clearError: true);
   }
 
@@ -57,18 +65,29 @@ class PremiumCheckoutViewModel extends _$PremiumCheckoutViewModel {
     if (state.isProcessing) return false;
 
     final currentUser = ref.read(currentUserProvider).value;
+
     if (currentUser == null) {
-      state = state.copyWith(errorMessage: 'Please sign in and try again.');
+      state = state.copyWith(
+        errorMessage: 'Please sign in and try again.',
+      );
       return false;
     }
 
-    state = state.copyWith(isProcessing: true, clearError: true);
+    final selectedPlan = state.selectedPlan;
+
+    state = state.copyWith(
+      isProcessing: true,
+      isCompleted: false,
+      clearError: true,
+    );
 
     try {
-      final selectedPlan = state.selectedPlan;
       final iapService = ref.read(premiumIapServiceProvider.notifier);
+
       final isIapSupported = await iapService.isSupported;
+
       if (!ref.mounted) return false;
+
       if (!isIapSupported) {
         state = state.copyWith(
           isProcessing: false,
@@ -78,8 +97,11 @@ class PremiumCheckoutViewModel extends _$PremiumCheckoutViewModel {
         );
         return false;
       }
+
       final purchaseResult = await iapService.purchasePlan(selectedPlan);
+
       if (!ref.mounted) return false;
+
       if (!purchaseResult.isSuccess) {
         state = state.copyWith(
           isProcessing: false,
@@ -89,32 +111,54 @@ class PremiumCheckoutViewModel extends _$PremiumCheckoutViewModel {
         );
         return false;
       }
-      final premiumTransactionId = purchaseResult.purchase?.purchaseID;
+
+      final purchase = purchaseResult.purchase;
+      final premiumTransactionId = purchase?.purchaseID;
+      final verificationPayload =
+          purchase?.verificationData.serverVerificationData;
 
       await _syncStripeCustomer(currentUser);
+
       if (!ref.mounted) return false;
 
-      await ref.read(profileRepositoryProvider).updateProfile(currentUser.uid, {
-        'isPremium': true,
-        'premiumPlan': selectedPlan.name,
-        'premiumSource': 'iap',
-        'premiumUpdatedAt': DateTime.now(),
-        if (premiumTransactionId != null && premiumTransactionId.isNotEmpty)
-          'premiumTransactionId': premiumTransactionId,
-      });
+      await ref.read(profileRepositoryProvider).updateProfile(
+        currentUser.uid,
+        {
+          'isPremium': true,
+          'premiumPlan': selectedPlan.name,
+          'premiumSource': 'iap',
+          'premiumPlatform': purchase?.verificationData.source,
+          'premiumProductId': purchase?.productID,
+          'premiumPurchaseStatus': purchase?.status.name,
+          'premiumUpdatedAt': DateTime.now(),
+          if (premiumTransactionId != null && premiumTransactionId.isNotEmpty)
+            'premiumTransactionId': premiumTransactionId,
+          if (verificationPayload != null && verificationPayload.isNotEmpty)
+            'premiumVerificationPayload': verificationPayload,
+        },
+      );
 
       if (!ref.mounted) return false;
 
       ref.invalidate(currentUserProvider);
-      state = state.copyWith(isProcessing: false, isCompleted: true);
+
+      state = state.copyWith(
+        isProcessing: false,
+        isCompleted: true,
+        clearError: true,
+      );
+
       return true;
     } catch (e, st) {
       TalkerService.error('Premium checkout failed', e, st);
+
       if (!ref.mounted) return false;
+
       state = state.copyWith(
         isProcessing: false,
         errorMessage: 'Unable to complete checkout. Please try again.',
       );
+
       return false;
     }
   }

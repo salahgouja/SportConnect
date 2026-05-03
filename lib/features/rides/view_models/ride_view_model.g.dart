@@ -110,6 +110,7 @@ abstract class _$RideDetailUiViewModel extends $Notifier<RideDetailUiState> {
 /// Delegates ride operations through the [RideService] for validated
 /// business logic. Falls back to the repository only for operations
 /// that don't require additional validation (start, complete, stream).
+// keepAlive: action-only VM - accessed from notification/background contexts.
 
 @ProviderFor(RideActionsViewModel)
 final rideActionsViewModelProvider = RideActionsViewModelProvider._();
@@ -117,11 +118,13 @@ final rideActionsViewModelProvider = RideActionsViewModelProvider._();
 /// Delegates ride operations through the [RideService] for validated
 /// business logic. Falls back to the repository only for operations
 /// that don't require additional validation (start, complete, stream).
+// keepAlive: action-only VM - accessed from notification/background contexts.
 final class RideActionsViewModelProvider
     extends $NotifierProvider<RideActionsViewModel, void> {
   /// Delegates ride operations through the [RideService] for validated
   /// business logic. Falls back to the repository only for operations
   /// that don't require additional validation (start, complete, stream).
+  // keepAlive: action-only VM - accessed from notification/background contexts.
   RideActionsViewModelProvider._()
     : super(
         from: null,
@@ -155,6 +158,7 @@ String _$rideActionsViewModelHash() =>
 /// Delegates ride operations through the [RideService] for validated
 /// business logic. Falls back to the repository only for operations
 /// that don't require additional validation (start, complete, stream).
+// keepAlive: action-only VM - accessed from notification/background contexts.
 
 abstract class _$RideActionsViewModel extends $Notifier<void> {
   void build();
@@ -553,7 +557,7 @@ final class RideFormViewModelProvider
         argument: null,
         retry: null,
         name: r'rideFormViewModelProvider',
-        isAutoDispose: false,
+        isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -574,7 +578,7 @@ final class RideFormViewModelProvider
   }
 }
 
-String _$rideFormViewModelHash() => r'b98714836514274349a771b1101f55498c123c19';
+String _$rideFormViewModelHash() => r'af3b611a7d0dbf90b6e1c4dadca2e6c6f299fa80';
 
 /// Ride Form View Model
 
@@ -779,7 +783,7 @@ final class RideDetailViewModelProvider
 }
 
 String _$rideDetailViewModelHash() =>
-    r'625b863331b2d6fe3e8c043394c180cb9599be52';
+    r'a761b04aae59a63e69826415ccc6d08c01d4a14e';
 
 /// Single Ride Detail View Model — views watch only this, never separate
 /// stream/booking providers directly.
@@ -1379,7 +1383,7 @@ final class BookingsByRideProvider
   }
 }
 
-String _$bookingsByRideHash() => r'773ee1f899cc5ca5050bf6a9b03cae07c7535a36';
+String _$bookingsByRideHash() => r'e517bd21e25da61cfb0260450031bed94889492f';
 
 /// Real-time stream of bookings for a given ride, scoped to the current user's role.
 ///
@@ -1665,7 +1669,7 @@ final class BookingsByPassengerProvider
 }
 
 String _$bookingsByPassengerHash() =>
-    r'2f3d4ed2fd70538b3331b6145fadf387f4590dc7';
+    r'7b46f32c9e286c66e13a58a2b49c539ebb62ca7e';
 
 /// Real-time stream of all bookings for a given passenger.
 ///

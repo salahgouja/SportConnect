@@ -280,53 +280,55 @@ class VerificationBadges extends StatelessWidget {
     if (compact) {
       return Row(
         mainAxisSize: MainAxisSize.min,
-        children: badges.map((b) {
-          return Padding(
-            padding: EdgeInsets.only(right: 6.w),
-            child: AdaptiveTooltip(
-              message: b.label,
-              child: Container(
-                padding: EdgeInsets.all(4.r),
-                decoration: BoxDecoration(
-                  color: b.color.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
+        children: [
+          for (final b in badges)
+            Padding(
+              padding: EdgeInsets.only(right: 6.w),
+              child: AdaptiveTooltip(
+                message: b.label,
+                child: Container(
+                  padding: EdgeInsets.all(4.r),
+                  decoration: BoxDecoration(
+                    color: b.color.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(b.icon, size: 14.sp, color: b.color),
                 ),
-                child: Icon(b.icon, size: 14.sp, color: b.color),
               ),
             ),
-          );
-        }).toList(),
+        ],
       );
     }
 
     return Wrap(
       spacing: 8.w,
       runSpacing: 6.h,
-      children: badges.map((b) {
-        return Container(
-          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
-          decoration: BoxDecoration(
-            color: b.color.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(20.r),
-            border: Border.all(color: b.color.withValues(alpha: 0.2)),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(b.icon, size: 14.sp, color: b.color),
-              SizedBox(width: 6.w),
-              Text(
-                b.label,
-                style: TextStyle(
-                  fontSize: 11.sp,
-                  fontWeight: FontWeight.w600,
-                  color: b.color,
+      children: [
+        for (final b in badges)
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+            decoration: BoxDecoration(
+              color: b.color.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(20.r),
+              border: Border.all(color: b.color.withValues(alpha: 0.2)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(b.icon, size: 14.sp, color: b.color),
+                SizedBox(width: 6.w),
+                Text(
+                  b.label,
+                  style: TextStyle(
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w600,
+                    color: b.color,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        );
-      }).toList(),
+      ],
     );
   }
 }

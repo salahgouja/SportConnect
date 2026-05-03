@@ -45,7 +45,7 @@ final class ActiveDriverRideProvider
   }
 }
 
-String _$activeDriverRideHash() => r'40112752f840218245e42d8586f94bfc6e0c7e29';
+String _$activeDriverRideHash() => r'27e74b0e2d3d541b3e15b44119f211a0226cace2';
 
 @ProviderFor(pastDriverRides)
 final pastDriverRidesProvider = PastDriverRidesProvider._();
@@ -84,7 +84,7 @@ final class PastDriverRidesProvider
   }
 }
 
-String _$pastDriverRidesHash() => r'c472965361f86512807c53111eede1de5c83bb38';
+String _$pastDriverRidesHash() => r'2f378861e1971564179208d3da65860249d72dc3';
 
 /// ViewModel for all driver dashboard screens.
 

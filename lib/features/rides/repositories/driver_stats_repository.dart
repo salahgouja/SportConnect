@@ -46,7 +46,7 @@ class DriverStatsRepository {
       );
 
   /// Get driver stats
-  @override
+
   Future<DriverStats> getDriverStats(String driverId) async {
     final doc = await _driverStatsCollection.doc(driverId).get();
     if (!doc.exists) {
@@ -59,7 +59,7 @@ class DriverStatsRepository {
   }
 
   /// Stream driver stats
-  @override
+
   Stream<DriverStats> streamDriverStats(String driverId) {
     return _driverStatsCollection.doc(driverId).snapshots().map((doc) {
       return doc.data() ?? DriverStats(driverId: driverId);
@@ -67,7 +67,7 @@ class DriverStatsRepository {
   }
 
   /// Streams pending bookings for a driver (replaces old rideRequests flow).
-  @override
+
   Stream<List<RideBooking>> streamPendingRequests(String driverId) {
     return _rideBookingsCollection
         .where('driverId', isEqualTo: driverId)
@@ -79,7 +79,7 @@ class DriverStatsRepository {
   }
 
   /// Streams accepted bookings for a driver.
-  @override
+
   Stream<List<RideBooking>> streamAcceptedRequests(String driverId) {
     return _rideBookingsCollection
         .where('driverId', isEqualTo: driverId)
@@ -91,7 +91,7 @@ class DriverStatsRepository {
   }
 
   /// Streams rejected/cancelled bookings for a driver.
-  @override
+
   Stream<List<RideBooking>> streamRejectedRequests(String driverId) {
     return _rideBookingsCollection
         .where('driverId', isEqualTo: driverId)
@@ -106,7 +106,7 @@ class DriverStatsRepository {
   }
 
   /// Get upcoming rides for driver - returns proper RideModel
-  @override
+
   Stream<List<RideModel>> streamUpcomingRides(String driverId) {
     final now = DateTime.now();
     return _ridesCollection
@@ -122,7 +122,7 @@ class DriverStatsRepository {
   }
 
   /// Get earnings transactions
-  @override
+
   Stream<List<EarningsTransaction>> streamTransactions(String driverId) {
     final controller = StreamController<List<EarningsTransaction>>();
     StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? paymentsSub;
@@ -256,7 +256,7 @@ class DriverStatsRepository {
   ///
   /// Updates the booking document in the `bookings` collection and
   /// increments the ride's booked capacity.
-  @override
+
   Future<void> acceptRequest(String rideId, String bookingId) async {
     final pickupOtp = (1000 + math.Random.secure().nextInt(9000)).toString();
 
@@ -316,7 +316,7 @@ class DriverStatsRepository {
   /// Decline a ride request
   ///
   /// Updates the booking document status in the `bookings` collection.
-  @override
+
   Future<void> declineRequest(String rideId, String bookingId) async {
     final bookingDoc = await _rideBookingsCollection.doc(bookingId).get();
     if (!bookingDoc.exists) return;
@@ -328,7 +328,7 @@ class DriverStatsRepository {
   }
 
   /// Update driver stats after ride completion
-  @override
+
   Future<void> recordRideCompletion({
     required String driverId,
     required int earningsInCents,
@@ -356,55 +356,67 @@ class DriverStatsRepository {
 }
 
 @riverpod
-Stream<DriverStats> driverStats(Ref ref) {
-  final user = ref.watch(authStateProvider).value;
-  if (user == null) {
-    return Stream.value(const DriverStats());
+Stream<DriverStats> driverStats(Ref ref) async* {
+  final userUID = await ref.watch(currentAuthUidProvider.future);
+  if (userUID == null) {
+    yield const DriverStats();
+    return;
   }
-  return ref.watch(driverStatsRepositoryProvider).streamDriverStats(user.uid);
+  yield* ref.watch(driverStatsRepositoryProvider).streamDriverStats(userUID);
 }
 
 @riverpod
-Stream<List<RideBooking>> pendingRideRequests(Ref ref) {
-  final user = ref.watch(authStateProvider).value;
-  if (user == null) return Stream.value([]);
-  return ref
-      .watch(driverStatsRepositoryProvider)
-      .streamPendingRequests(user.uid);
-}
-
-@riverpod
-Stream<List<RideBooking>> acceptedRideRequests(Ref ref) {
-  final user = ref.watch(authStateProvider).value;
-  if (user == null) return Stream.value([]);
-  return ref
-      .watch(driverStatsRepositoryProvider)
-      .streamAcceptedRequests(user.uid);
-}
-
-@riverpod
-Stream<List<RideBooking>> rejectedRideRequests(Ref ref) {
-  final user = ref.watch(authStateProvider).value;
-  if (user == null) return Stream.value([]);
-  return ref
-      .watch(driverStatsRepositoryProvider)
-      .streamRejectedRequests(user.uid);
-}
-
-@riverpod
-Stream<List<RideModel>> upcomingDriverRides(Ref ref) {
-  final user = ref.watch(authStateProvider).value;
-  if (user == null) {
-    return Stream.value([]);
+Stream<List<RideBooking>> pendingRideRequests(Ref ref) async* {
+  final userId = await ref.watch(currentAuthUidProvider.future);
+  if (userId == null) {
+    yield const <RideBooking>[];
+    return;
   }
-  return ref.watch(driverStatsRepositoryProvider).streamUpcomingRides(user.uid);
+  yield* ref
+      .watch(driverStatsRepositoryProvider)
+      .streamPendingRequests(userId);
 }
 
 @riverpod
-Stream<List<EarningsTransaction>> earningsTransactions(Ref ref) {
-  final user = ref.watch(authStateProvider).value;
-  if (user == null) {
-    return Stream.value([]);
+Stream<List<RideBooking>> acceptedRideRequests(Ref ref) async* {
+  final userId = await ref.watch(currentAuthUidProvider.future);
+  if (userId == null) {
+    yield const <RideBooking>[];
+    return;
   }
-  return ref.watch(driverStatsRepositoryProvider).streamTransactions(user.uid);
+  yield* ref
+      .watch(driverStatsRepositoryProvider)
+      .streamAcceptedRequests(userId);
+}
+
+@riverpod
+Stream<List<RideBooking>> rejectedRideRequests(Ref ref) async* {
+  final userId = await ref.watch(currentAuthUidProvider.future);
+  if (userId == null) {
+    yield const <RideBooking>[];
+    return;
+  }
+  yield* ref
+      .watch(driverStatsRepositoryProvider)
+      .streamRejectedRequests(userId);
+}
+
+@riverpod
+Stream<List<RideModel>> upcomingDriverRides(Ref ref) async* {
+  final userId = await ref.watch(currentAuthUidProvider.future);
+  if (userId == null) {
+    yield const <RideModel>[];
+    return;
+  }
+  yield* ref.watch(driverStatsRepositoryProvider).streamUpcomingRides(userId);
+}
+
+@riverpod
+Stream<List<EarningsTransaction>> earningsTransactions(Ref ref) async* {
+  final userId = await ref.watch(currentAuthUidProvider.future);
+  if (userId == null) {
+    yield const <EarningsTransaction>[];
+    return;
+  }
+  yield* ref.watch(driverStatsRepositoryProvider).streamTransactions(userId);
 }

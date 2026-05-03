@@ -57,8 +57,7 @@ class NotificationViewModel extends _$NotificationViewModel {
     // Watch auth state — infrequent (login/logout only), safe to use ref.watch.
     // When auth changes, build() re-runs and all transient state (selection,
     // filter) is intentionally reset, which is the correct behaviour.
-    final userAsync = ref.watch(currentUserProvider);
-    final userId = userAsync.value?.uid;
+    final userId = ref.watch(currentAuthUidProvider).value;
 
     // Subscribe to the notifications stream via ref.listen so that incoming
     // Firestore emissions do NOT re-run build() (which would reset isLoading).
@@ -78,8 +77,7 @@ class NotificationViewModel extends _$NotificationViewModel {
   }
 
   String? _getCurrentUserId() {
-    final userAsync = ref.read(currentUserProvider);
-    return userAsync.value?.uid;
+    return ref.read(currentAuthUidProvider).value;
   }
 
   /// Set filter
@@ -215,25 +213,23 @@ class NotificationViewModel extends _$NotificationViewModel {
 /// Stream provider for user notifications
 @riverpod
 Stream<List<NotificationModel>> userNotifications(Ref ref) {
-  final userAsync = ref.watch(currentUserProvider);
-  final user = userAsync.value;
-  if (user == null) {
+  final userId = ref.watch(currentAuthUidProvider).value;
+  if (userId == null) {
     return Stream.value([]);
   }
 
   final repository = ref.watch(notificationRepositoryProvider);
-  return repository.streamUserNotifications(user.uid);
+  return repository.streamUserNotifications(userId);
 }
 
 /// Provider for unread notification count
 @riverpod
 Stream<int> unreadNotificationCount(Ref ref) {
-  final userAsync = ref.watch(currentUserProvider);
-  final user = userAsync.value;
-  if (user == null) {
+  final userId = ref.watch(currentAuthUidProvider).value;
+  if (userId == null) {
     return Stream.value(0);
   }
 
   final repository = ref.watch(notificationRepositoryProvider);
-  return repository.streamUnreadCount(user.uid);
+  return repository.streamUnreadCount(userId);
 }

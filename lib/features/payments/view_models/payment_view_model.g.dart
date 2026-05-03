@@ -55,7 +55,7 @@ final class PaymentHistoryFilterViewModelProvider
         argument: null,
         retry: null,
         name: r'paymentHistoryFilterViewModelProvider',
-        isAutoDispose: false,
+        isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -77,7 +77,7 @@ final class PaymentHistoryFilterViewModelProvider
 }
 
 String _$paymentHistoryFilterViewModelHash() =>
-    r'278887e569705a80be26a3204c143e9f8532fca7';
+    r'dd8128a9e081630b517570e70334f4b877d6f857';
 
 abstract class _$PaymentHistoryFilterViewModel
     extends $Notifier<PaymentHistoryFilterState> {
@@ -203,7 +203,7 @@ final class DriverEarningsPeriodViewModelProvider
         argument: null,
         retry: null,
         name: r'driverEarningsPeriodViewModelProvider',
-        isAutoDispose: false,
+        isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -225,7 +225,7 @@ final class DriverEarningsPeriodViewModelProvider
 }
 
 String _$driverEarningsPeriodViewModelHash() =>
-    r'a33f6a320443ef760d48dcc9f3a4e1c602a14e95';
+    r'b6146d3c1252c7665faed188891319da4aa43817';
 
 abstract class _$DriverEarningsPeriodViewModel
     extends $Notifier<DriverEarningsPeriodState> {
@@ -1172,7 +1172,7 @@ final class DriverStripeStatusProvider
 }
 
 String _$driverStripeStatusHash() =>
-    r'796f7669834556ebc4864f1d40cbe4b7194c0d0d';
+    r'd0afe13df9ae234a0ad64b8fe5616ee69da919c5';
 
 @ProviderFor(currentDriverConnectedAccount)
 final currentDriverConnectedAccountProvider =
@@ -1215,4 +1215,4 @@ final class CurrentDriverConnectedAccountProvider
 }
 
 String _$currentDriverConnectedAccountHash() =>
-    r'142946606290c6090e90614f99f605f405e13e1f';
+    r'655fd339f4441940b5a8dc9ef8e573fdc05cf5fc';

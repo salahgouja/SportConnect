@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 /// Walking distance and directions to pickup point (#19, #45)
 class WalkingDistanceCard extends StatelessWidget {
@@ -507,12 +508,13 @@ class VehiclePhotoMatchCard extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(10.r),
             child: vehiclePhotoUrl != null
-                ? Image.network(
-                    vehiclePhotoUrl!,
+                ? CachedNetworkImage(
+                    imageUrl: vehiclePhotoUrl!,
                     width: 72.w,
                     height: 56.h,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) => _placeholderIcon(),
+                    errorWidget: (_, _, _) => _placeholderIcon(),
+                    placeholder: (_, _) => _placeholderIcon(),
                   )
                 : _placeholderIcon(),
           ),

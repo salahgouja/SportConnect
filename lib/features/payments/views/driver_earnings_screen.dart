@@ -124,9 +124,8 @@ class DriverEarningsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final driverStats = ref.watch(driverStatsProvider);
     final transactions = ref.watch(earningsTransactionsProvider);
-    final selectedPeriod = ref
-        .watch(driverEarningsPeriodViewModelProvider)
-        .selectedPeriod;
+    final selectedPeriod = ref.watch(
+        driverEarningsPeriodViewModelProvider.select((s) => s.selectedPeriod));
 
     return AdaptiveScaffold(
       body: RefreshIndicator.adaptive(
@@ -747,9 +746,8 @@ class DriverEarningsScreen extends ConsumerWidget {
   /// Build the payout section with Stripe integration
   Widget _buildPayoutSection(BuildContext context, WidgetRef ref) {
     final connectedAccount = ref.watch(currentDriverConnectedAccountProvider);
-    final liveStatus = ref.watch(driverStripeStatusProvider);
+    final resolvedLiveStatus = ref.watch(driverStripeStatusProvider.select((a) => a.value));
     final cachedStatus = _statusFromConnectedAccount(connectedAccount.value);
-    final resolvedLiveStatus = liveStatus.value;
 
     return connectedAccount.when(
       data: (account) {
@@ -835,7 +833,7 @@ class DriverEarningsScreen extends ConsumerWidget {
     final totalStripeBalanceInCents =
         availableBalanceInCents + pendingBalanceInCents;
     final tripEarningsInCents =
-        ref.watch(driverStatsProvider).value?.totalEarningsInCents ?? 0;
+        ref.watch(driverStatsProvider.select((a) => a.value))?.totalEarningsInCents ?? 0;
     final stripeAccountId = status?.stripeAccountId;
 
     return Container(

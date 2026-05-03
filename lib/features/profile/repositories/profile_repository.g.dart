@@ -97,7 +97,7 @@ final class CurrentUserStreamProvider
   }
 }
 
-String _$currentUserStreamHash() => r'1c75c9aaf796c347453dc56ef9b0ff17469624d4';
+String _$currentUserStreamHash() => r'936b12240f41f1d75f371d793db56776cabd377e';
 
 /// Stream provider for a user by ID
 

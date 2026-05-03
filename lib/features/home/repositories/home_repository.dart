@@ -25,7 +25,7 @@ class HomeRepository {
       );
 
   /// Stream nearby active rides
-  @override
+
   Stream<List<RideModel>> streamNearbyRides({
     required LatLng center,
     double radiusKm = 50,

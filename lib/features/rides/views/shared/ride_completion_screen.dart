@@ -23,6 +23,7 @@ import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/view_models/ride_completion_view_model.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
+import 'package:sport_connect/core/widgets/app_map_tile_layer.dart';
 
 /// Ride Completion / Trip Summary screen shown after a ride finishes.
 ///
@@ -60,7 +61,9 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
     final rideAsync = ref.watch(rideStreamProvider(widget.rideId));
     final uiState = ref.watch(rideCompletionUiViewModelProvider(widget.rideId));
     final bookings =
-        ref.watch(bookingsByRideProvider(widget.rideId)).value ??
+        ref.watch(
+          bookingsByRideProvider(widget.rideId).select((a) => a.value),
+        ) ??
         const <RideBooking>[];
     final l10n = AppLocalizations.of(context);
 
@@ -226,7 +229,7 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
                   // Show different rating CTA depending on the user's role
                   Builder(
                     builder: (ctx) {
-                      final uid = ref.read(currentUserProvider).value?.uid;
+                      final uid = ref.read(currentAuthUidProvider).value;
                       final isDriver = uid == ride.driverId;
 
                       return SizedBox(
@@ -363,7 +366,7 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
 
                   Builder(
                     builder: (ctx) {
-                      final uid = ref.read(currentUserProvider).value?.uid;
+                      final uid = ref.read(currentAuthUidProvider).value;
                       final isDriver = uid == ride.driverId;
 
                       if (isDriver) {
@@ -553,10 +556,7 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
               ),
             ),
             children: [
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.sportconnect.app',
-              ),
+              const AppMapTileLayer(),
               PolylineLayer(
                 polylines: [
                   Polyline(
@@ -879,7 +879,7 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
     List<RideBooking> bookings,
   ) {
     // Determine actual seats booked by the current user
-    final currentUid = ref.read(currentUserProvider).value?.uid;
+    final currentUid = ref.read(currentAuthUidProvider).value;
     final isDriver = currentUid == ride.driverId;
     final myBooking = bookings
         .where((b) => b.passengerId == currentUid)

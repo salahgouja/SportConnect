@@ -99,7 +99,7 @@ final class BlockedUsersProvider
   }
 }
 
-String _$blockedUsersHash() => r'ac1fd3dd1c226c65f024c4fbaef8cffed2538e49';
+String _$blockedUsersHash() => r'c5d4e927aff0a153b6b09e4d0240d10eb8f01ddf';
 
 @ProviderFor(ReportIssueFormViewModel)
 final reportIssueFormViewModelProvider = ReportIssueFormViewModelFamily._();

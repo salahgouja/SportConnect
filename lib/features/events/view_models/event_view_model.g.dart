@@ -173,7 +173,7 @@ final class EventSelectionViewModelProvider
         argument: null,
         retry: null,
         name: r'eventSelectionViewModelProvider',
-        isAutoDispose: false,
+        isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -195,7 +195,7 @@ final class EventSelectionViewModelProvider
 }
 
 String _$eventSelectionViewModelHash() =>
-    r'2eb5c069f416862657ea95f94cac7894c97a27ec';
+    r'a87de4adee9e06d1bceb90a863128344aeffcab9';
 
 abstract class _$EventSelectionViewModel
     extends $Notifier<EventSelectionState> {

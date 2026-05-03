@@ -46,7 +46,7 @@ class ProfileScreen extends ConsumerWidget {
         ? ref.watch(currentUserProfileProvider(userId!))
         : ref.watch(currentUserProvider);
     final totalEarningsInCents = _isOwnProfile
-        ? ref.watch(driverStatsProvider).value?.totalEarningsInCents ?? 0
+        ? ref.watch(driverStatsProvider.select((a) => a.value))?.totalEarningsInCents ?? 0
         : 0;
     return AdaptiveScaffold(
       body: userAsync.when(

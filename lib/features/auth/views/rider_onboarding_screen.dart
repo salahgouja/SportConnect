@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:reactive_forms/reactive_forms.dart';
@@ -190,12 +192,13 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
               if (hasPhoto)
                 ClipRRect(
                   borderRadius: BorderRadius.circular(22.r),
-                  child: Image.network(
-                    photoUrl!,
+                  child: CachedNetworkImage(
+                    imageUrl: photoUrl!,
                     width: 44.w,
                     height: 44.w,
                     fit: BoxFit.cover,
-                    errorBuilder: (ctx, err, st) => _defaultAvatar(name),
+                    errorWidget: (ctx, url, err) => _defaultAvatar(name),
+                    placeholder: (ctx, url) => _defaultAvatar(name),
                   ),
                 )
               else
@@ -417,9 +420,8 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final currentUser = ref.watch(currentUserProvider).value;
+    final currentUser = ref.watch(currentUserProvider.select((a) => a.value));
     final l10n = AppLocalizations.of(context);
-    final vmState = ref.watch(onboardingViewModelProvider);
     final displayName = (currentUser?.username ?? '').trim();
     final photoUrl = currentUser?.photoUrl;
     final hasPhoto = photoUrl != null && photoUrl.isNotEmpty;
@@ -899,8 +901,8 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
                         ReactiveFormConsumer(
                           builder: (context, form, _) {
                             final isFormReady = form.valid;
-                            final currentVmState = ref.watch(
-                              onboardingViewModelProvider,
+                            final isVmLoading = ref.watch(
+                              onboardingViewModelProvider.select((s) => s.isLoading),
                             );
 
                             return Semantics(
@@ -910,14 +912,15 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
                                 duration: const Duration(milliseconds: 250),
                                 opacity: isFormReady ? 1.0 : 0.55,
                                 child: PremiumButton(
-                                  text: currentVmState.isLoading
+                                  text: isVmLoading
                                       ? 'Saving...'
                                       : l10n.completeSetupButton,
-                                  onPressed: currentVmState.isLoading
+                                  onPressed: isVmLoading
                                       ? null
-                                      : () =>
-                                            _completeOnboarding(currentVmState),
-                                  isLoading: currentVmState.isLoading,
+                                      : () => _completeOnboarding(
+                                            ref.read(onboardingViewModelProvider),
+                                          ),
+                                  isLoading: isVmLoading,
                                   style: isFormReady
                                       ? PremiumButtonStyle.gradient
                                       : PremiumButtonStyle.primary,

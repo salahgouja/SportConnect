@@ -64,8 +64,7 @@ class VehicleViewModel extends _$VehicleViewModel {
   @override
   VehicleState build() {
     // Watch auth state — infrequent (login/logout only), safe to use ref.watch.
-    final userAsync = ref.watch(currentUserProvider);
-    final userId = userAsync.value?.uid;
+    final userId = ref.watch(currentAuthUidProvider).value;
 
     // Subscribe to the user's vehicles stream via ref.listen so that incoming
     // Firestore emissions do NOT re-run build() (which would reset isLoading).
@@ -84,8 +83,7 @@ class VehicleViewModel extends _$VehicleViewModel {
   }
 
   String? _getCurrentUserId() {
-    final userAsync = ref.read(currentUserProvider);
-    return userAsync.value?.uid;
+    return ref.read(currentAuthUidProvider).value;
   }
 
   /// Create a new vehicle

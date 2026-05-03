@@ -23,6 +23,7 @@ import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 const _kGenderOptions = ['Male', 'Female', 'Other', 'Prefer not to say'];
 
@@ -62,9 +63,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   UserModel? _user;
   bool _initialized = false;
+  StreamSubscription<Map<String, Object?>?>? _formChangesSub;
 
   @override
   void dispose() {
+    _formChangesSub?.cancel();
     _form.dispose();
     super.dispose();
   }
@@ -73,7 +76,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     _user = user;
     _form.patchValue({'name': user.username, 'email': user.email});
     ref.read(profileEditViewModelProvider(user.uid).notifier).initFromUser(user);
-    _form.valueChanges.listen((_) {
+    _formChangesSub?.cancel();
+    _formChangesSub = _form.valueChanges.listen((_) {
       if (!mounted) return;
       ref.read(profileEditViewModelProvider(user.uid).notifier).markChanged();
     });
@@ -294,8 +298,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final userAsync = ref.watch(currentUserProvider);
-    final user = userAsync.value;
+    final user = ref.watch(currentUserProvider.select((a) => a.value));
 
     if (user != null && !_initialized) {
       _hydrate(user);
@@ -665,12 +668,12 @@ class _AvatarHeader extends StatelessWidget {
     }
     final url = user.photoUrl;
     if (url != null && url.isNotEmpty && !editState.imageRemoved) {
-      return Image.network(
-        url,
+      return CachedNetworkImage(
+        imageUrl: url,
         width: size.w,
         height: size.w,
         fit: BoxFit.cover,
-        errorBuilder: (_, _, _) => PremiumAvatar(
+        errorWidget: (_, _, _) => PremiumAvatar(
           name: user.username,
           size: size,
           borderColor: Colors.transparent,

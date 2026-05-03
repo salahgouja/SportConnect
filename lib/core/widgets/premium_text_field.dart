@@ -123,12 +123,14 @@ class OTPField extends StatefulWidget {
 class _OTPFieldState extends State<OTPField> {
   late List<TextEditingController> _controllers;
   late List<FocusNode> _focusNodes;
+  late List<FocusNode> _keyListenerNodes;
 
   @override
   void initState() {
     super.initState();
     _controllers = List.generate(widget.length, (_) => TextEditingController());
     _focusNodes = List.generate(widget.length, (_) => FocusNode());
+    _keyListenerNodes = List.generate(widget.length, (_) => FocusNode());
   }
 
   @override
@@ -137,6 +139,9 @@ class _OTPFieldState extends State<OTPField> {
       c.dispose();
     }
     for (final f in _focusNodes) {
+      f.dispose();
+    }
+    for (final f in _keyListenerNodes) {
       f.dispose();
     }
     super.dispose();
@@ -173,7 +178,7 @@ class _OTPFieldState extends State<OTPField> {
           height: 60.h,
           margin: EdgeInsets.symmetric(horizontal: 4.w),
           child: KeyboardListener(
-            focusNode: FocusNode(),
+            focusNode: _keyListenerNodes[index],
             onKeyEvent: (event) => _onKeyPressed(event, index),
             child: TextFormField(
               controller: _controllers[index],

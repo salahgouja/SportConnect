@@ -909,7 +909,7 @@ class EventSelectionState {
   }
 }
 
-@Riverpod(keepAlive: true)
+@riverpod
 class EventSelectionViewModel extends _$EventSelectionViewModel {
   @override
   EventSelectionState build() => const EventSelectionState();

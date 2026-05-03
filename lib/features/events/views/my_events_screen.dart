@@ -27,9 +27,7 @@ class MyEventsScreen extends ConsumerStatefulWidget {
 class _MyEventsScreenState extends ConsumerState<MyEventsScreen> {
   @override
   Widget build(BuildContext context) {
-    final userId = ref.watch(
-      currentUserProvider.select((value) => value.value?.uid ?? ''),
-    );
+    final userId = ref.watch(currentAuthUidProvider).value ?? '';
     final l10n = AppLocalizations.of(context);
     final actionButton = AdaptiveFloatingActionButton(
       heroTag: null,
@@ -52,8 +50,9 @@ class _MyEventsScreenState extends ConsumerState<MyEventsScreen> {
       ),
       body: AdaptiveTabBarView(
         tabs: [l10n.myEventsCreatedTab, l10n.myEventsJoinedTab],
-          selectedColor: Colors.white,
-          backgroundColor: AppColors.primary,        children: [
+        selectedColor: Colors.white,
+        backgroundColor: AppColors.primary,
+        children: [
           _CreatedTab(userId: userId),
           _JoinedTab(userId: userId),
         ],
@@ -81,7 +80,8 @@ class _CreatedTab extends ConsumerWidget {
     final stream = ref.watch(eventsByCreatorStreamProvider(userId));
 
     return stream.when(
-      loading: () => const SkeletonLoader(type: SkeletonType.eventCard, itemCount: 3),
+      loading: () =>
+          const SkeletonLoader(type: SkeletonType.eventCard, itemCount: 3),
       error: (_, _) => _EmptyTab(message: l10n.unableToLoadEvents),
       data: (events) {
         if (events.isEmpty) {
@@ -107,7 +107,8 @@ class _JoinedTab extends ConsumerWidget {
     final stream = ref.watch(joinedEventsStreamProvider(userId));
 
     return stream.when(
-      loading: () => const SkeletonLoader(type: SkeletonType.eventCard, itemCount: 3),
+      loading: () =>
+          const SkeletonLoader(type: SkeletonType.eventCard, itemCount: 3),
       error: (_, _) => _EmptyTab(message: l10n.unableToLoadEvents),
       data: (events) {
         if (events.isEmpty) {

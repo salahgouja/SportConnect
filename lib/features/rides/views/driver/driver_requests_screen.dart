@@ -565,11 +565,8 @@ class _PendingBookingCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final profileAsync = ref.watch(userProfileProvider(booking.passengerId));
-    final rideAsync = ref.watch(requestCardRideProvider(booking.rideId));
-
-    final profile = profileAsync.value;
-    final ride = rideAsync.value;
+    final profile = ref.watch(userProfileProvider(booking.passengerId).select((a) => a.value));
+    final ride = ref.watch(requestCardRideProvider(booking.rideId).select((a) => a.value));
     final pickupAddress =
         booking.pickupLocation?.address ?? ride?.origin.address ?? '—';
     final dropoffAddress =
@@ -948,15 +945,14 @@ class _AcceptedBookingCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final profileAsync = ref.watch(userProfileProvider(booking.passengerId));
-    final rideAsync = ref.watch(requestCardRideProvider(booking.rideId));
-    final ride = rideAsync.value;
+    final profile = ref.watch(userProfileProvider(booking.passengerId).select((a) => a.value));
+    final ride = ref.watch(requestCardRideProvider(booking.rideId).select((a) => a.value));
     final pickupAddress =
         booking.pickupLocation?.address ?? ride?.origin.address ?? '—';
     final dropoffAddress =
         booking.dropoffLocation?.address ?? ride?.destination.address ?? '—';
-    final passengerName = profileAsync.value?.username ?? '…';
-    final pricePerSeatInCents = rideAsync.value?.pricePerSeatInCents ?? 0.0;
+    final passengerName = profile?.username ?? '…';
+    final pricePerSeatInCents = ride?.pricePerSeatInCents ?? 0.0;
     final formattedDate = DateFormat(
       'EEE, MMM d',
     ).format(booking.createdAt ?? DateTime.now());
@@ -1109,10 +1105,9 @@ class _DeclinedBookingCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final passengerName =
-        ref.watch(userProfileProvider(booking.passengerId)).value?.username ??
+        ref.watch(userProfileProvider(booking.passengerId).select((a) => a.value))?.username ??
         '…';
-    final rideAsync = ref.watch(requestCardRideProvider(booking.rideId));
-    final ride = rideAsync.value;
+    final ride = ref.watch(requestCardRideProvider(booking.rideId).select((a) => a.value));
     final pickupAddress =
         booking.pickupLocation?.address ?? ride?.origin.address ?? '—';
     final dropoffAddress =
@@ -1357,7 +1352,7 @@ class _DeclineReasonSheetState extends State<_DeclineReasonSheet> {
                   ),
                 ],
               ),
-              SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
+              SizedBox(height: MediaQuery.viewInsetsOf(context).bottom),
             ],
           ),
         );

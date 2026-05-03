@@ -29,7 +29,7 @@ class IncidentReportSheet extends StatefulWidget {
       maxHeightFactor: 0.86,
       child: Padding(
         padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
+          bottom: MediaQuery.viewInsetsOf(context).bottom,
         ),
         child: IncidentReportSheet(rideId: rideId, onSubmit: onSubmit),
       ),

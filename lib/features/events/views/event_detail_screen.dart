@@ -25,6 +25,7 @@ import 'package:sport_connect/features/profile/view_models/profile_view_model.da
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 /// Full-screen event detail with hero banner, info sections and join/leave CTA.
 class EventDetailScreen extends ConsumerStatefulWidget {
@@ -53,7 +54,11 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final eventAsync = ref.watch(eventByIdProvider(widget.eventId));
-    final detailVm = ref.watch(eventDetailViewModelProvider(widget.eventId));
+    // Select only action states — event content rebuilds handled by eventByIdProvider
+    ref.watch(eventDetailViewModelProvider(widget.eventId).select((s) => (
+      s.isJoining, s.isLeaving, s.isDeleting,
+    )));
+    final detailVm = ref.read(eventDetailViewModelProvider(widget.eventId));
     final currentUser = ref.watch(
       currentUserProvider.select((value) {
         final user = value.value;
@@ -415,7 +420,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                 ],
 
                 // Bottom safe-area padding
-                SizedBox(height: MediaQuery.of(context).padding.bottom + 32.h),
+                SizedBox(height: MediaQuery.paddingOf(context).bottom + 32.h),
               ],
             ),
           ),
@@ -594,7 +599,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
           20.w,
           20.h,
           20.w,
-          MediaQuery.of(context).viewInsets.bottom + 24.h,
+          MediaQuery.viewInsetsOf(context).bottom + 24.h,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -995,7 +1000,7 @@ class _HeroBanner extends StatelessWidget {
       return Stack(
         fit: StackFit.expand,
         children: [
-          Image.network(event.imageUrl!, fit: BoxFit.cover),
+          CachedNetworkImage(imageUrl: event.imageUrl!, fit: BoxFit.cover, memCacheWidth: 800),
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -1159,8 +1164,7 @@ class _OrganizerRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final organizerAsync = ref.watch(userProfileProvider(creatorId));
-    final organizer = organizerAsync.value;
+    final organizer = ref.watch(userProfileProvider(creatorId).select((a) => a.value));
     final name = organizer?.username ?? 'Organizer';
 
     return PremiumCard(
@@ -1292,7 +1296,7 @@ class _ParticipantAvatar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final photoUrl = ref.watch(userProfileProvider(userId)).value?.photoUrl;
+    final photoUrl = ref.watch(userProfileProvider(userId).select((a) => a.value))?.photoUrl;
     return Padding(
       padding: EdgeInsets.only(right: 4.w),
       child: CircleAvatar(
@@ -1644,12 +1648,13 @@ class _EventRidesSection extends ConsumerWidget {
               );
             }
             return Column(
-              children: rides.take(5).map((ride) {
-                return Padding(
-                  padding: EdgeInsets.only(bottom: 8.h),
-                  child: _EventRideTile(ride: ride),
-                );
-              }).toList(),
+              children: [
+                for (final ride in rides.take(5))
+                  Padding(
+                    padding: EdgeInsets.only(bottom: 8.h),
+                    child: _EventRideTile(ride: ride),
+                  ),
+              ],
             );
           },
           loading: () => Center(

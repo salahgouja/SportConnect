@@ -23,6 +23,7 @@ import 'package:sport_connect/features/rides/view_models/ride_countdown_view_mod
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:sport_connect/core/widgets/app_map_tile_layer.dart';
 
 class RideCountdownScreen extends ConsumerStatefulWidget {
   const RideCountdownScreen({required this.bookingId, super.key});
@@ -360,10 +361,7 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
             mapController: _mapController,
             options: MapOptions(initialCenter: center, initialZoom: 10),
             children: [
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.sportconnect.app',
-              ),
+              const AppMapTileLayer(),
               const CurrentLocationLayer(),
               PolylineLayer(
                 polylines: [

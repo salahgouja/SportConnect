@@ -60,13 +60,13 @@ class DriverInfoWidget extends ConsumerWidget {
 }
 
 /// Widget specifically for displaying driver name
-class DriverNameWidget extends ConsumerWidget {
+class DriverNameWidget extends StatelessWidget {
   const DriverNameWidget({required this.driverId, super.key, this.style});
   final String driverId;
   final TextStyle? style;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return DriverInfoWidget(
       driverId: driverId,
       builder: (context, displayName, _, _) => Text(displayName, style: style),
@@ -75,7 +75,7 @@ class DriverNameWidget extends ConsumerWidget {
 }
 
 /// Widget for displaying driver avatar
-class DriverAvatarWidget extends ConsumerWidget {
+class DriverAvatarWidget extends StatelessWidget {
   const DriverAvatarWidget({
     required this.driverId,
     super.key,
@@ -85,7 +85,7 @@ class DriverAvatarWidget extends ConsumerWidget {
   final double radius;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return DriverInfoWidget(
       driverId: driverId,
       builder: (context, displayName, photoUrl, _) => CircleAvatar(
@@ -100,7 +100,7 @@ class DriverAvatarWidget extends ConsumerWidget {
 }
 
 /// Widget for displaying driver rating
-class DriverRatingWidget extends ConsumerWidget {
+class DriverRatingWidget extends StatelessWidget {
   const DriverRatingWidget({
     required this.driverId,
     super.key,
@@ -112,7 +112,7 @@ class DriverRatingWidget extends ConsumerWidget {
   final TextStyle? style;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return DriverInfoWidget(
       driverId: driverId,
       builder: (context, _, _, rating) => Row(

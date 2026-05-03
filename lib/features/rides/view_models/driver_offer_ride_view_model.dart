@@ -280,7 +280,7 @@ class DriverOfferRideFormState {
   }
 }
 
-@Riverpod(keepAlive: true)
+@riverpod
 class DriverOfferRideViewModel extends _$DriverOfferRideViewModel {
   @override
   DriverOfferRideFormState build() => const DriverOfferRideFormState();

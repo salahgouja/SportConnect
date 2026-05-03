@@ -29,7 +29,7 @@ class NotificationRepository {
   // ==================== NOTIFICATION OPERATIONS ====================
 
   /// Create a notification
-  @override
+
   Future<String> createNotification(NotificationModel notification) async {
     final docRef = _notificationsCollection.doc();
     final notificationWithId = notification.copyWith(
@@ -41,7 +41,7 @@ class NotificationRepository {
   }
 
   /// Get notification by ID
-  @override
+
   Future<NotificationModel?> getNotificationById(String id) async {
     final doc = await _notificationsCollection.doc(id).get();
     if (!doc.exists) return null;
@@ -49,7 +49,7 @@ class NotificationRepository {
   }
 
   /// Stream user's notifications
-  @override
+
   Stream<List<NotificationModel>> streamUserNotifications(String userId) {
     return _notificationsCollection
         .where('userId', isEqualTo: userId)
@@ -61,18 +61,19 @@ class NotificationRepository {
   }
 
   /// Stream unread notification count
-  @override
+
   Stream<int> streamUnreadCount(String userId) {
     return _notificationsCollection
         .where('userId', isEqualTo: userId)
         .where('isRead', isEqualTo: false)
         .where('isArchived', isEqualTo: false)
+        .limit(99)
         .snapshots()
         .map((snapshot) => snapshot.docs.length);
   }
 
   /// Get user's notifications (paginated)
-  @override
+
   Future<List<NotificationModel>> getUserNotifications({
     required String userId,
     int limit = 20,
@@ -93,7 +94,7 @@ class NotificationRepository {
   }
 
   /// Mark notification as read
-  @override
+
   Future<void> markAsRead(String notificationId) async {
     await _notificationsCollection.doc(notificationId).update({
       'isRead': true,
@@ -103,7 +104,7 @@ class NotificationRepository {
 
   /// Mark all user notifications as read.
   /// Chunks into batches of 499 to stay within Firestore's 500-op limit.
-  @override
+
   Future<void> markAllAsRead(String userId) async {
     final snapshot = await _notificationsCollection
         .where('userId', isEqualTo: userId)
@@ -123,7 +124,7 @@ class NotificationRepository {
   }
 
   /// Archive notification (soft delete)
-  @override
+
   Future<void> archiveNotification(String notificationId) async {
     await _notificationsCollection.doc(notificationId).update({
       'isArchived': true,
@@ -132,7 +133,7 @@ class NotificationRepository {
 
   /// Archive all user notifications.
   /// Chunks into batches of 499 to stay within Firestore's 500-op limit.
-  @override
+
   Future<void> archiveAll(String userId) async {
     final snapshot = await _notificationsCollection
         .where('userId', isEqualTo: userId)
@@ -151,13 +152,13 @@ class NotificationRepository {
   }
 
   /// Delete notification permanently
-  @override
+
   Future<void> deleteNotification(String notificationId) async {
     await _notificationsCollection.doc(notificationId).delete();
   }
 
   /// Send ride booking request notification
-  @override
+
   Future<void> sendRideBookingRequest({
     required String toUserId,
     required String fromUserId,
@@ -184,7 +185,7 @@ class NotificationRepository {
   }
 
   /// Send ride booking accepted notification
-  @override
+
   Future<void> sendRideBookingAccepted({
     required String toUserId,
     required String driverName,
@@ -209,7 +210,7 @@ class NotificationRepository {
   }
 
   /// Send ride booking rejected notification
-  @override
+
   Future<void> sendRideBookingRejected({
     required String toUserId,
     required String driverName,
@@ -239,7 +240,7 @@ class NotificationRepository {
   }
 
   /// Send ride cancelled notification to a passenger
-  @override
+
   Future<void> sendRideCancelled({
     required String toUserId,
     required String driverName,
@@ -269,7 +270,7 @@ class NotificationRepository {
   }
 
   /// Send new message notification
-  @override
+
   Future<void> sendNewMessageNotification({
     required String toUserId,
     required String fromUserId,
@@ -295,7 +296,7 @@ class NotificationRepository {
   }
 
   /// Send achievement notification
-  @override
+
   Future<void> sendAchievementNotification({
     required String userId,
     required String achievementName,
@@ -313,7 +314,7 @@ class NotificationRepository {
   }
 
   /// Send level-up notification
-  @override
+
   Future<void> sendLevelUpNotification({
     required String userId,
     required int newLevel,
@@ -329,7 +330,6 @@ class NotificationRepository {
     );
   }
 
-  @override
   Future<void> sendDriverArrivedAtPickup({
     required String toUserId,
     required String driverName,
@@ -371,7 +371,7 @@ class NotificationRepository {
   }
 
   /// Send event cancelled notification to a participant.
-  @override
+
   Future<void> sendEventCancelled({
     required String toUserId,
     required String organizerName,

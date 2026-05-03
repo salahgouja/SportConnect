@@ -21,7 +21,7 @@ final class DriverOfferRideViewModelProvider
         argument: null,
         retry: null,
         name: r'driverOfferRideViewModelProvider',
-        isAutoDispose: false,
+        isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -43,7 +43,7 @@ final class DriverOfferRideViewModelProvider
 }
 
 String _$driverOfferRideViewModelHash() =>
-    r'8bdbcae581b4103706bc6762383af8cc4d77d9b3';
+    r'91c3c9718b32c416fd144a4a51083fb5ca44171d';
 
 abstract class _$DriverOfferRideViewModel
     extends $Notifier<DriverOfferRideFormState> {

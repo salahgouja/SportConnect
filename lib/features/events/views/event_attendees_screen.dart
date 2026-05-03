@@ -120,8 +120,7 @@ class _AttendeeCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final profileAsync = ref.watch(userProfileProvider(userId));
-    final profile = profileAsync.value;
+    final profile = ref.watch(userProfileProvider(userId).select((a) => a.value));
     final currentUser = ref.watch(
       currentUserProvider.select((value) {
         final user = value.value;

@@ -29,6 +29,7 @@ import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:v_chat_voice_player/v_chat_voice_player.dart';
 import 'package:v_platform/v_platform.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 /// Chat Detail Screen with real-time Firestore messaging.
 class ChatDetailScreen extends ConsumerStatefulWidget {
@@ -922,9 +923,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     final chatState = ref.watch(
       chatDetailViewModelProvider(_chatId, currentUser!.uid),
     );
-    final blockedIdsAsync = ref.watch(blockedUserIdsProvider(currentUser!.uid));
     final isReceiverBlocked =
-        blockedIdsAsync.value?.contains(_receiver.uid) ?? false;
+        ref.watch(blockedUserIdsProvider(currentUser!.uid).select((a) => a.value))?.contains(_receiver.uid) ?? false;
 
     // FIX: ref.listen in build is correct for ConsumerStatefulWidget —
     // Riverpod deduplicates it across rebuilds. Delegate read side-effect
@@ -2112,18 +2112,20 @@ class _MessageContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return switch (message.type) {
-      MessageType.image when message.mediaUrl != null => _ImageMessageContent(
-        mediaUrl: message.mediaUrl!,
+      MessageType.image when message.mediaUrl != null => RepaintBoundary(
+        child: _ImageMessageContent(mediaUrl: message.mediaUrl!),
       ),
       MessageType.location
           when message.latitude != null && message.longitude != null =>
-        _LocationMessageContent(
-          message: message,
-          isMe: isMe,
-          onTap: () => onLocationTap(
-            message.latitude!,
-            message.longitude!,
-            message.content,
+        RepaintBoundary(
+          child: _LocationMessageContent(
+            message: message,
+            isMe: isMe,
+            onTap: () => onLocationTap(
+              message.latitude!,
+              message.longitude!,
+              message.content,
+            ),
           ),
         ),
       MessageType.audio when message.mediaUrl != null => _AudioMessagePlayer(
@@ -2146,26 +2148,22 @@ class _ImageMessageContent extends StatelessWidget {
   Widget build(BuildContext context) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(12.r),
-      child: Image.network(
-        mediaUrl,
+      child: CachedNetworkImage(
+        imageUrl: mediaUrl,
         width: 200.w,
         fit: BoxFit.cover,
-        loadingBuilder: (context, child, progress) {
-          if (progress == null) return child;
-          return Container(
-            width: 200.w,
-            height: 150.h,
-            color: AppColors.surfaceVariant,
-            child: Center(
-              child: CircularProgressIndicator.adaptive(
-                value: progress.expectedTotalBytes != null
-                    ? progress.cumulativeBytesLoaded /
-                          progress.expectedTotalBytes!
-                    : null,
-              ),
-            ),
-          );
-        },
+        placeholder: (ctx, url) => Container(
+          width: 200.w,
+          height: 150.h,
+          color: AppColors.surfaceVariant,
+          child: const Center(child: CircularProgressIndicator.adaptive()),
+        ),
+        errorWidget: (ctx, url, err) => Container(
+          width: 200.w,
+          height: 150.h,
+          color: AppColors.surfaceVariant,
+          child: const Icon(Icons.broken_image_outlined),
+        ),
       ),
     );
   }
@@ -2200,12 +2198,17 @@ class _LocationMessageContent extends StatelessWidget {
             borderRadius: BorderRadius.circular(12.r),
             child: Stack(
               children: [
-                Image.network(
-                  mapUrl,
+                CachedNetworkImage(
+                  imageUrl: mapUrl,
                   width: 200.w,
                   height: 120.h,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => Container(
+                  placeholder: (_, _) => Container(
+                    width: 200.w,
+                    height: 120.h,
+                    color: AppColors.surfaceVariant,
+                  ),
+                  errorWidget: (_, _, _) => Container(
                     width: 200.w,
                     height: 120.h,
                     color: AppColors.surfaceVariant,
@@ -2232,18 +2235,17 @@ class _LocationMessageContent extends StatelessWidget {
                       ],
                     ),
                   ),
-                  loadingBuilder: (_, child, progress) => progress == null
-                      ? child
-                      : Container(
-                          width: 200.w,
-                          height: 120.h,
-                          color: AppColors.surfaceVariant,
-                          child: const Center(
-                            child: CircularProgressIndicator.adaptive(
-                              strokeWidth: 2,
-                            ),
-                          ),
-                        ),
+
+                  progressIndicatorBuilder: (_, _, progress) => Container(
+                    width: 200.w,
+                    height: 120.h,
+                    color: AppColors.surfaceVariant,
+                    child: const Center(
+                      child: CircularProgressIndicator.adaptive(
+                        strokeWidth: 2,
+                      ),
+                    ),
+                  ),
                 ),
                 Positioned(
                   right: 8.w,

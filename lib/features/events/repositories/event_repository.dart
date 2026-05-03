@@ -124,7 +124,6 @@ class EventRepository {
         toFirestore: (model, _) => model.toJson(),
       );
 
-  @override
   Future<String> createEvent(EventModel event) async {
     final docRef = _eventsCollection.doc();
     final eventWithId = event.copyWith(
@@ -149,14 +148,12 @@ class EventRepository {
     return docRef.id;
   }
 
-  @override
   Future<EventModel?> getEventById(String eventId) async {
     final doc = await _eventsCollection.doc(eventId).get();
     if (!doc.exists) return null;
     return doc.data();
   }
 
-  @override
   Stream<EventModel?> streamEventById(String eventId) {
     return _eventsCollection
         .doc(eventId)
@@ -164,7 +161,6 @@ class EventRepository {
         .map((snap) => snap.exists ? snap.data() : null);
   }
 
-  @override
   Future<void> updateEvent(EventModel event) async {
     await _eventsCollection.doc(event.id).update({
       ...event.toJson(),
@@ -172,12 +168,10 @@ class EventRepository {
     });
   }
 
-  @override
   Future<void> deleteEvent(String eventId) async {
     await _eventsCollection.doc(eventId).delete();
   }
 
-  @override
   Future<void> cancelEvent(String eventId) async {
     await _eventsCollection.doc(eventId).update({
       'isActive': false,
@@ -185,7 +179,6 @@ class EventRepository {
     });
   }
 
-  @override
   Future<void> joinEvent(String eventId, String userId) async {
     final docRef = _eventsCollection.doc(eventId);
     final now = DateTime.now();
@@ -259,7 +252,6 @@ class EventRepository {
     });
   }
 
-  @override
   Future<void> leaveEvent(String eventId, String userId) async {
     final docRef = _eventsCollection.doc(eventId);
     final now = DateTime.now();
@@ -292,7 +284,6 @@ class EventRepository {
     });
   }
 
-  @override
   Stream<List<EventModel>> streamUpcomingEvents() {
     return _eventsCollection
         .where('isActive', isEqualTo: true)
@@ -305,7 +296,6 @@ class EventRepository {
         });
   }
 
-  @override
   Stream<List<EventModel>> streamEventsByCreator(String creatorId) {
     return _eventsCollection
         .where('creatorId', isEqualTo: creatorId)
@@ -317,7 +307,6 @@ class EventRepository {
         });
   }
 
-  @override
   Stream<List<EventModel>> streamEventsByType(EventType type) {
     return _eventsCollection
         .where('isActive', isEqualTo: true)
@@ -331,7 +320,6 @@ class EventRepository {
         });
   }
 
-  @override
   Stream<List<EventModel>> streamJoinedEvents(String userId) {
     return _eventsCollection
         .where('participantIds', arrayContains: userId)
@@ -344,7 +332,6 @@ class EventRepository {
         });
   }
 
-  @override
   Future<String> uploadEventImage(String eventId, File file) async {
     final ref = _storage
         .ref()
@@ -361,7 +348,6 @@ class EventRepository {
 
   // ── Event-Ride Integration ──
 
-  @override
   Future<void> setRideStatus(
     String eventId,
     String userId,
@@ -373,7 +359,6 @@ class EventRepository {
     });
   }
 
-  @override
   Future<void> linkRideToEvent(String eventId, String rideId) async {
     await _eventsCollection.doc(eventId).update({
       'linkedRideIds': FieldValue.arrayUnion([rideId]),
@@ -381,7 +366,6 @@ class EventRepository {
     });
   }
 
-  @override
   Future<void> unlinkRideFromEvent(String eventId, String rideId) async {
     await _eventsCollection.doc(eventId).update({
       'linkedRideIds': FieldValue.arrayRemove([rideId]),
@@ -389,7 +373,6 @@ class EventRepository {
     });
   }
 
-  @override
   Future<void> setMeetupPin(String eventId, LocationPoint location) async {
     await _eventsCollection.doc(eventId).update({
       'meetupPinLocation': location.toJson(),
@@ -397,7 +380,6 @@ class EventRepository {
     });
   }
 
-  @override
   Future<void> setChatGroupId(String eventId, String chatGroupId) async {
     await _eventsCollection.doc(eventId).update({
       'chatGroupId': chatGroupId,
@@ -405,7 +387,6 @@ class EventRepository {
     });
   }
 
-  @override
   Future<String> ensureEventGroupChat({
     required EventModel event,
     required String userId,
@@ -475,11 +456,11 @@ class EventRepository {
     });
   }
 
-  @override
   Stream<List<EventModel>> streamEventsWithLinkedRides(String eventId) {
     // This queries events that have at least one linked ride
     return _eventsCollection
         .where('linkedRideIds', arrayContains: eventId)
+        .limit(50)
         .snapshots()
         .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
   }

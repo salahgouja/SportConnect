@@ -44,7 +44,7 @@ class _PremiumCheckoutScreenState extends ConsumerState<PremiumCheckoutScreen> {
     final state = ref.watch(premiumCheckoutViewModelProvider);
 
     return AdaptiveScaffold(
-      appBar: AdaptiveAppBar(
+      appBar: const AdaptiveAppBar(
         title: 'Premium Checkout',
       ),
       body: SafeArea(

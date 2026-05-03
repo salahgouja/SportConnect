@@ -11,18 +11,19 @@ import 'package:sport_connect/features/rides/services/ride_request_service.dart'
 part 'driver_view_model.g.dart';
 
 @riverpod
-Stream<RideModel?> activeDriverRide(Ref ref) {
+Stream<RideModel?> activeDriverRide(Ref ref) async* {
   // 1. Watch the auth state. Using valueOrNull is cleaner in 3.0.
-  final userId = ref.watch(authStateProvider).value?.uid;
+  final userId = await ref.watch(currentAuthUidProvider.future);
 
   if (userId == null) {
-    return Stream.value(null);
+    yield null;
+    return;
   }
 
   // 2. Watch the repository to ensure we react to any config changes.
   final repository = ref.watch(rideRepositoryProvider);
 
-  return repository.streamRidesByDriver(userId).map((rides) {
+  yield* repository.streamRidesByDriver(userId).map((rides) {
     // 3. Use 'where' and 'fold' for a more declarative approach.
     return rides
         .where((ride) => ride.status == RideStatus.inProgress)
@@ -40,11 +41,10 @@ Stream<RideModel?> activeDriverRide(Ref ref) {
 
 @riverpod
 Stream<List<RideModel>> pastDriverRides(Ref ref) {
-  final authState = ref.watch(authStateProvider);
+  final authUid = ref.watch(currentAuthUidProvider);
 
-  return authState.when(
-    data: (user) {
-      final userId = user?.uid;
+  return authUid.when(
+    data: (userId) {
       if (userId == null) return Stream.value([]);
 
       return ref

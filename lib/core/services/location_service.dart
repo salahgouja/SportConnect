@@ -15,16 +15,12 @@ class LocationService {
     return _instance!;
   }
 
-  @override
   Future<bool> isServiceEnabled() => Geolocator.isLocationServiceEnabled();
 
-  @override
   Future<void> openAppSettings() => Geolocator.openAppSettings();
 
-  @override
   Future<void> openLocationSettings() => Geolocator.openLocationSettings();
 
-  @override
   Future<bool> checkPermission() async {
     bool serviceEnabled;
     LocationPermission permission;
@@ -44,7 +40,6 @@ class LocationService {
     return true;
   }
 
-  @override
   Future<bool> requestPermission() async {
     bool serviceEnabled;
     LocationPermission permission;
@@ -75,13 +70,11 @@ class LocationService {
   /// LS-1: Returns true if the user has permanently denied location permission.
   /// The caller should show a manual address-entry fallback in this case, since
   /// `requestPermission()` cannot prompt the user again once denied-forever.
-  @override
   Future<bool> isPermissionPermanentlyDenied() async {
     final permission = await Geolocator.checkPermission();
     return permission == LocationPermission.deniedForever;
   }
 
-  @override
   Future<Position?> getCurrentLocation() async {
     try {
       final hasPermission = await requestPermission();
@@ -101,7 +94,6 @@ class LocationService {
     }
   }
 
-  @override
   Stream<Position> getLocationStream() {
     const locationSettings = LocationSettings(
       accuracy: LocationAccuracy.high,
@@ -111,12 +103,10 @@ class LocationService {
     return Geolocator.getPositionStream(locationSettings: locationSettings);
   }
 
-  @override
   double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
     return Geolocator.distanceBetween(lat1, lon1, lat2, lon2) / 1000;
   }
 
-  @override
   Future<String?> getAddressFromCoordinates(double lat, double lon) async {
     try {
       final placemarks = await placemarkFromCoordinates(lat, lon);
@@ -131,7 +121,6 @@ class LocationService {
     return null;
   }
 
-  @override
   Future<Position?> getCoordinatesFromAddress(String address) async {
     try {
       final locations = await locationFromAddress(address);

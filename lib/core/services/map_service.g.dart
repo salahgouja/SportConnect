@@ -49,3 +49,58 @@ final class MapServiceProvider
 }
 
 String _$mapServiceHash() => r'805ea1eba589838030d09934db5c8803ad6154b3';
+
+/// Cached [TileProvider] backed by Hive, shared across all map screens.
+///
+/// Tiles are cached for 30 days (OSM policy: re-fetch stale tiles, not
+/// indefinite caching). The OS may evict the cache dir under storage pressure.
+
+@ProviderFor(mapTileProvider)
+final mapTileProviderProvider = MapTileProviderProvider._();
+
+/// Cached [TileProvider] backed by Hive, shared across all map screens.
+///
+/// Tiles are cached for 30 days (OSM policy: re-fetch stale tiles, not
+/// indefinite caching). The OS may evict the cache dir under storage pressure.
+
+final class MapTileProviderProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<CachedTileProvider>,
+          CachedTileProvider,
+          FutureOr<CachedTileProvider>
+        >
+    with
+        $FutureModifier<CachedTileProvider>,
+        $FutureProvider<CachedTileProvider> {
+  /// Cached [TileProvider] backed by Hive, shared across all map screens.
+  ///
+  /// Tiles are cached for 30 days (OSM policy: re-fetch stale tiles, not
+  /// indefinite caching). The OS may evict the cache dir under storage pressure.
+  MapTileProviderProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'mapTileProviderProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$mapTileProviderHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<CachedTileProvider> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<CachedTileProvider> create(Ref ref) {
+    return mapTileProvider(ref);
+  }
+}
+
+String _$mapTileProviderHash() => r'f0c95ea0d4f4f89dd250f19480f4ca3589f78601';

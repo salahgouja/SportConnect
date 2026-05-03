@@ -31,7 +31,7 @@ class SupportRepository {
   /// Submits a user or ride report and optionally uploads [attachments].
   ///
   /// Returns the new document ID.
-  @override
+
   Future<String> submitReport({
     required String reporterId,
     required String reporterEmail,
@@ -76,7 +76,7 @@ class SupportRepository {
   /// Submits a support ticket and optionally uploads [attachments].
   ///
   /// Returns the new document ID.
-  @override
+
   Future<String> submitSupportTicket({
     required String userId,
     required String userEmail,

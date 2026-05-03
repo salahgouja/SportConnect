@@ -30,6 +30,7 @@ import 'package:sport_connect/features/rides/view_models/rider_view_ride_view_mo
 import 'package:sport_connect/features/rides/views/passenger/ride_detail_screen.dart'
     show RideDetailScreen;
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
+import 'package:sport_connect/core/widgets/app_map_tile_layer.dart';
 
 /// Rider's personal ride view with booking and review sections.
 ///
@@ -88,7 +89,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
       if (ride == null || _hasNavigatedToActiveRide) return;
 
       if (ride.status == RideStatus.inProgress) {
-        final currentUserId = ref.read(currentUserProvider).value?.uid;
+        final currentUserId = ref.read(currentAuthUidProvider).value;
         if (currentUserId == null) return;
 
         // Only redirect if this passenger has an accepted booking
@@ -111,7 +112,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
     if (!_hasNavigatedToActiveRide) {
       final ride = vmState.ride.value;
       if (ride != null && ride.status == RideStatus.inProgress) {
-        final currentUserId = ref.read(currentUserProvider).value?.uid;
+        final currentUserId = ref.read(currentAuthUidProvider).value;
         if (currentUserId != null) {
           final hasAcceptedBooking = vmState.bookings.any(
             (b) =>
@@ -297,10 +298,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
                 ),
               ),
               children: [
-                TileLayer(
-                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'com.sportconnect.app',
-                ),
+                const AppMapTileLayer(),
                 const CurrentLocationLayer(),
                 if (uiState.routeInfo != null)
                   PolylineLayer(
@@ -1277,15 +1275,17 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
   }
 
   Widget _buildBookingBar(RideModel ride, RiderViewRideUiState uiState) {
-    final currentUser = ref.watch(currentUserProvider).value;
-    final isOwnRide = currentUser?.uid == ride.driverId;
+    final currentUserId = ref.watch(currentAuthUidProvider).value;
+    final isOwnRide = currentUserId == ride.driverId;
 
     // Use the passenger-scoped provider to find the rider's own booking for
     // this ride. The ride-scoped provider filters by driverId and returns
     // nothing when the current user is a passenger.
-    final existingBooking = currentUser != null
+    final existingBooking = currentUserId != null
         ? _latestBookingForRide(
-            ref.watch(bookingsByPassengerProvider(currentUser.uid)).value,
+            ref.watch(
+              bookingsByPassengerProvider(currentUserId).select((a) => a.value),
+            ),
             ride.id,
           )
         : null;
@@ -1787,7 +1787,7 @@ class _BookingConfirmationSheetState extends State<_BookingConfirmationSheet> {
                 ),
               ],
             ),
-            SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
+            SizedBox(height: MediaQuery.viewInsetsOf(context).bottom),
           ],
         ),
       ),

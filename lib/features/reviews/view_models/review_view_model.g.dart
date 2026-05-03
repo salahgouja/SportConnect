@@ -113,7 +113,7 @@ final class ReviewsListViewModelProvider
 }
 
 String _$reviewsListViewModelHash() =>
-    r'9a2cdc865ae594b2801b50cc2ce1ba2ec0799f37';
+    r'f17186f5e7a1a5be9a336c2b53c6dd3aa05e8d8f';
 
 /// ViewModel for viewing reviews list
 

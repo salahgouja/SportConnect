@@ -111,8 +111,14 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final locationState = ref.watch(driverLocationViewModelProvider);
-    final activeRide = ref.watch(activeDriverRideProvider).value;
+    final (isLoadingLocation, locationGranted, locationDeniedForever, servicesDisabled) =
+        ref.watch(driverLocationViewModelProvider.select((s) => (
+          s.isLoading,
+          s.locationGranted,
+          s.locationDeniedForever,
+          s.servicesDisabled,
+        )));
+    final activeRide = ref.watch(activeDriverRideProvider.select((a) => a.value));
 
     // ── Global Active Ride Guard ─────────────────────────────
     // On app launch / foreground, auto-navigate to the active ride screen
@@ -132,11 +138,10 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
 
     return AdaptiveScaffold(
       body: _DriverDashboard(
-        isLoadingLocation: locationState.isLoading,
-        locationGranted: locationState.locationGranted,
-        locationDeniedForever: locationState.locationDeniedForever,
-        servicesDisabled: locationState.servicesDisabled,
-        currentPosition: locationState.currentPosition,
+        isLoadingLocation: isLoadingLocation,
+        locationGranted: locationGranted,
+        locationDeniedForever: locationDeniedForever,
+        servicesDisabled: servicesDisabled,
         onRetryLocation: _requestLocationPermission,
         onOpenSettings: () =>
             ref.read(locationServiceProvider).openLocationSettings(),
@@ -232,7 +237,6 @@ class _DriverDashboard extends ConsumerWidget {
     required this.locationGranted,
     required this.locationDeniedForever,
     required this.servicesDisabled,
-    required this.currentPosition,
     required this.onRetryLocation,
     required this.onOpenSettings,
   });
@@ -241,7 +245,6 @@ class _DriverDashboard extends ConsumerWidget {
   final bool locationGranted;
   final bool locationDeniedForever;
   final bool servicesDisabled;
-  final Position? currentPosition;
   final VoidCallback onRetryLocation;
   final VoidCallback onOpenSettings;
 
@@ -254,7 +257,7 @@ class _DriverDashboard extends ConsumerWidget {
         ),
       ),
     );
-    final activeRide = ref.watch(activeDriverRideProvider).value;
+    final activeRide = ref.watch(activeDriverRideProvider.select((a) => a.value));
     final driverStats = ref.watch(driverStatsProvider);
     final pendingRequests = ref.watch(pendingRideRequestsProvider);
     final upcomingRides = ref.watch(upcomingDriverRidesProvider);
@@ -419,7 +422,7 @@ class _DriverDashboard extends ConsumerWidget {
     AppLocalizations l10n,
     double hPad,
   ) {
-    final topPad = MediaQuery.of(context).padding.top;
+    final topPad = MediaQuery.paddingOf(context).top;
 
     final header = Container(
       padding: EdgeInsets.fromLTRB(hPad, topPad + 16, hPad, 16),
@@ -950,36 +953,37 @@ class _DriverDashboard extends ConsumerWidget {
               );
             }
             return Column(
-              children: requestPreview.map((request) {
-                return Padding(
-                  padding: EdgeInsets.only(bottom: 12.h),
-                  child: _RequestCard(
-                    request: request,
-                    isProcessing: false,
-                    onAccept: () async {
-                      HapticFeedback.heavyImpact();
-                      final result = await ref
-                          .read(rideRequestServiceProvider.notifier)
-                          .acceptRequest(request.id);
-                      if (!context.mounted) return;
-                      if (result is Success) {
-                        ref.invalidate(pendingRideRequestsProvider);
-                        ref.invalidate(upcomingDriverRidesProvider);
-                      }
-                    },
-                    onDecline: () async {
-                      HapticFeedback.lightImpact();
-                      final result = await ref
-                          .read(rideRequestServiceProvider.notifier)
-                          .rejectRequest(request.id, 'Declined by driver');
-                      if (!context.mounted) return;
-                      if (result is Success) {
-                        ref.invalidate(pendingRideRequestsProvider);
-                      }
-                    },
+              children: [
+                for (final request in requestPreview)
+                  Padding(
+                    padding: EdgeInsets.only(bottom: 12.h),
+                    child: _RequestCard(
+                      request: request,
+                      isProcessing: false,
+                      onAccept: () async {
+                        HapticFeedback.heavyImpact();
+                        final result = await ref
+                            .read(rideRequestServiceProvider.notifier)
+                            .acceptRequest(request.id);
+                        if (!context.mounted) return;
+                        if (result is Success) {
+                          ref.invalidate(pendingRideRequestsProvider);
+                          ref.invalidate(upcomingDriverRidesProvider);
+                        }
+                      },
+                      onDecline: () async {
+                        HapticFeedback.lightImpact();
+                        final result = await ref
+                            .read(rideRequestServiceProvider.notifier)
+                            .rejectRequest(request.id, 'Declined by driver');
+                        if (!context.mounted) return;
+                        if (result is Success) {
+                          ref.invalidate(pendingRideRequestsProvider);
+                        }
+                      },
+                    ),
                   ),
-                );
-              }).toList(),
+              ],
             );
           },
           loading: () => _buildShimmerCard(height: 100),
@@ -1022,18 +1026,19 @@ class _DriverDashboard extends ConsumerWidget {
               );
             }
             return Column(
-              children: ridePreview.map((ride) {
-                return Padding(
-                  padding: EdgeInsets.only(bottom: 12.h),
-                  child: _UpcomingRideCard(
-                    ride: ride,
-                    onTap: () => context.pushNamed(
-                      AppRoutes.rideDetail.name,
-                      pathParameters: {'id': ride.id},
+              children: [
+                for (final ride in ridePreview)
+                  Padding(
+                    padding: EdgeInsets.only(bottom: 12.h),
+                    child: _UpcomingRideCard(
+                      ride: ride,
+                      onTap: () => context.pushNamed(
+                        AppRoutes.rideDetail.name,
+                        pathParameters: {'id': ride.id},
+                      ),
                     ),
                   ),
-                );
-              }).toList(),
+              ],
             );
           },
           loading: () => _buildShimmerCard(height: 100),
@@ -1295,8 +1300,8 @@ class _RequestCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final profile = ref.watch(userProfileProvider(request.passengerId)).value;
-    final ride = ref.watch(requestCardRideProvider(request.rideId)).value;
+    final profile = ref.watch(userProfileProvider(request.passengerId).select((a) => a.value));
+    final ride = ref.watch(requestCardRideProvider(request.rideId).select((a) => a.value));
     final passengerName = profile?.username ?? '…';
     final passengerRating = profile?.asRider?.rating.average ?? 0.0;
     final pricePerSeatInCents = ride?.pricePerSeatInCents ?? 0.0;

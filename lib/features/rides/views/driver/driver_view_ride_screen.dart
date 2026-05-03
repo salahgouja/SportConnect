@@ -30,6 +30,7 @@ import 'package:sport_connect/features/rides/view_models/driver_view_ride_view_m
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:sport_connect/core/widgets/app_map_tile_layer.dart';
 
 /// Driver's dedicated screen for managing their ride and viewing booking requests
 /// Features: ride stats, booking management, passenger list, ride controls
@@ -276,10 +277,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen> {
                 ),
               ),
               children: [
-                TileLayer(
-                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'com.sportconnect.app',
-                ),
+                const AppMapTileLayer(),
                 const CurrentLocationLayer(),
                 PolylineLayer(
                   polylines: [
@@ -1552,7 +1550,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen> {
                   _cancelRide(ride);
                 },
               ),
-            SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
+            SizedBox(height: MediaQuery.viewInsetsOf(context).bottom),
           ],
         ),
       ),
@@ -1604,7 +1602,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen> {
                 _removePassenger(ride, booking);
               },
             ),
-            SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
+            SizedBox(height: MediaQuery.viewInsetsOf(context).bottom),
           ],
         ),
       ),

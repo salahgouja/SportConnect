@@ -10,16 +10,19 @@ part of 'chat_view_model.dart';
 // ignore_for_file: type=lint, type=warning
 /// Plain-class wrapper for one-shot chat operations (upload, mute, block, etc.)
 /// that don't require reactive state of their own.
+// keepAlive: action-only VM - accessed from notification/background contexts.
 
 @ProviderFor(ChatActionsViewModel)
 final chatActionsViewModelProvider = ChatActionsViewModelProvider._();
 
 /// Plain-class wrapper for one-shot chat operations (upload, mute, block, etc.)
 /// that don't require reactive state of their own.
+// keepAlive: action-only VM - accessed from notification/background contexts.
 final class ChatActionsViewModelProvider
     extends $NotifierProvider<ChatActionsViewModel, void> {
   /// Plain-class wrapper for one-shot chat operations (upload, mute, block, etc.)
   /// that don't require reactive state of their own.
+  // keepAlive: action-only VM - accessed from notification/background contexts.
   ChatActionsViewModelProvider._()
     : super(
         from: null,
@@ -52,6 +55,7 @@ String _$chatActionsViewModelHash() =>
 
 /// Plain-class wrapper for one-shot chat operations (upload, mute, block, etc.)
 /// that don't require reactive state of their own.
+// keepAlive: action-only VM - accessed from notification/background contexts.
 
 abstract class _$ChatActionsViewModel extends $Notifier<void> {
   void build();
@@ -456,7 +460,7 @@ final class ChatDetailViewModelProvider
 }
 
 String _$chatDetailViewModelHash() =>
-    r'4ec67d1544695c0483a9f10b17e12e220a65b6d8';
+    r'35e0e10d233a751cd0d28b2cb390de1cabe12f51';
 
 final class ChatDetailViewModelFamily extends $Family
     with

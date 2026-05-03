@@ -198,6 +198,7 @@ class RideDetailUiViewModel extends _$RideDetailUiViewModel {
 /// Delegates ride operations through the [RideService] for validated
 /// business logic. Falls back to the repository only for operations
 /// that don't require additional validation (start, complete, stream).
+// keepAlive: action-only VM - accessed from notification/background contexts.
 @Riverpod(keepAlive: true)
 class RideActionsViewModel extends _$RideActionsViewModel {
   @override
@@ -645,7 +646,7 @@ Stream<String?> ridePhaseStream(Ref ref, String rideId) {
 }
 
 /// Ride Form View Model
-@Riverpod(keepAlive: true)
+@riverpod
 class RideFormViewModel extends _$RideFormViewModel {
   @override
   RideFormState build() => const RideFormState();
@@ -1468,7 +1469,8 @@ class RideDetailViewModel extends _$RideDetailViewModel {
   RideDetailState build(String rideId) {
     final rideAsync = ref.watch(rideStreamProvider(rideId));
     final bookings =
-        ref.watch(bookingsByRideProvider(rideId)).value ?? const [];
+        ref.watch(bookingsByRideProvider(rideId)).value ??
+        const <RideBooking>[];
     return RideDetailState(ride: rideAsync, bookings: bookings);
   }
 
@@ -3184,8 +3186,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
     final cumulativeFromDriver = <double>[0];
     for (var i = driverNearestIdx + 1; i < routePoints.length; i++) {
       cumulativeFromDriver.add(
-        cumulativeFromDriver.last +
-            _distKm(routePoints[i - 1], routePoints[i]),
+        cumulativeFromDriver.last + _distKm(routePoints[i - 1], routePoints[i]),
       );
     }
     final remainingRouteKm = cumulativeFromDriver.last;
@@ -3268,8 +3269,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
     // routes with sparse OSRM geometry don't generate constant false positives.
     double totalRouteMeters = 0;
     for (var i = 0; i < routePoints.length - 1; i++) {
-      totalRouteMeters +=
-          _distKm(routePoints[i], routePoints[i + 1]) * 1000;
+      totalRouteMeters += _distKm(routePoints[i], routePoints[i + 1]) * 1000;
     }
     final avgSegmentMeters = totalRouteMeters / (routePoints.length - 1);
     // Threshold: 40% of avg segment length, clamped between 150 m and 400 m.
@@ -3506,7 +3506,8 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
       GeoDistanceService.calculateDistance(
         GeoPoint(latitude: a.latitude, longitude: a.longitude),
         GeoPoint(latitude: b.latitude, longitude: b.longitude),
-      ) / 1000.0;
+      ) /
+      1000.0;
 
   void _checkProximity(Position position) {
     final ride = state.currentRide;
@@ -3634,22 +3635,23 @@ Stream<List<RideModel>> nearbyRides(
 /// The role is determined lazily from [rideStreamProvider] so there is no
 /// extra Firestore read — the ride document is already being watched.
 @riverpod
-Stream<List<RideBooking>> bookingsByRide(Ref ref, String rideId) {
-  final uid = ref.watch(currentUserProvider).value?.uid;
-  if (uid == null) return const Stream.empty();
+Stream<List<RideBooking>> bookingsByRide(Ref ref, String rideId) async* {
+  final uid = await ref.watch(currentAuthUidProvider.future);
+  if (uid == null) return;
 
   // Once the ride snapshot is available, use driverId to determine role.
-  final ride = ref.watch(rideStreamProvider(rideId)).value;
+  final ride = await ref.watch(rideStreamProvider(rideId).future);
   if (ride != null && ride.driverId != uid) {
     // Current user is a passenger — stream only their own booking.
-    return ref
+    yield* ref
         .read(bookingRepositoryProvider)
         .streamPassengerBookingForRide(rideId, uid);
+    return;
   }
 
   // Current user is the driver (or ride hasn't loaded yet — driver query is
   // safe to retry because it returns empty for non-drivers).
-  return ref
+  yield* ref
       .read(bookingRepositoryProvider)
       .streamBookingsByRideId(rideId, uid);
 }
@@ -3677,12 +3679,12 @@ Stream<List<RideBooking>> bookingsByPassenger(
   Ref ref,
   String passengerId,
 ) async* {
-  // Emit immediately so the provider never stays in pure loading state.
+  final bookingRepository = ref.watch(bookingRepositoryProvider);
+
+  // Emit immediately so the provider has a first value.
   yield const <RideBooking>[];
 
-  yield* ref
-      .watch(bookingRepositoryProvider)
-      .streamBookingsByPassengerId(passengerId);
+  yield* bookingRepository.streamBookingsByPassengerId(passengerId);
 }
 
 /// All Active Rides Stream Provider (for search screen)

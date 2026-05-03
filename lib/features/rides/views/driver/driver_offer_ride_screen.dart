@@ -30,6 +30,7 @@ import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
 import 'package:sport_connect/features/vehicles/view_models/vehicle_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
+import 'package:sport_connect/core/widgets/app_map_tile_layer.dart';
 
 class DriverOfferRideScreen extends ConsumerStatefulWidget {
   const DriverOfferRideScreen({
@@ -365,7 +366,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
   }
 
   Widget _buildSliverHeader(BuildContext context) {
-    final topPad = MediaQuery.of(context).padding.top;
+    final topPad = MediaQuery.paddingOf(context).top;
     return Container(
       padding: EdgeInsets.fromLTRB(20.w, topPad + 12.h, 20.w, 16.h),
       decoration: const BoxDecoration(
@@ -660,10 +661,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
             ),
 
             children: [
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.sportconnect.app',
-              ),
+              const AppMapTileLayer(),
               const CurrentLocationLayer(),
               PolylineLayer(
                 polylines: [

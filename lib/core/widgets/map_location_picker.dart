@@ -17,6 +17,7 @@ import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
+import 'package:sport_connect/core/widgets/app_map_tile_layer.dart';
 
 /// Full-screen Location Picker with Search and Map
 ///
@@ -325,7 +326,7 @@ class _MapLocationPickerState extends ConsumerState<MapLocationPicker>
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: MediaQuery.of(context).size.height * 0.9,
+      height: MediaQuery.sizeOf(context).height * 0.9,
       decoration: BoxDecoration(
         color: AppColors.background,
         borderRadius: BorderRadius.vertical(top: Radius.circular(28.r)),
@@ -680,11 +681,8 @@ class _MapLocationPickerState extends ConsumerState<MapLocationPicker>
               onTap: (tapPosition, point) => _onMapTap(point),
             ),
             children: [
-              TileLayer(
-                urlTemplate: MapService.standardTileProvider.urlTemplate,
-                subdomains:
-                    MapService.standardTileProvider.subdomains ?? const [],
-                userAgentPackageName: 'com.sportconnect.app',
+              AppMapTileLayer(
+                subdomains: MapService.standardTileProvider.subdomains ?? const [],
               ),
               CurrentLocationLayer(
                 style: LocationMarkerStyle(

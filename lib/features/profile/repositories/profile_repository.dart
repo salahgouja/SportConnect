@@ -38,7 +38,7 @@ class ProfileRepository {
   // ==================== USER PROFILE ====================
 
   /// Get user by ID
-  @override
+
   Future<UserModel?> getUserById(String uid) async {
     final doc = await _usersCollection.doc(uid).get();
     if (!doc.exists) return null;
@@ -46,7 +46,7 @@ class ProfileRepository {
   }
 
   /// Stream user profile
-  @override
+
   Stream<UserModel?> streamUser(String uid) {
     return _usersCollection.doc(uid).snapshots().map((doc) {
       if (!doc.exists) return null;
@@ -55,7 +55,7 @@ class ProfileRepository {
   }
 
   /// Update user profile
-  @override
+
   Future<void> updateProfile(String uid, Map<String, dynamic> updates) async {
     updates['updatedAt'] = DateTime.now();
     await _usersCollection.doc(uid).update(updates);
@@ -80,7 +80,7 @@ class ProfileRepository {
   }
 
   /// Update profile photo
-  @override
+
   Future<void> updateProfilePhoto(String uid, File file) async {
     final photoUrl = await uploadProfilePhoto(uid, file);
     await updateProfile(uid, {'photoUrl': photoUrl});
@@ -117,7 +117,7 @@ class ProfileRepository {
   /// Block a user atomically:
   /// 1. Writes metadata to blocked-users sub-collection.
   /// 2. Appends UID to [UserModel.blockedUsers] array for fast query filtering.
-  @override
+
   Future<void> blockUser(String currentUserId, String targetUserId) async {
     final batch = _firestore.batch();
 
@@ -133,7 +133,7 @@ class ProfileRepository {
   }
 
   /// Unblock a user atomically — exact reverse of [blockUser].
-  @override
+
   Future<void> unblockUser(String currentUserId, String targetUserId) async {
     final batch = _firestore.batch();
 
@@ -146,7 +146,6 @@ class ProfileRepository {
     await batch.commit();
   }
 
-  @override
   Future<bool> isUserBlocked({
     required String userId,
     required String blockedUserId,
@@ -155,7 +154,6 @@ class ProfileRepository {
     return doc.exists;
   }
 
-  @override
   Stream<List<String>> streamBlockedUserIds(String userId) {
     return _blockedUsersCollection(userId).snapshots().map(
       (snapshot) => snapshot.docs.map((doc) => doc.id).toList(),
@@ -172,7 +170,7 @@ class ProfileRepository {
       );
 
   /// Add a vehicle (only for drivers)
-  @override
+
   Future<void> addVehicle(String uid, VehicleModel vehicle) async {
     final user = await getUserById(uid);
     if (user == null) {
@@ -194,7 +192,7 @@ class ProfileRepository {
   }
 
   /// Update a vehicle (only for drivers)
-  @override
+
   Future<void> updateVehicle(String uid, VehicleModel vehicle) async {
     final user = await getUserById(uid);
     if (user == null || user is! DriverModel) return;
@@ -204,7 +202,7 @@ class ProfileRepository {
   }
 
   /// Remove a vehicle (only for drivers)
-  @override
+
   Future<void> removeVehicle(String uid, String vehicleId) async {
     final user = await getUserById(uid);
     if (user == null || user is! DriverModel) return;
@@ -222,7 +220,7 @@ class ProfileRepository {
   /// Set default vehicle (only for drivers).
   /// G-6: Chunks writes into batches of 499 to stay within Firestore's
   /// 500-operation-per-batch limit for drivers with many vehicles.
-  @override
+
   Future<void> setDefaultVehicle(String uid, String vehicleId) async {
     final user = await getUserById(uid);
     if (user == null || user is! DriverModel) return;
@@ -246,7 +244,7 @@ class ProfileRepository {
   }
 
   /// Get vehicles for a driver
-  @override
+
   Future<List<VehicleModel>> getDriverVehicles(String uid) async {
     final user = await getUserById(uid);
     if (user == null || user is! DriverModel) return [];
@@ -267,7 +265,7 @@ class ProfileRepository {
   // ==================== GAMIFICATION ====================
 
   /// Add XP to user. Returns the new level if a level-up occurred, or null.
-  @override
+
   Future<int?> addXP(String uid, int xp) async {
     final user = await getUserById(uid);
     if (user == null) return null;
@@ -324,7 +322,7 @@ class ProfileRepository {
   }
 
   /// Update streak
-  @override
+
   Future<void> updateStreak(String uid) async {
     final user = await getUserById(uid);
     if (user == null) return;
@@ -377,7 +375,7 @@ class ProfileRepository {
   }
 
   /// Reset streak to 0 (no-show / bad behaviour penalty).
-  @override
+
   Future<void> resetStreak(String uid) async {
     await _usersCollection.doc(uid).update({
       'gamification.currentStreak': 0,
@@ -385,7 +383,7 @@ class ProfileRepository {
   }
 
   /// Update ride stats
-  @override
+
   Future<void> updateRideStats({
     required String uid,
     required bool asDriver,
@@ -419,7 +417,7 @@ class ProfileRepository {
   }
 
   /// Unlock achievement
-  @override
+
   Future<void> unlockAchievement(String uid, String achievementId) async {
     await _usersCollection.doc(uid).update({
       'gamification.unlockedBadges': FieldValue.arrayUnion([achievementId]),
@@ -428,7 +426,7 @@ class ProfileRepository {
 
   /// Evaluate and unlock achievements based on current user stats.
   /// Returns list of newly unlocked badge IDs.
-  @override
+
   Future<List<String>> evaluateAchievements(String uid) async {
     final user = await getUserById(uid);
     if (user == null) return [];
@@ -529,7 +527,7 @@ class ProfileRepository {
   // ==================== LEADERBOARD ====================
 
   /// Get leaderboard
-  @override
+
   Future<List<LeaderboardEntry>> getLeaderboard({int limit = 50}) async {
     final query = await _usersCollection
         .orderBy('gamification.totalXP', descending: true)
@@ -558,7 +556,7 @@ class ProfileRepository {
   }
 
   /// Get user's rank
-  @override
+
   Future<int> getUserRank(String uid) async {
     final user = await getUserById(uid);
     if (user == null) return 0;
@@ -594,7 +592,7 @@ class ProfileRepository {
   // ==================== SEARCH ====================
 
   /// Search users
-  @override
+
   Future<List<UserModel>> searchUsers({
     String? query,
     UserRole? role,
@@ -695,7 +693,6 @@ class ProfileRepository {
 
   // ==================== INTERFACE METHODS ====================
 
-  @override
   Future<void> updateUser(UserModel user) async {
     await _usersCollection.doc(user.uid).update({
       ...user.toJson(),
@@ -703,7 +700,6 @@ class ProfileRepository {
     });
   }
 
-  @override
   Future<void> updateUserField(
     String userId,
     String field,
@@ -718,11 +714,14 @@ class ProfileRepository {
 
 /// Stream provider for current user
 @riverpod
-Stream<UserModel?> currentUserStream(Ref ref) {
+Stream<UserModel?> currentUserStream(Ref ref) async* {
   final repository = ref.watch(profileRepositoryProvider);
-  final user = ref.watch(authStateProvider).value;
-  if (user == null) return Stream.value(null);
-  return repository.streamUser(user.uid);
+  final userId = await ref.watch(currentAuthUidProvider.future);
+  if (userId == null) {
+    yield null;
+    return;
+  }
+  yield* repository.streamUser(userId);
 }
 
 /// Stream provider for a user by ID

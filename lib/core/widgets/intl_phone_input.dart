@@ -103,6 +103,8 @@ class IntlPhoneInput extends StatefulWidget {
 }
 
 class IntlPhoneInputState extends State<IntlPhoneInput> {
+  static final _nonDigitsRegExp = RegExp(r'[^\d]');
+  static final _phoneCharsRegExp = RegExp(r'[\d\s\-()]');
   late Country _selectedCountry;
   late final TextEditingController _controller;
   String? _errorText;
@@ -168,7 +170,7 @@ class IntlPhoneInputState extends State<IntlPhoneInput> {
     final hasError = _errorText != null;
     final isValid =
         _isPhoneValid &&
-        _controller.text.replaceAll(RegExp(r'[^\d]'), '').isNotEmpty;
+        _controller.text.replaceAll(_nonDigitsRegExp, '').isNotEmpty;
 
     // Border color priority: error > valid > neutral
     final borderColor = hasError
@@ -225,7 +227,7 @@ class IntlPhoneInputState extends State<IntlPhoneInput> {
                     autofocus: widget.autofocus,
                     keyboardType: TextInputType.phone,
                     inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp(r'[\d\s\-()]')),
+                      FilteringTextInputFormatter.allow(_phoneCharsRegExp),
                       LengthLimitingTextInputFormatter(
                         _selectedCountry.maxLength + 2,
                       ),

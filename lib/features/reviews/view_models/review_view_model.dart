@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/features/profile/repositories/profile_repository.dart';
@@ -49,6 +50,7 @@ class ReviewsListState {
     this.error,
     this.filterType,
     this.hasMore = true,
+    this.nextCursor,
   });
   final List<ReviewModel> reviews;
   final RatingStats? stats;
@@ -56,6 +58,8 @@ class ReviewsListState {
   final String? error;
   final ReviewType? filterType;
   final bool hasMore;
+  // DocumentSnapshot cursor for Firestore cursor-based pagination
+  final DocumentSnapshot? nextCursor;
 
   ReviewsListState copyWith({
     List<ReviewModel>? reviews,
@@ -64,6 +68,8 @@ class ReviewsListState {
     String? error,
     ReviewType? filterType,
     bool? hasMore,
+    DocumentSnapshot? nextCursor,
+    bool clearCursor = false,
   }) {
     return ReviewsListState(
       reviews: reviews ?? this.reviews,
@@ -72,6 +78,7 @@ class ReviewsListState {
       error: error,
       filterType: filterType,
       hasMore: hasMore ?? this.hasMore,
+      nextCursor: clearCursor ? null : (nextCursor ?? this.nextCursor),
     );
   }
 
@@ -198,13 +205,15 @@ class ReviewsListViewModel extends _$ReviewsListViewModel {
   Future<ReviewsListState> _loadReviews() async {
     try {
       final repo = ref.read(reviewRepositoryProvider);
-      final reviews = await repo.getReviewsForUser(userId, limit: _pageSize);
+      final (:reviews, :nextCursor) =
+          await repo.getReviewsForUser(userId, limit: _pageSize);
       final stats = await repo.getRatingStatsForUser(userId);
 
       return ReviewsListState(
         reviews: reviews,
         stats: stats,
-        hasMore: reviews.length >= _pageSize,
+        hasMore: nextCursor != null,
+        nextCursor: nextCursor,
       );
     } catch (e, st) {
       return ReviewsListState(
@@ -227,7 +236,7 @@ class ReviewsListViewModel extends _$ReviewsListViewModel {
     state = AsyncValue.data(reviews);
   }
 
-  /// Load next page of reviews using cursor-based pagination.
+  /// Load next page of reviews using DocumentSnapshot cursor-based pagination.
   Future<void> loadMore() async {
     final current = state.value;
     if (current == null || !current.hasMore || current.isLoading) return;
@@ -236,22 +245,19 @@ class ReviewsListViewModel extends _$ReviewsListViewModel {
 
     try {
       final repo = ref.read(reviewRepositoryProvider);
-      // Use the last review's createdAt as cursor for Firestore startAfter
-      final cursor = current.reviews.isNotEmpty
-          ? current.reviews.last.createdAt
-          : null;
-      final more = await repo.getReviewsForUser(
+      final (:reviews, :nextCursor) = await repo.getReviewsForUser(
         userId,
         limit: _pageSize,
-        startAfter: cursor,
+        startAfterDoc: current.nextCursor,
       );
 
       if (!ref.mounted) return;
       state = AsyncValue.data(
         current.copyWith(
-          reviews: [...current.reviews, ...more],
+          reviews: [...current.reviews, ...reviews],
           isLoading: false,
-          hasMore: more.length >= _pageSize,
+          hasMore: nextCursor != null,
+          nextCursor: nextCursor,
         ),
       );
     } catch (e, st) {

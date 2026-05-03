@@ -19,6 +19,7 @@ import 'package:sport_connect/features/rides/view_models/pending_booking_view_mo
 import 'package:sport_connect/features/rides/views/passenger/ride_countdown_screen.dart'
     show RideCountdownScreen;
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
+import 'package:sport_connect/core/widgets/app_map_tile_layer.dart';
 
 /// Shown immediately after a passenger submits a booking request.
 ///
@@ -312,10 +313,7 @@ class _RideBookingPendingScreenState
               ),
             ),
             children: [
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.sportconnect.app',
-              ),
+              const AppMapTileLayer(),
               const CurrentLocationLayer(),
               PolylineLayer(
                 polylines: [

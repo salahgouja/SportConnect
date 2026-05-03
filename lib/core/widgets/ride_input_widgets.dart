@@ -203,6 +203,7 @@ class PriceInput extends StatefulWidget {
 }
 
 class PriceInputState extends State<PriceInput> {
+  static final _priceRegExp = RegExp(r'^\d{0,4}[.,]?\d{0,2}$');
   late final TextEditingController _controller;
   final FocusNode _focusNode = FocusNode();
   String? _errorText;
@@ -320,7 +321,7 @@ class PriceInputState extends State<PriceInput> {
                     ),
                     inputFormatters: [
                       FilteringTextInputFormatter.allow(
-                        RegExp(r'^\d{0,4}[.,]?\d{0,2}$'),
+                        _priceRegExp,
                       ),
                     ],
                     style: TextStyle(

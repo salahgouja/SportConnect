@@ -14,6 +14,7 @@ import 'package:sport_connect/core/widgets/address_autocomplete_field.dart';
 import 'package:sport_connect/core/widgets/expertise_picker.dart';
 import 'package:sport_connect/core/widgets/glass_panel.dart';
 import 'package:sport_connect/core/widgets/intl_phone_input.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/auth/view_models/onboarding_view_model.dart';
@@ -406,7 +407,7 @@ class _DriverOnboardingScreenState
 
   @override
   Widget build(BuildContext context) {
-    final currentUser = ref.watch(currentUserProvider).value;
+    final currentUser = ref.watch(currentUserProvider.select((a) => a.value));
     final vmState = ref.watch(onboardingViewModelProvider);
     final skipProfileStep = _skipProfileStep(context);
     final effectiveStep = _effectiveStep(vmState, skipProfileStep, currentUser);
@@ -1055,7 +1056,7 @@ class _DriverOnboardingScreenState
             ReactiveFormConsumer(
               builder: (context, form, _) {
                 final isFormReady = form.valid;
-                final currentVmState = ref.watch(onboardingViewModelProvider);
+                final isLoading = ref.watch(onboardingViewModelProvider.select((s) => s.isLoading));
 
                 return AnimatedOpacity(
                   duration: const Duration(milliseconds: 250),
@@ -1063,13 +1064,13 @@ class _DriverOnboardingScreenState
                   child: SizedBox(
                     width: double.infinity,
                     child: PremiumButton(
-                      text: currentVmState.isLoading
+                      text: isLoading
                           ? 'Saving...'
                           : l10n.driverSaveAndContinue,
-                      onPressed: currentVmState.isLoading
+                      onPressed: isLoading
                           ? null
                           : _saveProfileAndContinue,
-                      isLoading: currentVmState.isLoading,
+                      isLoading: isLoading,
                       size: PremiumButtonSize.large,
                       style: isFormReady
                           ? PremiumButtonStyle.success
@@ -1102,12 +1103,13 @@ class _DriverOnboardingScreenState
               if (hasPhoto)
                 ClipRRect(
                   borderRadius: BorderRadius.circular(22.r),
-                  child: Image.network(
-                    photoUrl!,
+                  child: CachedNetworkImage(
+                    imageUrl: photoUrl!,
                     width: 44.w,
                     height: 44.w,
                     fit: BoxFit.cover,
-                    errorBuilder: (ctx, err, st) => _defaultAvatar(name),
+                    errorWidget: (ctx, url, err) => _defaultAvatar(name),
+                    placeholder: (ctx, url) => _defaultAvatar(name),
                   ),
                 )
               else
@@ -1427,7 +1429,7 @@ class _DriverOnboardingScreenState
             ReactiveFormConsumer(
               builder: (context, form, _) {
                 final isFormReady = form.valid;
-                final currentVmState = ref.watch(onboardingViewModelProvider);
+                final isLoading = ref.watch(onboardingViewModelProvider.select((s) => s.isLoading));
 
                 return AnimatedOpacity(
                   duration: const Duration(milliseconds: 250),
@@ -1435,13 +1437,13 @@ class _DriverOnboardingScreenState
                   child: SizedBox(
                     width: double.infinity,
                     child: PremiumButton(
-                      text: currentVmState.isLoading
+                      text: isLoading
                           ? 'Saving...'
                           : l10n.driverSaveAndContinue,
-                      onPressed: currentVmState.isLoading
+                      onPressed: isLoading
                           ? null
                           : _saveVehicleAndContinue,
-                      isLoading: currentVmState.isLoading,
+                      isLoading: isLoading,
                       size: PremiumButtonSize.large,
                       style: isFormReady
                           ? PremiumButtonStyle.success

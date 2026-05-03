@@ -102,7 +102,40 @@ final class CurrentUserProvider
   }
 }
 
-String _$currentUserHash() => r'c506edc63c12df0dd555224781026d46219f2817';
+String _$currentUserHash() => r'8fb437f3a273823195bbc1fa96755275d07e0569';
+
+@ProviderFor(currentAuthUid)
+final currentAuthUidProvider = CurrentAuthUidProvider._();
+
+final class CurrentAuthUidProvider
+    extends $FunctionalProvider<AsyncValue<String?>, String?, FutureOr<String?>>
+    with $FutureModifier<String?>, $FutureProvider<String?> {
+  CurrentAuthUidProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'currentAuthUidProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$currentAuthUidHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<String?> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<String?> create(Ref ref) {
+    return currentAuthUid(ref);
+  }
+}
+
+String _$currentAuthUidHash() => r'31cac2c5a4ca796492b0bbc020c2fd6c7584e818';
 
 @ProviderFor(premiumMetadata)
 final premiumMetadataProvider = PremiumMetadataProvider._();
@@ -141,7 +174,7 @@ final class PremiumMetadataProvider
   }
 }
 
-String _$premiumMetadataHash() => r'cc1aab8848022e5923c8a5521516122ed356f81a';
+String _$premiumMetadataHash() => r'a797ac0a173944832c649f88daba74fb8e5d61ac';
 
 /// Pending user's selected role intent during onboarding setup.
 ///
@@ -190,4 +223,4 @@ final class SelectedRoleIntentProvider
 }
 
 String _$selectedRoleIntentHash() =>
-    r'099fc48bc57c3f498f56ed840eef1bb583aa9b99';
+    r'35c6e1b61f4a205e78cf006a79859d78767fc375';

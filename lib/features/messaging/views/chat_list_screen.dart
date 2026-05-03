@@ -345,11 +345,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
     final searchQuery = ref.watch(
       chatListUiViewModelProvider.select((state) => state.searchQuery),
     );
-    final currentUserAsync = ref.watch(
-      currentUserProvider.select(
-        (value) => value.whenData((user) => user?.uid),
-      ),
-    );
+    final currentUserAsync = ref.watch(currentAuthUidProvider);
 
     return currentUserAsync.when(
       loading: () => const SkeletonLoader(type: SkeletonType.chatTile),
@@ -415,11 +411,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
     final searchQuery = ref.watch(
       chatListUiViewModelProvider.select((state) => state.searchQuery),
     );
-    final currentUserAsync = ref.watch(
-      currentUserProvider.select(
-        (value) => value.whenData((user) => user?.uid),
-      ),
-    );
+    final currentUserAsync = ref.watch(currentAuthUidProvider);
 
     return currentUserAsync.when(
       loading: () => const SkeletonLoader(type: SkeletonType.chatTile),

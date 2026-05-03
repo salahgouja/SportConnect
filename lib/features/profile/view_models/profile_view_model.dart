@@ -229,6 +229,7 @@ class ReportIssueFormState {
   }
 }
 
+// keepAlive: action-only VM - accessed from notification/background contexts.
 @Riverpod(keepAlive: true)
 class ProfileActionsViewModel extends _$ProfileActionsViewModel {
   @override
@@ -402,8 +403,7 @@ class ProfileActionsViewModel extends _$ProfileActionsViewModel {
 
 @riverpod
 Future<List<UserModel>> blockedUsers(Ref ref) async {
-  final userAsync = ref.watch(currentUserProvider);
-  final currentUser = userAsync.value;
+  final currentUser = ref.watch(currentUserProvider).value;
   if (currentUser == null) {
     return const [];
   }
