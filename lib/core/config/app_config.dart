@@ -57,9 +57,9 @@ class AppConfig {
   /// --dart-define=FIREBASE_EMULATOR_HOST=192.168.1.23
   static const String defaultPhysicalDeviceEmulatorHost =
       String.fromEnvironment(
-    'FIREBASE_DEFAULT_PHYSICAL_DEVICE_EMULATOR_HOST',
-    defaultValue: '192.168.0.120',
-  );
+        'FIREBASE_DEFAULT_PHYSICAL_DEVICE_EMULATOR_HOST',
+        defaultValue: '192.168.0.120',
+      );
 
   /// Firebase emulator host resolution.
   ///
@@ -117,7 +117,7 @@ class AppConfig {
 
   /// App-level settings.
   static const String appName = 'SportConnect';
-  static const String appVersion = '1.1.5';
+  static const String appVersion = '1.1.6';
 
   static const String supportTicketEmail = String.fromEnvironment(
     'SPORTCONNECT_SUPPORT_EMAIL',
