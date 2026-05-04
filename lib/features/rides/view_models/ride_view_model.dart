@@ -758,12 +758,12 @@ class RideSearchState {
     this.draftSeats = 1,
     this.selectedDateChip = 0,
     this.hasSearched = false,
-    this.draftMaxPrice = 50,
+    this.draftMaxPrice = 100,
     this.draftFemaleOnly = false,
-    this.draftInstantBook = false,
     this.draftVerifiedOnly = false,
     this.draftPetFriendly = false,
     this.draftNoSmoking = false,
+    this.draftLuggageRequired = false,
     this.draftMinRating = 0,
     this.draftSortBy = 'recommended',
     this.draftVehicleType = 'any',
@@ -793,10 +793,10 @@ class RideSearchState {
   // Draft filter state
   final int draftMaxPrice;
   final bool draftFemaleOnly;
-  final bool draftInstantBook;
   final bool draftVerifiedOnly;
   final bool draftPetFriendly;
   final bool draftNoSmoking;
+  final bool draftLuggageRequired;
   final double draftMinRating;
   final String draftSortBy;
   final String draftVehicleType;
@@ -821,10 +821,10 @@ class RideSearchState {
     bool? hasSearched,
     int? draftMaxPrice,
     bool? draftFemaleOnly,
-    bool? draftInstantBook,
     bool? draftVerifiedOnly,
     bool? draftPetFriendly,
     bool? draftNoSmoking,
+    bool? draftLuggageRequired,
     double? draftMinRating,
     String? draftSortBy,
     String? draftVehicleType,
@@ -853,10 +853,10 @@ class RideSearchState {
       hasSearched: hasSearched ?? this.hasSearched,
       draftMaxPrice: draftMaxPrice ?? this.draftMaxPrice,
       draftFemaleOnly: draftFemaleOnly ?? this.draftFemaleOnly,
-      draftInstantBook: draftInstantBook ?? this.draftInstantBook,
       draftVerifiedOnly: draftVerifiedOnly ?? this.draftVerifiedOnly,
       draftPetFriendly: draftPetFriendly ?? this.draftPetFriendly,
       draftNoSmoking: draftNoSmoking ?? this.draftNoSmoking,
+      draftLuggageRequired: draftLuggageRequired ?? this.draftLuggageRequired,
       draftMinRating: draftMinRating ?? this.draftMinRating,
       draftSortBy: draftSortBy ?? this.draftSortBy,
       draftVehicleType: draftVehicleType ?? this.draftVehicleType,
@@ -874,22 +874,22 @@ class RideSearchState {
 
   bool get hasActiveFilters =>
       draftFemaleOnly ||
-      draftInstantBook ||
       draftVerifiedOnly ||
       draftPetFriendly ||
       draftNoSmoking ||
-      draftMaxPrice < 50 ||
+      draftLuggageRequired ||
+      draftMaxPrice < 100 ||
       draftMinRating > 0 ||
       draftVehicleType != 'any';
 
   int get activeFilterCount {
     var count = 0;
-    if (draftMaxPrice < 50) count++;
+    if (draftMaxPrice < 100) count++;
     if (draftFemaleOnly) count++;
-    if (draftInstantBook) count++;
     if (draftVerifiedOnly) count++;
     if (draftPetFriendly) count++;
     if (draftNoSmoking) count++;
+    if (draftLuggageRequired) count++;
     if (draftMinRating > 0) count++;
     if (draftVehicleType != 'any') count++;
     return count;
@@ -994,7 +994,8 @@ List<RideModel> _applyRideSearchPresentation(
     if (ride.remainingSeats < state.draftSeats) {
       return false;
     }
-    if (ride.pricePerSeatInCents > state.draftMaxPrice) {
+    if (state.draftMaxPrice < 100 &&
+        ride.pricePerSeatInCents > state.draftMaxPrice * 100) {
       return false;
     }
     if (state.draftFemaleOnly && !ride.isWomenOnly) {
@@ -1007,6 +1008,9 @@ List<RideModel> _applyRideSearchPresentation(
     if (state.draftNoSmoking && ride.allowSmoking) {
       return false;
     }
+    if (state.draftLuggageRequired && !ride.allowLuggage) {
+      return false;
+    }
     if (state.draftMinRating > 0 && ride.averageRating < state.draftMinRating) {
       return false;
     }
@@ -1014,9 +1018,6 @@ List<RideModel> _applyRideSearchPresentation(
       return false;
     }
     if (state.draftVehicleType == 'comfort' && !ride.isPremium) {
-      return false;
-    }
-    if (state.draftInstantBook) {
       return false;
     }
     if (state.draftVerifiedOnly && !ride.isDriverVerified) {
@@ -1132,13 +1133,6 @@ class RideSearchViewModel extends _$RideSearchViewModel {
     );
   }
 
-  void setDraftInstantBook(bool value) {
-    state = state.copyWith(
-      draftInstantBook: value,
-      visibleResultCount: _pageSize,
-    );
-  }
-
   void setDraftVerifiedOnly(bool value) {
     state = state.copyWith(
       draftVerifiedOnly: value,
@@ -1160,9 +1154,16 @@ class RideSearchViewModel extends _$RideSearchViewModel {
     );
   }
 
+  void setDraftLuggageRequired(bool value) {
+    state = state.copyWith(
+      draftLuggageRequired: value,
+      visibleResultCount: _pageSize,
+    );
+  }
+
   void setDraftMinRating(double rating) {
     state = state.copyWith(
-      draftMinRating: rating.clamp(0, 5),
+      draftMinRating: rating.clamp(0, 5).toDouble(),
       visibleResultCount: _pageSize,
     );
   }
@@ -1194,12 +1195,12 @@ class RideSearchViewModel extends _$RideSearchViewModel {
 
   void resetFilters() {
     state = state.copyWith(
-      draftMaxPrice: 50,
+      draftMaxPrice: 100,
       draftFemaleOnly: false,
-      draftInstantBook: false,
       draftVerifiedOnly: false,
       draftPetFriendly: false,
       draftNoSmoking: false,
+      draftLuggageRequired: false,
       draftMinRating: 0,
       draftSortBy: 'recommended',
       draftVehicleType: 'any',
@@ -1290,7 +1291,7 @@ class RideSearchViewModel extends _$RideSearchViewModel {
       destination: state.draftDestination,
       departureDate: state.draftDate,
       minSeats: state.draftSeats,
-      maxPrice: state.draftMaxPrice < 50 ? state.draftMaxPrice : null,
+      maxPrice: state.draftMaxPrice < 100 ? state.draftMaxPrice * 100 : null,
       womenOnly: state.draftFemaleOnly,
       allowPets: state.draftPetFriendly,
       allowSmoking: state.draftNoSmoking,
@@ -1324,6 +1325,9 @@ class RideSearchViewModel extends _$RideSearchViewModel {
       // allowSmoking in filters means "user wants no smoking"
       if (filters.allowSmoking) {
         rides = rides.where((r) => !r.preferences.allowSmoking).toList();
+      }
+      if (state.draftLuggageRequired) {
+        rides = rides.where((r) => r.preferences.allowLuggage).toList();
       }
       if (filters.minDriverRating != null) {
         rides = rides
@@ -1409,9 +1413,10 @@ String _buildDraftQueryKey(RideSearchState state) {
     state.draftSeats,
     state.draftMaxPrice.toStringAsFixed(2),
     state.draftFemaleOnly,
-    state.draftInstantBook,
+    state.draftVerifiedOnly,
     state.draftPetFriendly,
     state.draftNoSmoking,
+    state.draftLuggageRequired,
     state.draftMinRating.toStringAsFixed(1),
     state.draftSortBy,
     state.draftVehicleType,

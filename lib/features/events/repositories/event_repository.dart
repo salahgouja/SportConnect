@@ -20,6 +20,24 @@ EventRepository eventRepository(Ref ref) {
   );
 }
 
+class EventPageCursor {
+  const EventPageCursor._(this.document);
+
+  final DocumentSnapshot<EventModel> document;
+}
+
+class EventPage {
+  const EventPage({
+    required this.events,
+    required this.hasMore,
+    this.nextCursor,
+  });
+
+  final List<EventModel> events;
+  final EventPageCursor? nextCursor;
+  final bool hasMore;
+}
+
 class EventRepository {
   EventRepository(this._firestore, this._storage);
 
@@ -294,6 +312,36 @@ class EventRepository {
         .map((snapshot) {
           return snapshot.docs.map((doc) => doc.data()).toList();
         });
+  }
+
+  Future<EventPage> fetchUpcomingEventsPage({
+    EventType? type,
+    EventPageCursor? startAfter,
+    int limit = 30,
+  }) async {
+    var query = _eventsCollection
+        .where('isActive', isEqualTo: true)
+        .where('startsAt', isGreaterThan: Timestamp.now());
+
+    if (type != null) {
+      query = query.where('type', isEqualTo: type.jsonValue);
+    }
+
+    query = query.orderBy('startsAt').limit(limit);
+
+    final cursor = startAfter;
+    if (cursor != null) {
+      query = query.startAfterDocument(cursor.document);
+    }
+
+    final snapshot = await query.get();
+    final docs = snapshot.docs;
+
+    return EventPage(
+      events: docs.map((doc) => doc.data()).toList(),
+      nextCursor: docs.isEmpty ? null : EventPageCursor._(docs.last),
+      hasMore: docs.length == limit,
+    );
   }
 
   Stream<List<EventModel>> streamEventsByCreator(String creatorId) {

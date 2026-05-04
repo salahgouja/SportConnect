@@ -630,14 +630,16 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
   Widget _buildActiveFilters() {
     final filters = <Widget>[];
 
-    if (_searchState.draftMaxPrice < 50) {
+    if (_searchState.draftMaxPrice < 100) {
       filters.add(
         _buildFilterTag(
           AppLocalizations.of(
             context,
-          ).maxValue(_searchState.draftMaxPrice.toInt()),
+          ).maxValue(_searchState.draftMaxPrice),
           () {
-            ref.read(rideSearchViewModelProvider.notifier).setDraftMaxPrice(50);
+            ref
+                .read(rideSearchViewModelProvider.notifier)
+                .setDraftMaxPrice(100);
           },
         ),
       );
@@ -651,12 +653,12 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
         }),
       );
     }
-    if (_searchState.draftInstantBook) {
+    if (_searchState.draftVerifiedOnly) {
       filters.add(
-        _buildFilterTag(AppLocalizations.of(context).instantBook, () {
+        _buildFilterTag(AppLocalizations.of(context).verifiedDriver2, () {
           ref
               .read(rideSearchViewModelProvider.notifier)
-              .setDraftInstantBook(false);
+              .setDraftVerifiedOnly(false);
         }),
       );
     }
@@ -675,6 +677,15 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
           ref
               .read(rideSearchViewModelProvider.notifier)
               .setDraftNoSmoking(false);
+        }),
+      );
+    }
+    if (_searchState.draftLuggageRequired) {
+      filters.add(
+        _buildFilterTag(AppLocalizations.of(context).allowLuggageToggle, () {
+          ref
+              .read(rideSearchViewModelProvider.notifier)
+              .setDraftLuggageRequired(false);
         }),
       );
     }
@@ -1203,7 +1214,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
                               child: Text(
                                 AppLocalizations.of(
                                   context,
-                                ).maxValue(searchState.draftMaxPrice.toInt()),
+                                ).maxValue(searchState.draftMaxPrice),
                                 style: TextStyle(
                                   fontSize: 14.sp,
                                   fontWeight: FontWeight.w600,
@@ -1336,14 +1347,16 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
                               },
                             ),
                             _buildToggleChip(
-                              label: AppLocalizations.of(context).instantBook,
-                              icon: Icons.bolt_rounded,
-                              isSelected: searchState.draftInstantBook,
+                              label: AppLocalizations.of(
+                                context,
+                              ).verifiedDriver2,
+                              icon: Icons.verified_user_rounded,
+                              isSelected: searchState.draftVerifiedOnly,
                               onTap: () {
                                 ref
                                     .read(rideSearchViewModelProvider.notifier)
-                                    .setDraftInstantBook(
-                                      !searchState.draftInstantBook,
+                                    .setDraftVerifiedOnly(
+                                      !searchState.draftVerifiedOnly,
                                     );
                               },
                             ),
@@ -1368,6 +1381,20 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
                                     .read(rideSearchViewModelProvider.notifier)
                                     .setDraftNoSmoking(
                                       !searchState.draftNoSmoking,
+                                    );
+                              },
+                            ),
+                            _buildToggleChip(
+                              label: AppLocalizations.of(
+                                context,
+                              ).allowLuggageToggle,
+                              icon: Icons.luggage_rounded,
+                              isSelected: searchState.draftLuggageRequired,
+                              onTap: () {
+                                ref
+                                    .read(rideSearchViewModelProvider.notifier)
+                                    .setDraftLuggageRequired(
+                                      !searchState.draftLuggageRequired,
                                     );
                               },
                             ),

@@ -699,7 +699,7 @@ final class RideSearchViewModelProvider
 }
 
 String _$rideSearchViewModelHash() =>
-    r'17ee663ad0c783f5f8c9c6317aa265dd7bfefa61';
+    r'bee8c8da364614025a4114d7c01a55f8d8e6611e';
 
 /// Ride Search View Model
 ///

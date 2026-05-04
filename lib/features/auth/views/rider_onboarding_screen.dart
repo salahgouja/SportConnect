@@ -490,7 +490,10 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
       }
     });
 
-    return AdaptiveScaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (_, _) => _handleBack(),
+      child: AdaptiveScaffold(
       appBar: AdaptiveAppBar(
         leading: IconButton(
           tooltip: l10n.goBackTooltip,
@@ -940,6 +943,7 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
           ),
         ),
       ),
+    ),
     );
   }
 }

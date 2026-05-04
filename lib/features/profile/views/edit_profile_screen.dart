@@ -74,14 +74,20 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   void _hydrate(UserModel user) {
     _user = user;
+    _initialized = true;
     _form.patchValue({'name': user.username, 'email': user.email});
-    ref.read(profileEditViewModelProvider(user.uid).notifier).initFromUser(user);
     _formChangesSub?.cancel();
     _formChangesSub = _form.valueChanges.listen((_) {
       if (!mounted) return;
       ref.read(profileEditViewModelProvider(user.uid).notifier).markChanged();
     });
-    _initialized = true;
+    // Defer provider state mutation — modifying a provider inside build() is
+    // forbidden by Riverpod and causes the "Tried to modify a provider while
+    // the widget tree was building" error.
+    unawaited(Future.microtask(() {
+      if (!mounted) return;
+      ref.read(profileEditViewModelProvider(user.uid).notifier).initFromUser(user);
+    }));
   }
 
   // ─── Save ──────────────────────────────────────────────────────────────────

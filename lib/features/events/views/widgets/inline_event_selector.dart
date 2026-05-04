@@ -1,5 +1,6 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,16 +10,8 @@ import 'package:intl/intl.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/features/events/models/event_model.dart';
-import 'package:sport_connect/features/events/view_models/event_view_model.dart';
+import 'package:sport_connect/features/events/repositories/event_repository.dart';
 
-/// Drop-in replacement for EventPickerSheet.
-///
-/// ```dart
-/// InlineEventSelector(
-///   selected: _event,
-///   onChanged: (e) => setState(() => _event = e),
-/// )
-/// ```
 class InlineEventSelector extends ConsumerStatefulWidget {
   const InlineEventSelector({
     required this.selected,
@@ -35,14 +28,43 @@ class InlineEventSelector extends ConsumerStatefulWidget {
 }
 
 class _InlineEventSelectorState extends ConsumerState<InlineEventSelector> {
+  final _searchController = TextEditingController();
+  final _scrollController = ScrollController();
+
   bool _expanded = false;
+  bool _isLoading = false;
+  bool _isLoadingMore = false;
+  bool _hasMore = true;
+  String? _error;
+  String _query = '';
   EventType? _filterType;
+  EventPageCursor? _cursor;
+  List<EventModel> _events = const [];
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(_handleSearchChanged);
+    _scrollController.addListener(_handleScroll);
+  }
+
+  @override
+  void dispose() {
+    _searchController
+      ..removeListener(_handleSearchChanged)
+      ..dispose();
+    _scrollController
+      ..removeListener(_handleScroll)
+      ..dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return AnimatedSize(
       duration: 300.ms,
       curve: Curves.easeOutCubic,
+      alignment: Alignment.topCenter,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [_buildTrigger(), if (_expanded) _buildExpandedContent()],
@@ -50,7 +72,6 @@ class _InlineEventSelectorState extends ConsumerState<InlineEventSelector> {
     );
   }
 
-  // ── Trigger row ─────────────────────────────────────────────
   Widget _buildTrigger() {
     final hasEvent = widget.selected != null;
     return AnimatedContainer(
@@ -79,72 +100,71 @@ class _InlineEventSelectorState extends ConsumerState<InlineEventSelector> {
       ),
       child: Row(
         children: [
-          // ── Tappable expand zone ────────────────────────────
           Expanded(
-            child: GestureDetector(
-              onTap: () {
-                HapticFeedback.selectionClick();
-                setState(() => _expanded = !_expanded);
-              },
-              behavior: HitTestBehavior.opaque,
-              child: Row(
-                children: [
-                  AnimatedSwitcher(
-                    duration: 200.ms,
-                    child: Icon(
-                      hasEvent
-                          ? widget.selected!.type.icon
-                          : _expanded
-                          ? Icons.keyboard_arrow_up_rounded
-                          : Icons.event_rounded,
-                      key: ValueKey(hasEvent ? widget.selected!.id : _expanded),
-                      size: 20.sp,
-                      color: hasEvent
-                          ? widget.selected!.type.color
-                          : _expanded
-                          ? AppColors.primary
-                          : AppColors.textTertiary,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(14.r),
+              onTap: _toggleExpanded,
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 2.h),
+                child: Row(
+                  children: [
+                    AnimatedSwitcher(
+                      duration: 200.ms,
+                      child: Icon(
+                        hasEvent
+                            ? widget.selected!.type.icon
+                            : _expanded
+                            ? Icons.keyboard_arrow_up_rounded
+                            : Icons.event_rounded,
+                        key: ValueKey(
+                          hasEvent ? widget.selected!.id : _expanded,
+                        ),
+                        size: 20.sp,
+                        color: hasEvent
+                            ? widget.selected!.type.color
+                            : _expanded
+                            ? AppColors.primary
+                            : AppColors.textTertiary,
+                      ),
                     ),
-                  ),
-                  SizedBox(width: 12.w),
-                  Expanded(
-                    child: hasEvent
-                        ? Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                widget.selected!.title,
-                                style: TextStyle(
-                                  fontSize: 14.sp,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textPrimary,
+                    SizedBox(width: 12.w),
+                    Expanded(
+                      child: hasEvent
+                          ? Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  widget.selected!.title,
+                                  style: TextStyle(
+                                    fontSize: 14.sp,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              Text(
-                                DateFormat(
-                                  'EEE d MMM · HH:mm',
-                                ).format(widget.selected!.startsAt),
-                                style: TextStyle(
-                                  fontSize: 12.sp,
-                                  color: AppColors.textSecondary,
+                                Text(
+                                  DateFormat(
+                                    'EEE d MMM - HH:mm',
+                                  ).format(widget.selected!.startsAt),
+                                  style: TextStyle(
+                                    fontSize: 12.sp,
+                                    color: AppColors.textSecondary,
+                                  ),
                                 ),
+                              ],
+                            )
+                          : Text(
+                              _expanded
+                                  ? 'Choose an event'
+                                  : 'Link to a sport event (optional)',
+                              style: TextStyle(
+                                fontSize: 14.sp,
+                                color: _expanded
+                                    ? AppColors.textPrimary
+                                    : AppColors.textTertiary,
                               ),
-                            ],
-                          )
-                        : Text(
-                            _expanded
-                                ? 'Pick an event'
-                                : 'Link to a sport event (optional)',
-                            style: TextStyle(
-                              fontSize: 14.sp,
-                              color: _expanded
-                                  ? AppColors.textPrimary
-                                  : AppColors.textTertiary,
                             ),
-                          ),
-                  ),
-                  if (!hasEvent)
+                    ),
                     Icon(
                       _expanded
                           ? Icons.keyboard_arrow_up_rounded
@@ -152,27 +172,24 @@ class _InlineEventSelectorState extends ConsumerState<InlineEventSelector> {
                       size: 20.sp,
                       color: AppColors.textTertiary,
                     ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
-
-          // ── Close button — isolated tap zone ────────────────
           if (hasEvent)
-            GestureDetector(
-              onTap: () {
-                HapticFeedback.lightImpact();
+            IconButton(
+              tooltip: 'Clear selected event',
+              visualDensity: VisualDensity.compact,
+              onPressed: () {
+                unawaited(HapticFeedback.lightImpact());
                 widget.onChanged(null);
                 setState(() => _expanded = false);
               },
-              behavior: HitTestBehavior.opaque,
-              child: Padding(
-                padding: EdgeInsets.only(left: 12.w),
-                child: Icon(
-                  Icons.close_rounded,
-                  size: 20.sp,
-                  color: AppColors.textTertiary,
-                ),
+              icon: Icon(
+                Icons.close_rounded,
+                size: 20.sp,
+                color: AppColors.textTertiary,
               ),
             ),
         ],
@@ -180,47 +197,87 @@ class _InlineEventSelectorState extends ConsumerState<InlineEventSelector> {
     );
   }
 
-  // ── Expanded content ─────────────────────────────────────────
   Widget _buildExpandedContent() {
     return Padding(
           padding: EdgeInsets.only(top: 8.h),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Sport-type filter chips
-              _buildTypeFilterRow(),
-              SizedBox(height: 10.h),
-              // Event cards scroll
-              _buildEventList(),
-              SizedBox(height: 10.h),
-              // Create new event CTA
-              _buildCreateEventButton(),
-              SizedBox(height: 4.h),
-            ],
+          child: Container(
+            constraints: BoxConstraints(maxHeight: 420.h),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(16.r),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Column(
+              children: [
+                Padding(
+                  padding: EdgeInsets.fromLTRB(12.w, 12.h, 12.w, 8.h),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildSearchField(),
+                      SizedBox(height: 10.h),
+                      _buildTypeFilterRow(),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1, color: AppColors.border),
+                Expanded(child: _buildEventList()),
+                const Divider(height: 1, color: AppColors.border),
+                _buildFooter(),
+              ],
+            ),
           ),
         )
         .animate()
         .fadeIn(duration: 200.ms)
-        .slideY(begin: -0.05, end: 0, curve: Curves.easeOutCubic);
+        .slideY(begin: -0.04, end: 0, curve: Curves.easeOutCubic);
   }
 
-  // ── Type filter chips ────────────────────────────────────────
+  Widget _buildSearchField() {
+    return TextField(
+      controller: _searchController,
+      textInputAction: TextInputAction.search,
+      decoration: InputDecoration(
+        hintText: 'Search loaded events by title, place, organizer',
+        prefixIcon: Icon(
+          Icons.search_rounded,
+          size: 20.sp,
+          color: AppColors.textTertiary,
+        ),
+        suffixIcon: _query.isEmpty
+            ? null
+            : IconButton(
+                tooltip: 'Clear search',
+                icon: Icon(Icons.close_rounded, size: 18.sp),
+                onPressed: _searchController.clear,
+              ),
+        filled: true,
+        fillColor: AppColors.background,
+        contentPadding: EdgeInsets.symmetric(vertical: 10.h),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12.r),
+          borderSide: BorderSide.none,
+        ),
+      ),
+    );
+  }
+
   Widget _buildTypeFilterRow() {
+    final filters = <EventType?>[null, ...EventType.values];
     return SizedBox(
       height: 34.h,
-      child: ListView(
+      child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        children: [
-          _filterChip(
-            null,
-            'All',
-            Icons.auto_awesome_rounded,
-            AppColors.primary,
-          ),
-          ...EventType.values.map(
-            (t) => _filterChip(t, t.label, t.icon, t.color),
-          ),
-        ],
+        itemCount: filters.length,
+        itemBuilder: (context, index) {
+          final type = filters[index];
+          return _filterChip(
+            type,
+            type?.label ?? 'All',
+            type?.icon ?? Icons.auto_awesome_rounded,
+            type?.color ?? AppColors.primary,
+          );
+        },
       ),
     );
   }
@@ -232,245 +289,460 @@ class _InlineEventSelectorState extends ConsumerState<InlineEventSelector> {
     Color color,
   ) {
     final active = _filterType == type;
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.selectionClick();
-        setState(() => _filterType = type);
-      },
-      child: AnimatedContainer(
-        duration: 150.ms,
-        margin: EdgeInsets.only(right: 8.w),
-        padding: EdgeInsets.symmetric(horizontal: 12.w),
-        decoration: BoxDecoration(
-          color: active ? color.withValues(alpha: 0.12) : AppColors.background,
-          borderRadius: BorderRadius.circular(20.r),
-          border: Border.all(
+    return Padding(
+      padding: EdgeInsets.only(right: 8.w),
+      child: ChoiceChip(
+        selected: active,
+        onSelected: (_) {
+          unawaited(HapticFeedback.selectionClick());
+          _setFilterType(type);
+        },
+        avatar: Icon(
+          icon,
+          size: 14.sp,
+          color: active ? color : AppColors.textSecondary,
+        ),
+        label: Text(label),
+        labelStyle: TextStyle(
+          fontSize: 12.sp,
+          fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+          color: active ? color : AppColors.textSecondary,
+        ),
+        selectedColor: color.withValues(alpha: 0.12),
+        backgroundColor: AppColors.background,
+        shape: StadiumBorder(
+          side: BorderSide(
             color: active ? color : AppColors.border,
             width: active ? 1.5 : 1,
           ),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 13.sp,
-              color: active ? color : AppColors.textSecondary,
-            ),
-            SizedBox(width: 5.w),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12.sp,
-                fontWeight: active ? FontWeight.w700 : FontWeight.w500,
-                color: active ? color : AppColors.textSecondary,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
 
-  // ── Event card list ──────────────────────────────────────────
   Widget _buildEventList() {
-    final eventsAsync = ref.watch(upcomingEventsStreamProvider);
+    if (_isLoading) return _loadingList();
 
-    return eventsAsync.when(
-      loading: _shimmerRow,
-      error: (_, _) => Padding(
+    if (_error != null && _events.isEmpty) {
+      return _MessageState(
+        icon: Icons.error_outline_rounded,
+        title: 'Could not load events',
+        message: _error!,
+        actionLabel: 'Retry',
+        onAction: () => unawaited(_loadFirstPage()),
+      );
+    }
+
+    final visibleEvents = _visibleEvents;
+
+    if (visibleEvents.isEmpty) {
+      return _MessageState(
+        icon: Icons.search_off_rounded,
+        title: 'No matching loaded events',
+        message: _hasMore
+            ? 'Load more events or change the search.'
+            : 'Try another search or filter.',
+        actionLabel: _hasMore ? 'Load more' : null,
+        onAction: _hasMore ? () => unawaited(_loadNextPage()) : null,
+      );
+    }
+
+    return Scrollbar(
+      controller: _scrollController,
+      child: ListView.builder(
+        controller: _scrollController,
         padding: EdgeInsets.symmetric(vertical: 8.h),
-        child: Text(
-          'Could not load events',
-          style: TextStyle(fontSize: 13.sp, color: AppColors.textSecondary),
-        ),
+        itemCount: visibleEvents.length + 1,
+        itemBuilder: (context, index) {
+          if (index == visibleEvents.length) return _buildLoadMoreRow();
+          return _eventTile(visibleEvents[index]);
+        },
       ),
-      data: (events) {
-        var filtered = events.where((e) => e.isUpcoming && e.isActive).toList()
-          ..sort((a, b) => a.startsAt.compareTo(b.startsAt));
-
-        if (_filterType != null) {
-          filtered = filtered.where((e) => e.type == _filterType).toList();
-        }
-
-        if (filtered.isEmpty) {
-          return Padding(
-            padding: EdgeInsets.symmetric(vertical: 12.h),
-            child: Text(
-              'No upcoming events${_filterType != null ? ' for ${_filterType!.label}' : ''}',
-              style: TextStyle(fontSize: 13.sp, color: AppColors.textSecondary),
-            ),
-          );
-        }
-
-        return SizedBox(
-          height: 110.h,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: filtered.length,
-            itemBuilder: (_, i) => _eventCard(filtered[i]),
-          ),
-        );
-      },
     );
   }
 
-  Widget _eventCard(EventModel event) {
+  Widget _eventTile(EventModel event) {
     final isSelected = widget.selected?.id == event.id;
     final diff = event.startsAt.difference(DateTime.now());
 
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.selectionClick();
-        if (isSelected) {
-          widget.onChanged(null);
-          // keep expanded so user can pick another
-        } else {
-          widget.onChanged(event);
-          setState(() => _expanded = false);
-        }
-      },
-      child: AnimatedContainer(
-        duration: 200.ms,
-        width: 190.w,
-        margin: EdgeInsets.only(right: 10.w),
-        padding: EdgeInsets.all(12.w),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? event.type.color.withValues(alpha: 0.09)
-              : AppColors.background,
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 5.h),
+      child: Material(
+        color: isSelected
+            ? event.type.color.withValues(alpha: 0.08)
+            : AppColors.background,
+        borderRadius: BorderRadius.circular(14.r),
+        child: InkWell(
           borderRadius: BorderRadius.circular(14.r),
-          border: Border.all(
-            color: isSelected ? event.type.color : AppColors.border,
-            width: isSelected ? 2 : 1,
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Type + check
-            Row(
+          onTap: () {
+            unawaited(HapticFeedback.selectionClick());
+            if (isSelected) {
+              widget.onChanged(null);
+            } else {
+              widget.onChanged(event);
+              setState(() => _expanded = false);
+            }
+          },
+          child: Container(
+            padding: EdgeInsets.all(12.w),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14.r),
+              border: Border.all(
+                color: isSelected ? event.type.color : AppColors.border,
+                width: isSelected ? 1.5 : 1,
+              ),
+            ),
+            child: Row(
               children: [
-                Icon(event.type.icon, size: 14.sp, color: event.type.color),
-                SizedBox(width: 5.w),
-                Expanded(
-                  child: Text(
-                    event.type.label,
-                    style: TextStyle(
-                      fontSize: 11.sp,
-                      fontWeight: FontWeight.w600,
-                      color: event.type.color,
-                    ),
+                Container(
+                  width: 38.w,
+                  height: 38.w,
+                  decoration: BoxDecoration(
+                    color: event.type.color.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
                   ),
-                ),
-                if (isSelected)
-                  Icon(
-                    Icons.cancel_rounded,
-                    size: 16.sp,
+                  child: Icon(
+                    event.type.icon,
+                    size: 18.sp,
                     color: event.type.color,
                   ),
+                ),
+                SizedBox(width: 12.w),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        event.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      SizedBox(height: 3.h),
+                      Text(
+                        DateFormat('EEE d MMM - HH:mm').format(event.startsAt),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      SizedBox(height: 3.h),
+                      Text(
+                        event.location.address,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          color: AppColors.textTertiary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(width: 10.w),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Icon(
+                      isSelected
+                          ? Icons.check_circle_rounded
+                          : Icons.chevron_right_rounded,
+                      size: 20.sp,
+                      color: isSelected
+                          ? event.type.color
+                          : AppColors.textTertiary,
+                    ),
+                    SizedBox(height: 8.h),
+                    Text(
+                      _countdown(diff),
+                      style: TextStyle(
+                        fontSize: 11.sp,
+                        fontWeight: FontWeight.w700,
+                        color: diff.inHours < 24
+                            ? AppColors.warning
+                            : AppColors.primary,
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
-            SizedBox(height: 5.h),
-            // Title
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _loadingList() {
+    return ListView.builder(
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+      itemCount: 5,
+      itemBuilder: (_, _) =>
+          Container(
+                height: 72.h,
+                margin: EdgeInsets.only(bottom: 10.h),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceVariant,
+                  borderRadius: BorderRadius.circular(14.r),
+                ),
+              )
+              .animate(onPlay: (c) => c.repeat())
+              .shimmer(
+                duration: 1200.ms,
+                color: Colors.white38,
+              ),
+    );
+  }
+
+  Widget _buildLoadMoreRow() {
+    if (_isLoadingMore) {
+      return Padding(
+        padding: EdgeInsets.symmetric(vertical: 14.h),
+        child: const Center(child: CircularProgressIndicator.adaptive()),
+      );
+    }
+
+    if (_error != null) {
+      return Padding(
+        padding: EdgeInsets.fromLTRB(12.w, 8.h, 12.w, 12.h),
+        child: OutlinedButton.icon(
+          onPressed: () => unawaited(_loadNextPage()),
+          icon: Icon(Icons.refresh_rounded, size: 18.sp),
+          label: const Text('Retry loading events'),
+        ),
+      );
+    }
+
+    if (!_hasMore) {
+      return Padding(
+        padding: EdgeInsets.symmetric(vertical: 12.h),
+        child: Center(
+          child: Text(
+            'All loaded events shown',
+            style: TextStyle(fontSize: 12.sp, color: AppColors.textTertiary),
+          ),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(12.w, 8.h, 12.w, 12.h),
+      child: OutlinedButton.icon(
+        onPressed: () => unawaited(_loadNextPage()),
+        icon: Icon(Icons.expand_more_rounded, size: 18.sp),
+        label: const Text('Load more events'),
+      ),
+    );
+  }
+
+  Widget _buildFooter() {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(12.w, 8.h, 12.w, 12.h),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              '${_visibleEvents.length} shown - ${_events.length} loaded',
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 12.sp, color: AppColors.textTertiary),
+            ),
+          ),
+          TextButton.icon(
+            onPressed: () async {
+              final created = await context.push<EventModel>(
+                AppRoutes.createEvent.path,
+              );
+              if (created != null && mounted) {
+                widget.onChanged(created);
+                setState(() => _expanded = false);
+              }
+            },
+            icon: Icon(Icons.add_rounded, size: 18.sp),
+            label: Text(
+              'Create event',
+              style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<EventModel> get _visibleEvents {
+    final query = _query;
+    if (query.isEmpty) return _events;
+    return _events.where((event) {
+      return event.title.toLowerCase().contains(query) ||
+          event.location.address.toLowerCase().contains(query) ||
+          (event.organizerName?.toLowerCase().contains(query) ?? false);
+    }).toList();
+  }
+
+  void _toggleExpanded() {
+    unawaited(HapticFeedback.selectionClick());
+    final shouldExpand = !_expanded;
+    setState(() => _expanded = shouldExpand);
+    if (shouldExpand && _events.isEmpty && !_isLoading) {
+      unawaited(_loadFirstPage());
+    }
+  }
+
+  void _setFilterType(EventType? type) {
+    if (_filterType == type && _events.isNotEmpty) return;
+    setState(() {
+      _filterType = type;
+      _query = '';
+      _searchController.clear();
+    });
+    unawaited(_loadFirstPage());
+  }
+
+  void _handleSearchChanged() {
+    final next = _searchController.text.trim().toLowerCase();
+    if (next == _query) return;
+    setState(() => _query = next);
+  }
+
+  void _handleScroll() {
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    if (position.extentAfter < 220 &&
+        _hasMore &&
+        !_isLoading &&
+        !_isLoadingMore) {
+      unawaited(_loadNextPage());
+    }
+  }
+
+  Future<void> _loadFirstPage() async {
+    setState(() {
+      _isLoading = true;
+      _isLoadingMore = false;
+      _hasMore = true;
+      _cursor = null;
+      _events = const [];
+      _error = null;
+    });
+
+    try {
+      final page = await ref
+          .read(eventRepositoryProvider)
+          .fetchUpcomingEventsPage(
+            type: _filterType,
+          );
+      if (!mounted) return;
+      setState(() {
+        _events = page.events;
+        _cursor = page.nextCursor;
+        _hasMore = page.hasMore;
+        _isLoading = false;
+      });
+    } on Object catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _error = error.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadNextPage() async {
+    if (!_hasMore || _isLoading || _isLoadingMore) return;
+
+    setState(() {
+      _isLoadingMore = true;
+      _error = null;
+    });
+
+    try {
+      final page = await ref
+          .read(eventRepositoryProvider)
+          .fetchUpcomingEventsPage(
+            type: _filterType,
+            startAfter: _cursor,
+          );
+      if (!mounted) return;
+      final seenIds = _events.map((event) => event.id).toSet();
+      final newEvents = page.events
+          .where((event) => seenIds.add(event.id))
+          .toList(growable: false);
+
+      setState(() {
+        _events = [..._events, ...newEvents];
+        _cursor = page.nextCursor;
+        _hasMore = page.hasMore;
+        _isLoadingMore = false;
+      });
+    } on Object catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _error = error.toString();
+        _isLoadingMore = false;
+      });
+    }
+  }
+
+  String _countdown(Duration d) {
+    if (d.inDays > 0) return '${d.inDays}d';
+    if (d.inHours > 0) return '${d.inHours}h';
+    if (d.inMinutes > 0) return '${d.inMinutes}m';
+    return 'Now';
+  }
+}
+
+class _MessageState extends StatelessWidget {
+  const _MessageState({
+    required this.icon,
+    required this.title,
+    required this.message,
+    this.actionLabel,
+    this.onAction,
+  });
+
+  final IconData icon;
+  final String title;
+  final String message;
+  final String? actionLabel;
+  final VoidCallback? onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(20.w),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 34.sp, color: AppColors.textTertiary),
+            SizedBox(height: 10.h),
             Text(
-              event.title,
+              title,
+              textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 13.sp,
+                fontSize: 14.sp,
                 fontWeight: FontWeight.w700,
                 color: AppColors.textPrimary,
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
             ),
-            SizedBox(height: 3.h),
-            // Date
+            SizedBox(height: 4.h),
             Text(
-              DateFormat('EEE d MMM').format(event.startsAt),
-              style: TextStyle(fontSize: 11.sp, color: AppColors.textSecondary),
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12.sp, color: AppColors.textSecondary),
             ),
-            const Spacer(),
-            // Countdown
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 3.h),
-              decoration: BoxDecoration(
-                color: diff.inHours < 24
-                    ? AppColors.warning.withValues(alpha: 0.12)
-                    : AppColors.primarySurface,
-                borderRadius: BorderRadius.circular(6.r),
-              ),
-              child: Text(
-                _countdown(diff),
-                style: TextStyle(
-                  fontSize: 10.sp,
-                  fontWeight: FontWeight.w600,
-                  color: diff.inHours < 24
-                      ? AppColors.warning
-                      : AppColors.primary,
-                ),
-              ),
-            ),
+            if (actionLabel != null && onAction != null) ...[
+              SizedBox(height: 12.h),
+              OutlinedButton(onPressed: onAction, child: Text(actionLabel!)),
+            ],
           ],
         ),
       ),
     );
-  }
-
-  Widget _shimmerRow() {
-    return SizedBox(
-      height: 110.h,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: 3,
-        itemBuilder: (_, _) =>
-            Container(
-                  width: 190.w,
-                  margin: EdgeInsets.only(right: 10.w),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceVariant,
-                    borderRadius: BorderRadius.circular(14.r),
-                  ),
-                )
-                .animate(onPlay: (c) => c.repeat())
-                .shimmer(duration: 1200.ms, color: Colors.white38),
-      ),
-    );
-  }
-
-  // ── Create event CTA ─────────────────────────────────────────
-  Widget _buildCreateEventButton() {
-    return OutlinedButton.icon(
-      onPressed: () async {
-        // Navigate to dedicated create event screen
-        // GoRouter handles this cleanly — no sheets, no navigator bugs
-        final created = await context.push<EventModel>(
-          AppRoutes.createEvent.path,
-        );
-        if (created != null && mounted) {
-          widget.onChanged(created);
-          setState(() => _expanded = false);
-        }
-      },
-      icon: Icon(Icons.add_rounded, size: 18.sp),
-      label: Text(
-        'Create new event',
-        style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600),
-      ),
-      style: OutlinedButton.styleFrom(
-        foregroundColor: AppColors.primary,
-        side: BorderSide(color: AppColors.primary.withValues(alpha: 0.5)),
-        padding: EdgeInsets.symmetric(vertical: 11.h, horizontal: 16.w),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12.r),
-        ),
-      ),
-    );
-  }
-
-  String _countdown(Duration d) {
-    if (d.inDays > 0) return 'In ${d.inDays}d';
-    if (d.inHours > 0) return 'In ${d.inHours}h';
-    if (d.inMinutes > 0) return 'In ${d.inMinutes}m';
-    return 'Now';
   }
 }

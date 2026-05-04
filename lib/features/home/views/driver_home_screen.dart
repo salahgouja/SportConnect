@@ -6,7 +6,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:geolocator/geolocator.dart' show Position;
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:skeletonizer/skeletonizer.dart';
@@ -32,14 +31,13 @@ import 'package:sport_connect/features/rides/view_models/driver_requests_view_mo
 import 'package:sport_connect/features/rides/view_models/driver_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
-Widget _decorateDriverHome(
+Widget _animateDriverHome(
   Widget child,
   Widget Function(Animate animation) builder,
 ) {
   return builder(child.animate());
 }
 
-/// Driver Home Screen - Responsive dashboard with location support.
 class DriverHomeScreen extends ConsumerStatefulWidget {
   const DriverHomeScreen({super.key});
 
@@ -53,19 +51,13 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
   @override
   void initState() {
     super.initState();
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(driverLocationViewModelProvider.notifier).initialize();
       _requestNotificationPermission();
     });
   }
 
-  /// Requests notification permission, always preceded by our rationale dialog.
-  ///
-  /// On some Android OEMs / Android < 13, Firebase reports `denied` on a
-  /// fresh install instead of `notDetermined`, which would make us skip the
-  /// dialog entirely.  We guard against this by persisting a
-  /// `notification_dialog_shown` flag: we only treat `denied` as a genuine
-  /// previous refusal when that flag is already `true`.
   Future<void> _requestNotificationPermission() async {
     try {
       final pns = ref.read(pushNotificationServiceProvider);
@@ -74,7 +66,6 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
 
       final settings = ref.read(settingsViewModelProvider);
       final settingsNotifier = ref.read(settingsViewModelProvider.notifier);
-      if (!mounted) return;
       if (settings.notificationDialogShown) return;
 
       await Future<void>.delayed(const Duration(seconds: 1));
@@ -84,11 +75,14 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
         context,
       );
       if (!mounted) return;
+
       await settingsNotifier.setNotificationDialogShown();
       if (!accepted) return;
 
       await pns.requestPermission();
-    } catch (e, st) {}
+    } catch (_) {
+      // Permission prompts should never block the driver dashboard.
+    }
   }
 
   Future<void> _requestLocationPermission() async {
@@ -98,42 +92,54 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
       );
       if (!mounted) return;
       if (!accepted) return;
+
       await ref
           .read(driverLocationViewModelProvider.notifier)
           .requestPermission();
       if (!mounted) return;
+
       final locationState = ref.read(driverLocationViewModelProvider);
       if (!locationState.locationGranted) {
         await ref.read(locationServiceProvider).openLocationSettings();
       }
-    } catch (e, st) {}
+    } catch (_) {
+      // Keep the home screen usable even if permission handling fails.
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final (isLoadingLocation, locationGranted, locationDeniedForever, servicesDisabled) =
-        ref.watch(driverLocationViewModelProvider.select((s) => (
-          s.isLoading,
-          s.locationGranted,
-          s.locationDeniedForever,
-          s.servicesDisabled,
-        )));
-    final activeRide = ref.watch(activeDriverRideProvider.select((a) => a.value));
+    final (
+      isLoadingLocation,
+      locationGranted,
+      locationDeniedForever,
+      servicesDisabled,
+    ) = ref.watch(
+      driverLocationViewModelProvider.select(
+        (state) => (
+          state.isLoading,
+          state.locationGranted,
+          state.locationDeniedForever,
+          state.servicesDisabled,
+        ),
+      ),
+    );
 
-    // ── Global Active Ride Guard ─────────────────────────────
-    // On app launch / foreground, auto-navigate to the active ride screen
-    // if the driver has an in-progress ride.
-    if (!_hasAutoNavigatedToActiveRide) {
-      if (activeRide != null && activeRide.status == RideStatus.inProgress) {
-        _hasAutoNavigatedToActiveRide = true;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            context.push(
-              '${AppRoutes.driverActiveRide.path}?rideId=${activeRide.id}',
-            );
-          }
-        });
-      }
+    final activeRide = ref.watch(
+      activeDriverRideProvider.select((value) => value.value),
+    );
+
+    if (!_hasAutoNavigatedToActiveRide &&
+        activeRide != null &&
+        activeRide.status == RideStatus.inProgress) {
+      _hasAutoNavigatedToActiveRide = true;
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        context.push(
+          '${AppRoutes.driverActiveRide.path}?rideId=${activeRide.id}',
+        );
+      });
     }
 
     return AdaptiveScaffold(
@@ -143,28 +149,9 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
         locationDeniedForever: locationDeniedForever,
         servicesDisabled: servicesDisabled,
         onRetryLocation: _requestLocationPermission,
-        onOpenSettings: () =>
-            ref.read(locationServiceProvider).openLocationSettings(),
-      ),
-      floatingActionButton: _decorateDriverHome(
-        FloatingActionButton.extended(
-          heroTag: 'driver_home_offer_fab',
-          onPressed: () => context.push(AppRoutes.driverOfferRide.path),
-          backgroundColor: AppColors.primary,
-          elevation: 4,
-          icon: Icon(Icons.add_rounded, size: 22.sp, color: Colors.white),
-          label: Text(
-            AppLocalizations.of(context).offerRide,
-            style: TextStyle(
-              fontSize: 14.sp,
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
-            ),
-          ),
-        ),
-        (animation) => animation
-            .fadeIn(duration: 400.ms)
-            .scale(begin: const Offset(0.8, 0.8)),
+        onOpenSettings: () {
+          ref.read(locationServiceProvider).openLocationSettings();
+        },
       ),
     );
   }
@@ -187,6 +174,7 @@ class _DriverHomeUserData {
       DriverModel(:final gamification) => gamification,
       _ => null,
     };
+
     final totalXP = gamification?.totalXP ?? 0;
     final streak = gamification?.currentStreak ?? 0;
 
@@ -230,7 +218,6 @@ class _DriverHomeUserData {
   );
 }
 
-/// Main dashboard widget - adapts to orientation and screen size.
 class _DriverDashboard extends ConsumerWidget {
   const _DriverDashboard({
     required this.isLoadingLocation,
@@ -250,6 +237,7 @@ class _DriverDashboard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final user = ref.watch(
       currentUserProvider.select(
         (value) => value.whenData(
@@ -257,11 +245,12 @@ class _DriverDashboard extends ConsumerWidget {
         ),
       ),
     );
-    final activeRide = ref.watch(activeDriverRideProvider.select((a) => a.value));
+    final activeRide = ref.watch(
+      activeDriverRideProvider.select((value) => value.value),
+    );
     final driverStats = ref.watch(driverStatsProvider);
     final pendingRequests = ref.watch(pendingRideRequestsProvider);
     final upcomingRides = ref.watch(upcomingDriverRidesProvider);
-    final l10n = AppLocalizations.of(context);
 
     return RefreshIndicator.adaptive(
       onRefresh: () async {
@@ -273,143 +262,83 @@ class _DriverDashboard extends ConsumerWidget {
           ref.refresh(upcomingDriverRidesProvider.future),
         ]);
       },
-      child: OrientationBuilder(
-        builder: (context, orientation) {
-          return LayoutBuilder(
-            builder: (context, constraints) {
-              final isLandscape = orientation == Orientation.landscape;
-              final isSmall = constraints.maxWidth < 360;
-              final isWide = constraints.maxWidth >= 600;
-              final hPad = isSmall ? 14.0 : 20.0;
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isSmall = constraints.maxWidth < 360;
+          final hPad = isSmall ? 14.0 : 20.0;
 
-              return CustomScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                slivers: [
-                  // Header
-                  SliverToBoxAdapter(
-                    child: _buildHeader(context, user, l10n, hPad),
+          return CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              SliverToBoxAdapter(
+                child: _buildHeader(context, user, l10n, hPad),
+              ),
+              if (!locationGranted && !isLoadingLocation)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(hPad, 4.h, hPad, 12.h),
+                    child: _buildLocationBanner(l10n),
                   ),
-
-                  // XP & Streak strip
-                  SliverToBoxAdapter(
-                    child: _buildGamificationStrip(user, hPad),
+                ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(hPad, 8.h, hPad, 0),
+                  child: _buildDriverCommandCenter(
+                    context: context,
+                    l10n: l10n,
+                    activeRide: activeRide,
+                    pendingRequests: pendingRequests,
+                    upcomingRides: upcomingRides,
                   ),
-
-                  // Location banner when permission not granted
-                  if (!locationGranted && !isLoadingLocation)
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: hPad),
-                        child: Column(
-                          children: [
-                            _buildLocationBanner(l10n),
-                            SizedBox(height: 16.h),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                  // Active ride banner — shown when an inProgress ride exists
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: hPad,
-                        vertical: 4,
-                      ),
-                      child: _ActiveDriverRideBanner(ride: activeRide),
-                    ),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(hPad, 18.h, hPad, 0),
+                  child: _buildTodaySnapshot(l10n, driverStats),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(hPad, 22.h, hPad, 0),
+                  child: _buildPendingRequests(
+                    context,
+                    ref,
+                    l10n,
+                    pendingRequests,
                   ),
-
-                  // Quick actions
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.all(hPad),
-                      child: _buildQuickActions(context, l10n),
-                    ),
-                  ),
-
-                  // Earnings + Stats side-by-side in landscape on wide screens
-                  if (isLandscape && isWide)
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: hPad),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: _buildEarningsSummary(
-                                l10n,
-                                driverStats,
-                                isSmall,
-                              ),
-                            ),
-                            SizedBox(width: 16.w),
-                            Expanded(
-                              child: _buildStatsGrid(
-                                l10n,
-                                driverStats,
-                                isLandscape,
-                                isSmall,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    )
-                  else ...[
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: hPad),
-                        child: _buildEarningsSummary(
-                          l10n,
-                          driverStats,
-                          isSmall,
-                        ),
-                      ),
-                    ),
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: EdgeInsets.all(hPad),
-                        child: _buildStatsGrid(
-                          l10n,
-                          driverStats,
-                          isLandscape,
-                          isSmall,
-                        ),
-                      ),
-                    ),
-                  ],
-
-                  // Pending requests
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: hPad),
-                      child: _buildPendingRequests(
-                        context,
-                        ref,
-                        l10n,
-                        pendingRequests,
-                      ),
-                    ),
-                  ),
-
-                  // Upcoming rides
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.all(hPad),
-                      child: _buildUpcomingRides(
-                        context,
-                        l10n,
-                        upcomingRides,
-                      ),
-                    ),
-                  ),
-
-                  // Bottom spacing for FAB
-                  SliverToBoxAdapter(child: SizedBox(height: 100.h)),
-                ],
-              );
-            },
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(hPad, 22.h, hPad, 0),
+                  child: _buildUpcomingRides(context, l10n, upcomingRides),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(hPad, 22.h, hPad, 0),
+                  child: _buildDriverTools(context, l10n),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(hPad, 22.h, hPad, 0),
+                  child: _buildStatsGrid(l10n, driverStats),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(hPad, 22.h, hPad, 0),
+                  child: _buildGamificationStrip(user),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: SizedBox(
+                  height: 32.h + MediaQuery.paddingOf(context).bottom,
+                ),
+              ),
+            ],
           );
         },
       ),
@@ -425,17 +354,10 @@ class _DriverDashboard extends ConsumerWidget {
     final topPad = MediaQuery.paddingOf(context).top;
 
     final header = Container(
-      padding: EdgeInsets.fromLTRB(hPad, topPad + 16, hPad, 16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [AppColors.primary.withAlpha(15), AppColors.background],
-        ),
-      ),
+      padding: EdgeInsets.fromLTRB(hPad, topPad + 12.h, hPad, 10.h),
+      color: AppColors.background,
       child: Row(
         children: [
-          // Avatar
           GestureDetector(
             onTap: () => context.goNamed(
               AppRoutes.profile.name,
@@ -445,16 +367,14 @@ class _DriverDashboard extends ConsumerWidget {
               data: (userData) => PremiumAvatar(
                 imageUrl: userData?.photoUrl,
                 name: userData?.username ?? l10n.driver,
-                size: 52.w,
+                size: 48.w,
                 hasBorder: true,
               ),
-              loading: () => CircleAvatar(radius: 26.w),
-              error: (_, _) => CircleAvatar(radius: 26.w),
+              loading: () => CircleAvatar(radius: 24.w),
+              error: (_, _) => CircleAvatar(radius: 24.w),
             ),
           ),
-          SizedBox(width: 14.w),
-
-          // Greeting
+          SizedBox(width: 12.w),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -462,8 +382,9 @@ class _DriverDashboard extends ConsumerWidget {
                 Text(
                   _getGreeting(l10n),
                   style: TextStyle(
-                    fontSize: 14.sp,
+                    fontSize: 13.sp,
                     color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
                 SizedBox(height: 2.h),
@@ -474,52 +395,53 @@ class _DriverDashboard extends ConsumerWidget {
                       fontSize: 20.sp,
                       fontWeight: FontWeight.w800,
                       color: AppColors.textPrimary,
+                      letterSpacing: -0.2,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  loading: () =>
-                      Text(l10n.loading, style: TextStyle(fontSize: 20.sp)),
-                  error: (_, _) =>
-                      Text(l10n.driver, style: TextStyle(fontSize: 20.sp)),
+                  loading: () => Text(
+                    l10n.loading,
+                    style: TextStyle(
+                      fontSize: 20.sp,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  error: (_, _) => Text(
+                    l10n.driver,
+                    style: TextStyle(
+                      fontSize: 20.sp,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
                 ),
               ],
             ),
           ),
-
-          // Actions
-          IconButton(
+          _HeaderIconButton(
             tooltip: l10n.notificationsTooltip,
-            onPressed: () => context.push(AppRoutes.notifications.path),
-            icon: Badge(
-              smallSize: 8.w,
-              backgroundColor: AppColors.error,
-              child: Icon(
-                Icons.notifications_outlined,
-                size: 26.sp,
-                color: AppColors.textPrimary,
-              ),
-            ),
+            icon: Icons.notifications_outlined,
+            showBadge: true,
+            onTap: () => context.push(AppRoutes.notifications.path),
           ),
-          IconButton(
+          SizedBox(width: 6.w),
+          _HeaderIconButton(
             tooltip: l10n.messages,
-            onPressed: () => context.goNamed(
+            icon: Icons.chat_bubble_outline_rounded,
+            onTap: () => context.goNamed(
               AppRoutes.chat.name,
               extra: {'resetBranch': true},
-            ),
-            icon: Icon(
-              Icons.chat_bubble_outline_rounded,
-              size: 24.sp,
-              color: AppColors.textPrimary,
             ),
           ),
         ],
       ),
     );
 
-    return _decorateDriverHome(
+    return _animateDriverHome(
       header,
-      (animation) => animation.fadeIn(duration: 400.ms),
+      (animation) => animation.fadeIn(duration: 250.ms),
     );
   }
 
@@ -530,56 +452,18 @@ class _DriverDashboard extends ConsumerWidget {
     return l10n.goodEvening;
   }
 
-  Widget _buildGamificationStrip(
-    AsyncValue<_DriverHomeUserData?> user,
-    double hPad,
-  ) {
-    final userData = user.whenOrNull<_DriverHomeUserData?>(data: (u) => u);
-    if (userData == null) return const SizedBox.shrink();
-
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: hPad, vertical: 4),
-      child: Row(
-        children: [
-          Expanded(
-            child: XPProgressBar(
-              currentXP: userData.totalXP,
-              maxXP: userData.maxXP,
-              level: userData.level,
-            ),
-          ),
-          if (userData.streak > 0) ...[
-            SizedBox(width: 12.w),
-            StreakCounter(days: userData.streak),
-          ],
-        ],
-      ),
-    );
-  }
-
   Widget _buildLocationBanner(AppLocalizations l10n) {
     final shouldOpenSettings = locationDeniedForever || servicesDisabled;
 
-    final banner = Container(
-      padding: EdgeInsets.all(16.w),
-      decoration: BoxDecoration(
-        color: AppColors.warning.withAlpha(20),
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: AppColors.warning.withAlpha(60)),
-      ),
+    final banner = _SoftCard(
+      padding: EdgeInsets.all(14.w),
+      borderColor: AppColors.warning.withAlpha(70),
+      backgroundColor: AppColors.warning.withAlpha(18),
       child: Row(
         children: [
-          Container(
-            padding: EdgeInsets.all(10.w),
-            decoration: BoxDecoration(
-              color: AppColors.warning.withAlpha(30),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.location_off_rounded,
-              color: AppColors.warning,
-              size: 24.sp,
-            ),
+          _IconBubble(
+            icon: Icons.location_off_rounded,
+            color: AppColors.warning,
           ),
           SizedBox(width: 12.w),
           Expanded(
@@ -589,8 +473,8 @@ class _DriverDashboard extends ConsumerWidget {
                 Text(
                   l10n.locationRequired,
                   style: TextStyle(
-                    fontSize: 15.sp,
-                    fontWeight: FontWeight.w700,
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w800,
                     color: AppColors.textPrimary,
                   ),
                 ),
@@ -600,305 +484,173 @@ class _DriverDashboard extends ConsumerWidget {
                   style: TextStyle(
                     fontSize: 12.sp,
                     color: AppColors.textSecondary,
+                    height: 1.25,
                   ),
                 ),
               ],
             ),
           ),
-          SizedBox(width: 8.w),
-          if (shouldOpenSettings)
-            TextButton(
-              onPressed: onOpenSettings,
-              child: Text(
-                l10n.openSettings,
-                style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600),
-              ),
-            )
-          else
-            TextButton(
-              onPressed: onRetryLocation,
-              child: Text(
-                l10n.enable,
-                style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600),
+          TextButton(
+            onPressed: shouldOpenSettings ? onOpenSettings : onRetryLocation,
+            child: Text(
+              shouldOpenSettings ? l10n.openSettings : l10n.enable,
+              style: TextStyle(
+                fontSize: 13.sp,
+                fontWeight: FontWeight.w700,
               ),
             ),
+          ),
         ],
       ),
     );
 
-    return _decorateDriverHome(
+    return _animateDriverHome(
       banner,
-      (animation) => animation.fadeIn(duration: 300.ms).slideY(begin: -0.1),
+      (animation) => animation.fadeIn(duration: 250.ms).slideY(begin: -0.06),
     );
   }
 
-  Widget _buildQuickActions(BuildContext context, AppLocalizations l10n) {
-    final actions = Row(
-      children: [
-        Expanded(
-          child: _QuickActionButton(
-            icon: Icons.add_road_rounded,
-            label: l10n.driverCreateRide,
+  Widget _buildDriverCommandCenter({
+    required BuildContext context,
+    required AppLocalizations l10n,
+    required RideModel? activeRide,
+    required AsyncValue<List<RideBooking>> pendingRequests,
+    required AsyncValue<List<RideModel>> upcomingRides,
+  }) {
+    if (activeRide != null) {
+      return _ActiveRideCard(ride: activeRide);
+    }
+
+    return pendingRequests.when(
+      data: (requests) {
+        if (requests.isNotEmpty) {
+          return _MainActionCard(
+            icon: Icons.person_add_alt_1_rounded,
+            title: requests.length == 1
+                ? '1 passenger request'
+                : '${requests.length} passenger requests',
+            subtitle:
+                'Review and respond before passengers choose another ride.',
+            actionLabel: l10n.viewAll,
             color: AppColors.primary,
-            onTap: () => context.push(AppRoutes.driverOfferRide.path),
-          ),
-        ),
-        SizedBox(width: 12.w),
-        Expanded(
-          child: _QuickActionButton(
-            icon: Icons.directions_car_rounded,
-            label: l10n.myVehicles,
-            color: AppColors.secondary,
-            onTap: () => context.push(AppRoutes.driverVehicles.path),
-          ),
-        ),
-        SizedBox(width: 12.w),
-        Expanded(
-          child: _QuickActionButton(
-            icon: Icons.history_rounded,
-            label: l10n.history,
-            color: AppColors.info,
-            onTap: () => context.goNamed(
-              AppRoutes.driverRides.name,
-              extra: {'resetBranch': true},
-            ),
-          ),
-        ),
-        SizedBox(width: 12.w),
-        Expanded(
-          child: _QuickActionButton(
-            icon: Icons.emoji_events_rounded,
-            label: 'Events',
-            color: AppColors.xpGold,
-            onTap: () => context.push(AppRoutes.events.path),
-          ),
-        ),
-      ],
-    );
+            onTap: () => context.push(AppRoutes.driverRequests.path),
+          );
+        }
 
-    return _decorateDriverHome(
-      actions,
-      (animation) => animation.fadeIn(duration: 400.ms, delay: 200.ms),
-    );
-  }
-
-  Widget _buildEarningsSummary(
-    AppLocalizations l10n,
-    AsyncValue<DriverStats> stats,
-    bool isSmall,
-  ) {
-    return stats.when(
-      data: (driverStats) {
-        final card = Container(
-          padding: EdgeInsets.all(isSmall ? 14.w : 20.w),
-          decoration: BoxDecoration(
-            gradient: AppColors.primaryGradient,
-            borderRadius: BorderRadius.circular(24.r),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary.withAlpha(50),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Flexible(
-                    child: Text(
-                      l10n.todaySEarnings,
-                      style: TextStyle(
-                        fontSize: isSmall ? 12.sp : 14.sp,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.white.withAlpha(200),
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 10.w,
-                      vertical: 4.h,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withAlpha(40),
-                      borderRadius: BorderRadius.circular(20.r),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.trending_up,
-                          size: 14.sp,
-                          color: Colors.white,
-                        ),
-                        SizedBox(width: 4.w),
-                        Text(
-                          l10n.live,
-                          style: TextStyle(
-                            fontSize: 11.sp,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 8.h),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Flexible(
-                    child: Text(
-                      l10n.value6(
-                        (driverStats.earningsTodayInCents / 100)
-                            .toStringAsFixed(2),
-                      ),
-                      style: TextStyle(
-                        fontSize: isSmall ? 28.sp : 36.sp,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
-                        letterSpacing: -1,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  SizedBox(width: 12.w),
-                  Padding(
-                    padding: EdgeInsets.only(bottom: 6.h),
-                    child: Text(
-                      l10n.valueRides(driverStats.totalRides),
-                      style: TextStyle(
-                        fontSize: isSmall ? 12.sp : 14.sp,
-                        color: Colors.white.withAlpha(200),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 16.h),
-              Row(
-                children: [
-                  _EarningsMetric(
-                    label: l10n.driverThisWeek,
-                    value: l10n.value6(
-                      (driverStats.earningsThisWeekInCents / 100)
-                          .toStringAsFixed(0),
-                    ),
-                  ),
-                  SizedBox(width: 24.w),
-                  _EarningsMetric(
-                    label: l10n.driverThisMonth,
-                    value: l10n.value6(
-                      (driverStats.earningsThisMonthInCents / 100)
-                          .toStringAsFixed(0),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+        final nextRide = upcomingRides.whenOrNull(
+          data: (rides) => rides.isEmpty ? null : rides.first,
         );
 
-        return _decorateDriverHome(
-          card,
-          (animation) => animation
-              .fadeIn(duration: 400.ms, delay: 300.ms)
-              .slideY(begin: 0.1),
-        );
-      },
-      loading: () => _buildShimmerCard(height: 180),
-      error: (_, _) => _buildErrorCard(l10n.failedToLoadEarnings),
-    );
-  }
-
-  Widget _buildStatsGrid(
-    AppLocalizations l10n,
-    AsyncValue<DriverStats> stats,
-    bool isLandscape,
-    bool isSmall,
-  ) {
-    return stats.when(
-      data: (driverStats) {
-        final cards = [
-          _StatCard(
-            icon: Icons.star_rounded,
-            iconColor: AppColors.starFilled,
-            value: driverStats.rating > 0
-                ? driverStats.rating.toStringAsFixed(1)
-                : '\u2014',
-            label: l10n.rating,
-          ),
-          _StatCard(
-            icon: Icons.route_rounded,
-            iconColor: AppColors.primary,
-            value: '${driverStats.totalRides}',
-            label: l10n.totalRides,
-          ),
-          _StatCard(
-            icon: Icons.check_circle_rounded,
-            iconColor: AppColors.success,
-            value: '${driverStats.totalRides}',
-            label: l10n.complete,
-          ),
-          _StatCard(
-            icon: Icons.trending_up_rounded,
-            iconColor: AppColors.info,
-            value: (driverStats.earningsThisMonthInCents / 100).toStringAsFixed(
-              0,
-            ),
-            label: l10n.driverThisMonth,
-          ),
-        ];
-
-        if (isLandscape || isSmall) {
-          // In landscape or small: one scrollable row
-          return SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: cards
-                  .map(
-                    (c) => Padding(
-                      padding: EdgeInsets.only(right: 12.w),
-                      child: SizedBox(width: 120.w, child: c),
-                    ),
-                  )
-                  .toList(),
+        if (nextRide != null) {
+          return _NextRideCard(
+            ride: nextRide,
+            isHero: true,
+            onTap: () => context.pushNamed(
+              AppRoutes.rideDetail.name,
+              pathParameters: {'id': nextRide.id},
             ),
           );
         }
 
-        // Portrait: 2x2 grid
-        return Column(
-          children: [
-            Row(
-              children: [
-                Expanded(child: cards[0]),
-                SizedBox(width: 12.w),
-                Expanded(child: cards[1]),
-              ],
-            ),
-            SizedBox(height: 12.h),
-            Row(
-              children: [
-                Expanded(child: cards[2]),
-                SizedBox(width: 12.w),
-                Expanded(child: cards[3]),
-              ],
-            ),
-          ],
+        return _MainActionCard(
+          icon: Icons.add_road_rounded,
+          title: 'Ready for your next trip?',
+          subtitle: 'Publish a ride and start receiving passenger requests.',
+          actionLabel: l10n.offerRide,
+          color: AppColors.primary,
+          onTap: () => context.push(AppRoutes.driverOfferRide.path),
         );
       },
-      loading: _buildShimmerStatsRow,
-      error: (_, _) => const SizedBox.shrink(),
+      loading: () => _buildShimmerCard(height: 128),
+      error: (_, _) => _MainActionCard(
+        icon: Icons.add_road_rounded,
+        title: 'Ready for your next trip?',
+        subtitle: 'Publish a ride and start receiving passenger requests.',
+        actionLabel: l10n.offerRide,
+        color: AppColors.primary,
+        onTap: () => context.push(AppRoutes.driverOfferRide.path),
+      ),
+    );
+  }
+
+  Widget _buildTodaySnapshot(
+    AppLocalizations l10n,
+    AsyncValue<DriverStats> stats,
+  ) {
+    return stats.when(
+      data: (driverStats) {
+        final today = (driverStats.earningsTodayInCents / 100).toStringAsFixed(
+          2,
+        );
+        final month = (driverStats.earningsThisMonthInCents / 100)
+            .toStringAsFixed(0);
+
+        final card = _SoftCard(
+          padding: EdgeInsets.all(16.w),
+          child: Row(
+            children: [
+              Expanded(
+                flex: 4,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.todaySEarnings,
+                      style: TextStyle(
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    SizedBox(height: 5.h),
+                    Text(
+                      l10n.value6(today),
+                      style: TextStyle(
+                        fontSize: 28.sp,
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.textPrimary,
+                        letterSpacing: -0.7,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                width: 1,
+                height: 46.h,
+                color: AppColors.border,
+              ),
+              Expanded(
+                flex: 3,
+                child: Padding(
+                  padding: EdgeInsets.only(left: 16.w),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _MiniMetric(
+                        label: l10n.totalRides,
+                        value: '${driverStats.totalRides}',
+                      ),
+                      SizedBox(height: 8.h),
+                      _MiniMetric(
+                        label: l10n.driverThisMonth,
+                        value: l10n.value6(month),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+
+        return _animateDriverHome(
+          card,
+          (animation) => animation.fadeIn(duration: 300.ms, delay: 100.ms),
+        );
+      },
+      loading: () => _buildShimmerCard(height: 104),
+      error: (_, _) => _buildErrorCard(l10n.failedToLoadEarnings),
     );
   }
 
@@ -911,50 +663,26 @@ class _DriverDashboard extends ConsumerWidget {
     final section = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Flexible(
-              child: Text(
-                l10n.rideRequests,
-                style: TextStyle(
-                  fontSize: 18.sp,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            TextButton.icon(
-              onPressed: () => context.push(AppRoutes.driverRequests.path),
-              icon: Icon(Icons.adaptive.arrow_forward, size: 14.sp),
-              label: Text(
-                l10n.viewAll,
-                style: TextStyle(
-                  fontSize: 13.sp,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.primary,
-                ),
-              ),
-              iconAlignment: IconAlignment.end,
-            ),
-          ],
+        _SectionHeader(
+          title: l10n.rideRequests,
+          actionText: l10n.viewAll,
+          onActionTap: () => context.push(AppRoutes.driverRequests.path),
         ),
         SizedBox(height: 12.h),
         requestsAsync.when(
           data: (requests) {
-            final requestPreview = requests.take(2).toList(growable: false);
-            if (requestPreview.isEmpty) {
-              return _buildEmptyState(
+            final preview = requests.take(2).toList(growable: false);
+            if (preview.isEmpty) {
+              return _EmptyPanel(
                 icon: Icons.inbox_outlined,
                 title: l10n.noPendingRequests,
                 subtitle: l10n.newRideRequestsWillAppear,
               );
             }
+
             return Column(
               children: [
-                for (final request in requestPreview)
+                for (final request in preview)
                   Padding(
                     padding: EdgeInsets.only(bottom: 12.h),
                     child: _RequestCard(
@@ -962,10 +690,13 @@ class _DriverDashboard extends ConsumerWidget {
                       isProcessing: false,
                       onAccept: () async {
                         HapticFeedback.heavyImpact();
+
                         final result = await ref
                             .read(rideRequestServiceProvider.notifier)
                             .acceptRequest(request.id);
+
                         if (!context.mounted) return;
+
                         if (result is Success) {
                           ref.invalidate(pendingRideRequestsProvider);
                           ref.invalidate(upcomingDriverRidesProvider);
@@ -973,10 +704,13 @@ class _DriverDashboard extends ConsumerWidget {
                       },
                       onDecline: () async {
                         HapticFeedback.lightImpact();
+
                         final result = await ref
                             .read(rideRequestServiceProvider.notifier)
                             .rejectRequest(request.id, 'Declined by driver');
+
                         if (!context.mounted) return;
+
                         if (result is Success) {
                           ref.invalidate(pendingRideRequestsProvider);
                         }
@@ -986,15 +720,15 @@ class _DriverDashboard extends ConsumerWidget {
               ],
             );
           },
-          loading: () => _buildShimmerCard(height: 100),
+          loading: () => _buildShimmerCard(height: 150),
           error: (_, _) => _buildErrorCard(l10n.failedToLoadRequests),
         ),
       ],
     );
 
-    return _decorateDriverHome(
+    return _animateDriverHome(
       section,
-      (animation) => animation.fadeIn(duration: 400.ms, delay: 500.ms),
+      (animation) => animation.fadeIn(duration: 300.ms, delay: 150.ms),
     );
   }
 
@@ -1006,31 +740,25 @@ class _DriverDashboard extends ConsumerWidget {
     final section = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          l10n.upcomingRides,
-          style: TextStyle(
-            fontSize: 18.sp,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          ),
-        ),
+        _SectionHeader(title: l10n.upcomingRides),
         SizedBox(height: 12.h),
         ridesAsync.when(
           data: (rides) {
-            final ridePreview = rides.take(3).toList(growable: false);
-            if (ridePreview.isEmpty) {
-              return _buildEmptyState(
+            final preview = rides.take(3).toList(growable: false);
+            if (preview.isEmpty) {
+              return _EmptyPanel(
                 icon: Icons.event_available_outlined,
                 title: l10n.noUpcomingRides,
                 subtitle: l10n.createARideToStartEarning,
               );
             }
+
             return Column(
               children: [
-                for (final ride in ridePreview)
+                for (final ride in preview)
                   Padding(
                     padding: EdgeInsets.only(bottom: 12.h),
-                    child: _UpcomingRideCard(
+                    child: _NextRideCard(
                       ride: ride,
                       onTap: () => context.pushNamed(
                         AppRoutes.rideDetail.name,
@@ -1041,15 +769,190 @@ class _DriverDashboard extends ConsumerWidget {
               ],
             );
           },
-          loading: () => _buildShimmerCard(height: 100),
+          loading: () => _buildShimmerCard(height: 108),
           error: (_, _) => _buildErrorCard(l10n.failedToLoadRides),
         ),
       ],
     );
 
-    return _decorateDriverHome(
+    return _animateDriverHome(
       section,
-      (animation) => animation.fadeIn(duration: 400.ms, delay: 600.ms),
+      (animation) => animation.fadeIn(duration: 300.ms, delay: 200.ms),
+    );
+  }
+
+  Widget _buildDriverTools(BuildContext context, AppLocalizations l10n) {
+    final section = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _SectionHeader(title: 'Driver tools'),
+        SizedBox(height: 12.h),
+        Row(
+          children: [
+            Expanded(
+              child: _ToolButton(
+                icon: Icons.add_road_rounded,
+                label: l10n.offerRide,
+                color: AppColors.primary,
+                onTap: () => context.push(AppRoutes.driverOfferRide.path),
+              ),
+            ),
+            SizedBox(width: 10.w),
+            Expanded(
+              child: _ToolButton(
+                icon: Icons.directions_car_rounded,
+                label: l10n.myVehicles,
+                color: AppColors.secondary,
+                onTap: () => context.push(AppRoutes.driverVehicles.path),
+              ),
+            ),
+            SizedBox(width: 10.w),
+            Expanded(
+              child: _ToolButton(
+                icon: Icons.history_rounded,
+                label: l10n.history,
+                color: AppColors.info,
+                onTap: () => context.goNamed(
+                  AppRoutes.driverRides.name,
+                  extra: {'resetBranch': true},
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+
+    return _animateDriverHome(
+      section,
+      (animation) => animation.fadeIn(duration: 300.ms, delay: 250.ms),
+    );
+  }
+
+  Widget _buildStatsGrid(
+    AppLocalizations l10n,
+    AsyncValue<DriverStats> stats,
+  ) {
+    return stats.when(
+      data: (driverStats) {
+        final week = (driverStats.earningsThisWeekInCents / 100)
+            .toStringAsFixed(0);
+        final month = (driverStats.earningsThisMonthInCents / 100)
+            .toStringAsFixed(0);
+
+        final section = Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const _SectionHeader(title: 'Performance'),
+            SizedBox(height: 12.h),
+            Row(
+              children: [
+                Expanded(
+                  child: _StatCard(
+                    icon: Icons.star_rounded,
+                    iconColor: AppColors.starFilled,
+                    value: driverStats.rating > 0
+                        ? driverStats.rating.toStringAsFixed(1)
+                        : '\u2014',
+                    label: l10n.rating,
+                  ),
+                ),
+                SizedBox(width: 10.w),
+                Expanded(
+                  child: _StatCard(
+                    icon: Icons.route_rounded,
+                    iconColor: AppColors.primary,
+                    value: '${driverStats.totalRides}',
+                    label: l10n.totalRides,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 10.h),
+            Row(
+              children: [
+                Expanded(
+                  child: _StatCard(
+                    icon: Icons.calendar_view_week_rounded,
+                    iconColor: AppColors.success,
+                    value: l10n.value6(week),
+                    label: l10n.driverThisWeek,
+                  ),
+                ),
+                SizedBox(width: 10.w),
+                Expanded(
+                  child: _StatCard(
+                    icon: Icons.trending_up_rounded,
+                    iconColor: AppColors.info,
+                    value: l10n.value6(month),
+                    label: l10n.driverThisMonth,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+
+        return _animateDriverHome(
+          section,
+          (animation) => animation.fadeIn(duration: 300.ms, delay: 300.ms),
+        );
+      },
+      loading: () => Column(
+        children: [
+          Row(
+            children: [
+              Expanded(child: _buildShimmerCard(height: 96)),
+              SizedBox(width: 10.w),
+              Expanded(child: _buildShimmerCard(height: 96)),
+            ],
+          ),
+          SizedBox(height: 10.h),
+          Row(
+            children: [
+              Expanded(child: _buildShimmerCard(height: 96)),
+              SizedBox(width: 10.w),
+              Expanded(child: _buildShimmerCard(height: 96)),
+            ],
+          ),
+        ],
+      ),
+      error: (_, _) => const SizedBox.shrink(),
+    );
+  }
+
+  Widget _buildGamificationStrip(AsyncValue<_DriverHomeUserData?> user) {
+    final userData = user.whenOrNull<_DriverHomeUserData?>(
+      data: (data) => data,
+    );
+    if (userData == null) return const SizedBox.shrink();
+
+    final section = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _SectionHeader(title: 'Progress'),
+        SizedBox(height: 12.h),
+        Row(
+          children: [
+            Expanded(
+              child: XPProgressBar(
+                currentXP: userData.totalXP,
+                maxXP: userData.maxXP,
+                level: userData.level,
+              ),
+            ),
+            if (userData.streak > 0) ...[
+              SizedBox(width: 10.w),
+              StreakCounter(days: userData.streak),
+            ],
+          ],
+        ),
+      ],
+    );
+
+    return _animateDriverHome(
+      section,
+      (animation) => animation.fadeIn(duration: 300.ms, delay: 350.ms),
     );
   }
 
@@ -1058,7 +961,7 @@ class _DriverDashboard extends ConsumerWidget {
       height: height.h,
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16.r),
+        borderRadius: BorderRadius.circular(18.r),
       ),
     );
 
@@ -1069,35 +972,27 @@ class _DriverDashboard extends ConsumerWidget {
     );
   }
 
-  Widget _buildShimmerStatsRow() {
-    return Row(
-      children: List.generate(
-        3,
-        (_) => Expanded(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 4.w),
-            child: _buildShimmerCard(height: 90),
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildErrorCard(String message) {
-    return Container(
-      padding: EdgeInsets.all(16.w),
-      decoration: BoxDecoration(
-        color: AppColors.error.withAlpha(25),
-        borderRadius: BorderRadius.circular(12.r),
-      ),
+    return _SoftCard(
+      padding: EdgeInsets.all(14.w),
+      backgroundColor: AppColors.error.withAlpha(18),
+      borderColor: AppColors.error.withAlpha(45),
       child: Row(
         children: [
-          Icon(Icons.error_outline, color: AppColors.error, size: 20.sp),
-          SizedBox(width: 12.w),
+          Icon(
+            Icons.error_outline_rounded,
+            color: AppColors.error,
+            size: 20.sp,
+          ),
+          SizedBox(width: 10.w),
           Expanded(
             child: Text(
               message,
-              style: TextStyle(fontSize: 14.sp, color: AppColors.error),
+              style: TextStyle(
+                fontSize: 13.sp,
+                color: AppColors.error,
+                fontWeight: FontWeight.w600,
+              ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
@@ -1106,181 +1001,365 @@ class _DriverDashboard extends ConsumerWidget {
       ),
     );
   }
+}
 
-  Widget _buildEmptyState({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-  }) {
-    return Container(
-      padding: EdgeInsets.all(32.w),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(20.r),
-        border: Border.all(color: AppColors.border),
+class _HeaderIconButton extends StatelessWidget {
+  const _HeaderIconButton({
+    required this.tooltip,
+    required this.icon,
+    required this.onTap,
+    this.showBadge = false,
+  });
+
+  final String tooltip;
+  final IconData icon;
+  final VoidCallback onTap;
+  final bool showBadge;
+
+  @override
+  Widget build(BuildContext context) {
+    final button = Material(
+      color: AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14.r),
+        side: BorderSide(color: AppColors.border.withAlpha(100)),
       ),
-      child: Column(
-        children: [
-          Container(
-            padding: EdgeInsets.all(16.w),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withAlpha(15),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, size: 32.sp, color: AppColors.primary),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14.r),
+        child: SizedBox(
+          width: 42.w,
+          height: 42.w,
+          child: Icon(
+            icon,
+            size: 21.sp,
+            color: AppColors.textPrimary,
           ),
-          SizedBox(height: 16.h),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 16.sp,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          SizedBox(height: 4.h),
-          Text(
-            subtitle,
-            style: TextStyle(fontSize: 13.sp, color: AppColors.textSecondary),
-            textAlign: TextAlign.center,
-          ),
-        ],
+        ),
       ),
+    );
+
+    return Tooltip(
+      message: tooltip,
+      child: showBadge
+          ? Badge(
+              smallSize: 8.w,
+              backgroundColor: AppColors.error,
+              child: button,
+            )
+          : button,
     );
   }
 }
 
-// ============ Helper Widgets ============
-
-class _QuickActionButton extends StatelessWidget {
-  const _QuickActionButton({
+class _MainActionCard extends StatelessWidget {
+  const _MainActionCard({
     required this.icon,
-    required this.label,
+    required this.title,
+    required this.subtitle,
+    required this.actionLabel,
     required this.color,
     required this.onTap,
   });
+
   final IconData icon;
-  final String label;
+  final String title;
+  final String subtitle;
+  final String actionLabel;
   final Color color;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.lightImpact();
-        onTap();
-      },
-      child: Container(
-        padding: EdgeInsets.symmetric(vertical: 16.h),
-        decoration: BoxDecoration(
-          color: color.withAlpha(15),
-          borderRadius: BorderRadius.circular(16.r),
-          border: Border.all(color: color.withAlpha(40)),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: color, size: 24.sp),
-            SizedBox(height: 8.h),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12.sp,
-                fontWeight: FontWeight.w600,
-                color: color,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _EarningsMetric extends StatelessWidget {
-  const _EarningsMetric({required this.label, required this.value});
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(fontSize: 12.sp, color: Colors.white.withAlpha(180)),
-        ),
-        SizedBox(height: 2.h),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 16.sp,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _StatCard extends StatelessWidget {
-  const _StatCard({
-    required this.icon,
-    required this.iconColor,
-    required this.value,
-    required this.label,
-  });
-  final IconData icon;
-  final Color iconColor;
-  final String value;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(16.w),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16.r),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(8),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+    final card = _SoftCard(
+      padding: EdgeInsets.all(18.w),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: EdgeInsets.all(8.w),
-            decoration: BoxDecoration(
-              color: iconColor.withAlpha(25),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: iconColor, size: 18.sp),
+          Row(
+            children: [
+              _IconBubble(icon: icon, color: color, size: 44.w),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 20.sp,
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.textPrimary,
+                        letterSpacing: -0.35,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    SizedBox(height: 4.h),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 13.sp,
+                        color: AppColors.textSecondary,
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          SizedBox(height: 10.h),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 18.sp,
-              fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
+          SizedBox(height: 16.h),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                HapticFeedback.mediumImpact();
+                onTap();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: color,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding: EdgeInsets.symmetric(vertical: 13.h),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14.r),
+                ),
+              ),
+              child: Text(
+                actionLabel,
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
             ),
-          ),
-          SizedBox(height: 2.h),
-          Text(
-            label,
-            style: TextStyle(fontSize: 11.sp, color: AppColors.textSecondary),
-            textAlign: TextAlign.center,
           ),
         ],
+      ),
+    );
+
+    return _animateDriverHome(
+      card,
+      (animation) => animation.fadeIn(duration: 300.ms).slideY(begin: 0.04),
+    );
+  }
+}
+
+class _ActiveRideCard extends StatelessWidget {
+  const _ActiveRideCard({required this.ride});
+
+  final RideModel ride;
+
+  @override
+  Widget build(BuildContext context) {
+    final origin = ride.origin.city ?? ride.origin.address;
+    final destination = ride.destination.city ?? ride.destination.address;
+
+    final card = _SoftCard(
+      padding: EdgeInsets.all(18.w),
+      borderColor: AppColors.success.withAlpha(80),
+      backgroundColor: AppColors.success.withAlpha(18),
+      child: Row(
+        children: [
+          _IconBubble(
+            icon: Icons.navigation_rounded,
+            color: AppColors.success,
+            size: 46.w,
+          ),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Ride in progress',
+                  style: TextStyle(
+                    fontSize: 20.sp,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.textPrimary,
+                    letterSpacing: -0.35,
+                  ),
+                ),
+                SizedBox(height: 4.h),
+                Text(
+                  '$origin → $destination',
+                  style: TextStyle(
+                    fontSize: 13.sp,
+                    color: AppColors.textSecondary,
+                    height: 1.3,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          SizedBox(width: 10.w),
+          FilledButton(
+            onPressed: () {
+              HapticFeedback.mediumImpact();
+              context.push(
+                '${AppRoutes.driverActiveRide.path}?rideId=${ride.id}',
+              );
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.success,
+              foregroundColor: Colors.white,
+              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(13.r),
+              ),
+            ),
+            child: Icon(Icons.arrow_forward_rounded, size: 18.sp),
+          ),
+        ],
+      ),
+    );
+
+    return _animateDriverHome(
+      card,
+      (animation) => animation.fadeIn(duration: 300.ms).slideY(begin: 0.04),
+    );
+  }
+}
+
+class _NextRideCard extends StatelessWidget {
+  const _NextRideCard({
+    required this.ride,
+    required this.onTap,
+    this.isHero = false,
+  });
+
+  final RideModel ride;
+  final VoidCallback onTap;
+  final bool isHero;
+
+  @override
+  Widget build(BuildContext context) {
+    final origin = ride.route.origin.city ?? ride.route.origin.address;
+    final destination =
+        ride.route.destination.city ?? ride.route.destination.address;
+    final departure = ride.schedule.departureTime;
+    final earned =
+        ((ride.pricing.pricePerSeatInCents.amountInCents *
+                    ride.capacity.booked) /
+                100)
+            .toStringAsFixed(2);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          HapticFeedback.lightImpact();
+          onTap();
+        },
+        borderRadius: BorderRadius.circular(20.r),
+        child: _SoftCard(
+          padding: EdgeInsets.all(isHero ? 18.w : 14.w),
+          child: Row(
+            children: [
+              _DateTile(date: departure, isLarge: isHero),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (isHero) ...[
+                      Text(
+                        'Next ride',
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      SizedBox(height: 4.h),
+                    ],
+                    Text(
+                      AppLocalizations.of(
+                        context,
+                      ).valueValue2(origin, destination),
+                      style: TextStyle(
+                        fontSize: isHero ? 17.sp : 15.sp,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
+                        letterSpacing: -0.2,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    SizedBox(height: 6.h),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.schedule_rounded,
+                          size: 14.sp,
+                          color: AppColors.textTertiary,
+                        ),
+                        SizedBox(width: 4.w),
+                        Text(
+                          DateFormat('h:mm a').format(departure),
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            color: AppColors.textSecondary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        SizedBox(width: 10.w),
+                        Icon(
+                          Icons.people_outline_rounded,
+                          size: 14.sp,
+                          color: AppColors.textTertiary,
+                        ),
+                        SizedBox(width: 4.w),
+                        Text(
+                          AppLocalizations.of(context).valueValue(
+                            ride.capacity.booked,
+                            ride.capacity.available,
+                          ),
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            color: AppColors.textSecondary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(width: 10.w),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    AppLocalizations.of(context).value6(earned),
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w900,
+                      color: AppColors.success,
+                    ),
+                  ),
+                  SizedBox(height: 2.h),
+                  Text(
+                    AppLocalizations.of(context).earned,
+                    style: TextStyle(
+                      fontSize: 11.sp,
+                      color: AppColors.textTertiary,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(width: 4.w),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.textTertiary,
+                size: 22.sp,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -1293,6 +1372,7 @@ class _RequestCard extends ConsumerWidget {
     required this.onAccept,
     required this.onDecline,
   });
+
   final RideBooking request;
   final bool isProcessing;
   final VoidCallback onAccept;
@@ -1300,8 +1380,13 @@ class _RequestCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final profile = ref.watch(userProfileProvider(request.passengerId).select((a) => a.value));
-    final ride = ref.watch(requestCardRideProvider(request.rideId).select((a) => a.value));
+    final profile = ref.watch(
+      userProfileProvider(request.passengerId).select((value) => value.value),
+    );
+    final ride = ref.watch(
+      requestCardRideProvider(request.rideId).select((value) => value.value),
+    );
+
     final passengerName = profile?.username ?? '…';
     final passengerRating = profile?.asRider?.rating.average ?? 0.0;
     final pricePerSeatInCents = ride?.pricePerSeatInCents ?? 0.0;
@@ -1311,19 +1396,8 @@ class _RequestCard extends ConsumerWidget {
     final dropoffAddress =
         request.dropoffLocation?.address ?? ride?.destination.address ?? '—';
 
-    return Container(
-      padding: EdgeInsets.all(16.w),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16.r),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(8),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+    return _SoftCard(
+      padding: EdgeInsets.all(14.w),
       child: Column(
         children: [
           Row(
@@ -1338,18 +1412,21 @@ class _RequestCard extends ConsumerWidget {
                       passengerName,
                       style: TextStyle(
                         fontSize: 15.sp,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w800,
                         color: AppColors.textPrimary,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
+                    SizedBox(height: 3.h),
                     Row(
                       children: [
                         Icon(
-                          Icons.star,
+                          Icons.star_rounded,
                           color: AppColors.starFilled,
                           size: 14.sp,
                         ),
-                        SizedBox(width: 4.w),
+                        SizedBox(width: 3.w),
                         Text(
                           passengerRating > 0
                               ? passengerRating.toStringAsFixed(1)
@@ -1357,15 +1434,16 @@ class _RequestCard extends ConsumerWidget {
                           style: TextStyle(
                             fontSize: 12.sp,
                             color: AppColors.textSecondary,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                         SizedBox(width: 8.w),
                         Icon(
-                          Icons.event_seat,
+                          Icons.event_seat_rounded,
                           size: 14.sp,
                           color: AppColors.textTertiary,
                         ),
-                        SizedBox(width: 4.w),
+                        SizedBox(width: 3.w),
                         Text(
                           AppLocalizations.of(context).valueSeatValue(
                             request.seatsBooked,
@@ -1374,6 +1452,7 @@ class _RequestCard extends ConsumerWidget {
                           style: TextStyle(
                             fontSize: 12.sp,
                             color: AppColors.textSecondary,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
@@ -1388,16 +1467,16 @@ class _RequestCard extends ConsumerWidget {
                     vertical: 6.h,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.success.withAlpha(25),
-                    borderRadius: BorderRadius.circular(20.r),
+                    color: AppColors.success.withAlpha(18),
+                    borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(
                     AppLocalizations.of(
                       context,
                     ).value6((total / 100).toStringAsFixed(2)),
                     style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w700,
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.w900,
                       color: AppColors.success,
                     ),
                   ),
@@ -1405,83 +1484,31 @@ class _RequestCard extends ConsumerWidget {
             ],
           ),
           SizedBox(height: 12.h),
-          Container(
-            padding: EdgeInsets.all(12.w),
-            decoration: BoxDecoration(
-              color: AppColors.background,
-              borderRadius: BorderRadius.circular(12.r),
-            ),
-            child: Row(
-              children: [
-                Column(
-                  children: [
-                    Container(
-                      width: 8.w,
-                      height: 8.w,
-                      decoration: const BoxDecoration(
-                        color: AppColors.success,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    Container(width: 1, height: 20.h, color: AppColors.border),
-                    Container(
-                      width: 8.w,
-                      height: 8.w,
-                      decoration: const BoxDecoration(
-                        color: AppColors.error,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(width: 12.w),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        pickupAddress,
-                        style: TextStyle(
-                          fontSize: 13.sp,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textPrimary,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      SizedBox(height: 8.h),
-                      Text(
-                        dropoffAddress,
-                        style: TextStyle(
-                          fontSize: 13.sp,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textPrimary,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+          _RoutePreview(
+            pickupAddress: pickupAddress,
+            dropoffAddress: dropoffAddress,
           ),
-          SizedBox(height: 12.h),
+          SizedBox(height: 10.h),
           Row(
             children: [
               Icon(
                 Icons.schedule_outlined,
-                size: 16.sp,
+                size: 15.sp,
                 color: AppColors.textTertiary,
               ),
-              SizedBox(width: 6.w),
-              Text(
-                DateFormat(
-                  'EEE, MMM d • h:mm a',
-                ).format(request.createdAt ?? DateTime.now()),
-                style: TextStyle(
-                  fontSize: 12.sp,
-                  color: AppColors.textSecondary,
+              SizedBox(width: 5.w),
+              Expanded(
+                child: Text(
+                  DateFormat('EEE, MMM d • h:mm a').format(
+                    request.createdAt ?? DateTime.now(),
+                  ),
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
@@ -1494,24 +1521,21 @@ class _RequestCard extends ConsumerWidget {
                   onPressed: isProcessing || profile == null
                       ? null
                       : () => _openMessageChat(context, ref, profile),
-                  icon: Icon(
-                    Icons.chat_bubble_outline_rounded,
-                    size: 16.sp,
-                  ),
+                  icon: Icon(Icons.chat_bubble_outline_rounded, size: 15.sp),
                   label: Text(
                     'Message',
                     style: TextStyle(
-                      fontSize: 13.sp,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.primary,
-                    side: BorderSide(color: AppColors.primary.withAlpha(80)),
+                    side: BorderSide(color: AppColors.primary.withAlpha(70)),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12.r),
                     ),
-                    padding: EdgeInsets.symmetric(vertical: 12.h),
+                    padding: EdgeInsets.symmetric(vertical: 11.h),
                   ),
                 ),
               ),
@@ -1521,17 +1545,17 @@ class _RequestCard extends ConsumerWidget {
                   onPressed: isProcessing ? null : onDecline,
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.error,
-                    side: BorderSide(color: AppColors.error.withAlpha(80)),
+                    side: BorderSide(color: AppColors.error.withAlpha(70)),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12.r),
                     ),
-                    padding: EdgeInsets.symmetric(vertical: 12.h),
+                    padding: EdgeInsets.symmetric(vertical: 11.h),
                   ),
                   child: Text(
                     AppLocalizations.of(context).decline,
                     style: TextStyle(
-                      fontSize: 13.sp,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
@@ -1543,15 +1567,16 @@ class _RequestCard extends ConsumerWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.success,
                     foregroundColor: Colors.white,
+                    elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12.r),
                     ),
-                    padding: EdgeInsets.symmetric(vertical: 12.h),
+                    padding: EdgeInsets.symmetric(vertical: 11.h),
                   ),
                   child: isProcessing
                       ? SizedBox(
-                          width: 18.w,
-                          height: 18.w,
+                          width: 17.w,
+                          height: 17.w,
                           child: const CircularProgressIndicator.adaptive(
                             strokeWidth: 2,
                             valueColor: AlwaysStoppedAnimation<Color>(
@@ -1562,8 +1587,8 @@ class _RequestCard extends ConsumerWidget {
                       : Text(
                           AppLocalizations.of(context).accept,
                           style: TextStyle(
-                            fontSize: 13.sp,
-                            fontWeight: FontWeight.w600,
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
                 ),
@@ -1618,8 +1643,7 @@ class _RequestCard extends ConsumerWidget {
 
       if (!context.mounted) return;
 
-      context.pop(); // Close loading dialog.
-
+      context.pop();
       context.pushNamed(
         AppRoutes.chatDetail.name,
         pathParameters: {'id': chat.id},
@@ -1634,8 +1658,7 @@ class _RequestCard extends ConsumerWidget {
     } on Exception {
       if (!context.mounted) return;
 
-      context.pop(); // Close loading dialog.
-
+      context.pop();
       AdaptiveSnackBar.show(
         context,
         message: AppLocalizations.of(context).failedToCreateChatTryAgain,
@@ -1645,254 +1668,419 @@ class _RequestCard extends ConsumerWidget {
   }
 }
 
-class _UpcomingRideCard extends StatelessWidget {
-  const _UpcomingRideCard({required this.ride, required this.onTap});
-  final RideModel ride;
-  final VoidCallback onTap;
+class _RoutePreview extends StatelessWidget {
+  const _RoutePreview({
+    required this.pickupAddress,
+    required this.dropoffAddress,
+  });
+
+  final String pickupAddress;
+  final String dropoffAddress;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.all(16.w),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(16.r),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha(8),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            // Date box
-            Container(
-              width: 56.w,
-              padding: EdgeInsets.symmetric(vertical: 10.h),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withAlpha(20),
-                borderRadius: BorderRadius.circular(12.r),
+    return Container(
+      padding: EdgeInsets.all(12.w),
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.circular(13.r),
+      ),
+      child: Row(
+        children: [
+          Column(
+            children: [
+              Container(
+                width: 8.w,
+                height: 8.w,
+                decoration: const BoxDecoration(
+                  color: AppColors.success,
+                  shape: BoxShape.circle,
+                ),
               ),
-              child: Column(
-                children: [
-                  Text(
-                    DateFormat(
-                      'MMM',
-                    ).format(ride.schedule.departureTime).toUpperCase(),
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                  Text(
-                    DateFormat('d').format(ride.schedule.departureTime),
-                    style: TextStyle(
-                      fontSize: 20.sp,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                ],
+              Container(width: 1, height: 22.h, color: AppColors.border),
+              Container(
+                width: 8.w,
+                height: 8.w,
+                decoration: const BoxDecoration(
+                  color: AppColors.error,
+                  shape: BoxShape.circle,
+                ),
               ),
-            ),
-            SizedBox(width: 14.w),
-            // Ride info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    AppLocalizations.of(context).valueValue2(
-                      ride.route.origin.city ?? ride.route.origin.address,
-                      ride.route.destination.city ??
-                          ride.route.destination.address,
-                    ),
-                    style: TextStyle(
-                      fontSize: 15.sp,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  SizedBox(height: 4.h),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.schedule,
-                        size: 14.sp,
-                        color: AppColors.textTertiary,
-                      ),
-                      SizedBox(width: 4.w),
-                      Text(
-                        DateFormat(
-                          'h:mm a',
-                        ).format(ride.schedule.departureTime),
-                        style: TextStyle(
-                          fontSize: 12.sp,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      SizedBox(width: 12.w),
-                      Icon(
-                        Icons.people_outline,
-                        size: 14.sp,
-                        color: AppColors.textTertiary,
-                      ),
-                      SizedBox(width: 4.w),
-                      Text(
-                        AppLocalizations.of(context).valueValue(
-                          ride.capacity.booked,
-                          ride.capacity.available,
-                        ),
-                        style: TextStyle(
-                          fontSize: 12.sp,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            // Price
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
+            ],
+          ),
+          SizedBox(width: 11.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  AppLocalizations.of(context).value6(
-                    ((ride.pricing.pricePerSeatInCents.amountInCents *
-                                ride.capacity.booked) /
-                            100)
-                        .toStringAsFixed(2),
-                  ),
+                  pickupAddress,
                   style: TextStyle(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.success,
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
+                SizedBox(height: 9.h),
                 Text(
-                  AppLocalizations.of(context).earned,
+                  dropoffAddress,
                   style: TextStyle(
-                    fontSize: 11.sp,
-                    color: AppColors.textTertiary,
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
-            SizedBox(width: 8.w),
-            Icon(
-              Icons.chevron_right,
-              color: AppColors.textTertiary,
-              size: 20.sp,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DateTile extends StatelessWidget {
+  const _DateTile({required this.date, this.isLarge = false});
+
+  final DateTime date;
+  final bool isLarge;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: isLarge ? 58.w : 52.w,
+      padding: EdgeInsets.symmetric(vertical: isLarge ? 10.h : 8.h),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withAlpha(14),
+        borderRadius: BorderRadius.circular(14.r),
+        border: Border.all(color: AppColors.primary.withAlpha(35)),
+      ),
+      child: Column(
+        children: [
+          Text(
+            DateFormat('MMM').format(date).toUpperCase(),
+            style: TextStyle(
+              fontSize: 11.sp,
+              fontWeight: FontWeight.w800,
+              color: AppColors.primary,
             ),
-          ],
+          ),
+          SizedBox(height: 1.h),
+          Text(
+            DateFormat('d').format(date),
+            style: TextStyle(
+              fontSize: isLarge ? 21.sp : 18.sp,
+              fontWeight: FontWeight.w900,
+              color: AppColors.primary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ToolButton extends StatelessWidget {
+  const _ToolButton({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          HapticFeedback.lightImpact();
+          onTap();
+        },
+        borderRadius: BorderRadius.circular(16.r),
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 14.h),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(16.r),
+            border: Border.all(color: AppColors.border.withAlpha(100)),
+          ),
+          child: Column(
+            children: [
+              Icon(icon, color: color, size: 23.sp),
+              SizedBox(height: 8.h),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-/// Persistent banner shown at the top of the driver dashboard whenever the
-/// driver has an active (inProgress) ride.  Tapping it jumps straight to the
-/// active-ride management screen.
-class _ActiveDriverRideBanner extends StatelessWidget {
-  const _ActiveDriverRideBanner({required this.ride});
+class _StatCard extends StatelessWidget {
+  const _StatCard({
+    required this.icon,
+    required this.iconColor,
+    required this.value,
+    required this.label,
+  });
 
-  final RideModel? ride;
+  final IconData icon;
+  final Color iconColor;
+  final String value;
+  final String label;
 
   @override
   Widget build(BuildContext context) {
-    final activeRide = ride;
-    if (activeRide == null) return const SizedBox.shrink();
-
-    final origin = activeRide.origin.city ?? activeRide.origin.address;
-    final dest = activeRide.destination.city ?? activeRide.destination.address;
-
-    final banner = GestureDetector(
-      onTap: () {
-        HapticFeedback.mediumImpact();
-        context.push(
-          '${AppRoutes.driverActiveRide.path}?rideId=${activeRide.id}',
-        );
-      },
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
-        decoration: BoxDecoration(
-          color: AppColors.success,
-          borderRadius: BorderRadius.circular(16.r),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.success.withValues(alpha: 0.40),
-              blurRadius: 18,
-              offset: const Offset(0, 5),
+    return _SoftCard(
+      padding: EdgeInsets.all(14.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: iconColor, size: 22.sp),
+          SizedBox(height: 12.h),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 18.sp,
+              fontWeight: FontWeight.w900,
+              color: AppColors.textPrimary,
+              letterSpacing: -0.2,
             ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: EdgeInsets.all(9.w),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.22),
-                borderRadius: BorderRadius.circular(11.r),
-              ),
-              child: Icon(
-                Icons.navigation_rounded,
-                color: Colors.white,
-                size: 22.sp,
-              ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          SizedBox(height: 2.h),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12.sp,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary,
             ),
-            SizedBox(width: 12.w),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Ride In Progress',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  SizedBox(height: 2.h),
-                  Text(
-                    '$origin → $dest',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.87),
-                      fontSize: 12.sp,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              Icons.chevron_right_rounded,
-              color: Colors.white,
-              size: 26.sp,
-            ),
-          ],
-        ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
       ),
     );
+  }
+}
 
-    return _decorateDriverHome(
-      banner,
-      (animation) => animation
-          .fadeIn(delay: 200.ms, duration: 400.ms)
-          .slideY(begin: -0.2, curve: Curves.easeOutCubic),
+class _MiniMetric extends StatelessWidget {
+  const _MiniMetric({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Flexible(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 12.sp,
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w600,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        SizedBox(width: 8.w),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 13.sp,
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w900,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
+    );
+  }
+}
+
+class _EmptyPanel extends StatelessWidget {
+  const _EmptyPanel({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return _SoftCard(
+      padding: EdgeInsets.all(16.w),
+      backgroundColor: AppColors.surface.withAlpha(230),
+      child: Row(
+        children: [
+          _IconBubble(icon: icon, color: AppColors.textTertiary, size: 42.w),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                SizedBox(height: 3.h),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: AppColors.textSecondary,
+                    height: 1.25,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({
+    required this.title,
+    this.actionText,
+    this.onActionTap,
+  });
+
+  final String title;
+  final String? actionText;
+  final VoidCallback? onActionTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            title,
+            style: TextStyle(
+              fontSize: 18.sp,
+              fontWeight: FontWeight.w900,
+              color: AppColors.textPrimary,
+              letterSpacing: -0.2,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        if (actionText != null && onActionTap != null)
+          TextButton(
+            onPressed: onActionTap,
+            child: Text(
+              actionText!,
+              style: TextStyle(
+                fontSize: 13.sp,
+                fontWeight: FontWeight.w800,
+                color: AppColors.primary,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _SoftCard extends StatelessWidget {
+  const _SoftCard({
+    required this.child,
+    this.padding,
+    this.backgroundColor,
+    this.borderColor,
+  });
+
+  final Widget child;
+  final EdgeInsetsGeometry? padding;
+  final Color? backgroundColor;
+  final Color? borderColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: padding ?? EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: backgroundColor ?? AppColors.surface,
+        borderRadius: BorderRadius.circular(20.r),
+        border: Border.all(
+          color: borderColor ?? AppColors.border.withAlpha(95),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(6),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
+}
+
+class _IconBubble extends StatelessWidget {
+  const _IconBubble({
+    required this.icon,
+    required this.color,
+    this.size,
+  });
+
+  final IconData icon;
+  final Color color;
+  final double? size;
+
+  @override
+  Widget build(BuildContext context) {
+    final bubbleSize = size ?? 40.w;
+
+    return Container(
+      width: bubbleSize,
+      height: bubbleSize,
+      decoration: BoxDecoration(
+        color: color.withAlpha(16),
+        borderRadius: BorderRadius.circular(14.r),
+      ),
+      child: Icon(icon, color: color, size: 21.sp),
     );
   }
 }

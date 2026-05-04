@@ -186,21 +186,20 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
       vehiclesAsync.whenData((vehicles) {
         if (vehicles.isNotEmpty && mounted) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            final vehicleId =
+            final vehicle =
                 _formState.existingRideId != null &&
                     widget.existingRide?.vehicleId != null
-                ? widget.existingRide!.vehicleId
-                : vehicles
-                      .firstWhere(
-                        (v) => v.isDefault,
-                        orElse: () => vehicles.first,
-                      )
-                      .id;
-            if (vehicleId != null) {
-              ref
-                  .read(driverOfferRideViewModelProvider.notifier)
-                  .setVehicle(vehicleId);
-            }
+                ? vehicles.firstWhere(
+                    (v) => v.id == widget.existingRide!.vehicleId,
+                    orElse: () => vehicles.first,
+                  )
+                : vehicles.firstWhere(
+                    (v) => v.isDefault,
+                    orElse: () => vehicles.first,
+                  );
+            ref
+                .read(driverOfferRideViewModelProvider.notifier)
+                .setVehicleModel(vehicle);
           });
         }
       });
@@ -1366,9 +1365,13 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                       .toList(),
                   currentVehicleId: selectedVehicle?.id,
                   onSelect: (id) {
+                    final vehicle = vehicles.firstWhere(
+                      (v) => v.id == id,
+                      orElse: () => vehicles.first,
+                    );
                     ref
                         .read(driverOfferRideViewModelProvider.notifier)
-                        .setVehicle(id);
+                        .setVehicleModel(vehicle);
                   },
                 ),
                 child: Container(
@@ -1417,7 +1420,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                 onTap: () {
                   ref
                       .read(driverOfferRideViewModelProvider.notifier)
-                      .setVehicle(vehicle.id);
+                      .setVehicleModel(vehicle);
                 },
                 child: Container(
                   width: 150.w,

@@ -535,7 +535,9 @@ class PaymentRepository {
 
       final now = DateTime.now();
       final todayStart = DateTime(now.year, now.month, now.day);
-      final weekStart = now.subtract(Duration(days: now.weekday - 1));
+      final weekStart = todayStart.subtract(
+        Duration(days: todayStart.weekday - DateTime.monday),
+      );
       final monthStart = DateTime(now.year, now.month);
       final yearStart = DateTime(now.year);
 
@@ -547,15 +549,15 @@ class PaymentRepository {
 
       final payments = allPayments.docs.map((doc) => doc.data()).toList();
 
-      int totalEarningsInCents = 0;
-      int totalPlatformFeesInCents = 0;
-      int totalStripeFeesInCents = 0;
+      var totalEarningsInCents = 0;
+      var totalPlatformFeesInCents = 0;
+      var totalStripeFeesInCents = 0;
       final totalRides = payments.length;
 
-      int earningsTodayInCents = 0;
-      int earningsThisWeekInCents = 0;
-      int earningsThisMonthInCents = 0;
-      int earningsThisYearInCents = 0;
+      var earningsTodayInCents = 0;
+      var earningsThisWeekInCents = 0;
+      var earningsThisMonthInCents = 0;
+      var earningsThisYearInCents = 0;
 
       var ridesToday = 0;
       var ridesThisWeek = 0;

@@ -461,7 +461,11 @@ class _DriverOnboardingScreenState
       }
     });
 
-    return AdaptiveScaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (_, _) =>
+          _previousStep(vmState, skipProfileStep: skipProfileStep),
+      child: AdaptiveScaffold(
       appBar: AdaptiveAppBar(
         leading: effectiveStep > 0
             ? IconButton(
@@ -526,6 +530,7 @@ class _DriverOnboardingScreenState
           ],
         ),
       ),
+    ),
     );
   }
 

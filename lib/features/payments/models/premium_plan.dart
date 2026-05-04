@@ -25,6 +25,15 @@ extension PremiumPlanX on PremiumPlan {
     }
   }
 
+  String get billingPeriodLabel {
+    switch (this) {
+      case PremiumPlan.monthly:
+        return 'month';
+      case PremiumPlan.yearly:
+        return 'year';
+    }
+  }
+
   String get helperText {
     switch (this) {
       case PremiumPlan.monthly:

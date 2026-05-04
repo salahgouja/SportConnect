@@ -353,6 +353,13 @@ class DriverOfferRideViewModel extends _$DriverOfferRideViewModel {
     state = state.copyWith(selectedVehicleId: vehicleId);
   }
 
+  void setVehicleModel(VehicleModel vehicle) {
+    state = state.copyWith(
+      selectedVehicleId: vehicle.id,
+      availableSeats: state.availableSeats.clamp(1, vehicle.capacity),
+    );
+  }
+
   void setSeats(int seats) {
     // Clamp to valid range
     final clamped = seats.clamp(1, 8);
@@ -622,6 +629,12 @@ class DriverOfferRideViewModel extends _$DriverOfferRideViewModel {
           FuelType.hydrogen,
         }.contains(vehicle.fuelType)) {
           tags.add('eco');
+        }
+        if (vehicle.isVerified) {
+          tags.add('verified_driver');
+        }
+        if (vehicle.hasAC || vehicle.hasWifi || vehicle.hasCharger) {
+          tags.add('premium');
         }
       }
 

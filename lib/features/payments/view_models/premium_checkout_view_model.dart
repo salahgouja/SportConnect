@@ -84,7 +84,7 @@ class PremiumCheckoutViewModel extends _$PremiumCheckoutViewModel {
     try {
       final iapService = ref.read(premiumIapServiceProvider.notifier);
 
-      final isIapSupported = await iapService.isSupported;
+      final isIapSupported = await iapService.isSupported();
 
       if (!ref.mounted) return false;
 
@@ -131,8 +131,14 @@ class PremiumCheckoutViewModel extends _$PremiumCheckoutViewModel {
           'premiumProductId': purchase?.productID,
           'premiumPurchaseStatus': purchase?.status.name,
           'premiumUpdatedAt': DateTime.now(),
+
+          // Useful for debugging Google Play subscriptions with multiple
+          // base plans under one subscription product.
+          'premiumGooglePlayBasePlanId': selectedPlan.googlePlayBasePlanId,
+
           if (premiumTransactionId != null && premiumTransactionId.isNotEmpty)
             'premiumTransactionId': premiumTransactionId,
+
           if (verificationPayload != null && verificationPayload.isNotEmpty)
             'premiumVerificationPayload': verificationPayload,
         },
@@ -156,7 +162,7 @@ class PremiumCheckoutViewModel extends _$PremiumCheckoutViewModel {
 
       state = state.copyWith(
         isProcessing: false,
-        errorMessage: 'Unable to complete checkout. Please try again.',
+        errorMessage: _friendlyCheckoutError(e),
       );
 
       return false;
@@ -188,5 +194,15 @@ class PremiumCheckoutViewModel extends _$PremiumCheckoutViewModel {
       );
       TalkerService.error('Stripe customer sync error', e, st);
     }
+  }
+
+  String _friendlyCheckoutError(Object error) {
+    final message = error.toString().replaceFirst('Bad state: ', '').trim();
+
+    if (message.isEmpty) {
+      return 'Unable to complete checkout. Please try again.';
+    }
+
+    return message;
   }
 }

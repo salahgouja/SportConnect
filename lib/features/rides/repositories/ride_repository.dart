@@ -184,7 +184,7 @@ class RideRepository {
       if (date != null && !_isSameDay(ride.schedule.departureTime, date)) {
         return false;
       }
-      if (minSeats != null && ride.capacity.available < minSeats) {
+      if (minSeats != null && ride.capacity.remaining < minSeats) {
         return false;
       }
       if (maxPriceInCents != null &&
