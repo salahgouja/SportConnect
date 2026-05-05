@@ -188,7 +188,7 @@ class RideRepository {
         return false;
       }
       if (maxPriceInCents != null &&
-          ride.pricing.pricePerSeatInCents.amountInCents > maxPriceInCents) {
+          ride.pricing.pricePerSeatInCents > maxPriceInCents) {
         return false;
       }
 

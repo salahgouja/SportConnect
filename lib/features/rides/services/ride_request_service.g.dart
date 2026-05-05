@@ -49,7 +49,7 @@ final class RideRequestServiceProvider
 }
 
 String _$rideRequestServiceHash() =>
-    r'ee0308e734ac1e3ed27f61617b0f56ad2f541c79';
+    r'049f587982ac1e82b86971a006b33574f8984dc7';
 
 /// Booking action service — handles driver accept/reject of pending bookings.
 ///

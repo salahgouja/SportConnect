@@ -138,6 +138,10 @@ class AppRoutes {
     '/ride/booking-pending/:rideId',
     'ride-booking-pending',
   );
+  static const rideBookingReview = AppRoute(
+    '/rides/:rideId/booking-review',
+    'ride-booking-review',
+  );
   static const rideCountdown = AppRoute(
     '/ride/countdown/:bookingId',
     'ride-countdown',
@@ -162,6 +166,7 @@ class AppRoutes {
 
   // Events
   static const events = AppRoute('/events', 'events');
+  static const eventsBrowse = AppRoute('/events/browse', 'events-browse');
   static const createEvent = AppRoute('/events/create', 'create-event');
   static const myEvents = AppRoute('/events/mine', 'my-events');
   static const eventDetail = AppRoute(

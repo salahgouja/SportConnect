@@ -95,7 +95,7 @@ class RideCompletionUiViewModel extends _$RideCompletionUiViewModel {
         osrmRoutePoints: routeInfo?.coordinates,
         isLoadingOsrmRoute: false,
       );
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoadingOsrmRoute: false);
     }
@@ -156,7 +156,7 @@ class RideCompletionUiViewModel extends _$RideCompletionUiViewModel {
       );
       if (!ref.mounted) return;
       state = state.copyWith(isGeneratingPdf: false);
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       try {
         final driverProfile = await ref.read(
           userProfileProvider(ride.driverId).future,
@@ -167,7 +167,8 @@ class RideCompletionUiViewModel extends _$RideCompletionUiViewModel {
         final serviceFee = (baseFare * 0.10).round();
         final total = baseFare + serviceFee;
 
-        final receipt = '''
+        final receipt =
+            '''
 $receiptTitle
 ${'=' * 30}
 $fromLabel: ${ride.origin.address}
@@ -180,12 +181,12 @@ $serviceFeeLabel: €${(serviceFee / 100).toStringAsFixed(2)}
 $totalLabel: €${(total / 100).toStringAsFixed(2)}
 ${'=' * 30}
 $rideIdLabel: ${ride.id}'''
-            .trimLeft();
+                .trimLeft();
 
         await SharePlus.instance.share(ShareParams(text: receipt));
         if (!ref.mounted) return;
         state = state.copyWith(isGeneratingPdf: false);
-      } catch (e, st) {
+      } on Exception catch (e, st) {
         if (!ref.mounted) return;
         state = state.copyWith(
           isGeneratingPdf: false,

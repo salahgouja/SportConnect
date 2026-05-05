@@ -79,10 +79,7 @@ abstract class RideModel with _$RideModel {
   DateTime get departureTime => schedule.departureTime;
 
   /// Price per seat (as double for backward compat)
-  int get pricePerSeatInCents => pricing.pricePerSeatInCents.amountInCents;
-
-  /// Currency string
-  String? get currency => pricing.pricePerSeatInCents.currency;
+  int get pricePerSeatInCents => pricing.pricePerSeatInCents;
 
   /// Available seats
   int get availableSeats => capacity.available;

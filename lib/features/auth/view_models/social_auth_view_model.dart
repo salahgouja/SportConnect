@@ -1,4 +1,3 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 
@@ -49,7 +48,7 @@ class SocialAuthViewModel extends _$SocialAuthViewModel {
       await ref.read(authActionsViewModelProvider.notifier).signInWithGoogle();
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, completedProvider: 'google');
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, error: e);
     }
@@ -68,7 +67,7 @@ class SocialAuthViewModel extends _$SocialAuthViewModel {
       await ref.read(authActionsViewModelProvider.notifier).signInWithApple();
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, completedProvider: 'apple');
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, error: e);
     }

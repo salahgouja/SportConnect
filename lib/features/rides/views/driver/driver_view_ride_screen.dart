@@ -14,13 +14,14 @@ import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
-import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
+import 'package:sport_connect/core/widgets/app_map_tile_layer.dart';
 import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/core/widgets/passenger_info_widget.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/core/widgets/ride_feature_widgets.dart';
 import 'package:sport_connect/core/widgets/safety_widgets.dart';
+import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/messaging/view_models/chat_view_model.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
@@ -30,7 +31,6 @@ import 'package:sport_connect/features/rides/view_models/driver_view_ride_view_m
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:sport_connect/core/widgets/app_map_tile_layer.dart';
 
 /// Driver's dedicated screen for managing their ride and viewing booking requests
 /// Features: ride stats, booking management, passenger list, ride controls
@@ -205,7 +205,8 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen> {
                 : AppLocalizations.of(context).passengers,
           ],
           selectedColor: Colors.white,
-          backgroundColor: AppColors.primary,          children: [
+          backgroundColor: AppColors.primary,
+          children: [
             _buildDetailsTab(ride),
             _buildRequestsTab(ride, pendingBookings),
             _buildPassengersTab(ride, confirmedBookings),
@@ -1638,7 +1639,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen> {
           context,
         ).bookingConfirmedForValue(passengerName),
       );
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       _showErrorMessage('Could not confirm booking. Please try again.');
     }
   }
@@ -1694,7 +1695,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen> {
       if (!success) {
         _showErrorMessage('Could not decline booking. Please try again.');
       }
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       _showErrorMessage('Could not decline booking. Please try again.');
     }
   }
@@ -1782,7 +1783,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen> {
             bookingId: booking.id,
             newStatus: BookingStatus.cancelled,
           );
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       _showErrorMessage('Could not remove passenger. Please try again.');
     }
   }
@@ -1836,7 +1837,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen> {
         pathParameters: {'id': chat.id},
         extra: passengerUser,
       );
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       _showErrorMessage('Failed to open chat. Please try again.');
     }
   }
@@ -1930,7 +1931,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen> {
       if (mounted) {
         context.push('${AppRoutes.driverActiveRide.path}?rideId=${ride.id}');
       }
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       _showErrorMessage('Could not start ride. Please try again.');
     }
   }
@@ -1969,7 +1970,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen> {
         message: AppLocalizations.of(context).rideCompleted,
         backgroundColor: AppColors.textPrimary,
       );
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       _showErrorMessage('Could not complete ride. Please try again.');
     }
   }

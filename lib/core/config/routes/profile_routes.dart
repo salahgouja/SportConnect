@@ -3,7 +3,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
-import 'package:sport_connect/core/config/routes/route_config.dart';
 import 'package:sport_connect/core/config/routes/route_params.dart';
 import 'package:sport_connect/features/notifications/views/notifications_screen.dart';
 import 'package:sport_connect/features/payments/views/driver_stripe_onboarding_screen.dart';
@@ -26,9 +25,7 @@ import 'package:sport_connect/features/profile/views/user_search_screen.dart';
 import 'package:sport_connect/features/vehicles/views/vehicle_management_screen.dart';
 
 /// Profile and related features module routes
-class ProfileRoutes implements RouteConfig {
-
-  @override
+class ProfileRoutes {
   List<RouteBase> getRoutes() {
     return [
       // NOTE: Main profile route is defined as a StatefulShellBranch

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -29,7 +30,6 @@ import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:v_chat_voice_player/v_chat_voice_player.dart';
 import 'package:v_platform/v_platform.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 
 /// Chat Detail Screen with real-time Firestore messaging.
 class ChatDetailScreen extends ConsumerStatefulWidget {
@@ -322,7 +322,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
         return;
       }
       _scrollToBottom();
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
       _showStatusSnackBar(
@@ -478,7 +478,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       // Delete temp file only after confirmed success so RETRY can re-send it.
       if (file.existsSync()) file.deleteSync();
       _scrollToBottom();
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
@@ -935,7 +935,12 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       chatDetailViewModelProvider(_chatId, currentUser!.uid),
     );
     final isReceiverBlocked =
-        ref.watch(blockedUserIdsProvider(currentUser!.uid).select((a) => a.value))?.contains(_receiver.uid) ?? false;
+        ref
+            .watch(
+              blockedUserIdsProvider(currentUser!.uid).select((a) => a.value),
+            )
+            ?.contains(_receiver.uid) ??
+        false;
 
     // FIX: ref.listen in build is correct for ConsumerStatefulWidget —
     // Riverpod deduplicates it across rebuilds. Delegate read side-effect
@@ -1950,7 +1955,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
           duration: const Duration(seconds: 2),
         );
       }
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!mounted) return;
       Navigator.of(context).pop();
       _showLocationError('Failed to get location: $e');
@@ -2021,7 +2026,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
           duration: const Duration(seconds: 2),
         );
       }
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!mounted) return;
       _showStatusSnackBar(
         AppLocalizations.of(context).couldNotOpenMapsValue(e),

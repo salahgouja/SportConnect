@@ -65,7 +65,7 @@ final class DriverPassengerRatingViewModelProvider
 }
 
 String _$driverPassengerRatingViewModelHash() =>
-    r'33ccff984eec13bbf467eb457064da2d63b569fb';
+    r'a153c9664e292e22a5ae2db3aa4c4c155cba4396';
 
 final class DriverPassengerRatingViewModelFamily extends $Family
     with

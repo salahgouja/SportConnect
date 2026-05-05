@@ -14,6 +14,7 @@ import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/widgets/app_map_tile_layer.dart';
 import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/core/widgets/driver_info_widget.dart';
 import 'package:sport_connect/core/widgets/misc_feature_widgets.dart';
@@ -27,7 +28,6 @@ import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
-import 'package:sport_connect/core/widgets/app_map_tile_layer.dart';
 
 class RiderHomeScreen extends ConsumerStatefulWidget {
   const RiderHomeScreen({super.key});
@@ -39,9 +39,14 @@ class RiderHomeScreen extends ConsumerStatefulWidget {
 class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
   // ── Map controller (widget-owned) ──────────────────────────
   final MapController _mapController = MapController();
-
-  // ── Search (ephemeral UI state) ────────────────────────────
   final TextEditingController _searchController = TextEditingController();
+
+  static const double _minMapZoom = 11.5;
+  static const double _maxMapZoom = 18;
+
+  double _clampMapZoom(double zoom) {
+    return zoom.clamp(_minMapZoom, _maxMapZoom);
+  }
 
   /// Whether the active-ride guard has already navigated (prevent re-entry).
   bool _hasAutoNavigatedToActiveRide = false;
@@ -153,7 +158,10 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
           try {
             final vm = ref.read(riderHomeViewModelProvider.notifier);
             if (vm.canMoveMap()) {
-              _mapController.move(next.currentLocation!, next.currentZoom);
+              _mapController.move(
+                next.currentLocation!,
+                _clampMapZoom(next.currentZoom),
+              );
               vm.updateLastMapMoveTime(DateTime.now());
             }
           } on Exception {
@@ -704,7 +712,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
     // Extract state from ViewModel
     final loc = vmState.currentLocation ?? const LatLng(0, 0);
     final queryAnchor = vmState.nearbyQueryAnchor ?? loc;
-    final currentZoom = vmState.currentZoom;
+    final currentZoom = _clampMapZoom(vmState.currentZoom);
     final selectedMapStyle = vmState.selectedMapStyle;
     final showNearbyDrivers = vmState.showNearbyDrivers;
     final showDistanceRadius = vmState.showDistanceRadius;
@@ -732,18 +740,18 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
           options: MapOptions(
             initialCenter: loc,
             initialZoom: currentZoom,
+            minZoom: _minMapZoom,
+            maxZoom: _maxMapZoom,
             onPositionChanged: (position, hasGesture) {
               if (hasGesture) {
                 final vm = ref.read(riderHomeViewModelProvider.notifier);
-                final nextZoom = position.zoom;
+                final nextZoom = _clampMapZoom(position.zoom);
                 vm.updateZoom(nextZoom);
               }
             },
           ),
           children: [
-            AppMapTileLayer(
-              urlTemplate: _mapStyles[selectedMapStyle],
-            ),
+            const AppMapTileLayer(),
             const CurrentLocationLayer(),
 
             if (activeRoute != null)
@@ -1228,11 +1236,6 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
       top: 120.h,
       child: Column(
         children: [
-          _buildMapControl(
-            icon: Icons.layers_outlined,
-            onTap: _showMapStylePicker,
-          ),
-          SizedBox(height: 8.h),
           _buildMapControl(
             icon: Icons.radar_rounded,
             isActive: showDistanceRadius,
@@ -1769,7 +1772,6 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
       context: context,
       title: l10n.findARide,
       forceMaxHeight: true,
-      maxHeightFactor: 0.9,
       trailingNavBarWidget: IconButton(
         tooltip: l10n.filters,
         onPressed: () {

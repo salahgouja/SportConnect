@@ -1,4 +1,3 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/features/auth/models/auth_exception.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
@@ -65,7 +64,7 @@ class ChangePasswordViewModel extends _$ChangePasswordViewModel {
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, isSuccess: true);
       _pendingPassword = null;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!ref.mounted) return;
       if (e is AuthException && e.code == 'requires-recent-login') {
         state = state.copyWith(isLoading: false, requiresReauth: true);

@@ -3,14 +3,12 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
-import 'package:sport_connect/core/config/routes/route_config.dart';
 import 'package:sport_connect/core/config/routes/route_params.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/messaging/views/chat_detail_screen.dart';
 
 /// Chat module routes
-class ChatRoutes implements RouteConfig {
-  @override
+class ChatRoutes {
   List<RouteBase> getRoutes() {
     UserModel fallbackReceiver(GoRouterState state) {
       final receiverId = state.params.getQueryOrDefault('receiverId', '');

@@ -168,8 +168,7 @@ class RoutingService {
     }
 
     try {
-      final coords = <String>[];
-      coords.add('${origin.longitude},${origin.latitude}');
+      final coords = <String>['${origin.longitude},${origin.latitude}'];
       if (waypoints != null) {
         for (final wp in waypoints) {
           coords.add('${wp.longitude},${wp.latitude}');
@@ -220,7 +219,7 @@ class RoutingService {
         'OSRM request failed with status: ${response.statusCode}',
       );
       return null;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('Failed to get route from OSRM', e, st);
       return null;
     }
@@ -255,7 +254,7 @@ class RoutingService {
             .toList();
       }
       return [];
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('Failed to get alternative routes', e, st);
       return [];
     }
@@ -279,7 +278,7 @@ class RoutingService {
         return LatLng(location[1] as double, location[0] as double);
       }
       return null;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('Failed to get nearest road', e, st);
       return null;
     }
@@ -320,7 +319,7 @@ class RoutingService {
         };
       }
       return null;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('Failed to get distance matrix', e, st);
       return null;
     }
@@ -357,7 +356,7 @@ class RoutingService {
         return _parseRoute(matchings[0] as Map<String, dynamic>, 'geojson');
       }
       return null;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('Failed to match points to roads', e, st);
       return null;
     }
@@ -393,7 +392,7 @@ class RoutingService {
         return _parseRoute(trips[0] as Map<String, dynamic>, 'geojson');
       }
       return null;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('Failed to calculate optimal trip', e, st);
       return null;
     }

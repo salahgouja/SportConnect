@@ -6,14 +6,6 @@ import 'package:sport_connect/core/theme/app_colors.dart';
 
 // ─── Data Models ──────────────────────────────────────────────────────────────
 
-/// French phone input with +33 prefix, formatting, and validation.
-///
-/// Features:
-/// - France-only phone number input
-/// - 9-digit French national number validation
-/// - Real-time validation with visual feedback
-/// - Trailing checkmark when valid; red border when invalid
-/// - Accessible labels and semantics
 class PhoneNumber {
   const PhoneNumber({
     required this.countryCode,
@@ -24,19 +16,23 @@ class PhoneNumber {
 
   final String countryCode;
   final String dialCode;
+
+  /// National-significant number without the French leading trunk prefix `0`.
+  ///
+  /// Example:
+  /// - UI: FR +33 | 6 12 34 56 78
+  /// - number: 612345678
+  /// - fullNumber: +33612345678
   final String number;
 
-  /// Whether the number satisfies the selected country's length constraints.
-  /// Set by [IntlPhoneInputState], not self-computed.
   final bool isValid;
 
-  String get fullNumber => '+$dialCode$number';
+  String get fullNumber => number.isEmpty ? '' : '+$dialCode$number';
 
   @override
   String toString() => fullNumber;
 }
 
-/// Represents a country with dial code and formatting info.
 class Country {
   const Country({
     required this.code,
@@ -57,19 +53,31 @@ class Country {
   final int maxLength;
 }
 
+const Country france = Country(
+  code: 'FR',
+  name: 'France',
+  dialCode: '33',
+  flag: '🇫🇷',
+  example: '6 12 34 56 78',
+  minLength: 9,
+  maxLength: 9,
+);
+
 // ─── Main Widget ──────────────────────────────────────────────────────────────
 
-/// International Phone Input with country code picker, flag emojis,
-/// formatting and validation.
+/// Production-style France phone input using an international prefix pattern.
 ///
-/// Features:
-/// - 50+ countries with flag emoji + dial code
-/// - Searchable country picker bottom sheet with empty state
-/// - Per-country min/max digit length validation
-/// - Real-time validation with visual feedback (error, valid, neutral)
-/// - Trailing checkmark when valid; red border when invalid
-/// - Auto-detects country from device locale
-/// - Accessible labels and semantics
+/// Keeps the existing public API name `IntlPhoneInput` so current screens do
+/// not break.
+///
+/// UX:
+/// - visible fixed prefix: FR +33
+/// - user enters the 9 national-significant digits: 6 12 34 56 78
+/// - local pasted values like 06 12 34 56 78 are normalized safely
+/// - international pasted values like +33612345678 / 0033612345678 work
+/// - no fake country picker
+/// - no aggressive focus border
+/// - stores normalized full number as +33XXXXXXXXX
 class IntlPhoneInput extends StatefulWidget {
   const IntlPhoneInput({
     super.key,
@@ -87,8 +95,9 @@ class IntlPhoneInput extends StatefulWidget {
 
   final String? initialValue;
 
-  /// ISO country code to pre-select. Defaults to France.
+  /// Kept only for API compatibility. This widget is intentionally France-only.
   final String initialCountryCode;
+
   final String? label;
   final String? hint;
   final bool enabled;
@@ -103,36 +112,51 @@ class IntlPhoneInput extends StatefulWidget {
 }
 
 class IntlPhoneInputState extends State<IntlPhoneInput> {
-  static final _nonDigitsRegExp = RegExp(r'[^\d]');
-  static final _phoneCharsRegExp = RegExp(r'[\d\s\-()]');
-  late Country _selectedCountry;
   late final TextEditingController _controller;
+  late final FocusNode _focusNode;
+
   String? _errorText;
   bool _hasInteracted = false;
 
-  Country get selectedCountry => _selectedCountry;
+  Country get selectedCountry => france;
 
-  /// Whether the current digits satisfy the selected country's length rules.
-  bool get _isPhoneValid {
-    final digits = _controller.text.replaceAll(RegExp(r'[^\d]'), '');
-    return digits.length >= _selectedCountry.minLength &&
-        digits.length <= _selectedCountry.maxLength;
-  }
+  /// What appears after the visible +33 prefix.
+  ///
+  /// Valid final shape:
+  /// 6 12 34 56 78
+  String get _visibleDigits => _extractInternationalNationalDigits(
+    _controller.text,
+  );
+
+  /// What the app stores after +33.
+  ///
+  /// This never includes the French domestic trunk prefix `0`.
+  String get _normalizedDigits => _normalizeInternationalDigits(_visibleDigits);
+
+  bool get _hasDigits => _visibleDigits.isNotEmpty;
+
+  bool get _isOnlyLeadingZero => _visibleDigits == '0';
+
+  bool get _isPhoneValid => _normalizedDigits.length == france.maxLength;
 
   PhoneNumber get phoneNumber => PhoneNumber(
-    countryCode: _selectedCountry.code,
-    dialCode: _selectedCountry.dialCode,
-    number: _controller.text.replaceAll(RegExp(r'[^\d]'), ''),
+    countryCode: france.code,
+    dialCode: france.dialCode,
+    number: _normalizedDigits,
     isValid: _isPhoneValid,
   );
 
   String get fullNumber => phoneNumber.fullNumber;
 
-  /// Externally validate and return error text (or null).
   String? validate() {
     _hasInteracted = true;
-    final error = widget.validator?.call(phoneNumber);
-    setState(() => _errorText = error);
+
+    final error = _validatePhone();
+
+    setState(() {
+      _errorText = error;
+    });
+
     return error;
   }
 
@@ -140,198 +164,373 @@ class IntlPhoneInputState extends State<IntlPhoneInput> {
   void initState() {
     super.initState();
 
-    // Auto-detect country from device locale; fall back to TN.
-    _selectedCountry = france;
+    final initialDigits = _extractInternationalNationalDigits(
+      widget.initialValue,
+    );
 
-    _controller = TextEditingController(text: widget.initialValue ?? '');
+    _controller = TextEditingController(
+      text: _formatInternationalNationalNumber(initialDigits),
+    );
+
+    _focusNode = FocusNode();
+    _focusNode.addListener(_handleFocusChange);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      widget.onChanged?.call(phoneNumber);
+    });
   }
 
   @override
   void dispose() {
+    _focusNode.removeListener(_handleFocusChange);
+    _focusNode.dispose();
     _controller.dispose();
     super.dispose();
   }
 
-  void _onPhoneChanged(String _) {
-    final pn = phoneNumber;
-    widget.onChanged?.call(pn);
-    if (_hasInteracted && widget.validator != null) {
-      setState(() => _errorText = widget.validator!(pn));
-    } else {
-      // Rebuild to update valid/invalid visual state.
-      setState(() {});
+  void _handleFocusChange() {
+    if (!mounted) return;
+
+    if (!_focusNode.hasFocus && _hasInteracted) {
+      setState(() {
+        _errorText = _validatePhone();
+      });
+      return;
     }
+
+    setState(() {});
+  }
+
+  String? _validatePhone() {
+    final pn = phoneNumber;
+    final customError = widget.validator?.call(pn);
+
+    if (customError != null) return customError;
+
+    if (!_isPhoneValid && _hasDigits) {
+      return 'Enter a valid French phone number.';
+    }
+
+    return null;
+  }
+
+  void _handleChanged(String _) {
+    _hasInteracted = true;
+
+    setState(() {
+      if (_errorText != null) {
+        _errorText = _validatePhone();
+      }
+    });
+
+    widget.onChanged?.call(phoneNumber);
+  }
+
+  void _clear() {
+    HapticFeedback.selectionClick();
+
+    _controller.clear();
+
+    setState(() {
+      _hasInteracted = true;
+      _errorText = _validatePhone();
+    });
+
+    widget.onChanged?.call(phoneNumber);
+  }
+
+  String _supportText({
+    required bool hasError,
+    required bool showValid,
+  }) {
+    if (hasError) return _errorText!;
+
+    if (showValid) return phoneNumber.fullNumber;
+
+    if (_isOnlyLeadingZero) {
+      return 'After +33, enter the number without the leading 0.';
+    }
+
+    if (_hasDigits) {
+      return '${_normalizedDigits.length.clamp(0, france.maxLength)} of ${france.maxLength} digits after +33';
+    }
+
+    return 'Used only for ride coordination and safety.';
+  }
+
+  Color _supportColor({
+    required Color accent,
+    required bool hasError,
+    required bool showValid,
+  }) {
+    if (hasError) return AppColors.error;
+    if (showValid) return accent;
+    if (_isOnlyLeadingZero) return AppColors.textSecondary;
+    return AppColors.textSecondary;
+  }
+
+  IconData _supportIcon({
+    required bool hasError,
+    required bool showValid,
+  }) {
+    if (hasError) return Icons.error_outline_rounded;
+    if (showValid) return Icons.check_circle_rounded;
+    if (_hasDigits) return Icons.dialpad_rounded;
+    return Icons.lock_outline_rounded;
   }
 
   @override
   Widget build(BuildContext context) {
     final accent = widget.accentColor ?? AppColors.primary;
-    final fill = widget.fillColor ?? accent.withValues(alpha: 0.06);
-    final hasError = _errorText != null;
-    final isValid =
-        _isPhoneValid &&
-        _controller.text.replaceAll(_nonDigitsRegExp, '').isNotEmpty;
+    final fill = widget.fillColor ?? AppColors.surface;
 
-    // Border color priority: error > valid > neutral
+    final hasError = _errorText != null;
+    final isFocused = _focusNode.hasFocus;
+    final showValid = _hasDigits && _isPhoneValid && !hasError;
+    final showClear = widget.enabled && _hasDigits && isFocused && !showValid;
+
+    final title = widget.label ?? 'Phone number';
+
+    final fieldBackground = !widget.enabled
+        ? AppColors.textSecondary.withValues(alpha: 0.05)
+        : Color.alphaBlend(
+            isFocused ? accent.withValues(alpha: 0.035) : Colors.transparent,
+            fill,
+          );
+
     final borderColor = hasError
-        ? AppColors.error
-        : isValid
-        ? Colors.green.withValues(alpha: 0.65)
-        : accent.withValues(alpha: 0.2);
-    final borderWidth = (hasError || isValid) ? 1.5 : 1.0;
+        ? AppColors.error.withValues(alpha: 0.68)
+        : isFocused
+        ? accent.withValues(alpha: 0.16)
+        : AppColors.border.withValues(alpha: 0.32);
+
+    final supportColor = _supportColor(
+      accent: accent,
+      hasError: hasError,
+      showValid: showValid,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (widget.label != null) ...[
-          Text(
-            widget.label!,
-            style: TextStyle(
-              fontSize: 13.sp,
-              fontWeight: FontWeight.w600,
-              color: hasError
-                  ? AppColors.error
-                  : isValid
-                  ? Colors.green
-                  : accent.withValues(alpha: 0.8),
-            ),
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 12.5.sp,
+            fontWeight: FontWeight.w800,
+            color: hasError ? AppColors.error : AppColors.textPrimary,
           ),
-          SizedBox(height: 8.h),
-        ],
-        Container(
+        ),
+        SizedBox(height: 8.h),
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOutCubic,
           decoration: BoxDecoration(
-            color: fill,
-            borderRadius: BorderRadius.circular(14.r),
-            border: Border.all(color: borderColor, width: borderWidth),
+            color: fieldBackground,
+            borderRadius: BorderRadius.circular(18.r),
+            border: Border.all(
+              color: borderColor,
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(
+                  alpha: isFocused ? 0.04 : 0.022,
+                ),
+                blurRadius: isFocused ? 18 : 10,
+                offset: Offset(0, isFocused ? 7.h : 4.h),
+              ),
+            ],
           ),
           child: Row(
             children: [
-              // Country picker button
-              _CountryPrefix(
-                country: _selectedCountry,
+              SizedBox(width: 12.w),
+              _InternationalPrefixBlock(
                 accent: accent,
+                enabled: widget.enabled,
               ),
+              SizedBox(width: 12.w),
               Container(
                 width: 1,
                 height: 30.h,
-                color: accent.withValues(alpha: 0.15),
+                color: AppColors.border.withValues(alpha: 0.32),
               ),
-              // Phone number text field
+              SizedBox(width: 12.w),
               Expanded(
                 child: Semantics(
-                  label: widget.label ?? 'Phone number',
+                  label: title,
+                  textField: true,
                   child: TextField(
                     controller: _controller,
+                    focusNode: _focusNode,
                     enabled: widget.enabled,
                     autofocus: widget.autofocus,
                     keyboardType: TextInputType.phone,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(_phoneCharsRegExp),
-                      LengthLimitingTextInputFormatter(
-                        _selectedCountry.maxLength + 2,
-                      ),
+                    textInputAction: TextInputAction.done,
+                    autofillHints: const [
+                      AutofillHints.telephoneNumber,
+                    ],
+                    enableSuggestions: false,
+                    autocorrect: false,
+                    cursorColor: accent,
+                    inputFormatters: const [
+                      _InternationalFrenchPhoneFormatter(),
                     ],
                     style: TextStyle(
-                      fontSize: 15.sp,
-                      fontWeight: FontWeight.w500,
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w800,
                       color: AppColors.textPrimary,
+                      letterSpacing: 0.1,
                     ),
                     decoration: InputDecoration(
-                      hintText: widget.hint ?? _selectedCountry.example,
+                      hintText: widget.hint ?? 'Phone number',
                       hintStyle: TextStyle(
-                        fontSize: 14.sp,
+                        fontSize: 14.5.sp,
+                        fontWeight: FontWeight.w500,
                         color: AppColors.textTertiary,
                       ),
                       border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 12.w,
-                        vertical: 14.h,
-                      ),
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      disabledBorder: InputBorder.none,
+                      errorBorder: InputBorder.none,
+                      focusedErrorBorder: InputBorder.none,
+                      isDense: true,
+                      contentPadding: EdgeInsets.symmetric(vertical: 17.h),
                     ),
-                    onChanged: _onPhoneChanged,
+                    onChanged: _handleChanged,
                   ),
                 ),
               ),
-              // Trailing valid checkmark
               AnimatedSwitcher(
-                duration: const Duration(milliseconds: 200),
-                child: isValid
+                duration: const Duration(milliseconds: 160),
+                switchInCurve: Curves.easeOutCubic,
+                switchOutCurve: Curves.easeInCubic,
+                child: showValid
                     ? Padding(
-                        key: const ValueKey('phone-valid'),
-                        padding: EdgeInsets.only(right: 12.w),
+                        key: const ValueKey('phone-valid-icon'),
+                        padding: EdgeInsets.only(right: 14.w),
                         child:
                             Icon(
                               Icons.check_circle_rounded,
-                              color: Colors.green,
-                              size: 18.sp,
+                              color: accent,
+                              size: 20.sp,
                             ).animate().scale(
-                              duration: 200.ms,
+                              duration: 180.ms,
                               curve: Curves.easeOutBack,
                             ),
                       )
-                    : SizedBox(key: const ValueKey('phone-neutral'), width: 0),
+                    : showClear
+                    ? IconButton(
+                        key: const ValueKey('phone-clear-button'),
+                        tooltip: 'Clear phone number',
+                        onPressed: _clear,
+                        visualDensity: VisualDensity.compact,
+                        padding: EdgeInsets.zero,
+                        constraints: BoxConstraints(
+                          minWidth: 42.w,
+                          minHeight: 48.h,
+                        ),
+                        icon: Icon(
+                          Icons.close_rounded,
+                          color: AppColors.textSecondary,
+                          size: 18.sp,
+                        ),
+                      )
+                    : SizedBox(
+                        key: const ValueKey('phone-empty-trailing'),
+                        width: 14.w,
+                      ),
               ),
             ],
           ),
         ),
-        // Error text
+        SizedBox(height: 8.h),
         AnimatedSwitcher(
-          duration: const Duration(milliseconds: 200),
-          child: hasError
-              ? Padding(
-                  key: const ValueKey('phone-error'),
-                  padding: EdgeInsets.only(top: 6.h, left: 12.w),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.error_outline_rounded,
-                        size: 13.sp,
-                        color: AppColors.error,
-                      ),
-                      SizedBox(width: 4.w),
-                      Text(
-                        _errorText!,
-                        style: TextStyle(
-                          fontSize: 12.sp,
-                          color: AppColors.error,
-                        ),
-                      ),
-                    ],
+          duration: const Duration(milliseconds: 180),
+          switchInCurve: Curves.easeOutCubic,
+          switchOutCurve: Curves.easeInCubic,
+          child: Row(
+            key: ValueKey(
+              '${_supportText(
+                hasError: hasError,
+                showValid: showValid,
+              )}-$supportColor',
+            ),
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                _supportIcon(
+                  hasError: hasError,
+                  showValid: showValid,
+                ),
+                size: 13.sp,
+                color: supportColor,
+              ),
+              SizedBox(width: 6.w),
+              Expanded(
+                child: Text(
+                  _supportText(
+                    hasError: hasError,
+                    showValid: showValid,
                   ),
-                ).animate().fadeIn(duration: 200.ms).slideY(begin: -0.3)
-              : const SizedBox.shrink(key: ValueKey('phone-no-error')),
+                  style: TextStyle(
+                    fontSize: 11.5.sp,
+                    height: 1.25,
+                    fontWeight: FontWeight.w600,
+                    color: supportColor,
+                  ),
+                ),
+              ),
+            ],
+          ).animate().fadeIn(duration: 160.ms),
         ),
       ],
     );
   }
 }
 
-// ─── Country Picker Button ────────────────────────────────────────────────────
-class _CountryPrefix extends StatelessWidget {
-  const _CountryPrefix({
-    required this.country,
+// ─── UI Pieces ────────────────────────────────────────────────────────────────
+
+class _InternationalPrefixBlock extends StatelessWidget {
+  const _InternationalPrefixBlock({
     required this.accent,
+    required this.enabled,
   });
 
-  final Country country;
   final Color accent;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+    final primary = enabled ? AppColors.textPrimary : AppColors.textSecondary;
+    final secondary = enabled ? accent : AppColors.textSecondary;
+
+    return SizedBox(
+      height: 44.h,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(country.flag, style: TextStyle(fontSize: 22.sp)),
-          SizedBox(width: 6.w),
           Text(
-            '+${country.dialCode}',
+            france.code,
             style: TextStyle(
-              fontSize: 14.sp,
-              fontWeight: FontWeight.w700,
-              color: accent,
+              fontSize: 11.sp,
+              height: 1,
+              fontWeight: FontWeight.w900,
+              color: primary,
+              letterSpacing: 0.5,
+            ),
+          ),
+          SizedBox(height: 4.h),
+          Text(
+            '+${france.dialCode}',
+            style: TextStyle(
+              fontSize: 13.sp,
+              height: 1,
+              fontWeight: FontWeight.w900,
+              color: secondary,
             ),
           ),
         ],
@@ -340,12 +539,88 @@ class _CountryPrefix extends StatelessWidget {
   }
 }
 
-const Country france = Country(
-  code: 'FR',
-  name: 'France',
-  dialCode: '33',
-  flag: '🇫🇷',
-  example: '6 12 34 56 78',
-  minLength: 9,
-  maxLength: 9,
-);
+// ─── Formatting ───────────────────────────────────────────────────────────────
+
+class _InternationalFrenchPhoneFormatter extends TextInputFormatter {
+  const _InternationalFrenchPhoneFormatter();
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final digits = _extractInternationalNationalDigits(newValue.text);
+    final formatted = _formatInternationalNationalNumber(digits);
+
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
+      composing: TextRange.empty,
+    );
+  }
+}
+
+/// Extracts the digits that should visually appear after the visible +33 prefix.
+///
+/// Accepts:
+/// - 6 12 34 56 78   -> 612345678
+/// - 06 12 34 56 78  -> 612345678 after the second digit is typed
+/// - +33612345678    -> 612345678
+/// - 0033612345678   -> 612345678
+///
+/// Special case:
+/// - typing only `0` keeps `0` temporarily so the first tap does not disappear.
+String _extractInternationalNationalDigits(String? rawValue) {
+  if (rawValue == null || rawValue.trim().isEmpty) {
+    return '';
+  }
+
+  var digits = rawValue.replaceAll(RegExp(r'[^\d]'), '');
+
+  if (digits.startsWith('0033')) {
+    digits = digits.substring(4);
+  } else if (digits.startsWith('33') && digits.length > france.maxLength) {
+    digits = digits.substring(2);
+  }
+
+  if (digits == '0') {
+    return digits;
+  }
+
+  if (digits.startsWith('0')) {
+    digits = digits.substring(1);
+  }
+
+  if (digits.length > france.maxLength) {
+    digits = digits.substring(0, france.maxLength);
+  }
+
+  return digits;
+}
+
+String _normalizeInternationalDigits(String visibleDigits) {
+  if (visibleDigits == '0') return '';
+  return visibleDigits;
+}
+
+/// Formats national-significant digits after +33:
+/// 612345678 -> 6 12 34 56 78
+///
+/// Temporary leading 0:
+/// 0 -> 0
+String _formatInternationalNationalNumber(String digits) {
+  if (digits.isEmpty) return '';
+
+  if (digits == '0') return '0';
+
+  final groups = <String>[];
+
+  groups.add(digits.substring(0, 1));
+
+  for (var i = 1; i < digits.length; i += 2) {
+    final end = (i + 2 < digits.length) ? i + 2 : digits.length;
+    groups.add(digits.substring(i, end));
+  }
+
+  return groups.join(' ');
+}

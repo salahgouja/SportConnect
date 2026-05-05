@@ -105,10 +105,14 @@ class PushNotificationService {
         );
 
     // 4. Listen for foreground messages
-    _foregroundMessageSub = FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
+    _foregroundMessageSub = FirebaseMessaging.onMessage.listen(
+      _handleForegroundMessage,
+    );
 
     // 5. Listen for notification taps (app was in background)
-    _notificationOpenedSub = FirebaseMessaging.onMessageOpenedApp.listen(_handleNotificationTap);
+    _notificationOpenedSub = FirebaseMessaging.onMessageOpenedApp.listen(
+      _handleNotificationTap,
+    );
 
     // 6. Check for initial message (app opened from terminated state)
     final initialMessage = await _firebaseService.messaging.getInitialMessage();
@@ -208,7 +212,10 @@ class PushNotificationService {
           try {
             await _usersCollection
                 .doc(userId)
-                .set(user!.copyWith(fcmToken: newToken), SetOptions(merge: true));
+                .set(
+                  user!.copyWith(fcmToken: newToken),
+                  SetOptions(merge: true),
+                );
             TalkerService.info('FCM token refreshed for user $userId');
           } catch (e) {
             TalkerService.warning('FCM token refresh save failed: $e');
@@ -278,7 +285,7 @@ class PushNotificationService {
           try {
             final data = jsonDecode(response.payload!) as Map<String, dynamic>;
             _navigateFromData(data);
-          } catch (e, st) {}
+          } on Exception catch (e, st) {}
         }
       },
     );
@@ -368,7 +375,7 @@ class PushNotificationService {
             }),
           );
         }
-      } catch (e, st) {
+      } on Exception catch (e, st) {
         // Best-effort — navigation must not fail if this read fails.
       }
     }
@@ -512,7 +519,7 @@ class PushNotificationService {
         ),
         chatType: ChatType.private,
       );
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error(
         'Failed to resolve chat receiver from notification',
         e,

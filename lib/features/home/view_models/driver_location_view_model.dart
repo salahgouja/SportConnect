@@ -1,6 +1,5 @@
 import 'dart:async' show StreamSubscription, unawaited;
 
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart' show Position;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/services/location_service.dart';
@@ -109,7 +108,7 @@ class DriverLocationViewModel extends _$DriverLocationViewModel {
         if (!ref.mounted) return;
         _startLocationTracking();
       }
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!ref.mounted) return;
       state = state.copyWith(
         isLoading: false,
@@ -167,7 +166,7 @@ class DriverLocationViewModel extends _$DriverLocationViewModel {
         if (!ref.mounted) return;
         _startLocationTracking();
       }
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!ref.mounted) return;
       state = state.copyWith(
         isLoading: false,

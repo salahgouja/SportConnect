@@ -4059,13 +4059,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get eventRepeatEndDate => 'Date de fin de répétition (optionnel)';
 
   @override
-  String get eventCostSplit => 'Activer le partage des frais';
-
-  @override
-  String get eventCostSplitSubtitle =>
-      'Permettre aux participants de partager les frais de trajet';
-
-  @override
   String get eventUploadingCover => 'Téléchargement de la couverture…';
 
   @override

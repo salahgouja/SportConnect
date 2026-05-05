@@ -103,4 +103,4 @@ final class MapTileProviderProvider
   }
 }
 
-String _$mapTileProviderHash() => r'f0c95ea0d4f4f89dd250f19480f4ca3589f78601';
+String _$mapTileProviderHash() => r'4c04ad4b89c0c8970e729cfb240ec28d36235466';

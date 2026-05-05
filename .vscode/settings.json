@@ -1,13 +1,103 @@
 {
+  // ─────────────────────────────────────────────
+  // Editor readability
+  // ─────────────────────────────────────────────
+  "editor.fontSize": 14,
+  "editor.lineHeight": 22,
+  "editor.minimap.enabled": false,
+  "editor.smoothScrolling": true,
+  "editor.cursorSmoothCaretAnimation": "on",
+  "editor.bracketPairColorization.enabled": true,
+  "editor.guides.bracketPairs": true,
+  "editor.stickyScroll.enabled": true,
+  "editor.linkedEditing": true,
+  "editor.inlineSuggest.enabled": true,
+
+  // ─────────────────────────────────────────────
+  // Save behavior
+  // ─────────────────────────────────────────────
+  "files.autoSave": "afterDelay",
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "explicit",
+    "source.fixAll": "explicit"
+  },
+
+  // ─────────────────────────────────────────────
+  // Dart recommended settings
+  // ─────────────────────────────────────────────
   "[dart]": {
+    "editor.defaultFormatter": "Dart-Code.dart-code",
+    "editor.formatOnSave": true,
+    "editor.formatOnType": true,
+    "editor.rulers": [80],
+    "editor.selectionHighlight": false,
+    "editor.tabCompletion": "onlySnippets",
+    "editor.wordBasedSuggestions": "off",
     "editor.codeActionsOnSave": {
-      "source.organizeImports": "explicit"
+      "source.organizeImports": "explicit",
+      "source.fixAll": "explicit"
     }
   },
-  "java.configuration.updateBuildConfiguration": "automatic",
-  "flutterTools.displayGetxContextMenu": false,
-  "flutterTools.displayMobxContextMenu": false,
-  "flutterTools.displayRiverpodContextMenu": true,
-  "flutterTools.displayModularContextMenu": false,
-  "flutterTools.displaySignalsContextMenu": false
+
+  // ─────────────────────────────────────────────
+  // Dart / Flutter extension
+  // ─────────────────────────────────────────────
+  "dart.enableSdkFormatter": true,
+  "dart.enableSnippets": true,
+  "dart.enableServerSnippets": true,
+  "dart.autoImportCompletions": true,
+  "dart.closingLabels": true,
+  "dart.flutterOutline": true,
+  "dart.previewFlutterUiGuides": true,
+  "dart.previewFlutterUiGuidesCustomTracking": true,
+  "dart.showTodos": true,
+  "dart.notifyAnalyzerErrors": true,
+
+  // Keep hot reload controlled.
+  "dart.flutterHotReloadOnSave": "manualIfDirty",
+
+  // Debugging: stay in your app code.
+  "dart.debugExternalPackageLibraries": false,
+  "dart.debugSdkLibraries": false,
+  "dart.evaluateToStringInDebugViews": true,
+
+  // DevTools
+  "dart.closeDevTools": "ifOpened",
+  "dart.devToolsReuseWindows": true,
+
+  // Pub behavior
+  "dart.enablePub": true,
+  "dart.runPubGetOnPubspecChanges": "prompt",
+  "dart.runPubGetOnNestedProjects": "none",
+
+  // Widget preview
+  "dart.flutterWidgetPreview": "startLazily",
+  "dart.flutterWidgetPreviewLocation": "sidebar",
+
+  // ─────────────────────────────────────────────
+  // Search / Explorer cleanup
+  // ─────────────────────────────────────────────
+  "search.exclude": {
+    "**/.dart_tool": true,
+    "**/build": true,
+    "**/.flutter-plugins": true,
+    "**/.flutter-plugins-dependencies": true,
+    "**/.pub-cache": true,
+    "**/ios/Pods": true,
+    "**/android/.gradle": true,
+    "**/*.g.dart": false
+  },
+
+  "files.exclude": {
+    "**/.dart_tool": true,
+    "**/build": true
+  },
+
+  // ─────────────────────────────────────────────
+  // Terminal
+  // ─────────────────────────────────────────────
+  "terminal.integrated.scrollback": 20000
 }

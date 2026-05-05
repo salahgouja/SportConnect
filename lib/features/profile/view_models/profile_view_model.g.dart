@@ -152,7 +152,7 @@ final class ReportIssueFormViewModelProvider
 }
 
 String _$reportIssueFormViewModelHash() =>
-    r'6ae05498859be0da79ca3a958e34c946c35fd991';
+    r'a7c91dc4b2a3d8f18b4ed95e7356900a5ab1921a';
 
 final class ReportIssueFormViewModelFamily extends $Family
     with
@@ -422,7 +422,7 @@ final class ProfileEditViewModelProvider
 }
 
 String _$profileEditViewModelHash() =>
-    r'44165332228e72fe73d531763ee37f03a4242e4c';
+    r'0f4b478253a0eb3c136c630b623b151fe80dbb0d';
 
 /// Profile Edit View Model
 
@@ -585,7 +585,7 @@ final class SocialActionsViewModelProvider
 }
 
 String _$socialActionsViewModelHash() =>
-    r'bd62c9b038d95a33c97ee32312564c3365244afc';
+    r'1e08875c880a573ed6e9c6014c94991a9f64c854';
 
 /// Social Actions View Model
 
@@ -698,7 +698,7 @@ final class VehicleViewModelProvider
   }
 }
 
-String _$vehicleViewModelHash() => r'81d3fb74b070c90fab0b2e1193954066e0995abe';
+String _$vehicleViewModelHash() => r'adba1ef019ad2ca3a4b2481603119a513eb0195b';
 
 /// Vehicle Management View Model
 

@@ -67,7 +67,7 @@ class RiderViewRideUiViewModel extends _$RiderViewRideUiViewModel {
           );
       if (!ref.mounted) return;
       state = state.copyWith(routeInfo: info, isLoadingRoute: false);
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoadingRoute: false);
     }

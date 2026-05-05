@@ -3,7 +3,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
-import 'package:sport_connect/core/config/routes/route_config.dart';
 import 'package:sport_connect/features/auth/views/change_password_screen.dart';
 import 'package:sport_connect/features/auth/views/driver_onboarding_screen.dart';
 import 'package:sport_connect/features/auth/views/email_verification_screen.dart';
@@ -16,8 +15,7 @@ import 'package:sport_connect/features/auth/views/splash_screen.dart';
 import 'package:sport_connect/features/onboarding/views/onboarding_screen.dart';
 
 /// Auth module routes
-class AuthRoutes implements RouteConfig {
-  @override
+class AuthRoutes {
   List<RouteBase> getRoutes() {
     return [
       GoRoute(

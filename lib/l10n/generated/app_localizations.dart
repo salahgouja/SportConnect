@@ -7310,18 +7310,6 @@ abstract class AppLocalizations {
   /// **'Repeat end date (optional)'**
   String get eventRepeatEndDate;
 
-  /// No description provided for @eventCostSplit.
-  ///
-  /// In en, this message translates to:
-  /// **'Enable Cost Splitting'**
-  String get eventCostSplit;
-
-  /// No description provided for @eventCostSplitSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Allow attendees to split ride costs'**
-  String get eventCostSplitSubtitle;
-
   /// No description provided for @eventUploadingCover.
   ///
   /// In en, this message translates to:

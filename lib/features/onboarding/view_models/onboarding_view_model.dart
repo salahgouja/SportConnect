@@ -84,7 +84,7 @@ class OnboardingViewModel extends _$OnboardingViewModel {
       if (!ref.mounted) return true;
       state = state.copyWith(isCompleting: false);
       return true;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!ref.mounted) return false;
       state = state.copyWith(
         isCompleting: false,

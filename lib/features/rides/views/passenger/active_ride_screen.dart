@@ -12,10 +12,11 @@ import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/services/location_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
-import 'package:sport_connect/core/widgets/skeleton_loader.dart';
+import 'package:sport_connect/core/widgets/app_map_tile_layer.dart';
 import 'package:sport_connect/core/widgets/custom_button.dart';
 import 'package:sport_connect/core/widgets/misc_feature_widgets.dart';
 import 'package:sport_connect/core/widgets/ride_feature_widgets.dart';
+import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/messaging/view_models/chat_view_model.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
@@ -24,7 +25,6 @@ import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/features/vehicles/repositories/vehicle_repository.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:sport_connect/core/widgets/app_map_tile_layer.dart';
 
 /// Active Ride Screen  - shows real-time ride status from Firestore
 class PassengerActiveRideScreen extends ConsumerStatefulWidget {
@@ -94,7 +94,7 @@ class _PassengerActiveRideScreenState
           ),
         );
       }
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       // Location not available — pin simply won't show
     }
   }
@@ -3266,7 +3266,7 @@ class _PassengerActiveRideScreenState
         );
         context.pop();
       }
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (mounted) {
         AdaptiveSnackBar.show(
           context,

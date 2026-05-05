@@ -3,12 +3,10 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
-import 'package:sport_connect/core/config/routes/route_config.dart';
 import 'package:sport_connect/features/legal/views/legal_screen.dart';
 
 /// Legal module routes
-class LegalRoutes implements RouteConfig {
-  @override
+class LegalRoutes {
   List<RouteBase> getRoutes() {
     return [
       GoRoute(

@@ -17,6 +17,7 @@ import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
+import 'package:sport_connect/core/widgets/app_map_tile_layer.dart';
 import 'package:sport_connect/core/widgets/driver_info_widget.dart';
 import 'package:sport_connect/core/widgets/map_location_picker.dart';
 import 'package:sport_connect/core/widgets/misc_feature_widgets.dart';
@@ -37,7 +38,6 @@ import 'package:sport_connect/features/rides/views/passenger/rider_view_ride_scr
 import 'package:sport_connect/features/rides/views/widgets/ride_shared_widgets.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:sport_connect/core/widgets/app_map_tile_layer.dart';
 
 /// Full ride detail screen with map, route visualization, and booking flow.
 ///
@@ -87,6 +87,15 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
         );
       }
     }
+  }
+
+  void _openBookingReview(RideModel ride) {
+    HapticFeedback.lightImpact();
+
+    context.pushNamed(
+      AppRoutes.rideBookingReview.name,
+      pathParameters: {'rideId': ride.id},
+    );
   }
 
   @override
@@ -1571,7 +1580,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
         AppLocalizations.of(context).requestAccepted,
         backgroundColor: Colors.green,
       );
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!mounted) return;
       _showSnackBar(
         AppLocalizations.of(context).errorValue(e),
@@ -1589,7 +1598,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
 
       if (!mounted) return;
       _showSnackBar(AppLocalizations.of(context).requestDeclined);
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!mounted) return;
       _showSnackBar(
         AppLocalizations.of(context).errorValue(e),
@@ -2278,7 +2287,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
             height: 56.h,
             child: ElevatedButton(
               onPressed: ride.remainingSeats > 0 && !uiState.isBooking
-                  ? () => _bookRide(ride)
+                  ? () => _openBookingReview(ride)
                   : null,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
@@ -2542,7 +2551,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
           message: AppLocalizations.of(context).failedToBookRidePlease,
         );
       }
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!mounted) return;
       _uiNotifier.setBooking(false);
       await FeedbackAnimations.showError(

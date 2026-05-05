@@ -124,7 +124,7 @@ class DeepLinkService {
       await _initializeAppLinks(router);
 
       TalkerService.info('✅ Deep link service initialized');
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('❌ Failed to initialize deep links', e, st);
     }
   }
@@ -282,7 +282,7 @@ class DeepLinkService {
       }
       // For any other resource type, default to allowing navigation.
       return true;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('_resourceExists check failed', e);
       return true; // fail-open — let destination screen handle the error
     }
@@ -341,7 +341,7 @@ class DeepLinkService {
         ),
         chatType: ChatType.private,
       );
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('Failed to resolve chat receiver from deep link', e);
       return (receiver: null, chatType: ChatType.private);
     }

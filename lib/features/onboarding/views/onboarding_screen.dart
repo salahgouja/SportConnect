@@ -9,13 +9,22 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
-import 'package:sport_connect/features/onboarding/models/onboarding_model.dart';
 import 'package:sport_connect/features/onboarding/view_models/onboarding_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
-// ---------------------------------------------------------------------------
-// Screen
-// ---------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// SportConnect onboarding
+// Product story:
+// 1. Runners find rides to events.
+// 2. Drivers offer empty seats and earn.
+// 3. Riders and drivers plan pickup and route.
+// 4. Everyone connects safely before going.
+// No humans / portraits / photos. All visuals are cards, icons, and painters.
+// -----------------------------------------------------------------------------
+
+double _clamped(num value, double min, double max) {
+  return value.clamp(min, max).toDouble();
+}
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
@@ -31,1237 +40,1432 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       ref.read(onboardingViewModelProvider).currentPageIndex;
 
   @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
   void dispose() {
     _pageController.dispose();
     super.dispose();
   }
 
-  void _onPageChanged(int page) =>
-      ref.read(onboardingViewModelProvider.notifier).setPageIndex(page);
+  void _onPageChanged(int page) {
+    ref.read(onboardingViewModelProvider.notifier).setPageIndex(page);
+  }
 
   Future<void> _completeOnboarding() async {
     final success = await ref
         .read(onboardingViewModelProvider.notifier)
         .completeOnboarding();
+
     if (!success || !mounted) return;
-    await _showWelcomeDialog();
+
+    HapticFeedback.mediumImpact();
+    GoRouter.of(context).go(AppRoutes.login.path);
   }
 
-  Future<void> _showWelcomeDialog() async {
-    HapticFeedback.mediumImpact();
-    final router = GoRouter.of(context);
-    await showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => Dialog(
-        backgroundColor: Colors.transparent,
-        child: Semantics(
-          label: AppLocalizations.of(ctx).youReReadyToRun,
-          explicitChildNodes: true,
-          child: Container(
-            padding: EdgeInsets.all(28.w),
-            decoration: BoxDecoration(
-              color: AppColors.cardBg,
-              borderRadius: BorderRadius.circular(24.r),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.15),
-                  blurRadius: 30,
-                  spreadRadius: 5,
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ExcludeSemantics(
-                  child: Container(
-                    width: 72.w,
-                    height: 72.w,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: onboardingPages[_currentPage].gradientColors,
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.directions_car_rounded,
-                      size: 34.sp,
-                      color: Colors.white,
-                    ),
-                  ),
-                ).animate().scale(
-                  begin: const Offset(0.7, 0.7),
-                  duration: 350.ms,
-                  curve: Curves.easeOutBack,
-                ),
-                SizedBox(height: 20.h),
-                Semantics(
-                  header: true,
-                  child: Text(
-                    AppLocalizations.of(ctx).youReReadyToRun,
-                    style: TextStyle(
-                      fontSize: 22.sp,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ).animate().fadeIn(delay: 150.ms),
-                SizedBox(height: 10.h),
-                Text(
-                  AppLocalizations.of(ctx).createAnAccountToStart,
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    color: AppColors.textSecondary,
-                    height: 1.5,
-                  ),
-                  textAlign: TextAlign.center,
-                ).animate().fadeIn(delay: 250.ms),
-                SizedBox(height: 28.h),
-                SizedBox(
-                  width: double.infinity,
-                  height: 56.h,
-                  child: FilledButton(
-                    onPressed: () {
-                      Navigator.of(ctx).pop();
-                      router.go(AppRoutes.login.path);
-                    },
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14.r),
-                      ),
-                    ),
-                    child: Text(
-                      AppLocalizations.of(ctx).kContinue,
-                      style: TextStyle(
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ).animate().fadeIn(delay: 350.ms).slideY(begin: 0.2),
-              ],
-            ),
-          ),
-        ),
-      ),
+  void _goNext() {
+    HapticFeedback.lightImpact();
+
+    if (_currentPage == _onboardingSteps.length - 1) {
+      _completeOnboarding();
+      return;
+    }
+
+    _pageController.nextPage(
+      duration: const Duration(milliseconds: 420),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  void _goBack() {
+    if (_currentPage == 0) return;
+
+    HapticFeedback.lightImpact();
+    _pageController.previousPage(
+      duration: const Duration(milliseconds: 420),
+      curve: Curves.easeOutCubic,
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final vmState = ref.watch(onboardingViewModelProvider);
+
     return AdaptiveScaffold(
-      body: Column(
-        children: [
-          SafeArea(
-            bottom: false,
-            child: _TopBar(
-              currentPage: _currentPage,
-              pages: onboardingPages,
-              onSkip: _completeOnboarding,
-            ),
+      body: DecoratedBox(
+        decoration: BoxDecoration(
+          color: AppColors.cardBg,
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              AppColors.primary.withValues(alpha: 0.060),
+              AppColors.cardBg,
+              AppColors.cardBg,
+            ],
           ),
-          Expanded(
-            child: PageView.builder(
-              controller: _pageController,
-              onPageChanged: _onPageChanged,
-              itemCount: onboardingPages.length,
-              itemBuilder: (_, i) => _PageContent(page: onboardingPages[i]),
-            ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              _OnboardingTopBar(
+                currentPage: _currentPage,
+                totalPages: _onboardingSteps.length,
+                onSkip: _completeOnboarding,
+              ),
+              Expanded(
+                child: PageView.builder(
+                  controller: _pageController,
+                  onPageChanged: _onPageChanged,
+                  itemCount: _onboardingSteps.length,
+                  itemBuilder: (context, index) {
+                    return _OnboardingPage(
+                      step: _onboardingSteps[index],
+                      index: index,
+                    );
+                  },
+                ),
+              ),
+              _OnboardingBottomControls(
+                currentPage: _currentPage,
+                totalPages: _onboardingSteps.length,
+                vmState: vmState,
+                onBack: _goBack,
+                onNext: _goNext,
+              ),
+            ],
           ),
-          SafeArea(
-            top: false,
-            child: _BottomControls(
-              currentPage: _currentPage,
-              pages: onboardingPages,
-              vmState: vmState,
-              pageController: _pageController,
-              onComplete: _completeOnboarding,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 }
 
-// ---------------------------------------------------------------------------
-// Top bar
-// ---------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// Content model
+// -----------------------------------------------------------------------------
 
-class _TopBar extends StatelessWidget {
-  const _TopBar({
+enum _OnboardingVisual {
+  findRide,
+  earnSeats,
+  planPickup,
+  connectGo,
+}
+
+class _OnboardingStepSpec {
+  const _OnboardingStepSpec({
+    required this.visual,
+    required this.eyebrow,
+    required this.title,
+    required this.description,
+  });
+
+  final _OnboardingVisual visual;
+  final String eyebrow;
+  final String title;
+  final String description;
+}
+
+const _onboardingSteps = [
+  _OnboardingStepSpec(
+    visual: _OnboardingVisual.findRide,
+    eyebrow: 'Running events',
+    title: 'Find a ride to your race',
+    description:
+        'Join runners heading to the same event and arrive without the stress.',
+  ),
+  _OnboardingStepSpec(
+    visual: _OnboardingVisual.earnSeats,
+    eyebrow: 'Drive & earn',
+    title: 'Offer seats and earn',
+    description:
+        'Driving to a race? Share your empty seats and earn from the trip.',
+  ),
+  _OnboardingStepSpec(
+    visual: _OnboardingVisual.planPickup,
+    eyebrow: 'Pickup planning',
+    title: 'Plan the route together',
+    description:
+        'Set pickup points, confirm timing, and follow a clear route to the event.',
+  ),
+  _OnboardingStepSpec(
+    visual: _OnboardingVisual.connectGo,
+    eyebrow: 'Trusted rides',
+    title: 'Connect safely and go',
+    description:
+        'Chat with verified runners, confirm the ride, and travel with confidence.',
+  ),
+];
+
+// -----------------------------------------------------------------------------
+// Top bar
+// -----------------------------------------------------------------------------
+
+class _OnboardingTopBar extends StatelessWidget {
+  const _OnboardingTopBar({
     required this.currentPage,
-    required this.pages,
+    required this.totalPages,
     required this.onSkip,
   });
 
   final int currentPage;
-  final List<OnboardingPage> pages;
+  final int totalPages;
   final VoidCallback onSkip;
 
   @override
   Widget build(BuildContext context) {
-    final page = pages[currentPage];
-    return Padding(
-      padding: EdgeInsets.fromLTRB(20.w, 14.h, 20.w, 6.h),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Semantics(
-                label: 'Step ${currentPage + 1} of ${pages.length}',
-                child: _GradientPill(
-                  colors: page.gradientColors,
-                  child: Text(
-                    '${currentPage + 1} / ${pages.length}',
-                    style: TextStyle(
-                      fontSize: 13.sp,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ).animate().fadeIn(duration: 400.ms).slideX(begin: -0.2),
+    final showSkip = currentPage < totalPages - 1;
 
-              if (currentPage < pages.length - 1)
-                GestureDetector(
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    onSkip();
-                  },
-                  child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 16.w,
-                      vertical: 9.h,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceVariant,
-                      borderRadius: BorderRadius.circular(25.r),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          AppLocalizations.of(context).skip,
-                          style: TextStyle(
-                            fontSize: 13.sp,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                        SizedBox(width: 4.w),
-                        Icon(
-                          Icons.adaptive.arrow_forward_rounded,
-                          size: 15.sp,
-                          color: AppColors.textSecondary,
-                        ),
-                      ],
-                    ),
-                  ),
-                ).animate().fadeIn(duration: 400.ms, delay: 100.ms),
-            ],
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        _clamped(24.w, 18, 28),
+        _clamped(14.h, 10, 16),
+        _clamped(24.w, 18, 28),
+        _clamped(8.h, 6, 10),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _StepIndicator(
+              currentPage: currentPage,
+              totalPages: totalPages,
+            ),
           ),
-          SizedBox(height: 14.h),
-          _StepTrack(currentPage: currentPage, pages: pages),
+          SizedBox(width: _clamped(12.w, 8, 14)),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            child: showSkip
+                ? _TextActionButton(
+                    key: const ValueKey('skip'),
+                    label: AppLocalizations.of(context).skip,
+                    onPressed: onSkip,
+                  )
+                : SizedBox(
+                    key: const ValueKey('empty-skip'),
+                    width: _clamped(56.w, 48, 62),
+                  ),
+          ),
         ],
       ),
     );
   }
 }
 
-// ---------------------------------------------------------------------------
-// Step track
-// ---------------------------------------------------------------------------
-
-class _StepTrack extends StatelessWidget {
-  const _StepTrack({required this.currentPage, required this.pages});
+class _StepIndicator extends StatelessWidget {
+  const _StepIndicator({
+    required this.currentPage,
+    required this.totalPages,
+  });
 
   final int currentPage;
-  final List<OnboardingPage> pages;
-
-  static const _labels = ['Find', 'Offer', 'Route', 'Connect'];
+  final int totalPages;
 
   @override
   Widget build(BuildContext context) {
-    return ExcludeSemantics(
-      child: Row(
-        children: List.generate(pages.length, (i) {
-          final active = i <= currentPage;
-          final current = i == currentPage;
-          return Expanded(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 3.w),
-              child: Column(
-                children: [
-                  AnimatedContainer(
-                    duration: 300.ms,
-                    height: 5.h,
+    final pageCount = totalPages <= 0 ? 1 : totalPages;
+    final page = currentPage.clamp(0, pageCount - 1);
+    const activeColor = AppColors.primary;
+    final completedColor = AppColors.primary.withValues(alpha: 0.82);
+    final inactiveColor = AppColors.border.withValues(alpha: 0.62);
+    final inactiveFill = AppColors.surfaceVariant.withValues(alpha: 0.74);
+
+    final activeSize = _clamped(28.w, 24, 30);
+    final completedSize = _clamped(18.w, 16, 20);
+    final inactiveSize = _clamped(9.w, 7, 10);
+    final lineHeight = _clamped(3.h, 2, 4);
+
+    return Semantics(
+      label: 'Step ${page + 1} of $pageCount',
+      child: ExcludeSemantics(
+        child: SizedBox(
+          height: _clamped(34.h, 30, 38),
+          child: Row(
+            children: List.generate(pageCount * 2 - 1, (slot) {
+              if (slot.isOdd) {
+                final connectorIndex = slot ~/ 2;
+                final isCompleted = connectorIndex < page;
+
+                return Expanded(
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 260),
+                    curve: Curves.easeOutCubic,
+                    height: lineHeight,
+                    margin: EdgeInsets.symmetric(
+                      horizontal: _clamped(8.w, 5, 10),
+                    ),
                     decoration: BoxDecoration(
-                      gradient: active
-                          ? LinearGradient(colors: pages[i].gradientColors)
-                          : null,
-                      color: active ? null : AppColors.border,
-                      borderRadius: BorderRadius.circular(3.r),
+                      color: isCompleted
+                          ? completedColor.withValues(alpha: 0.42)
+                          : inactiveColor,
+                      borderRadius: BorderRadius.circular(99.r),
                     ),
                   ),
-                  SizedBox(height: 4.h),
-                  Text(
-                    _labels[i],
-                    style: TextStyle(
-                      fontSize: 9.sp,
-                      fontWeight: current ? FontWeight.w700 : FontWeight.w500,
-                      color: active
-                          ? pages[i].gradientColors[0]
-                          : AppColors.textSecondary,
-                    ),
+                );
+              }
+
+              final index = slot ~/ 2;
+              final isActive = index == page;
+              final isPast = index < page;
+              final size = isActive
+                  ? activeSize
+                  : isPast
+                  ? completedSize
+                  : inactiveSize;
+
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 260),
+                curve: Curves.easeOutCubic,
+                width: size,
+                height: size,
+                decoration: BoxDecoration(
+                  color: isActive
+                      ? activeColor
+                      : isPast
+                      ? completedColor
+                      : inactiveFill,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: isActive || isPast
+                        ? activeColor.withValues(alpha: 0.18)
+                        : inactiveColor,
                   ),
-                ],
-              ),
-            ),
-          );
-        }),
-      ).animate().fadeIn(duration: 500.ms, delay: 200.ms),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Page content
-// ---------------------------------------------------------------------------
-
-class _PageContent extends StatelessWidget {
-  const _PageContent({required this.page});
-  final OnboardingPage page;
-
-  @override
-  Widget build(BuildContext context) {
-    // Illustration takes 36 % of screen height, clamped for SE ↔ tablet range.
-    final illustrationH = (1.sh * 0.36).clamp(170.0, 310.0);
-
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 22.w),
-      child: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(height: 10.h),
-            _Illustration(
-              variant: page.illustration,
-              colors: page.gradientColors,
-              height: illustrationH,
-            ),
-            SizedBox(height: 22.h),
-            _SubtitleBadge(label: page.subtitle, colors: page.gradientColors),
-            SizedBox(height: 11.h),
-            _Title(text: page.title),
-            SizedBox(height: 9.h),
-            _Description(text: page.description),
-            SizedBox(height: 16.h),
-            _FeatureRow(
-              features: page.features,
-              accentColor: page.gradientColors[0],
-            ),
-            SizedBox(height: 4.h),
-          ],
+                  boxShadow: isActive
+                      ? [
+                          BoxShadow(
+                            color: activeColor.withValues(alpha: 0.24),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ]
+                      : null,
+                ),
+                alignment: Alignment.center,
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 180),
+                  child: isActive
+                      ? Text(
+                          '${index + 1}',
+                          key: ValueKey('active-$index'),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: _clamped(11.sp, 9, 12),
+                            fontWeight: FontWeight.w800,
+                            height: 1,
+                          ),
+                        )
+                      : isPast
+                      ? Icon(
+                          Icons.check_rounded,
+                          key: ValueKey('past-$index'),
+                          color: Colors.white,
+                          size: _clamped(12.sp, 10, 13),
+                        )
+                      : const SizedBox.shrink(
+                          key: ValueKey('future'),
+                        ),
+                ),
+              );
+            }),
+          ),
         ),
       ),
     );
   }
 }
 
-// ---------------------------------------------------------------------------
-// Illustration shell — LayoutBuilder passes real pixel w/h to each variant
-// ---------------------------------------------------------------------------
-
-class _Illustration extends StatefulWidget {
-  const _Illustration({
-    required this.variant,
-    required this.colors,
-    required this.height,
+class _TextActionButton extends StatelessWidget {
+  const _TextActionButton({
+    required this.label,
+    required this.onPressed,
+    super.key,
   });
 
-  final IllustrationVariant variant;
-  final List<Color> colors;
-  final double height;
-
-  @override
-  State<_Illustration> createState() => _IllustrationState();
-}
-
-class _IllustrationState extends State<_Illustration>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 3),
-    )..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
+  final String label;
+  final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      excludeSemantics: true,
-      child:
-          AnimatedBuilder(
-                animation: _ctrl,
-                builder: (_, _) => LayoutBuilder(
-                  builder: (_, constraints) {
-                    final w = constraints.maxWidth;
-                    final h = widget.height;
-                    return Container(
-                      height: h,
-                      width: w,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            widget.colors[0].withValues(alpha: 0.11),
-                            widget.colors[1].withValues(alpha: 0.05),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(22.r),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(22.r),
-                        child: _buildVariant(w, h),
-                      ),
-                    );
-                  },
-                ),
-              )
-              .animate()
-              .fadeIn(duration: 600.ms)
-              .scale(
-                begin: const Offset(0.93, 0.93),
-                curve: Curves.easeOutBack,
-              ),
-    );
-  }
-
-  Widget _buildVariant(double w, double h) {
-    switch (widget.variant) {
-      case IllustrationVariant.findRide:
-        return _FindRideIllustration(
-          colors: widget.colors,
-          t: _ctrl.value,
-          w: w,
-          h: h,
-        );
-      case IllustrationVariant.offerSeat:
-        return _OfferSeatIllustration(
-          colors: widget.colors,
-          t: _ctrl.value,
-          w: w,
-          h: h,
-        );
-      case IllustrationVariant.planRoute:
-        return _PlanRouteIllustration(
-          colors: widget.colors,
-          t: _ctrl.value,
-          w: w,
-          h: h,
-        );
-      case IllustrationVariant.connectGo:
-        return _ConnectGoIllustration(
-          colors: widget.colors,
-          t: _ctrl.value,
-          w: w,
-          h: h,
-        );
-    }
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Page 1 — Find Your Ride
-// All geometry expressed as fractions of w / h — zero hardcoded pixels.
-// ---------------------------------------------------------------------------
-
-class _FindRideIllustration extends StatelessWidget {
-  const _FindRideIllustration({
-    required this.colors,
-    required this.t,
-    required this.w,
-    required this.h,
-  });
-
-  final List<Color> colors;
-  final double t;
-  final double w;
-  final double h;
-
-  @override
-  Widget build(BuildContext context) {
-    final cx = w * 0.5;
-    final cy = h * 0.5;
-    final carR = math.min(w, h) * 0.14; // car circle radius
-    final orbitR = h * 0.28; // orbit radius
-    final avatarR = math.min(w, h) * 0.07; // runner avatar radius
-    final pulse = 1.0 + 0.05 * math.sin(t * math.pi);
-
-    return Stack(
-      children: [
-        Positioned.fill(
-          child: CustomPaint(
-            painter: _ArcPainter(color: colors[0], t: t, cx: cx, cy: cy),
-          ),
-        ),
-
-        // Central car
-        Positioned(
-          left: cx - carR * pulse,
-          top: cy - carR * pulse,
-          child: Transform.scale(
-            scale: pulse,
-            child: Container(
-              width: carR * 2,
-              height: carR * 2,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: colors,
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: colors[0].withValues(alpha: 0.35),
-                    blurRadius: carR * 0.8,
-                  ),
-                ],
-              ),
-              child: Icon(
-                Icons.directions_car_filled_rounded,
-                size: carR * 0.95,
-                color: Colors.white,
+      button: true,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(18.r),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(18.r),
+          onTap: () {
+            HapticFeedback.lightImpact();
+            onPressed();
+          },
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: _clamped(10.w, 8, 12),
+              vertical: _clamped(8.h, 6, 9),
+            ),
+            child: Text(
+              label,
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: _clamped(13.sp, 12, 14),
+                fontWeight: FontWeight.w700,
               ),
             ),
           ),
         ),
+      ),
+    );
+  }
+}
 
-        // Orbiting runner avatars
-        for (int i = 0; i < 3; i++) ...[
-          () {
-            final angle = (i / 3) * 2 * math.pi + t * math.pi * 0.4;
-            final dx = math.cos(angle) * orbitR;
-            final dy = math.sin(angle) * orbitR;
-            return Positioned(
-              left: cx + dx - avatarR,
-              top: cy + dy - avatarR,
-              child: Container(
-                width: avatarR * 2,
-                height: avatarR * 2,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: colors[0].withValues(alpha: 0.4),
-                    width: 1.5,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: colors[0].withValues(alpha: 0.14),
-                      blurRadius: 8,
-                    ),
+// -----------------------------------------------------------------------------
+// Page body
+// -----------------------------------------------------------------------------
+
+class _OnboardingPage extends StatelessWidget {
+  const _OnboardingPage({
+    required this.step,
+    required this.index,
+  });
+
+  final _OnboardingStepSpec step;
+  final int index;
+
+  @override
+  Widget build(BuildContext context) {
+    final horizontalPadding = _clamped(24.w, 18, 28);
+    final maxContentWidth = _clamped(430.w, 320, 460);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          physics: const BouncingScrollPhysics(
+            parent: AlwaysScrollableScrollPhysics(),
+          ),
+          padding: EdgeInsets.fromLTRB(
+            horizontalPadding,
+            _clamped(10.h, 6, 14),
+            horizontalPadding,
+            _clamped(28.h, 20, 34),
+          ),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: maxContentWidth),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _VisualCard(
+                      visual: step.visual,
+                    ).animate().fadeIn(duration: 360.ms).slideY(begin: 0.025),
+                    SizedBox(height: _clamped(18.h, 12, 22)),
+                    _Eyebrow(
+                      text: step.eyebrow,
+                    ).animate().fadeIn(delay: 100.ms, duration: 280.ms),
+                    SizedBox(height: _clamped(10.h, 7, 12)),
+                    Semantics(
+                      header: true,
+                      child: Text(
+                        step.title,
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: AppColors.textPrimary,
+                          fontSize: _clamped(29.sp, 24, 32),
+                          height: 1.08,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.55,
+                        ),
+                      ),
+                    ).animate().fadeIn(delay: 150.ms).slideY(begin: 0.08),
+                    SizedBox(height: _clamped(10.h, 7, 12)),
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: _clamped(320.w, 280, 360),
+                      ),
+                      child: Text(
+                        step.description,
+                        textAlign: TextAlign.center,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: _clamped(14.sp, 12.5, 15),
+                          height: 1.48,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ).animate().fadeIn(delay: 220.ms).slideY(begin: 0.08),
+                    SizedBox(height: _clamped(12.h, 8, 16)),
                   ],
                 ),
-                child: Icon(
-                  Icons.directions_run_rounded,
-                  size: avatarR * 0.9,
-                  color: colors[0],
-                ),
               ),
-            );
-          }(),
-        ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _Eyebrow extends StatelessWidget {
+  const _Eyebrow({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: _clamped(12.w, 10, 14),
+        vertical: _clamped(6.h, 5, 7),
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.085),
+        borderRadius: BorderRadius.circular(999.r),
+        border: Border.all(
+          color: AppColors.primary.withValues(alpha: 0.12),
+        ),
+      ),
+      child: Text(
+        text.toUpperCase(),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          color: AppColors.primary,
+          fontSize: _clamped(10.sp, 9, 11),
+          fontWeight: FontWeight.w900,
+          letterSpacing: 1.25,
+        ),
+      ),
+    );
+  }
+}
+
+class _VisualCard extends StatelessWidget {
+  const _VisualCard({required this.visual});
+
+  final _OnboardingVisual visual;
+
+  @override
+  Widget build(BuildContext context) {
+    return switch (visual) {
+      _OnboardingVisual.findRide => const _FindRideVisual(),
+      _OnboardingVisual.earnSeats => const _EarnSeatsVisual(),
+      _OnboardingVisual.planPickup => const _PlanPickupVisual(),
+      _OnboardingVisual.connectGo => const _ConnectGoVisual(),
+    };
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Screen 1 — Find ride
+// -----------------------------------------------------------------------------
+
+class _FindRideVisual extends StatelessWidget {
+  const _FindRideVisual();
+
+  @override
+  Widget build(BuildContext context) {
+    final heroHeight = _clamped(224.h, 188, 252);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _FindRideHeroCard(height: heroHeight),
+        SizedBox(height: _clamped(12.h, 9, 14)),
+        const _RideAvailabilityCard(),
       ],
     );
   }
 }
 
-// ---------------------------------------------------------------------------
-// Page 2 — Offer a Seat
-// ---------------------------------------------------------------------------
+class _FindRideHeroCard extends StatelessWidget {
+  const _FindRideHeroCard({required this.height});
 
-class _OfferSeatIllustration extends StatelessWidget {
-  const _OfferSeatIllustration({
-    required this.colors,
-    required this.t,
-    required this.w,
-    required this.h,
-  });
-
-  final List<Color> colors;
-  final double t;
-  final double w;
-  final double h;
+  final double height;
 
   @override
   Widget build(BuildContext context) {
-    // Cards take up ~38% of width each, gap fills the rest
-    final cardW = (w * 0.36).clamp(68.0, 108.0);
-    final cardH = (h * 0.30).clamp(54.0, 86.0);
-    final gap = (w - cardW * 2) * 0.38;
-    final badgeOffset = -4 * math.sin(t * math.pi);
-
-    return Stack(
-      children: [
-        Positioned.fill(
-          child: CustomPaint(painter: _GridPainter(color: colors[0])),
+    return _PremiumCard(
+      padding: EdgeInsets.zero,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24.r),
+        child: SizedBox(
+          height: height,
+          width: double.infinity,
+          child: DecoratedBox(
+            decoration: _softGreenGradient(),
+            child: CustomPaint(
+              painter: const _FindRidePainter(color: AppColors.primary),
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  _clamped(20.w, 16, 24),
+                  _clamped(20.h, 16, 24),
+                  _clamped(20.w, 16, 24),
+                  _clamped(16.h, 12, 18),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Expanded(
+                          child: _HeroEventTitle(
+                            title: 'PARIS',
+                            distance: '10K',
+                            location: 'RUNNING EVENT',
+                          ),
+                        ),
+                        SizedBox(width: _clamped(12.w, 8, 14)),
+                        _EventBadge(
+                          labelTop: 'RIDE',
+                          labelMain: '3',
+                          labelBottom: 'OPEN',
+                          size: _clamped(70.w, 58, 76),
+                        ),
+                      ],
+                    ),
+                    const Spacer(),
+                    Row(
+                      children: [
+                        const Expanded(
+                          child: _MiniStatPill(
+                            icon: Icons.directions_car_filled_rounded,
+                            label: '3 rides',
+                          ),
+                        ),
+                        SizedBox(width: _clamped(8.w, 6, 10)),
+                        const Expanded(
+                          child: _MiniStatPill(
+                            icon: Icons.payments_outlined,
+                            label: 'From €8',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ),
+      ),
+    );
+  }
+}
 
-        Center(
+class _RideAvailabilityCard extends StatelessWidget {
+  const _RideAvailabilityCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return _PremiumCard(
+      padding: EdgeInsets.fromLTRB(
+        _clamped(18.w, 15, 20),
+        _clamped(16.h, 14, 18),
+        _clamped(18.w, 15, 20),
+        _clamped(17.h, 14, 19),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              const _StatusPill(
+                label: 'RIDES AVAILABLE',
+                icon: Icons.route_rounded,
+              ),
+              const Spacer(),
+              Icon(
+                Icons.bookmark_border_rounded,
+                color: AppColors.textSecondary,
+                size: _clamped(21.sp, 18, 22),
+              ),
+            ],
+          ),
+          SizedBox(height: _clamped(13.h, 9, 15)),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Ride to Paris 10K',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: _clamped(23.sp, 20, 25),
+                    fontWeight: FontWeight.w900,
+                    height: 1.05,
+                    letterSpacing: -0.40,
+                  ),
+                ),
+              ),
+              SizedBox(width: _clamped(10.w, 8, 12)),
+              const _SmallPill(label: '2 seats'),
+            ],
+          ),
+          SizedBox(height: _clamped(14.h, 10, 16)),
+          const _InfoLine(
+            icon: Icons.event_outlined,
+            text: 'Sun, 15 Jun 2025',
+          ),
+          SizedBox(height: _clamped(8.h, 5, 9)),
+          const _InfoLine(
+            icon: Icons.location_on_outlined,
+            text: 'Pickup near Paris, France',
+          ),
+          SizedBox(height: _clamped(8.h, 5, 9)),
+          const _InfoLine(
+            icon: Icons.euro_rounded,
+            text: 'Passenger contribution from €8',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Screen 2 — Earn seats
+// -----------------------------------------------------------------------------
+
+class _EarnSeatsVisual extends StatelessWidget {
+  const _EarnSeatsVisual();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const _EarningsHeroCard(),
+        SizedBox(height: _clamped(12.h, 9, 14)),
+        _PremiumCard(
+          padding: EdgeInsets.fromLTRB(
+            _clamped(16.w, 14, 18),
+            _clamped(15.h, 13, 17),
+            _clamped(16.w, 14, 18),
+            _clamped(16.h, 14, 18),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const _SeatSelectorHeader(),
+              SizedBox(height: _clamped(12.h, 9, 14)),
+              const _SeatChips(),
+              SizedBox(height: _clamped(14.h, 10, 16)),
+              Row(
+                children: [
+                  const Expanded(
+                    child: _MiniSummaryTile(
+                      icon: Icons.local_gas_station_outlined,
+                      label: 'Fuel offset',
+                      value: 'Shared',
+                    ),
+                  ),
+                  SizedBox(width: _clamped(9.w, 7, 10)),
+                  const Expanded(
+                    child: _MiniSummaryTile(
+                      icon: Icons.verified_user_outlined,
+                      label: 'Passengers',
+                      value: 'Verified',
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: _clamped(13.h, 10, 15)),
+              const _IncludedRideBenefits(),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _EarningsHeroCard extends StatelessWidget {
+  const _EarningsHeroCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return _PremiumCard(
+      padding: EdgeInsets.zero,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24.r),
+        child: DecoratedBox(
+          decoration: _softGreenGradient(),
+          child: CustomPaint(
+            painter: const _EarningsPainter(color: AppColors.primary),
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                _clamped(18.w, 16, 20),
+                _clamped(17.h, 15, 19),
+                _clamped(18.w, 16, 20),
+                _clamped(17.h, 15, 19),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      const _IconSquare(
+                        icon: Icons.directions_car_filled_rounded,
+                      ),
+                      SizedBox(width: _clamped(12.w, 9, 14)),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Offer your ride',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: AppColors.textPrimary,
+                                fontSize: _clamped(16.sp, 14, 18),
+                                fontWeight: FontWeight.w900,
+                                height: 1.1,
+                              ),
+                            ),
+                            SizedBox(height: 4.h),
+                            Text(
+                              'Paris 10K • 2 seats available',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: AppColors.textSecondary,
+                                fontSize: _clamped(11.sp, 10, 12),
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(width: _clamped(8.w, 6, 10)),
+                      const _SmallPill(label: 'Driver'),
+                    ],
+                  ),
+                  SizedBox(height: _clamped(16.h, 12, 18)),
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: _clamped(15.w, 13, 17),
+                      vertical: _clamped(15.h, 12, 17),
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.78),
+                      borderRadius: BorderRadius.circular(19.r),
+                      border: Border.all(
+                        color: AppColors.primary.withValues(alpha: 0.10),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'ESTIMATED EARNING',
+                                style: TextStyle(
+                                  color: AppColors.textSecondary,
+                                  fontSize: _clamped(10.sp, 9, 11),
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 1.1,
+                                ),
+                              ),
+                              SizedBox(height: _clamped(7.h, 5, 8)),
+                              Text(
+                                'Fill 2 seats',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: AppColors.primary,
+                                  fontSize: _clamped(12.sp, 11, 13),
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(width: _clamped(12.w, 8, 14)),
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            '€16',
+                            maxLines: 1,
+                            style: TextStyle(
+                              color: AppColors.textPrimary,
+                              fontSize: _clamped(44.sp, 34, 48),
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: -1.4,
+                              height: 0.95,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SeatSelectorHeader extends StatelessWidget {
+  const _SeatSelectorHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Text(
+          'Set available seats',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: _clamped(13.sp, 12, 14),
+            fontWeight: FontWeight.w900,
+            letterSpacing: -0.1,
+          ),
+        ),
+        const Spacer(),
+        Text(
+          'Flexible',
+          style: TextStyle(
+            color: AppColors.textSecondary,
+            fontSize: _clamped(11.sp, 10, 12),
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SeatChips extends StatelessWidget {
+  const _SeatChips();
+
+  @override
+  Widget build(BuildContext context) {
+    const seats = ['1 seat', '2 seats', '3 seats', '4 seats'];
+
+    return Wrap(
+      spacing: _clamped(8.w, 6, 9),
+      runSpacing: _clamped(8.h, 6, 9),
+      children: seats.map((seat) {
+        final selected = seat == '2 seats';
+        return _SelectableChip(
+          label: seat,
+          selected: selected,
+          icon: selected
+              ? Icons.check_circle_rounded
+              : Icons.event_seat_outlined,
+        );
+      }).toList(),
+    );
+  }
+}
+
+class _IncludedRideBenefits extends StatelessWidget {
+  const _IncludedRideBenefits();
+
+  static const List<({IconData icon, String label})> items = [
+    (icon: Icons.payments_outlined, label: 'Earn'),
+    (icon: Icons.schedule_outlined, label: 'Set time'),
+    (icon: Icons.pin_drop_outlined, label: 'Pickup'),
+    (icon: Icons.chat_bubble_outline_rounded, label: 'Chat'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Driver tools',
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: _clamped(12.sp, 11, 13),
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        SizedBox(height: _clamped(10.h, 8, 12)),
+        Wrap(
+          spacing: _clamped(8.w, 6, 9),
+          runSpacing: _clamped(8.h, 6, 9),
+          children: items.map((item) {
+            return _BenefitChip(icon: item.icon, label: item.label);
+          }).toList(),
+        ),
+      ],
+    );
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Screen 3 — Plan pickup route
+// -----------------------------------------------------------------------------
+
+class _PlanPickupVisual extends StatelessWidget {
+  const _PlanPickupVisual();
+
+  @override
+  Widget build(BuildContext context) {
+    final mapHeight = _clamped(205.h, 172, 224);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _PremiumCard(
+          padding: EdgeInsets.zero,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24.r),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    _clamped(16.w, 14, 18),
+                    _clamped(14.h, 12, 16),
+                    _clamped(16.w, 14, 18),
+                    _clamped(10.h, 8, 12),
+                  ),
+                  child: Row(
+                    children: [
+                      const _IconSquare(icon: Icons.route_outlined),
+                      SizedBox(width: _clamped(11.w, 8, 12)),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Pickup route',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: AppColors.textPrimary,
+                                fontSize: _clamped(14.sp, 12.5, 15),
+                                fontWeight: FontWeight.w900,
+                                height: 1.1,
+                              ),
+                            ),
+                            SizedBox(height: 3.h),
+                            Text(
+                              'Coordinate pickup before the event',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: AppColors.textSecondary,
+                                fontSize: _clamped(11.sp, 10, 12),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(width: _clamped(8.w, 6, 10)),
+                      const _SmallPill(label: 'Ride'),
+                    ],
+                  ),
+                ),
+                SizedBox(
+                  height: mapHeight,
+                  width: double.infinity,
+                  child: const CustomPaint(
+                    painter: _PickupRoutePainter(
+                      color: AppColors.primary,
+                      borderColor: AppColors.border,
+                    ),
+                    child: SizedBox.expand(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        SizedBox(height: _clamped(12.h, 9, 14)),
+        _PremiumCard(
+          padding: EdgeInsets.fromLTRB(
+            _clamped(16.w, 14, 18),
+            _clamped(15.h, 13, 17),
+            _clamped(16.w, 14, 18),
+            _clamped(16.h, 14, 18),
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Row(
-                mainAxisSize: MainAxisSize.min,
                 children: [
-                  _SeatCard(
-                    icon: Icons.person_rounded,
-                    label: 'Driver',
-                    colors: colors,
-                    filled: true,
-                    cardW: cardW,
-                    cardH: cardH,
-                    delay: 0,
+                  Text(
+                    'Trip plan',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: _clamped(14.sp, 12.5, 15),
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
-                  SizedBox(width: gap),
-                  _SeatCard(
-                    icon: Icons.person_add_alt_1_rounded,
-                    label: 'Seat 2',
-                    colors: colors,
-                    filled: true,
-                    cardW: cardW,
-                    cardH: cardH,
-                    delay: 80,
+                  const Spacer(),
+                  Text(
+                    'Sun, 15 Jun',
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: _clamped(11.sp, 10, 12),
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ],
               ),
-              SizedBox(height: gap),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _SeatCard(
-                    icon: Icons.person_add_alt_1_rounded,
-                    label: 'Seat 3',
-                    colors: colors,
-                    filled: false,
-                    cardW: cardW,
-                    cardH: cardH,
-                    delay: 160,
-                  ),
-                  SizedBox(width: gap),
-                  _SeatCard(
-                    icon: Icons.person_add_alt_1_rounded,
-                    label: 'Available',
-                    colors: colors,
-                    filled: false,
-                    cardW: cardW,
-                    cardH: cardH,
-                    delay: 240,
-                  ),
-                ],
+              SizedBox(height: _clamped(14.h, 10, 16)),
+              const _TimelineItem(
+                icon: Icons.home_outlined,
+                time: '06:15',
+                title: 'Driver starts',
+                subtitle: 'Route opens for passengers',
+                isFirst: true,
+              ),
+              const _TimelineItem(
+                icon: Icons.person_pin_circle_outlined,
+                time: '06:40',
+                title: 'Pickup confirmed',
+                subtitle: 'Shared meeting point',
+              ),
+              const _TimelineItem(
+                icon: Icons.flag_outlined,
+                time: '07:30',
+                title: 'Arrive at event',
+                subtitle: 'Paris 10K race village',
+                isLast: true,
               ),
             ],
           ),
-        ),
-
-        // Cost badge — position as fraction of w/h
-        Positioned(
-          top: h * 0.07 + badgeOffset,
-          right: w * 0.05,
-          child: _FloatingBadge(label: '−12€', colors: colors, t: t),
         ),
       ],
     );
   }
 }
 
-class _SeatCard extends StatelessWidget {
-  const _SeatCard({
-    required this.icon,
-    required this.label,
-    required this.colors,
-    required this.filled,
-    required this.cardW,
-    required this.cardH,
-    required this.delay,
-  });
+// -----------------------------------------------------------------------------
+// Screen 4 — Connect safely
+// -----------------------------------------------------------------------------
 
-  final IconData icon;
-  final String label;
-  final List<Color> colors;
-  final bool filled;
-  final double cardW;
-  final double cardH;
-  final int delay;
+class _ConnectGoVisual extends StatelessWidget {
+  const _ConnectGoVisual();
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-          width: cardW,
-          height: cardH,
-          decoration: BoxDecoration(
-            gradient: filled
-                ? LinearGradient(
-                    colors: colors,
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  )
-                : null,
-            color: filled ? null : Colors.white,
-            borderRadius: BorderRadius.circular(14.r),
-            border: Border.all(
-              color: filled
-                  ? Colors.transparent
-                  : colors[0].withValues(alpha: 0.28),
-              width: 1.5,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: colors[0].withValues(alpha: filled ? 0.22 : 0.07),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const _ConfirmedRideCard(),
+        SizedBox(height: _clamped(12.h, 9, 14)),
+        _PremiumCard(
+          padding: EdgeInsets.fromLTRB(
+            _clamped(16.w, 14, 18),
+            _clamped(15.h, 13, 17),
+            _clamped(16.w, 14, 18),
+            _clamped(16.h, 14, 18),
           ),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                icon,
-                size: (cardH * 0.36).clamp(16.0, 28.0),
-                color: filled
-                    ? Colors.white
-                    : colors[0].withValues(alpha: 0.45),
+              const Row(
+                children: [
+                  Expanded(
+                    child: _FeatureTile(
+                      icon: Icons.verified_user_outlined,
+                      title: 'Verified',
+                      subtitle: 'Trusted runners',
+                    ),
+                  ),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: _FeatureTile(
+                      icon: Icons.chat_bubble_outline_rounded,
+                      title: 'Chat',
+                      subtitle: 'Before pickup',
+                    ),
+                  ),
+                ],
               ),
-              SizedBox(height: 4.h),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 9.sp,
-                  fontWeight: FontWeight.w700,
-                  color: filled
-                      ? Colors.white
-                      : colors[0].withValues(alpha: 0.55),
-                ),
+              SizedBox(height: _clamped(10.h, 8, 12)),
+              const Row(
+                children: [
+                  Expanded(
+                    child: _FeatureTile(
+                      icon: Icons.location_on_outlined,
+                      title: 'Live route',
+                      subtitle: 'Trip visibility',
+                    ),
+                  ),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: _FeatureTile(
+                      icon: Icons.shield_outlined,
+                      title: 'Safer rides',
+                      subtitle: 'Event travel',
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-        )
-        .animate()
-        .fadeIn(
-          duration: 400.ms,
-          delay: Duration(milliseconds: delay),
-        )
-        .scale(begin: const Offset(0.85, 0.85));
+        ),
+        SizedBox(height: _clamped(12.h, 9, 14)),
+        const _RideNetworkCard(),
+      ],
+    );
   }
 }
 
-// ---------------------------------------------------------------------------
-// Page 3 — Plan Your Route
-// ---------------------------------------------------------------------------
-
-class _PlanRouteIllustration extends StatelessWidget {
-  const _PlanRouteIllustration({
-    required this.colors,
-    required this.t,
-    required this.w,
-    required this.h,
-  });
-
-  final List<Color> colors;
-  final double t;
-  final double w;
-  final double h;
+class _ConfirmedRideCard extends StatelessWidget {
+  const _ConfirmedRideCard();
 
   @override
   Widget build(BuildContext context) {
-    // Cubic bezier control points — must match _RoutePainter exactly.
-    final p0 = Offset(w * 0.10, h * 0.35);
-    final p1 = Offset(w * 0.32, h * 0.12);
-    final p2 = Offset(w * 0.68, h * 0.78);
-    final p3 = Offset(w * 0.90, h * 0.62);
-
-    // Standard cubic bezier formula: B(t) = (1-t)³P0 + 3(1-t)²tP1 + 3(1-t)t²P2 + t³P3
-    final u = 1.0 - t;
-    final carPos =
-        p0 * (u * u * u) +
-        p1 * (3 * u * u * t) +
-        p2 * (3 * u * t * t) +
-        p3 * (t * t * t);
-
-    final pinSize = math.min(w, h) * 0.11;
-    final carSize = pinSize * 0.75;
-
-    return Stack(
-      children: [
-        Positioned.fill(
+    return _PremiumCard(
+      padding: EdgeInsets.zero,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24.r),
+        child: DecoratedBox(
+          decoration: _softGreenGradient(),
           child: CustomPaint(
-            painter: _RoutePainter(color: colors[0], t: t),
-          ),
-        ),
-
-        // Pickup pin — anchored to bezier start (p0)
-        Positioned(
-          left: w * 0.10 - pinSize / 2,
-          top: h * 0.38 - pinSize,
-          child: _MapPin(
-            icon: Icons.my_location_rounded,
-            label: 'You',
-            colors: colors,
-            size: pinSize,
-          ).animate().fadeIn(delay: 100.ms).slideY(begin: -0.3),
-        ),
-
-        // Destination pin — anchored to bezier end (p3)
-        Positioned(
-          left: w * 0.90 - pinSize / 2,
-          top: h * 0.62 - pinSize,
-          child: _MapPin(
-            icon: Icons.flag_rounded,
-            label: 'Race',
-            colors: colors,
-            size: pinSize,
-          ).animate().fadeIn(delay: 300.ms).slideY(begin: -0.3),
-        ),
-
-        // Animated car dot — positioned exactly on the bezier curve
-        Positioned(
-          left: carPos.dx - carSize / 2,
-          top: carPos.dy - carSize / 2,
-          child: Container(
-            width: carSize,
-            height: carSize,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(colors: colors),
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: colors[0].withValues(alpha: 0.4),
-                  blurRadius: 8,
-                ),
-              ],
-            ),
-            child: Icon(
-              Icons.directions_car_filled_rounded,
-              size: carSize * 0.52,
-              color: Colors.white,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _MapPin extends StatelessWidget {
-  const _MapPin({
-    required this.icon,
-    required this.label,
-    required this.colors,
-    required this.size,
-  });
-
-  final IconData icon;
-  final String label;
-  final List<Color> colors;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: colors,
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: colors[0].withValues(alpha: 0.35),
-                blurRadius: 8,
+            painter: const _TrustPainter(color: AppColors.primary),
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                _clamped(18.w, 16, 20),
+                _clamped(17.h, 15, 19),
+                _clamped(18.w, 16, 20),
+                _clamped(17.h, 15, 19),
               ),
-            ],
-          ),
-          child: Icon(icon, size: size * 0.48, color: Colors.white),
-        ),
-        SizedBox(height: 3.h),
-        Container(
-          padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(6.r),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.08),
-                blurRadius: 4,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      _EventBadge(
+                        labelTop: 'RIDE',
+                        labelMain: 'OK',
+                        labelBottom: 'SET',
+                        size: _clamped(76.w, 62, 82),
+                        filled: true,
+                      ),
+                      SizedBox(width: _clamped(15.w, 12, 18)),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Ride confirmed',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: AppColors.textPrimary,
+                                fontSize: _clamped(20.sp, 18, 22),
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: -0.3,
+                              ),
+                            ),
+                            SizedBox(height: _clamped(5.h, 4, 7)),
+                            Text(
+                              'Paris 10K • 2 passengers',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: AppColors.textSecondary,
+                                fontSize: _clamped(12.sp, 11, 13),
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            SizedBox(height: _clamped(10.h, 8, 12)),
+                            const _SmallPill(label: 'Pickup 06:40'),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: _clamped(16.h, 12, 18)),
+                  const _ChatPreviewCard(),
+                ],
               ),
-            ],
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 8.sp,
-              fontWeight: FontWeight.w700,
-              color: colors[0],
             ),
           ),
         ),
-      ],
+      ),
     );
   }
 }
 
-// ---------------------------------------------------------------------------
-// Page 4 — Connect & Go
-// ---------------------------------------------------------------------------
-
-class _ConnectGoIllustration extends StatelessWidget {
-  const _ConnectGoIllustration({
-    required this.colors,
-    required this.t,
-    required this.w,
-    required this.h,
-  });
-
-  final List<Color> colors;
-  final double t;
-  final double w;
-  final double h;
-
-  @override
-  Widget build(BuildContext context) {
-    final cx = w * 0.5;
-    final cy = h * 0.5;
-    final badgeR = math.min(w, h) * 0.13;
-    // Orbit radius: fits inside the tighter of cx / cy with padding
-    final orbitR = math.min(cx, cy) * 0.64;
-    final bubbleR = math.min(w, h) * 0.065;
-
-    final compassItems = [
-      (Icons.chat_bubble_rounded, 'Chat', Offset(cx, cy - orbitR)),
-      (Icons.shield_rounded, 'Safe', Offset(cx + orbitR, cy)),
-      (Icons.location_on_rounded, 'Live', Offset(cx, cy + orbitR)),
-      (Icons.star_rounded, 'Rated', Offset(cx - orbitR, cy)),
-    ];
-
-    return Stack(
-      children: [
-        Positioned.fill(
-          child: CustomPaint(
-            painter: _PulseRingPainter(color: colors[0], t: t, cx: cx, cy: cy),
-          ),
-        ),
-
-        // Central badge
-        Positioned(
-          left: cx - badgeR,
-          top: cy - badgeR,
-          child: Container(
-            width: badgeR * 2,
-            height: badgeR * 2,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: colors,
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: colors[0].withValues(alpha: 0.4),
-                  blurRadius: badgeR * 0.6,
-                  spreadRadius: 2,
-                ),
-              ],
-            ),
-            child: Icon(
-              Icons.verified_rounded,
-              size: badgeR * 0.85,
-              color: Colors.white,
-            ),
-          ),
-        ),
-
-        // Compass bubbles — positioned relative to cx/cy, no fixed offsets
-        for (final item in compassItems)
-          Positioned(
-            left: item.$3.dx - bubbleR,
-            top: item.$3.dy - bubbleR,
-            child: _CompassBubble(
-              icon: item.$1,
-              label: item.$2,
-              colors: colors,
-              size: bubbleR * 2,
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-class _CompassBubble extends StatelessWidget {
-  const _CompassBubble({
-    required this.icon,
-    required this.label,
-    required this.colors,
-    required this.size,
-  });
-
-  final IconData icon;
-  final String label;
-  final List<Color> colors;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: colors[0].withValues(alpha: 0.28),
-              width: 1.5,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: colors[0].withValues(alpha: 0.12),
-                blurRadius: 8,
-              ),
-            ],
-          ),
-          child: Icon(icon, size: size * 0.45, color: colors[0]),
-        ),
-        SizedBox(height: 2.h),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 8.sp,
-            fontWeight: FontWeight.w700,
-            color: colors[0],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Custom painters — all geometry relative to canvas size or passed cx/cy
-// ---------------------------------------------------------------------------
-
-class _ArcPainter extends CustomPainter {
-  _ArcPainter({
-    required this.color,
-    required this.t,
-    required this.cx,
-    required this.cy,
-  });
-  final Color color;
-  final double t;
-  final double cx;
-  final double cy;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color.withValues(alpha: 0.08)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-    final base = math.min(size.width, size.height) * 0.18;
-    for (var i = 0; i < 3; i++) {
-      canvas.drawCircle(
-        Offset(cx, cy),
-        base + i * base * 0.85 + t * base * 0.12,
-        paint,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(_ArcPainter o) => o.t != t;
-}
-
-class _GridPainter extends CustomPainter {
-  _GridPainter({required this.color});
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color.withValues(alpha: 0.06)
-      ..strokeWidth = 1;
-    // Grid step = 1/10 of width — stays proportional on any screen
-    final step = size.width / 10;
-    for (double x = 0; x <= size.width; x += step) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-    }
-    for (double y = 0; y <= size.height; y += step) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(_GridPainter o) => false;
-}
-
-class _RoutePainter extends CustomPainter {
-  _RoutePainter({required this.color, required this.t});
-  final Color color;
-  final double t;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final w = size.width;
-    final h = size.height;
-
-    canvas.drawRect(
-      Offset.zero & size,
-      Paint()..color = color.withValues(alpha: 0.04),
-    );
-
-    final gridPaint = Paint()
-      ..color = color.withValues(alpha: 0.07)
-      ..strokeWidth = 1;
-    final step = w / 9;
-    for (double x = 0; x <= w; x += step) {
-      canvas.drawLine(Offset(x, 0), Offset(x, h), gridPaint);
-    }
-    for (double y = 0; y <= h; y += step) {
-      canvas.drawLine(Offset(0, y), Offset(w, y), gridPaint);
-    }
-
-    // Route bezier — control points MUST match _PlanRouteIllustration exactly.
-    final path = Path()
-      ..moveTo(w * 0.10, h * 0.35)
-      ..cubicTo(w * 0.32, h * 0.12, w * 0.68, h * 0.78, w * 0.90, h * 0.62);
-
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = color.withValues(alpha: 0.65)
-        ..strokeWidth = 3.5
-        ..style = PaintingStyle.stroke
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round,
-    );
-
-    // Dashed animated progress overlay
-    final metrics = path.computeMetrics().first;
-    final totalLen = metrics.length;
-    const dashLen = 7.0;
-    const gapLen = 5.0;
-    final progress = totalLen * t /*(0.25 + t * 0.55)*/;
-    double d = 0;
-    while (d < progress) {
-      final seg = metrics.extractPath(d, math.min(d + dashLen, progress));
-      canvas.drawPath(
-        seg,
-        Paint()
-          ..color = Colors.white.withValues(alpha: 0.55)
-          ..strokeWidth = 2
-          ..style = PaintingStyle.stroke
-          ..strokeCap = StrokeCap.round,
-      );
-      d += dashLen + gapLen;
-    }
-  }
-
-  @override
-  bool shouldRepaint(_RoutePainter o) => o.t != t;
-}
-
-class _PulseRingPainter extends CustomPainter {
-  _PulseRingPainter({
-    required this.color,
-    required this.t,
-    required this.cx,
-    required this.cy,
-  });
-  final Color color;
-  final double t;
-  final double cx;
-  final double cy;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final base = math.min(size.width, size.height) * 0.18;
-    for (var i = 0; i < 3; i++) {
-      final alpha = (0.12 - i * 0.03 + t * 0.03).clamp(0.0, 0.14);
-      canvas.drawCircle(
-        Offset(cx, cy),
-        base * (1.0 + i * 0.55) + t * base * 0.10,
-        Paint()
-          ..color = color.withValues(alpha: alpha)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.5,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(_PulseRingPainter o) => o.t != t;
-}
-
-// ---------------------------------------------------------------------------
-// Shared widgets
-// ---------------------------------------------------------------------------
-
-class _GradientPill extends StatelessWidget {
-  const _GradientPill({required this.colors, required this.child});
-  final List<Color> colors;
-  final Widget child;
+class _ChatPreviewCard extends StatelessWidget {
+  const _ChatPreviewCard();
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
+      width: double.infinity,
+      padding: EdgeInsets.fromLTRB(
+        _clamped(14.w, 12, 16),
+        _clamped(12.h, 10, 14),
+        _clamped(14.w, 12, 16),
+        _clamped(12.h, 10, 14),
+      ),
       decoration: BoxDecoration(
-        gradient: LinearGradient(colors: colors),
-        borderRadius: BorderRadius.circular(25.r),
+        color: Colors.white.withValues(alpha: 0.80),
+        borderRadius: BorderRadius.circular(18.r),
+        border: Border.all(
+          color: AppColors.primary.withValues(alpha: 0.10),
+        ),
+      ),
+      child: Row(
+        children: [
+          const _IconSquare(icon: Icons.chat_bubble_outline_rounded),
+          SizedBox(width: _clamped(11.w, 8, 12)),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'In-app chat',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: _clamped(13.sp, 12, 14),
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                SizedBox(height: 4.h),
+                Text(
+                  'Confirm bags, pickup spot, and arrival time.',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: _clamped(11.sp, 10, 12),
+                    height: 1.25,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RideNetworkCard extends StatelessWidget {
+  const _RideNetworkCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return _PremiumCard(
+      padding: EdgeInsets.fromLTRB(
+        _clamped(15.w, 13, 17),
+        _clamped(14.h, 12, 16),
+        _clamped(15.w, 13, 17),
+        _clamped(14.h, 12, 16),
+      ),
+      child: Row(
+        children: [
+          const _IconSquare(icon: Icons.groups_2_outlined),
+          SizedBox(width: _clamped(12.w, 9, 14)),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Runner carpool network',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: _clamped(14.sp, 13, 15),
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                SizedBox(height: 4.h),
+                Text(
+                  'Travel with people going to the same event.',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: _clamped(11.sp, 10, 12),
+                    fontWeight: FontWeight.w600,
+                    height: 1.25,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Icon(
+            Icons.chevron_right_rounded,
+            color: AppColors.textSecondary,
+            size: _clamped(24.sp, 21, 25),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Shared UI widgets
+// -----------------------------------------------------------------------------
+
+BoxDecoration _softGreenGradient() {
+  return BoxDecoration(
+    gradient: LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [
+        AppColors.primary.withValues(alpha: 0.13),
+        AppColors.primary.withValues(alpha: 0.055),
+        AppColors.cardBg,
+      ],
+    ),
+  );
+}
+
+class _PremiumCard extends StatelessWidget {
+  const _PremiumCard({
+    required this.child,
+    this.padding,
+  });
+
+  final Widget child;
+  final EdgeInsetsGeometry? padding;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: padding ?? EdgeInsets.all(_clamped(18.w, 15, 20)),
+      decoration: BoxDecoration(
+        color: AppColors.cardBg,
+        borderRadius: BorderRadius.circular(24.r),
+        border: Border.all(
+          color: AppColors.border.withValues(alpha: 0.52),
+        ),
         boxShadow: [
           BoxShadow(
-            color: colors[0].withValues(alpha: 0.26),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
+            color: Colors.black.withValues(alpha: 0.045),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
+          ),
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.035),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -1270,354 +1474,1426 @@ class _GradientPill extends StatelessWidget {
   }
 }
 
-class _FloatingBadge extends StatelessWidget {
-  const _FloatingBadge({
-    required this.label,
-    required this.colors,
-    required this.t,
-  });
-  final String label;
-  final List<Color> colors;
-  final double t;
-
-  @override
-  Widget build(BuildContext context) {
-    return Transform.translate(
-      offset: Offset(0, -4 * math.sin(t * math.pi)),
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 11.w, vertical: 6.h),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(colors: colors),
-          borderRadius: BorderRadius.circular(14.r),
-          boxShadow: [
-            BoxShadow(
-              color: colors[0].withValues(alpha: 0.38),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 13.sp,
-            fontWeight: FontWeight.w800,
-            color: Colors.white,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SubtitleBadge extends StatelessWidget {
-  const _SubtitleBadge({required this.label, required this.colors});
-  final String label;
-  final List<Color> colors;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 13.w, vertical: 6.h),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            colors[0].withValues(alpha: 0.11),
-            colors[1].withValues(alpha: 0.05),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: colors[0].withValues(alpha: 0.22)),
-      ),
-      child: Text(
-        label.toUpperCase(),
-        style: TextStyle(
-          fontSize: 10.sp,
-          fontWeight: FontWeight.w800,
-          color: colors[0],
-          letterSpacing: 1.5,
-        ),
-      ),
-    ).animate().fadeIn(duration: 500.ms, delay: 150.ms).slideY(begin: 0.2);
-  }
-}
-
-class _Title extends StatelessWidget {
-  const _Title({required this.text});
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      header: true,
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 32.sp,
-          fontWeight: FontWeight.w900,
-          color: AppColors.textPrimary,
-          height: 1.1,
-          letterSpacing: -0.7,
-        ),
-      ),
-    ).animate().fadeIn(duration: 500.ms, delay: 200.ms).slideY(begin: 0.2);
-  }
-}
-
-class _Description extends StatelessWidget {
-  const _Description({required this.text});
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: TextStyle(
-        fontSize: 14.sp,
-        color: AppColors.textSecondary,
-        height: 1.65,
-      ),
-    ).animate().fadeIn(duration: 500.ms, delay: 280.ms).slideY(begin: 0.2);
-  }
-}
-
-class _FeatureRow extends StatelessWidget {
-  const _FeatureRow({required this.features, required this.accentColor});
-  final List<String> features;
-  final Color accentColor;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      label: 'Features: ${features.join(', ')}',
-      child: Row(
-        children: features.asMap().entries.map((e) {
-          return Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(
-                right: e.key < features.length - 1 ? 7.w : 0,
-              ),
-              child: _FeatureChip(
-                label: e.value,
-                accentColor: accentColor,
-                delay: e.key * 80,
-              ),
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-}
-
-class _FeatureChip extends StatelessWidget {
-  const _FeatureChip({
-    required this.label,
-    required this.accentColor,
-    required this.delay,
-  });
-  final String label;
-  final Color accentColor;
-  final int delay;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-          padding: EdgeInsets.symmetric(vertical: 9.h),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(11.r),
-            border: Border.all(color: accentColor.withValues(alpha: 0.2)),
-            boxShadow: [
-              BoxShadow(
-                color: accentColor.withValues(alpha: 0.09),
-                blurRadius: 8,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.check_circle_rounded, size: 14.sp, color: accentColor),
-              SizedBox(height: 3.h),
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 9.sp,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ],
-          ),
-        )
-        .animate()
-        .fadeIn(
-          duration: 400.ms,
-          delay: Duration(milliseconds: 380 + delay),
-        )
-        .slideY(begin: 0.25)
-        .scale(begin: const Offset(0.88, 0.88));
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Bottom controls
-// ---------------------------------------------------------------------------
-
-class _BottomControls extends StatelessWidget {
-  const _BottomControls({
-    required this.currentPage,
-    required this.pages,
-    required this.vmState,
-    required this.pageController,
-    required this.onComplete,
+class _HeroEventTitle extends StatelessWidget {
+  const _HeroEventTitle({
+    required this.title,
+    required this.distance,
+    required this.location,
   });
 
-  final int currentPage;
-  final List<OnboardingPage> pages;
-  final OnboardingState vmState;
-  final PageController pageController;
-  final VoidCallback onComplete;
+  final String title;
+  final String distance;
+  final String location;
 
   @override
   Widget build(BuildContext context) {
-    final isLast = currentPage == pages.length - 1;
-    final isCompleting = vmState.isCompleting;
-    final page = pages[currentPage];
-
-    return Container(
-      padding: EdgeInsets.fromLTRB(22.w, 10.h, 22.w, 22.h),
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.topLeft,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Dot indicators
-          ExcludeSemantics(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(pages.length, (i) {
-                final cur = i == currentPage;
-                return AnimatedContainer(
-                  duration: 300.ms,
-                  margin: EdgeInsets.symmetric(horizontal: 4.w),
-                  height: 7.h,
-                  width: cur ? 26.w : 7.w,
-                  decoration: BoxDecoration(
-                    color: cur ? page.gradientColors[0] : AppColors.border,
-                    borderRadius: BorderRadius.circular(4.r),
-                  ),
-                );
-              }),
+          Text(
+            title,
+            style: TextStyle(
+              color: AppColors.primary,
+              fontSize: 34.sp,
+              fontWeight: FontWeight.w900,
+              letterSpacing: -1.05,
+              height: 0.92,
             ),
           ),
-
-          SizedBox(height: 18.h),
-
-          Row(
-            children: [
-              if (currentPage > 0) ...[
-                GestureDetector(
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    pageController.previousPage(
-                      duration: const Duration(milliseconds: 450),
-                      curve: Curves.easeOutCubic,
-                    );
-                  },
-                  child: Container(
-                    width: 54.w,
-                    height: 54.w,
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceVariant,
-                      borderRadius: BorderRadius.circular(15.r),
-                    ),
-                    child: Icon(
-                      Icons.adaptive.arrow_back_rounded,
-                      color: AppColors.textSecondary,
-                      size: 22.sp,
-                    ),
-                  ),
-                ).animate().fadeIn(duration: 300.ms).slideX(begin: -0.2),
-                SizedBox(width: 12.w),
-              ],
-
-              Expanded(
-                child: GestureDetector(
-                  onTap: isCompleting
-                      ? null
-                      : () {
-                          HapticFeedback.mediumImpact();
-                          if (isLast) {
-                            onComplete();
-                          } else {
-                            pageController.nextPage(
-                              duration: const Duration(milliseconds: 450),
-                              curve: Curves.easeOutCubic,
-                            );
-                          }
-                        },
-                  child: AnimatedContainer(
-                    duration: 300.ms,
-                    height: 54.h,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(colors: page.gradientColors),
-                      borderRadius: BorderRadius.circular(15.r),
-                      boxShadow: [
-                        BoxShadow(
-                          color: page.gradientColors[0].withValues(alpha: 0.34),
-                          blurRadius: 15,
-                          offset: const Offset(0, 6),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          isCompleting
-                              ? '...'
-                              : isLast
-                              ? AppLocalizations.of(context).getStarted
-                              : AppLocalizations.of(context).kContinue,
-                          style: TextStyle(
-                            fontSize: 16.sp,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                          ),
-                        ),
-                        SizedBox(width: 10.w),
-                        Container(
-                              width: 28.w,
-                              height: 28.w,
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.2),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                isLast
-                                    ? Icons.rocket_launch_rounded
-                                    : Icons.adaptive.arrow_forward_rounded,
-                                color: Colors.white,
-                                size: 14.sp,
-                              ),
-                            )
-                            .animate(onPlay: (c) => c.repeat(reverse: true))
-                            .slideX(
-                              begin: 0,
-                              end: 0.15,
-                              duration: 900.ms,
-                              curve: Curves.easeInOut,
-                            ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
+          Text(
+            distance,
+            style: TextStyle(
+              color: AppColors.primary,
+              fontSize: 50.sp,
+              fontWeight: FontWeight.w900,
+              letterSpacing: -1.6,
+              height: 0.98,
+            ),
+          ),
+          SizedBox(height: 8.h),
+          Text(
+            location,
+            style: TextStyle(
+              color: AppColors.primary.withValues(alpha: 0.82),
+              fontSize: 11.sp,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1.05,
+            ),
           ),
         ],
       ),
     );
+  }
+}
+
+class _EventBadge extends StatelessWidget {
+  const _EventBadge({
+    required this.labelTop,
+    required this.labelMain,
+    required this.size,
+    this.labelBottom,
+    this.filled = false,
+  });
+
+  final String labelTop;
+  final String labelMain;
+  final String? labelBottom;
+  final double size;
+  final bool filled;
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      painter: _ShieldPainter(
+        color: AppColors.primary,
+        filled: filled,
+      ),
+      child: SizedBox(
+        width: size,
+        height: size,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              labelTop,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: filled ? Colors.white : AppColors.primary,
+                fontSize: (size * 0.12).clamp(8.0, 12.0),
+                fontWeight: FontWeight.w900,
+                height: 1,
+              ),
+            ),
+            SizedBox(height: size * 0.03),
+            Text(
+              labelMain,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: filled ? Colors.white : AppColors.primary,
+                fontSize: (size * 0.27).clamp(15.0, 24.0),
+                fontWeight: FontWeight.w900,
+                height: 1,
+              ),
+            ),
+            if (labelBottom != null) ...[
+              SizedBox(height: size * 0.035),
+              Text(
+                labelBottom!,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: filled ? Colors.white : AppColors.primary,
+                  fontSize: (size * 0.105).clamp(7.0, 10.0),
+                  fontWeight: FontWeight.w900,
+                  height: 1,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _IconSquare extends StatelessWidget {
+  const _IconSquare({
+    required this.icon,
+    this.size,
+  });
+
+  final IconData icon;
+  final double? size;
+
+  @override
+  Widget build(BuildContext context) {
+    final resolvedSize = size ?? _clamped(44.w, 38, 48);
+
+    return Container(
+      width: resolvedSize,
+      height: resolvedSize,
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.09),
+        borderRadius: BorderRadius.circular(14.r),
+        border: Border.all(
+          color: AppColors.primary.withValues(alpha: 0.12),
+        ),
+      ),
+      child: Icon(
+        icon,
+        color: AppColors.primary,
+        size: _clamped(21.sp, 18, 23),
+      ),
+    );
+  }
+}
+
+class _MiniStatPill extends StatelessWidget {
+  const _MiniStatPill({
+    required this.icon,
+    required this.label,
+  });
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: _clamped(10.w, 8, 11),
+        vertical: _clamped(8.h, 6, 9),
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.82),
+        borderRadius: BorderRadius.circular(999.r),
+        border: Border.all(
+          color: AppColors.primary.withValues(alpha: 0.10),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            icon,
+            color: AppColors.primary,
+            size: _clamped(14.sp, 12, 15),
+          ),
+          SizedBox(width: _clamped(5.w, 4, 6)),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: _clamped(11.sp, 10, 12),
+                fontWeight: FontWeight.w800,
+                height: 1,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SmallPill extends StatelessWidget {
+  const _SmallPill({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: _clamped(10.w, 8, 12),
+        vertical: _clamped(5.h, 4, 6),
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.09),
+        borderRadius: BorderRadius.circular(99.r),
+      ),
+      child: Text(
+        label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          color: AppColors.primary,
+          fontSize: _clamped(11.sp, 10, 12),
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+    );
+  }
+}
+
+class _StatusPill extends StatelessWidget {
+  const _StatusPill({
+    required this.label,
+    required this.icon,
+  });
+
+  final String label;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: _clamped(9.w, 8, 10),
+        vertical: _clamped(5.h, 4, 6),
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.09),
+        borderRadius: BorderRadius.circular(999.r),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: AppColors.primary, size: _clamped(13.sp, 12, 14)),
+          SizedBox(width: _clamped(5.w, 4, 6)),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: AppColors.primary,
+              fontSize: _clamped(10.sp, 9, 11),
+              fontWeight: FontWeight.w900,
+              letterSpacing: 0.8,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InfoLine extends StatelessWidget {
+  const _InfoLine({
+    required this.icon,
+    required this.text,
+  });
+
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          color: AppColors.textSecondary,
+          size: _clamped(18.sp, 16, 19),
+        ),
+        SizedBox(width: _clamped(9.w, 7, 10)),
+        Expanded(
+          child: Text(
+            text,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: _clamped(12.sp, 11, 13),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SelectableChip extends StatelessWidget {
+  const _SelectableChip({
+    required this.label,
+    required this.selected,
+    required this.icon,
+  });
+
+  final String label;
+  final bool selected;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOutCubic,
+      padding: EdgeInsets.symmetric(
+        horizontal: _clamped(13.w, 11, 15),
+        vertical: _clamped(10.h, 8, 11),
+      ),
+      decoration: BoxDecoration(
+        color: selected
+            ? AppColors.primary.withValues(alpha: 0.11)
+            : AppColors.surfaceVariant.withValues(alpha: 0.68),
+        borderRadius: BorderRadius.circular(14.r),
+        border: Border.all(
+          color: selected
+              ? AppColors.primary.withValues(alpha: 0.76)
+              : AppColors.border.withValues(alpha: 0.72),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            color: selected ? AppColors.primary : AppColors.textSecondary,
+            size: _clamped(14.sp, 12, 15),
+          ),
+          SizedBox(width: _clamped(5.w, 4, 6)),
+          Text(
+            label,
+            style: TextStyle(
+              color: selected ? AppColors.primary : AppColors.textPrimary,
+              fontSize: _clamped(12.sp, 11, 13),
+              fontWeight: FontWeight.w900,
+              height: 1,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MiniSummaryTile extends StatelessWidget {
+  const _MiniSummaryTile({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: _clamped(11.w, 9, 12),
+        vertical: _clamped(11.h, 9, 12),
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceVariant.withValues(alpha: 0.46),
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(
+          color: AppColors.border.withValues(alpha: 0.62),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            color: AppColors.primary,
+            size: _clamped(18.sp, 16, 20),
+          ),
+          SizedBox(width: _clamped(8.w, 6, 9)),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: _clamped(10.sp, 9, 11),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                SizedBox(height: 3.h),
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: _clamped(12.sp, 11, 13),
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BenefitChip extends StatelessWidget {
+  const _BenefitChip({
+    required this.icon,
+    required this.label,
+  });
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: _clamped(10.w, 8, 11),
+        vertical: _clamped(9.h, 7, 10),
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.055),
+        borderRadius: BorderRadius.circular(14.r),
+        border: Border.all(
+          color: AppColors.primary.withValues(alpha: 0.08),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            color: AppColors.primary,
+            size: _clamped(16.sp, 14, 18),
+          ),
+          SizedBox(width: _clamped(6.w, 5, 7)),
+          Text(
+            label,
+            style: TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: _clamped(11.sp, 10, 12),
+              fontWeight: FontWeight.w800,
+              height: 1,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TimelineItem extends StatelessWidget {
+  const _TimelineItem({
+    required this.icon,
+    required this.time,
+    required this.title,
+    required this.subtitle,
+    this.isFirst = false,
+    this.isLast = false,
+  });
+
+  final IconData icon;
+  final String time;
+  final String title;
+  final String subtitle;
+  final bool isFirst;
+  final bool isLast;
+
+  @override
+  Widget build(BuildContext context) {
+    final markerSize = _clamped(26.w, 22, 28);
+
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: _clamped(30.w, 26, 32),
+            child: Column(
+              children: [
+                Container(
+                  width: markerSize,
+                  height: markerSize,
+                  decoration: BoxDecoration(
+                    color: isFirst
+                        ? AppColors.primary.withValues(alpha: 0.12)
+                        : AppColors.primary,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: AppColors.primary.withValues(alpha: 0.18),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primary.withValues(alpha: 0.14),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    icon,
+                    color: isFirst ? AppColors.primary : Colors.white,
+                    size: _clamped(14.sp, 12, 15),
+                  ),
+                ),
+                if (!isLast)
+                  Expanded(
+                    child: Container(
+                      width: _clamped(2.w, 1.5, 2),
+                      margin: EdgeInsets.symmetric(
+                        vertical: _clamped(4.h, 3, 5),
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.16),
+                        borderRadius: BorderRadius.circular(99.r),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          SizedBox(width: _clamped(10.w, 8, 12)),
+          SizedBox(
+            width: _clamped(48.w, 42, 54),
+            child: Text(
+              time,
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: _clamped(13.sp, 11.5, 14),
+                fontWeight: FontWeight.w900,
+                height: 1.25,
+              ),
+            ),
+          ),
+          SizedBox(width: _clamped(8.w, 6, 10)),
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(
+                bottom: isLast ? 0 : _clamped(17.h, 12, 20),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: _clamped(13.sp, 12, 14),
+                      fontWeight: FontWeight.w900,
+                      height: 1.2,
+                    ),
+                  ),
+                  SizedBox(height: _clamped(4.h, 3, 5)),
+                  Text(
+                    subtitle,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: _clamped(11.sp, 10, 12),
+                      fontWeight: FontWeight.w600,
+                      height: 1.28,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FeatureTile extends StatelessWidget {
+  const _FeatureTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.fromLTRB(
+        _clamped(12.w, 10, 14),
+        _clamped(12.h, 10, 14),
+        _clamped(12.w, 10, 14),
+        _clamped(12.h, 10, 14),
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceVariant.withValues(alpha: 0.48),
+        borderRadius: BorderRadius.circular(17.r),
+        border: Border.all(
+          color: AppColors.border.withValues(alpha: 0.60),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: AppColors.primary, size: _clamped(20.sp, 18, 22)),
+          SizedBox(height: _clamped(8.h, 6, 10)),
+          Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: _clamped(12.sp, 11, 13),
+              fontWeight: FontWeight.w900,
+              height: 1.1,
+            ),
+          ),
+          SizedBox(height: 3.h),
+          Text(
+            subtitle,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: _clamped(10.sp, 9, 11),
+              fontWeight: FontWeight.w600,
+              height: 1.1,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Bottom controls
+// -----------------------------------------------------------------------------
+
+class _OnboardingBottomControls extends StatelessWidget {
+  const _OnboardingBottomControls({
+    required this.currentPage,
+    required this.totalPages,
+    required this.vmState,
+    required this.onBack,
+    required this.onNext,
+  });
+
+  final int currentPage;
+  final int totalPages;
+  final OnboardingState vmState;
+  final VoidCallback onBack;
+  final VoidCallback onNext;
+
+  @override
+  Widget build(BuildContext context) {
+    final isLast = currentPage == totalPages - 1;
+    final isCompleting = vmState.isCompleting;
+    final loc = AppLocalizations.of(context);
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        _clamped(24.w, 18, 28),
+        _clamped(10.h, 8, 12),
+        _clamped(24.w, 18, 28),
+        _clamped(18.h, 14, 22),
+      ),
+      child: Row(
+        children: [
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 220),
+            child: currentPage == 0
+                ? SizedBox(
+                    width: _clamped(54.w, 48, 58),
+                    key: const ValueKey('empty-back'),
+                  )
+                : _BackButton(
+                    key: const ValueKey('back'),
+                    onPressed: onBack,
+                  ),
+          ),
+          SizedBox(width: _clamped(12.w, 9, 14)),
+          Expanded(
+            child: _PrimaryCtaButton(
+              label: isCompleting
+                  ? '...'
+                  : isLast
+                  ? loc.getStarted
+                  : loc.kContinue,
+              onPressed: isCompleting ? null : onNext,
+              icon: Icons.arrow_forward_rounded,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BackButton extends StatelessWidget {
+  const _BackButton({
+    required this.onPressed,
+    super.key,
+  });
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: 'Previous step',
+      child: Material(
+        color: AppColors.surfaceVariant,
+        borderRadius: BorderRadius.circular(16.r),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16.r),
+          onTap: onPressed,
+          child: SizedBox(
+            width: _clamped(54.w, 48, 58),
+            height: _clamped(54.h, 48, 58),
+            child: Icon(
+              Icons.adaptive.arrow_back_rounded,
+              color: AppColors.textSecondary,
+              size: _clamped(21.sp, 19, 23),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PrimaryCtaButton extends StatelessWidget {
+  const _PrimaryCtaButton({
+    required this.label,
+    required this.onPressed,
+    required this.icon,
+  });
+
+  final String label;
+  final VoidCallback? onPressed;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final disabled = onPressed == null;
+
+    return Semantics(
+      button: true,
+      enabled: !disabled,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16.r),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16.r),
+          onTap: onPressed,
+          child: Ink(
+            height: _clamped(56.h, 50, 58),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: disabled
+                    ? [
+                        AppColors.primary.withValues(alpha: 0.35),
+                        AppColors.primary.withValues(alpha: 0.26),
+                      ]
+                    : [
+                        AppColors.primary.withValues(alpha: 0.86),
+                        AppColors.primary,
+                      ],
+              ),
+              borderRadius: BorderRadius.circular(16.r),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withValues(alpha: 0.20),
+                  blurRadius: 18,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: _clamped(20.w, 16, 22)),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Flexible(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: _clamped(16.sp, 14, 17),
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: _clamped(12.w, 9, 14)),
+                  Icon(
+                    icon,
+                    color: Colors.white,
+                    size: _clamped(21.sp, 19, 22),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Painters
+// -----------------------------------------------------------------------------
+
+class _FindRidePainter extends CustomPainter {
+  const _FindRidePainter({required this.color});
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+
+    _drawCity(canvas, size);
+    _drawRoute(canvas, size);
+    _drawCar(canvas, Offset(w * 0.63, h * 0.63), math.min(w, h) * 0.16);
+  }
+
+  void _drawCity(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+
+    final riverPaint = Paint()
+      ..color = color.withValues(alpha: 0.08)
+      ..style = PaintingStyle.fill;
+
+    final river = Path()
+      ..moveTo(0, h * 0.78)
+      ..cubicTo(w * 0.22, h * 0.70, w * 0.40, h * 0.87, w * 0.62, h * 0.76)
+      ..cubicTo(w * 0.78, h * 0.68, w * 0.88, h * 0.80, w, h * 0.72)
+      ..lineTo(w, h)
+      ..lineTo(0, h)
+      ..close();
+
+    canvas.drawPath(river, riverPaint);
+
+    final towerPaint = Paint()
+      ..color = color.withValues(alpha: 0.30)
+      ..strokeWidth = 1.6
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    final top = Offset(w * 0.52, h * 0.25);
+    final leftBase = Offset(w * 0.42, h * 0.78);
+    final rightBase = Offset(w * 0.64, h * 0.78);
+
+    canvas.drawLine(top, leftBase, towerPaint);
+    canvas.drawLine(top, rightBase, towerPaint);
+    canvas.drawLine(
+      Offset(w * 0.45, h * 0.60),
+      Offset(w * 0.61, h * 0.60),
+      towerPaint,
+    );
+    canvas.drawLine(
+      Offset(w * 0.47, h * 0.47),
+      Offset(w * 0.58, h * 0.47),
+      towerPaint,
+    );
+
+    final skylinePaint = Paint()
+      ..color = color.withValues(alpha: 0.13)
+      ..style = PaintingStyle.fill;
+
+    for (var i = 0; i < 7; i++) {
+      final x = w * (0.04 + i * 0.075);
+      final height = h * (0.05 + (i.isEven ? 0.04 : 0.0));
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(x, h * 0.80 - height, w * 0.045, height),
+          const Radius.circular(3),
+        ),
+        skylinePaint,
+      );
+    }
+  }
+
+  void _drawRoute(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+
+    final path = Path()
+      ..moveTo(w * 0.16, h * 0.70)
+      ..cubicTo(w * 0.32, h * 0.54, w * 0.46, h * 0.74, w * 0.60, h * 0.58)
+      ..cubicTo(w * 0.72, h * 0.44, w * 0.84, h * 0.52, w * 0.91, h * 0.38);
+
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = color.withValues(alpha: 0.14)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 8
+        ..strokeCap = StrokeCap.round,
+    );
+
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = color.withValues(alpha: 0.55)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3.2
+        ..strokeCap = StrokeCap.round,
+    );
+  }
+
+  void _drawCar(Canvas canvas, Offset center, double size) {
+    final body = RRect.fromRectAndRadius(
+      Rect.fromCenter(center: center, width: size * 1.85, height: size * 0.82),
+      Radius.circular(size * 0.28),
+    );
+
+    canvas.drawRRect(
+      body,
+      Paint()
+        ..color = AppColors.cardBg.withValues(alpha: 0.92)
+        ..style = PaintingStyle.fill,
+    );
+
+    canvas.drawRRect(
+      body,
+      Paint()
+        ..color = color.withValues(alpha: 0.25)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.4,
+    );
+
+    final roof = RRect.fromRectAndRadius(
+      Rect.fromCenter(
+        center: Offset(center.dx - size * 0.05, center.dy - size * 0.34),
+        width: size * 0.98,
+        height: size * 0.55,
+      ),
+      Radius.circular(size * 0.22),
+    );
+
+    canvas.drawRRect(
+      roof,
+      Paint()
+        ..color = color.withValues(alpha: 0.13)
+        ..style = PaintingStyle.fill,
+    );
+
+    final wheelPaint = Paint()
+      ..color = color.withValues(alpha: 0.55)
+      ..style = PaintingStyle.fill;
+
+    canvas.drawCircle(
+      Offset(center.dx - size * 0.55, center.dy + size * 0.40),
+      size * 0.15,
+      wheelPaint,
+    );
+    canvas.drawCircle(
+      Offset(center.dx + size * 0.55, center.dy + size * 0.40),
+      size * 0.15,
+      wheelPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _FindRidePainter oldDelegate) {
+    return oldDelegate.color != color;
+  }
+}
+
+class _EarningsPainter extends CustomPainter {
+  const _EarningsPainter({required this.color});
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+
+    final accentPaint = Paint()
+      ..color = color.withValues(alpha: 0.055)
+      ..style = PaintingStyle.fill;
+
+    canvas.drawCircle(
+      Offset(w * 0.90, h * 0.12),
+      size.shortestSide * 0.35,
+      accentPaint,
+    );
+    canvas.drawCircle(
+      Offset(w * 0.12, h * 0.90),
+      size.shortestSide * 0.26,
+      accentPaint,
+    );
+
+    final linePaint = Paint()
+      ..color = color.withValues(alpha: 0.12)
+      ..strokeWidth = 1.4
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    for (var i = 0; i < 3; i++) {
+      final y = h * (0.28 + i * 0.18);
+      canvas.drawLine(
+        Offset(w * 0.70, y),
+        Offset(w * 0.92, y - h * 0.07),
+        linePaint,
+      );
+    }
+
+    final coinPaint = Paint()
+      ..color = color.withValues(alpha: 0.16)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.4;
+
+    for (var i = 0; i < 3; i++) {
+      canvas.drawCircle(
+        Offset(w * (0.76 + i * 0.055), h * (0.66 - i * 0.07)),
+        9 + i * 1.5,
+        coinPaint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _EarningsPainter oldDelegate) {
+    return oldDelegate.color != color;
+  }
+}
+
+class _PickupRoutePainter extends CustomPainter {
+  const _PickupRoutePainter({
+    required this.color,
+    required this.borderColor,
+  });
+
+  final Color color;
+  final Color borderColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    _drawBackground(canvas, size);
+    _drawRoadGrid(canvas, size);
+    _drawRoute(canvas, size);
+    _drawLabels(canvas, size);
+  }
+
+  void _drawBackground(Canvas canvas, Size size) {
+    canvas.drawRect(
+      Offset.zero & size,
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            color.withValues(alpha: 0.060),
+            color.withValues(alpha: 0.030),
+            AppColors.cardBg,
+          ],
+        ).createShader(Offset.zero & size),
+    );
+
+    final w = size.width;
+    final h = size.height;
+    final riverPath = Path()
+      ..moveTo(0, h * 0.66)
+      ..cubicTo(w * 0.17, h * 0.55, w * 0.31, h * 0.78, w * 0.48, h * 0.65)
+      ..cubicTo(w * 0.65, h * 0.52, w * 0.77, h * 0.68, w, h * 0.56)
+      ..lineTo(w, h * 0.76)
+      ..cubicTo(w * 0.80, h * 0.86, w * 0.63, h * 0.69, w * 0.48, h * 0.80)
+      ..cubicTo(w * 0.31, h * 0.92, w * 0.15, h * 0.70, 0, h * 0.82)
+      ..close();
+
+    canvas.drawPath(
+      riverPath,
+      Paint()
+        ..color = color.withValues(alpha: 0.055)
+        ..style = PaintingStyle.fill,
+    );
+  }
+
+  void _drawRoadGrid(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+
+    final roadPaint = Paint()
+      ..color = borderColor.withValues(alpha: 0.45)
+      ..strokeWidth = 1
+      ..strokeCap = StrokeCap.round;
+
+    for (var i = 1; i < 6; i++) {
+      final y = h * (0.12 + i * 0.12);
+      canvas.drawLine(
+        Offset(w * 0.08, y),
+        Offset(w * 0.92, y + (i.isEven ? h * 0.025 : -h * 0.018)),
+        roadPaint,
+      );
+    }
+
+    for (var i = 1; i < 5; i++) {
+      final x = w * (0.13 + i * 0.17);
+      canvas.drawLine(
+        Offset(x, h * 0.10),
+        Offset(x + (i.isEven ? w * 0.05 : -w * 0.04), h * 0.90),
+        roadPaint,
+      );
+    }
+
+    final parkPaint = Paint()
+      ..color = color.withValues(alpha: 0.045)
+      ..style = PaintingStyle.fill;
+
+    final blocks = [
+      Rect.fromLTWH(w * 0.08, h * 0.13, w * 0.24, h * 0.18),
+      Rect.fromLTWH(w * 0.68, h * 0.15, w * 0.22, h * 0.20),
+      Rect.fromLTWH(w * 0.12, h * 0.78, w * 0.25, h * 0.13),
+    ];
+
+    for (final block in blocks) {
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(block, const Radius.circular(16)),
+        parkPaint,
+      );
+    }
+  }
+
+  void _drawRoute(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+
+    final start = Offset(w * 0.16, h * 0.77);
+    final pickup = Offset(w * 0.42, h * 0.53);
+    final event = Offset(w * 0.80, h * 0.36);
+
+    final route = Path()
+      ..moveTo(start.dx, start.dy)
+      ..cubicTo(w * 0.22, h * 0.58, w * 0.32, h * 0.61, pickup.dx, pickup.dy)
+      ..cubicTo(w * 0.55, h * 0.43, w * 0.66, h * 0.47, event.dx, event.dy);
+
+    canvas.drawPath(
+      route,
+      Paint()
+        ..color = color.withValues(alpha: 0.13)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 9
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round,
+    );
+
+    canvas.drawPath(
+      route,
+      Paint()
+        ..color = color.withValues(alpha: 0.76)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 4
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round,
+    );
+
+    _drawMarker(canvas, start, 'Start', Icons.home_outlined, filled: false);
+    _drawMarker(
+      canvas,
+      pickup,
+      'Pickup',
+      Icons.person_pin_circle_outlined,
+      filled: true,
+    );
+    _drawMarker(canvas, event, 'Event', Icons.flag_outlined, filled: false);
+  }
+
+  void _drawMarker(
+    Canvas canvas,
+    Offset center,
+    String label,
+    IconData icon, {
+    required bool filled,
+  }) {
+    canvas.drawCircle(
+      center,
+      15,
+      Paint()
+        ..color = filled ? color : AppColors.cardBg
+        ..style = PaintingStyle.fill,
+    );
+
+    canvas.drawCircle(
+      center,
+      15,
+      Paint()
+        ..color = color.withValues(alpha: filled ? 0.0 : 0.20)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5,
+    );
+
+    _drawText(
+      canvas,
+      label,
+      Offset(center.dx, center.dy + 22),
+      color: filled ? color : AppColors.textPrimary,
+      fontSize: 10,
+      fontWeight: FontWeight.w900,
+      align: TextAlign.center,
+    );
+  }
+
+  void _drawLabels(Canvas canvas, Size size) {
+    _drawSoftLabel(
+      canvas,
+      Offset(size.width * 0.09, size.height * 0.16),
+      'Driver route',
+    );
+    _drawSoftLabel(
+      canvas,
+      Offset(size.width * 0.58, size.height * 0.71),
+      'Shared arrival',
+    );
+  }
+
+  void _drawSoftLabel(Canvas canvas, Offset offset, String text) {
+    final tp = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: TextStyle(
+          color: color.withValues(alpha: 0.62),
+          fontSize: 10,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+      maxLines: 1,
+    )..layout();
+
+    final rect = Rect.fromLTWH(
+      offset.dx,
+      offset.dy,
+      tp.width + 14,
+      tp.height + 8,
+    );
+
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(rect, const Radius.circular(999)),
+      Paint()
+        ..color = AppColors.cardBg.withValues(alpha: 0.72)
+        ..style = PaintingStyle.fill,
+    );
+
+    tp.paint(canvas, Offset(offset.dx + 7, offset.dy + 4));
+  }
+
+  void _drawText(
+    Canvas canvas,
+    String text,
+    Offset offset, {
+    required Color color,
+    required double fontSize,
+    required FontWeight fontWeight,
+    TextAlign align = TextAlign.left,
+  }) {
+    final tp = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: TextStyle(
+          color: color,
+          fontSize: fontSize,
+          fontWeight: fontWeight,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+      textAlign: align,
+      maxLines: 1,
+    )..layout();
+
+    final dx = align == TextAlign.center ? offset.dx - tp.width / 2 : offset.dx;
+    tp.paint(canvas, Offset(dx, offset.dy));
+  }
+
+  @override
+  bool shouldRepaint(covariant _PickupRoutePainter oldDelegate) {
+    return oldDelegate.color != color || oldDelegate.borderColor != borderColor;
+  }
+}
+
+class _TrustPainter extends CustomPainter {
+  const _TrustPainter({required this.color});
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+
+    final accentPaint = Paint()
+      ..color = color.withValues(alpha: 0.055)
+      ..style = PaintingStyle.fill;
+
+    canvas.drawCircle(
+      Offset(w * 0.88, h * 0.16),
+      size.shortestSide * 0.32,
+      accentPaint,
+    );
+    canvas.drawCircle(
+      Offset(w * 0.08, h * 0.88),
+      size.shortestSide * 0.25,
+      accentPaint,
+    );
+
+    final ringPaint = Paint()
+      ..color = color.withValues(alpha: 0.12)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.3;
+
+    for (var i = 0; i < 3; i++) {
+      canvas.drawCircle(
+        Offset(w * 0.72, h * 0.38),
+        size.shortestSide * (0.14 + i * 0.08),
+        ringPaint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _TrustPainter oldDelegate) {
+    return oldDelegate.color != color;
+  }
+}
+
+class _ShieldPainter extends CustomPainter {
+  const _ShieldPainter({
+    required this.color,
+    required this.filled,
+  });
+
+  final Color color;
+  final bool filled;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+
+    final path = Path()
+      ..moveTo(w * 0.50, h * 0.05)
+      ..cubicTo(w * 0.70, h * 0.10, w * 0.82, h * 0.18, w * 0.88, h * 0.24)
+      ..lineTo(w * 0.82, h * 0.67)
+      ..cubicTo(w * 0.78, h * 0.82, w * 0.64, h * 0.91, w * 0.50, h * 0.97)
+      ..cubicTo(w * 0.36, h * 0.91, w * 0.22, h * 0.82, w * 0.18, h * 0.67)
+      ..lineTo(w * 0.12, h * 0.24)
+      ..cubicTo(w * 0.18, h * 0.18, w * 0.30, h * 0.10, w * 0.50, h * 0.05)
+      ..close();
+
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = filled
+            ? color.withValues(alpha: 0.90)
+            : color.withValues(alpha: 0.08)
+        ..style = PaintingStyle.fill,
+    );
+
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = color.withValues(alpha: filled ? 0.0 : 0.22)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.3,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _ShieldPainter oldDelegate) {
+    return oldDelegate.color != color || oldDelegate.filled != filled;
   }
 }

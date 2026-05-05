@@ -99,7 +99,7 @@ final class LoginViewModelProvider
   }
 }
 
-String _$loginViewModelHash() => r'40fa21f7a78bc1baf1988441c00374bf8c83050b';
+String _$loginViewModelHash() => r'2c78819bbc477d5d368bbafde80c516552400e6d';
 
 /// Login view model
 
@@ -157,7 +157,7 @@ final class RegisterViewModelProvider
   }
 }
 
-String _$registerViewModelHash() => r'41ee1507b207eeba81e38a4a8de793955876afad';
+String _$registerViewModelHash() => r'29a5ffcf0de10ce243ba0b56f7a57b961b61eca2';
 
 /// Register view model
 

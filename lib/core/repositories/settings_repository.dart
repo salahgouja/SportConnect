@@ -206,7 +206,7 @@ class SettingsRepository {
   }
 
   Future<double> setDriverMaxDistance(double value) async {
-    final clampedValue = value.clamp(5.0, 50.0).toDouble();
+    final clampedValue = value.clamp(5.0, 50.0);
     await _prefs.setDouble(_driverMaxDistanceKey, clampedValue);
     return clampedValue;
   }

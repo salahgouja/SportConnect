@@ -5,7 +5,6 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/services/firebase_service.dart';
-
 import 'package:sport_connect/core/services/talker_service.dart';
 
 part 'support_repository.g.dart';
@@ -65,7 +64,7 @@ class SupportRepository {
 
       TalkerService.info('Report submitted: ${docRef.id}');
       return docRef.id;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('Error submitting report: $e');
       rethrow;
     }
@@ -108,7 +107,7 @@ class SupportRepository {
 
       TalkerService.info('Support ticket submitted: ${docRef.id}');
       return docRef.id;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('Error submitting support ticket: $e');
       rethrow;
     }

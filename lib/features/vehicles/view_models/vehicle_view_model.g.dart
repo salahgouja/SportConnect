@@ -47,7 +47,7 @@ final class VehicleViewModelProvider
   }
 }
 
-String _$vehicleViewModelHash() => r'f475fb344047a91e61fdbd12ee5ddc21638eeef8';
+String _$vehicleViewModelHash() => r'c5646056203f7bda986c2258435584d72cec2a71';
 
 /// ViewModel for vehicle-related operations
 /// Manages vehicle CRUD operations, active vehicle selection, and verification

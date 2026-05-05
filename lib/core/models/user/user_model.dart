@@ -116,6 +116,7 @@ sealed class UserModel with _$UserModel {
     @Default(false) bool isEmailVerified,
     @Default(false) bool isBanned,
     @Default('') String fcmToken,
+    String? selectedRoleIntent,
     @TimestampConverter() DateTime? createdAt,
     @TimestampConverter() DateTime? updatedAt,
   }) = PendingUserModel;

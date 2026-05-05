@@ -209,8 +209,7 @@ class PaymentViewModel extends _$PaymentViewModel {
         riderName: riderName,
         driverId: ride.driverId,
         driverName: driverName,
-        amountInCents:
-            ride.pricing.pricePerSeatInCents.amountInCents * seatsBooked,
+        amountInCents: ride.pricing.pricePerSeatInCents * seatsBooked,
         currency: currency,
         customerId: customerId,
         driverStripeAccountId: driverStripeAccountId,
@@ -248,7 +247,7 @@ class PaymentViewModel extends _$PaymentViewModel {
       } else {
         throw Exception('Payment cancelled by user');
       }
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('Error processing payment: $e');
 
       // Check if provider is still mounted before setting error state
@@ -277,7 +276,7 @@ class PaymentViewModel extends _$PaymentViewModel {
         existingCustomerId: existingCustomerId,
       );
       return result['customerId'] as String;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('Error getting/creating customer: $e');
       rethrow;
     }
@@ -303,7 +302,7 @@ class PaymentViewModel extends _$PaymentViewModel {
       if (!ref.mounted) return;
 
       state = const AsyncValue.data(null);
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('Error processing refund: $e');
 
       // Check if provider is still mounted before setting error state
@@ -341,7 +340,7 @@ class DriverOnboardingViewModel extends _$DriverOnboardingViewModel {
 
       state = const AsyncValue.data(null);
       return account;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('Error creating connected account: $e');
       if (ref.mounted) {
         state = AsyncValue.error(e, st);
@@ -367,7 +366,7 @@ class DriverStripeOnboardingFlowViewModel
       if (status.isConnected) {
         state = state.copyWith(isConnected: true, clearError: true);
       }
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('Error checking existing Stripe account: $e');
     }
   }
@@ -456,7 +455,10 @@ class DriverStripeOnboardingFlowViewModel
       if (!ref.mounted) return;
       final url = result['url'] as String?;
       if (url == null || url.isEmpty) {
-        state = state.copyWith(isLoading: false, errorMessage: 'Failed to refresh onboarding link.');
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: 'Failed to refresh onboarding link.',
+        );
         return;
       }
       state = state.copyWith(isLoading: false, onboardingUrl: url);
@@ -535,7 +537,7 @@ class DriverStripeOnboardingFlowViewModel
         webViewProgress: 0,
         clearOnboardingUrl: true,
       );
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error(
         'Stripe onboarding verification failed: $e',
         e,
@@ -606,7 +608,7 @@ class DriverConnectedAccountViewModel
     try {
       // Refresh from Firestore (webhooks keep it updated)
       ref.invalidateSelf();
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('Error refreshing account status: $e');
       rethrow;
     }
@@ -679,7 +681,7 @@ class DriverPayoutViewModel extends _$DriverPayoutViewModel {
 
       state = const AsyncValue.data(null);
       return true;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('Error requesting payout: $e');
       if (ref.mounted) {
         state = AsyncValue.error(e, st);
@@ -704,7 +706,7 @@ class DriverPayoutViewModel extends _$DriverPayoutViewModel {
       if (!ref.mounted) return true;
       state = const AsyncValue.data(null);
       return true;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('Error cancelling payout: $e');
       if (ref.mounted) {
         state = AsyncValue.error(e, st);
@@ -835,7 +837,7 @@ Future<DriverStripeStatus> driverStripeStatus(Ref ref) async {
         stripeAccountId: accountId,
       );
     }
-  } catch (e, st) {
+  } on Exception catch (e, st) {
     TalkerService.error('Error loading driverStripeStatus: $e', e, st);
     return const DriverStripeStatus();
   }

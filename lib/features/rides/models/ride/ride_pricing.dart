@@ -1,5 +1,4 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:sport_connect/core/models/value_objects/money.dart';
 
 part 'ride_pricing.freezed.dart';
 part 'ride_pricing.g.dart';
@@ -8,7 +7,7 @@ part 'ride_pricing.g.dart';
 @freezed
 abstract class RidePricing with _$RidePricing {
   const factory RidePricing({
-    required Money pricePerSeatInCents,
+    required int pricePerSeatInCents,
   }) = _RidePricing;
   const RidePricing._();
 
@@ -16,8 +15,9 @@ abstract class RidePricing with _$RidePricing {
       _$RidePricingFromJson(json);
 
   /// Get formatted price
-  String get formattedPrice => pricePerSeatInCents.formatted;
+  String get formattedPrice =>
+      '€${(pricePerSeatInCents / 100).toStringAsFixed(2)}';
 
   /// Calculate total price for seats
-  Money totalForSeats(int seats) => pricePerSeatInCents * seats;
+  int totalForSeats(int seats) => pricePerSeatInCents * seats;
 }

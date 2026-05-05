@@ -165,7 +165,7 @@ class OnboardingViewModel extends _$OnboardingViewModel {
         isLoading: false,
         completedAction: OnboardingAction.riderDone,
       );
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
@@ -190,7 +190,7 @@ class OnboardingViewModel extends _$OnboardingViewModel {
         isLoading: false,
         completedAction: OnboardingAction.profileSaved,
       );
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
@@ -212,7 +212,7 @@ class OnboardingViewModel extends _$OnboardingViewModel {
         isLoading: false,
         completedAction: OnboardingAction.vehicleSaved,
       );
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }

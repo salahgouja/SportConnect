@@ -70,10 +70,6 @@ final _driverProfileNavigatorKey = GlobalKey<NavigatorState>(
   debugLabel: 'driverProfileNavigatorKey',
 );
 
-const _enableRouterDiagnostics = bool.fromEnvironment(
-  'SPORT_CONNECT_DEBUG_INSTRUMENTATION',
-);
-
 /// Main router provider with centralized redirect logic.
 @Riverpod(keepAlive: true)
 GoRouter appRouter(Ref ref) {
@@ -83,43 +79,33 @@ GoRouter appRouter(Ref ref) {
   final analyticsService = ref.read(firebaseServiceProvider);
   final routerListenable = _AuthChangeNotifier();
 
-  ref.listen(currentUserProvider, (previous, next) {
-    if (_routeUserStateKey(previous) != _routeUserStateKey(next)) {
+  ref
+    ..listen(currentUserProvider, (previous, next) {
+      if (_routeUserStateKey(previous) != _routeUserStateKey(next)) {
+        routerListenable.notify();
+      }
+    })
+    ..listen(currentDriverConnectedAccountProvider, (previous, next) {
+      if (_routeConnectedAccountStateKey(previous) !=
+          _routeConnectedAccountStateKey(next)) {
+        routerListenable.notify();
+      }
+    })
+    ..listen(selectedRoleIntentProvider, (previous, next) {
+      if (previous != next) routerListenable.notify();
+    })
+    ..listen(authStateProvider, (previous, next) {
       routerListenable.notify();
-    }
-  });
-
-  ref.listen(currentDriverConnectedAccountProvider, (previous, next) {
-    if (_routeConnectedAccountStateKey(previous) !=
-        _routeConnectedAccountStateKey(next)) {
+    })
+    ..listen(isOnboardingCompleteProvider, (previous, next) {
       routerListenable.notify();
-    }
-  });
-
-  ref.listen(selectedRoleIntentProvider, (previous, next) {
-    if (_routeRoleIntentStateKey(previous) != _routeRoleIntentStateKey(next)) {
-      routerListenable.notify();
-    }
-  });
-
-  // Also listen to raw Firebase Auth state so email-verification changes
-  // (which don't affect the Firestore UserModel) still trigger a redirect.
-  ref.listen(authStateProvider, (previous, next) {
-    routerListenable.notify();
-  });
-
-  // Listen to onboarding completion so splash redirect can switch between
-  // onboarding and login without recreating the router.
-  ref.listen(isOnboardingCompleteProvider, (previous, next) {
-    routerListenable.notify();
-  });
-
-  ref.onDispose(routerListenable.dispose);
+    })
+    ..onDispose(routerListenable.dispose);
 
   return GoRouter(
     navigatorKey: rootNavigatorKey,
     initialLocation: AppRoutes.splash.path,
-    debugLogDiagnostics: kDebugMode && _enableRouterDiagnostics,
+    debugLogDiagnostics: kDebugMode,
     refreshListenable: routerListenable,
     requestFocus: false,
     observers: [
@@ -142,7 +128,7 @@ GoRouter appRouter(Ref ref) {
 
       final needsRoleSelection = userState.value?.role == UserRole.pending;
       final selectedRoleIntent = needsRoleSelection
-          ? ref.read(selectedRoleIntentProvider).value
+          ? ref.read(selectedRoleIntentProvider)
           : null;
 
       return _handleRedirect(
@@ -445,12 +431,6 @@ String _routeConnectedAccountStateKey(
     account.onboardingCompleted,
     account.capabilities.transfers.name,
   ].join(':');
-}
-
-String _routeRoleIntentStateKey(AsyncValue<UserRole?>? state) {
-  if (state == null) return 'none';
-
-  return '${state.isLoading}:${state.hasError}:${state.value?.name ?? 'null'}';
 }
 
 String _routeUserKey(UserModel? user) {

@@ -62,7 +62,16 @@ class FirebaseService {
     return FirebaseAnalyticsObserver(analytics: analytics);
   }
 
-  Future<FirebaseService> initialize() async {
+  /// Fast initialization — safe to call before `runApp`.
+  ///
+  /// Only performs synchronous / near-instant work so the native launch screen
+  /// is dismissed as quickly as possible:
+  /// - Firebase core init (reads local GoogleService-Info.plist / google-services.json)
+  /// - Firestore offline cache settings (local, no network)
+  ///
+  /// Network-dependent work (App Check token fetch, Crashlytics toggle) lives
+  /// in [activateAppCheck] and is deferred to after the first Flutter frame.
+  Future<FirebaseService> initializeCore() async {
     if (_initialized) return this;
 
     try {
@@ -73,16 +82,6 @@ class FirebaseService {
       // RTDB offline persistence is intentionally disabled — live location data
       // is inherently online-only; caching stale GPS coordinates has no value.
       // Firestore persistence (100 MB, below) covers all durable offline state.
-
-      await FirebaseAppCheck.instance.activate(
-        providerAndroid: kDebugMode
-            ? const AndroidDebugProvider()
-            : const AndroidPlayIntegrityProvider(),
-        providerApple: kDebugMode
-            ? const AppleDebugProvider()
-            : const AppleDeviceCheckProvider(),
-      );
-
       firestore.settings = const Settings(
         persistenceEnabled: true,
         cacheSizeBytes: 100 * 1024 * 1024,
@@ -92,20 +91,56 @@ class FirebaseService {
         await connectToEmulators();
       }
 
-      await crashlytics.setCrashlyticsCollectionEnabled(!kDebugMode);
+      // Crashlytics collection toggle is deferred to activateAppCheck() to
+      // keep initializeCore() purely local and free of async I/O.
 
       _initialized = true;
 
-      TalkerService.info('Firebase initialized successfully');
+      TalkerService.info('Firebase core initialized successfully');
       TalkerService.info('Environment: ${AppConfig.environmentStatus}');
-      TalkerService.info('✅ Analytics & Crashlytics initialized');
 
       return this;
-    } catch (e, st) {
-      TalkerService.error('Firebase initialization failed', e, st);
+    } on Exception catch (e, st) {
+      TalkerService.error('Firebase core initialization failed', e, st);
       rethrow;
     }
   }
+
+  /// Activates Firebase App Check and finalises Crashlytics — deferred to
+  /// after the first frame.
+  ///
+  /// On production iOS, App Check calls Apple's DeviceCheck network API which
+  /// can take 1–3 s. Running it after `runApp` keeps the native launch screen
+  /// short and prevents App Store "stalled on launch" rejections.
+  ///
+  /// Crashlytics collection toggle is also done here because its iOS
+  /// implementation may perform async disk I/O.
+  Future<void> activateAppCheck() async {
+    try {
+      await crashlytics.setCrashlyticsCollectionEnabled(!kDebugMode);
+      TalkerService.info('✅ Crashlytics collection configured');
+    } on Exception catch (e, st) {
+      TalkerService.error('Crashlytics configuration failed', e, st);
+    }
+
+    try {
+      await FirebaseAppCheck.instance.activate(
+        providerAndroid: kDebugMode
+            ? const AndroidDebugProvider()
+            : const AndroidPlayIntegrityProvider(),
+        providerApple: kDebugMode
+            ? const AppleDebugProvider()
+            : const AppleDeviceCheckProvider(),
+      );
+
+      TalkerService.info('✅ App Check activated');
+    } on Exception catch (e, st) {
+      TalkerService.error('App Check activation failed', e, st);
+    }
+  }
+
+  /// Legacy helper kept for call-sites that may still reference it.
+  Future<FirebaseService> initialize() => initializeCore();
 
   Future<void> connectToEmulators() async {
     final host = AppConfig.emulatorHost;
@@ -158,7 +193,7 @@ class FirebaseService {
       );
 
       TalkerService.info('🔧 Firebase emulators connected successfully');
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('Failed to connect to Firebase emulators', e, st);
       TalkerService.warning(
         'Emulator connection failed on host $host. Ensure Firebase emulators '

@@ -25,8 +25,8 @@ class NominatimClient {
         'addressdetails': addressDetails,
         'limit': limit,
         'accept-language': acceptLanguage,
-        if (latitude != null) 'lat': latitude,
-        if (longitude != null) 'lon': longitude,
+        'lat': ?latitude,
+        'lon': ?longitude,
         if (countryCode != null && countryCode.isNotEmpty)
           'countrycodes': countryCode,
       },
@@ -38,8 +38,8 @@ class NominatimClient {
     );
 
     return (response.data ?? const [])
-        .whereType<Map>()
-        .map((item) => Map<String, dynamic>.from(item))
+        .whereType<Map<String, dynamic>>()
+        .map(Map<String, dynamic>.from)
         .toList();
   }
 

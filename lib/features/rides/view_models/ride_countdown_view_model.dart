@@ -97,7 +97,7 @@ class RideCountdownUiViewModel extends _$RideCountdownUiViewModel {
         osrmRouteRideId: ride.id,
         isLoadingOsrmRoute: false,
       );
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!ref.mounted) return;
 
       state = state.copyWith(isLoadingOsrmRoute: false);

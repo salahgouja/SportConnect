@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
-import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,7 +9,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
-import 'package:reactive_forms/reactive_forms.dart';
 import 'package:sport_connect/core/models/location/location_point.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
@@ -20,10 +18,9 @@ import 'package:sport_connect/features/events/models/event_model.dart';
 import 'package:sport_connect/features/events/view_models/event_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
-/// Full-screen event editing form — pre-populated from an existing event.
+/// Full-screen event editing form.
 ///
-/// Expects an [EventModel] passed via GoRouter `extra`.
-/// On success, pops with the updated [EventModel].
+/// Loads the event by [eventId]. On success, pops with the updated [EventModel].
 class EditEventScreen extends ConsumerStatefulWidget {
   const EditEventScreen({required this.eventId, super.key});
 
@@ -34,95 +31,55 @@ class EditEventScreen extends ConsumerStatefulWidget {
 }
 
 class _EditEventScreenState extends ConsumerState<EditEventScreen> {
-  late final FormGroup _form;
+  late final TextEditingController _titleController;
+  late final TextEditingController _descriptionController;
 
-  final _dateFmt = DateFormat('EEE, MMM d, yyyy');
-  final _timeFmt = DateFormat('h:mm a');
+  final DateFormat _dateFormat = DateFormat('EEE, MMM d, yyyy');
+  final DateFormat _timeFormat = DateFormat('h:mm a');
 
-  EditEventFormState get _formState =>
-      ref.watch(editEventFormViewModelProvider(widget.eventId));
+  bool _isSyncingTextControllers = false;
 
-  EditEventFormViewModel get _formNotifier =>
+  EditEventFormViewModel get _editForm =>
       ref.read(editEventFormViewModelProvider(widget.eventId).notifier);
 
   @override
   void initState() {
     super.initState();
-    _form = FormGroup({
-      'title': FormControl<String>(
-        value: '',
-        validators: [Validators.required, Validators.minLength(3)],
-      ),
-      'description': FormControl<String>(
-        value: '',
-      ),
-    });
-    _formNotifier.initFromEventId(widget.eventId);
+
+    _titleController = TextEditingController();
+    _descriptionController = TextEditingController();
+
+    _titleController.addListener(_onTitleChanged);
+    _descriptionController.addListener(_onDescriptionChanged);
   }
 
   @override
   void dispose() {
-    _form.dispose();
+    _titleController
+      ..removeListener(_onTitleChanged)
+      ..dispose();
+    _descriptionController
+      ..removeListener(_onDescriptionChanged)
+      ..dispose();
     super.dispose();
   }
 
-  // ═══════════════════════════════════════════════════════════
-  // BUILD
-  // ═══════════════════════════════════════════════════════════
   @override
   Widget build(BuildContext context) {
-    final detailState = ref.watch(
+    final eventActions = ref.watch(
       eventDetailViewModelProvider(widget.eventId),
     );
-    final formState = _formState;
+    final editState = ref.watch(editEventFormViewModelProvider(widget.eventId));
 
-    ref.listen(eventDetailViewModelProvider(widget.eventId), (previous, next) {
-      if (next.error != null &&
-          next.error != previous?.error &&
-          context.mounted) {
-        AdaptiveSnackBar.show(
-          context,
-          message: _localizedEventError(next.error!),
-          type: AdaptiveSnackBarType.error,
-        );
-      }
-    });
-
-    ref.listen(editEventFormViewModelProvider(widget.eventId), (
-      previous,
-      next,
-    ) {
-      if (next.error != null &&
-          next.error != previous?.error &&
-          context.mounted) {
-        AdaptiveSnackBar.show(
-          context,
-          message: _localizedEventError(next.error!),
-          type: AdaptiveSnackBarType.error,
-        );
-      }
-      if (next.isSaved && previous?.isSaved != true && context.mounted) {
-        final event = ref.read(eventByIdProvider(widget.eventId)).value;
-        final updated = event?.copyWith(
-          title: next.title.trim(),
-          type: next.type,
-          location: next.location!,
-          startsAt: next.startsAt!,
-          endsAt: next.endsAt,
-          description: next.description.trim().isEmpty
-              ? null
-              : next.description.trim(),
-          imageUrl: next.removeExistingImage ? null : next.existingImageUrl,
-          maxParticipants: next.maxParticipants,
-          isRecurring: next.isRecurring,
-          recurringPattern: next.recurringPattern,
-          recurringEndDate: next.recurringEndDate,
-          costSplitEnabled: next.costSplitEnabled,
-          updatedAt: DateTime.now(),
-        );
-        context.pop(updated);
-      }
-    });
+    ref
+      ..listen(
+        eventDetailViewModelProvider(widget.eventId),
+        _onEventActionStateChanged,
+      )
+      ..listen(
+        editEventFormViewModelProvider(widget.eventId),
+        _onEditStateChanged,
+      );
 
     return AdaptiveScaffold(
       appBar: AdaptiveAppBar(
@@ -136,64 +93,137 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
         ),
         title: AppLocalizations.of(context).editEventTitle,
       ),
-      body: ReactiveForm(
-        formGroup: _form,
-        child: ListView(
-          padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 32.h),
-          children: [
-            _buildSportTypeSelector(),
-            SizedBox(height: 20.h),
-            _buildTitleField(),
-            SizedBox(height: 14.h),
-            _buildDescriptionField(),
-            SizedBox(height: 20.h),
-            _buildImagePicker(),
-            SizedBox(height: 20.h),
-            _buildLocationPicker(),
-            SizedBox(height: 20.h),
-            _buildWhenSection(),
-            SizedBox(height: 20.h),
-            _buildParticipantSlider(),
-            SizedBox(height: 20.h),
-            _buildRecurringToggle(),
-            SizedBox(height: 20.h),
-            _buildCostSplitToggle(),
-            SizedBox(height: 32.h),
-            _buildSubmitButton(detailState.isLoading || formState.isSubmitting),
-          ],
-        ),
-      ),
+      body: _buildBody(editState, eventActions),
     );
   }
 
-  // ── Sport type ─────────────────────────────────────────────
-  Widget _buildSportTypeSelector() {
+  void _onEventActionStateChanged(
+    EventDetailState? previous,
+    EventDetailState next,
+  ) {
+    _showNewError(previous?.error, next.error);
+  }
+
+  void _onEditStateChanged(
+    EditEventFormState? previous,
+    EditEventFormState next,
+  ) {
+    if (next.isLoaded && previous?.isLoaded != true) {
+      _syncTextControllers(next);
+    }
+
+    _showNewError(previous?.error, next.error);
+
+    final savedEvent = next.savedEvent;
+    if (savedEvent != null && previous?.savedEvent == null && context.mounted) {
+      context.pop(savedEvent);
+    }
+  }
+
+  void _showNewError(String? previousError, String? nextError) {
+    if (nextError == null || nextError == previousError || !context.mounted) {
+      return;
+    }
+
+    AdaptiveSnackBar.show(
+      context,
+      message: _localizedEventError(nextError),
+      type: AdaptiveSnackBarType.error,
+    );
+  }
+
+  void _syncTextControllers(EditEventFormState state) {
+    _isSyncingTextControllers = true;
+    _titleController.text = state.title;
+    _descriptionController.text = state.description;
+    _isSyncingTextControllers = false;
+  }
+
+  void _onTitleChanged() {
+    if (_isSyncingTextControllers) return;
+    _editForm.setTitle(_titleController.text);
+  }
+
+  void _onDescriptionChanged() {
+    if (_isSyncingTextControllers) return;
+    _editForm.setDescription(_descriptionController.text);
+  }
+
+  Widget _buildBody(
+    EditEventFormState editState,
+    EventDetailState eventActions,
+  ) {
+    if (editState.isLoading) {
+      return const Center(child: CircularProgressIndicator.adaptive());
+    }
+
+    if (!editState.isLoaded) {
+      return Center(
+        child: Padding(
+          padding: EdgeInsets.all(24.r),
+          child: Text(
+            AppLocalizations.of(context).eventUnableToLoadOriginal,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 14.sp,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return ListView(
+      padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 32.h),
+      children: [
+        _buildSportTypeSelector(editState),
+        SizedBox(height: 20.h),
+        _buildTitleField(editState),
+        SizedBox(height: 14.h),
+        _buildDescriptionField(),
+        SizedBox(height: 20.h),
+        _buildImagePicker(editState),
+        SizedBox(height: 20.h),
+        _buildLocationPicker(editState),
+        SizedBox(height: 20.h),
+        _buildWhenSection(editState),
+        SizedBox(height: 20.h),
+        _buildParticipantSlider(editState),
+        SizedBox(height: 20.h),
+        _buildRecurringSection(editState),
+        SizedBox(height: 32.h),
+        _buildSubmitButton(eventActions.isLoading || editState.isSubmitting),
+      ],
+    );
+  }
+
+  Widget _buildSportTypeSelector(EditEventFormState state) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _label(AppLocalizations.of(context).eventSportType),
+        _sectionLabel(AppLocalizations.of(context).eventSportType),
         SizedBox(height: 8.h),
         Wrap(
           spacing: 8.w,
           runSpacing: 8.h,
           children: EventType.values.map((type) {
-            final active = _formState.type == type;
+            final isSelected = state.type == type;
             return GestureDetector(
               onTap: () {
                 HapticFeedback.selectionClick();
-                _formNotifier.setType(type);
+                _editForm.setType(type);
               },
               child: AnimatedContainer(
                 duration: 150.ms,
                 padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
                 decoration: BoxDecoration(
-                  color: active
+                  color: isSelected
                       ? type.color.withValues(alpha: 0.13)
                       : AppColors.surface,
                   borderRadius: BorderRadius.circular(10.r),
                   border: Border.all(
-                    color: active ? type.color : AppColors.border,
-                    width: active ? 1.5 : 1,
+                    color: isSelected ? type.color : AppColors.border,
+                    width: isSelected ? 1.5 : 1,
                   ),
                 ),
                 child: Row(
@@ -205,8 +235,12 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
                       type.label,
                       style: TextStyle(
                         fontSize: 12.sp,
-                        fontWeight: active ? FontWeight.w700 : FontWeight.w500,
-                        color: active ? type.color : AppColors.textSecondary,
+                        fontWeight: isSelected
+                            ? FontWeight.w700
+                            : FontWeight.w500,
+                        color: isSelected
+                            ? type.color
+                            : AppColors.textSecondary,
                       ),
                     ),
                   ],
@@ -219,53 +253,45 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
     ).animate().fadeIn(duration: 250.ms);
   }
 
-  // ── Fields ─────────────────────────────────────────────────
-  Widget _buildTitleField() {
-    return ReactiveTextField<String>(
-      formControlName: 'title',
+  Widget _buildTitleField(EditEventFormState state) {
+    final l10n = AppLocalizations.of(context);
+
+    return TextField(
+      controller: _titleController,
       maxLength: 100,
       textCapitalization: TextCapitalization.words,
-      decoration: _deco(
-        AppLocalizations.of(context).eventTitleField,
+      decoration: _fieldDecoration(
+        l10n.eventTitleField,
         Icons.title_rounded,
+        errorText: _titleErrorText(state),
       ),
-      onChanged: (control) => _formNotifier.setTitle(control.value ?? ''),
-      validationMessages: {
-        ValidationMessage.required: (_) =>
-            AppLocalizations.of(context).eventTitleRequired,
-        ValidationMessage.minLength: (_) =>
-            AppLocalizations.of(context).eventTitleMinLength,
-      },
     ).animate().fadeIn(duration: 250.ms, delay: 60.ms);
   }
 
   Widget _buildDescriptionField() {
-    return ReactiveTextField<String>(
-      formControlName: 'description',
+    final l10n = AppLocalizations.of(context);
+
+    return TextField(
+      controller: _descriptionController,
       maxLines: 3,
       minLines: 2,
       maxLength: 500,
       textCapitalization: TextCapitalization.sentences,
-      onChanged: (control) => _formNotifier.setDescription(control.value ?? ''),
-      decoration: _deco(
-        AppLocalizations.of(context).eventDescriptionField,
+      decoration: _fieldDecoration(
+        l10n.eventDescriptionField,
         Icons.notes_rounded,
       ),
     ).animate().fadeIn(duration: 250.ms, delay: 140.ms);
   }
 
-  // ── Cover Image ──────────────────────────────────────────────
-  Widget _buildImagePicker() {
-    final existingUrl = _formState.removeExistingImage
-        ? null
-        : _formState.existingImageUrl;
-    final hasImage =
-        _formState.imageFile != null || (existingUrl?.isNotEmpty ?? false);
+  Widget _buildImagePicker(EditEventFormState state) {
+    final existingImageUrl = state.visibleImageUrl;
+    final hasImage = state.imageFile != null || existingImageUrl != null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _label(AppLocalizations.of(context).eventCoverImage),
+        _sectionLabel(AppLocalizations.of(context).eventCoverImage),
         SizedBox(height: 8.h),
         GestureDetector(
           onTap: _pickImage,
@@ -278,81 +304,80 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
               border: Border.all(
                 color: AppColors.primary.withValues(alpha: 0.15),
               ),
-              image: _formState.imageFile != null
-                  ? DecorationImage(
-                      image: FileImage(_formState.imageFile!),
-                      fit: BoxFit.cover,
-                    )
-                  : existingUrl != null && existingUrl.isNotEmpty
-                  ? DecorationImage(
-                      image: NetworkImage(existingUrl),
-                      fit: BoxFit.cover,
-                    )
-                  : null,
+              image: _imageDecoration(state.imageFile, existingImageUrl),
             ),
-            child: hasImage
-                ? Align(
-                    alignment: Alignment.topRight,
-                    child: Padding(
-                      padding: EdgeInsets.all(8.r),
-                      child: CircleAvatar(
-                        radius: 16.r,
-                        backgroundColor: Colors.black54,
-                        child: IconButton(
-                          icon: Icon(
-                            Icons.close,
-                            size: 16.sp,
-                            color: Colors.white,
-                          ),
-                          padding: EdgeInsets.zero,
-                          onPressed: _formNotifier.clearSelectedImage,
-                        ),
-                      ),
-                    ),
-                  )
-                : Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.add_photo_alternate_outlined,
-                        size: 36.sp,
-                        color: AppColors.textSecondary,
-                      ),
-                      SizedBox(height: 8.h),
-                      Text(
-                        AppLocalizations.of(context).eventTapToAddPhoto,
-                        style: TextStyle(
-                          fontSize: 13.sp,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
+            child: hasImage ? _buildRemoveImageButton() : _buildAddImageHint(),
           ),
         ),
       ],
     ).animate().fadeIn(duration: 250.ms, delay: 160.ms);
   }
 
+  DecorationImage? _imageDecoration(File? imageFile, String? imageUrl) {
+    if (imageFile != null) {
+      return DecorationImage(image: FileImage(imageFile), fit: BoxFit.cover);
+    }
+    if (imageUrl != null && imageUrl.isNotEmpty) {
+      return DecorationImage(image: NetworkImage(imageUrl), fit: BoxFit.cover);
+    }
+    return null;
+  }
+
+  Widget _buildRemoveImageButton() {
+    return Align(
+      alignment: Alignment.topRight,
+      child: Padding(
+        padding: EdgeInsets.all(8.r),
+        child: CircleAvatar(
+          radius: 16.r,
+          backgroundColor: Colors.black54,
+          child: IconButton(
+            icon: Icon(Icons.close, size: 16.sp, color: Colors.white),
+            padding: EdgeInsets.zero,
+            onPressed: _editForm.clearSelectedImage,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAddImageHint() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(
+          Icons.add_photo_alternate_outlined,
+          size: 36.sp,
+          color: AppColors.textSecondary,
+        ),
+        SizedBox(height: 8.h),
+        Text(
+          AppLocalizations.of(context).eventTapToAddPhoto,
+          style: TextStyle(fontSize: 13.sp, color: AppColors.textSecondary),
+        ),
+      ],
+    );
+  }
+
   Future<void> _pickImage() async {
-    final picker = ImagePicker();
-    final image = await picker.pickImage(
+    final image = await ImagePicker().pickImage(
       source: ImageSource.gallery,
       maxWidth: 1200,
       maxHeight: 800,
       imageQuality: 85,
     );
-    if (image != null) {
-      _formNotifier.setImageFile(File(image.path));
-    }
+
+    if (image == null || !mounted) return;
+    _editForm.setImageFile(File(image.path));
   }
 
-  // ── Location ───────────────────────────────────────────────
-  Widget _buildLocationPicker() {
+  Widget _buildLocationPicker(EditEventFormState state) {
+    final hasLocation = state.location != null;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _label(AppLocalizations.of(context).eventLocationField),
+        _sectionLabel(AppLocalizations.of(context).eventLocationField),
         SizedBox(height: 8.h),
         GestureDetector(
           onTap: _pickLocation,
@@ -362,30 +387,28 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
               color: AppColors.surface,
               borderRadius: BorderRadius.circular(14.r),
               border: Border.all(
-                color: _formState.location != null
-                    ? AppColors.success
-                    : AppColors.border,
+                color: hasLocation ? AppColors.success : AppColors.border,
               ),
             ),
             child: Row(
               children: [
                 Icon(
-                  _formState.location != null
+                  hasLocation
                       ? Icons.check_circle_rounded
                       : Icons.location_on_outlined,
                   size: 20.sp,
-                  color: _formState.location != null
+                  color: hasLocation
                       ? AppColors.success
                       : AppColors.textTertiary,
                 ),
                 SizedBox(width: 12.w),
                 Expanded(
                   child: Text(
-                    _formState.location?.address ??
+                    state.location?.address ??
                         AppLocalizations.of(context).eventTapToPickLocation,
                     style: TextStyle(
                       fontSize: 14.sp,
-                      color: _formState.location != null
+                      color: hasLocation
                           ? AppColors.textPrimary
                           : AppColors.textTertiary,
                     ),
@@ -411,46 +434,46 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
       context,
       title: AppLocalizations.of(context).eventLocationTitle,
     );
-    if (result != null && context.mounted) {
-      _formNotifier.setLocation(
-        LocationPoint(
-          latitude: result.location.latitude,
-          longitude: result.location.longitude,
-          address: result.address,
-        ),
-      );
-    }
+
+    if (result == null || !mounted) return;
+    _editForm.setLocation(
+      LocationPoint(
+        latitude: result.location.latitude,
+        longitude: result.location.longitude,
+        address: result.address,
+      ),
+    );
   }
 
-  // ── When ───────────────────────────────────────────────────
-  Widget _buildWhenSection() {
+  Widget _buildWhenSection(EditEventFormState state) {
+    final startsAt = state.startsAt!;
+    final endsAt = state.endsAt;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _label(
+        _sectionLabel(
           AppLocalizations.of(context).eventWhenField.replaceAll(' *', ''),
         ),
         SizedBox(height: 8.h),
-        // Start date + time
         Row(
           children: [
             Expanded(
               child: _DateTimeChip(
                 icon: Icons.calendar_today_rounded,
-                label: _dateFmt.format(_formState.startsAt!),
-                onTap: () => _pickDate(isStart: true),
+                label: _dateFormat.format(startsAt),
+                onTap: () => _pickDate(state, isStart: true),
               ),
             ),
             SizedBox(width: 8.w),
             _DateTimeChip(
               icon: Icons.access_time_rounded,
-              label: _timeFmt.format(_formState.startsAt!),
-              onTap: () => _pickTime(isStart: true),
+              label: _timeFormat.format(startsAt),
+              onTap: () => _pickTime(state, isStart: true),
             ),
           ],
         ),
         SizedBox(height: 8.h),
-        // End time (optional)
         Row(
           children: [
             Text(
@@ -459,39 +482,9 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
             ),
             SizedBox(width: 8.w),
             Expanded(
-              child: _formState.endsAt != null
-                  ? GestureDetector(
-                      onTap: () => _pickTime(isStart: false),
-                      child: Row(
-                        children: [
-                          _DateTimeChip(
-                            icon: Icons.access_time_rounded,
-                            label: _timeFmt.format(_formState.endsAt!),
-                            onTap: () => _pickTime(isStart: false),
-                          ),
-                          SizedBox(width: 6.w),
-                          GestureDetector(
-                            onTap: () => _formNotifier.setEndsAt(null),
-                            child: Icon(
-                              Icons.close_rounded,
-                              size: 18.sp,
-                              color: AppColors.textTertiary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  : GestureDetector(
-                      onTap: () => _pickTime(isStart: false),
-                      child: Text(
-                        AppLocalizations.of(context).eventAddEndTime,
-                        style: TextStyle(
-                          fontSize: 13.sp,
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
+              child: endsAt == null
+                  ? _buildAddEndTimeButton(state)
+                  : _buildEndDateTimeControls(state, endsAt),
             ),
           ],
         ),
@@ -499,19 +492,61 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
     ).animate().fadeIn(duration: 250.ms, delay: 220.ms);
   }
 
-  // ── Participant slider ─────────────────────────────────────
-  Widget _buildParticipantSlider() {
+  Widget _buildAddEndTimeButton(EditEventFormState state) {
+    return GestureDetector(
+      onTap: () => _pickTime(state, isStart: false),
+      child: Text(
+        AppLocalizations.of(context).eventAddEndTime,
+        style: TextStyle(
+          fontSize: 13.sp,
+          color: AppColors.primary,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEndDateTimeControls(EditEventFormState state, DateTime endsAt) {
+    return Row(
+      children: [
+        Flexible(
+          child: _DateTimeChip(
+            icon: Icons.calendar_today_rounded,
+            label: _dateFormat.format(endsAt),
+            onTap: () => _pickDate(state, isStart: false),
+          ),
+        ),
+        SizedBox(width: 6.w),
+        _DateTimeChip(
+          icon: Icons.access_time_rounded,
+          label: _timeFormat.format(endsAt),
+          onTap: () => _pickTime(state, isStart: false),
+        ),
+        SizedBox(width: 6.w),
+        GestureDetector(
+          onTap: () => _editForm.setEndsAt(null),
+          child: Icon(
+            Icons.close_rounded,
+            size: 18.sp,
+            color: AppColors.textTertiary,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildParticipantSlider(EditEventFormState state) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            _label(AppLocalizations.of(context).eventMaxParticipants),
+            _sectionLabel(AppLocalizations.of(context).eventMaxParticipants),
             const Spacer(),
             Text(
-              _formState.maxParticipants == 0
+              state.maxParticipants == 0
                   ? AppLocalizations.of(context).eventUnlimited
-                  : '${_formState.maxParticipants}',
+                  : '${state.maxParticipants}',
               style: TextStyle(
                 fontSize: 14.sp,
                 fontWeight: FontWeight.w700,
@@ -521,29 +556,28 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
           ],
         ),
         AdaptiveSlider(
-          value: _formState.maxParticipants.toDouble(),
+          value: state.maxParticipants.toDouble(),
           max: 100,
           divisions: 20,
           activeColor: AppColors.primary,
-          label: _formState.maxParticipants == 0
+          label: state.maxParticipants == 0
               ? AppLocalizations.of(context).eventUnlimited
-              : '${_formState.maxParticipants}',
-          onChanged: (v) => _formNotifier.setMaxParticipants(v.round()),
+              : '${state.maxParticipants}',
+          onChanged: (value) => _editForm.setMaxParticipants(value.round()),
         ),
       ],
     ).animate().fadeIn(duration: 250.ms, delay: 260.ms);
   }
 
-  // ── Recurring Toggle + Day Selector ──────────────────────────
-  Widget _buildRecurringToggle() {
+  Widget _buildRecurringSection(EditEventFormState state) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SwitchListTile.adaptive(
-          value: _formState.isRecurring,
-          onChanged: (v) {
+          value: state.isRecurring,
+          onChanged: (value) {
             HapticFeedback.selectionClick();
-            _formNotifier.setRecurring(v);
+            _editForm.setRecurring(value);
           },
           title: Text(
             AppLocalizations.of(context).eventRecurring,
@@ -565,99 +599,105 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
           activeColor: AppColors.primary,
           contentPadding: EdgeInsets.zero,
         ),
-        if (_formState.isRecurring) ...[
+        if (state.isRecurring) ...[
           SizedBox(height: 12.h),
-          GestureDetector(
-            onTap: _showRecurrencePatternPicker,
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(12.r),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.calendar_today_rounded,
-                        size: 18.sp,
-                        color: AppColors.textTertiary,
-                      ),
-                      SizedBox(width: 10.w),
-                      Text(
-                        _formState.recurringPattern?.label ?? 'Select pattern',
-                        style: TextStyle(
-                          fontSize: 13.sp,
-                          color: _formState.recurringPattern != null
-                              ? AppColors.textPrimary
-                              : AppColors.textTertiary,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Icon(
-                    Icons.expand_more_rounded,
-                    size: 18.sp,
-                    color: AppColors.textTertiary,
-                  ),
-                ],
-              ),
-            ),
-          ),
+          _buildRecurrencePatternButton(state),
           SizedBox(height: 12.h),
-          GestureDetector(
-            onTap: _pickRecurringEndDate,
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(12.r),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.event_repeat_rounded,
-                    size: 18.sp,
-                    color: AppColors.textTertiary,
-                  ),
-                  SizedBox(width: 10.w),
-                  Text(
-                    _formState.recurringEndDate != null
-                        ? AppLocalizations.of(context).eventRepeatsUntil(
-                            DateFormat(
-                              'MMM d, y',
-                            ).format(_formState.recurringEndDate!),
-                          )
-                        : AppLocalizations.of(context).eventRepeatEndDate,
-                    style: TextStyle(
-                      fontSize: 13.sp,
-                      color: _formState.recurringEndDate != null
-                          ? AppColors.textPrimary
-                          : AppColors.textTertiary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          _buildRecurringEndDateButton(state),
         ],
       ],
     ).animate().fadeIn(duration: 250.ms, delay: 280.ms);
   }
 
+  Widget _buildRecurrencePatternButton(EditEventFormState state) {
+    return GestureDetector(
+      onTap: _showRecurrencePatternPicker,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.calendar_today_rounded,
+                  size: 18.sp,
+                  color: AppColors.textTertiary,
+                ),
+                SizedBox(width: 10.w),
+                Text(
+                  state.recurringPattern?.label ?? 'Select pattern',
+                  style: TextStyle(
+                    fontSize: 13.sp,
+                    color: state.recurringPattern != null
+                        ? AppColors.textPrimary
+                        : AppColors.textTertiary,
+                  ),
+                ),
+              ],
+            ),
+            Icon(
+              Icons.expand_more_rounded,
+              size: 18.sp,
+              color: AppColors.textTertiary,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRecurringEndDateButton(EditEventFormState state) {
+    return GestureDetector(
+      onTap: () => _pickRecurringEndDate(state),
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.event_repeat_rounded,
+              size: 18.sp,
+              color: AppColors.textTertiary,
+            ),
+            SizedBox(width: 10.w),
+            Text(
+              state.recurringEndDate != null
+                  ? AppLocalizations.of(context).eventRepeatsUntil(
+                      DateFormat('MMM d, y').format(state.recurringEndDate!),
+                    )
+                  : AppLocalizations.of(context).eventRepeatEndDate,
+              style: TextStyle(
+                fontSize: 13.sp,
+                color: state.recurringEndDate != null
+                    ? AppColors.textPrimary
+                    : AppColors.textTertiary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _showRecurrencePatternPicker() async {
-    final liveState = ref.read(editEventFormViewModelProvider(widget.eventId));
-    final patterns = liveState.applicablePatterns;
+    final state = ref.read(editEventFormViewModelProvider(widget.eventId));
+    final patterns = state.applicablePatterns;
 
     await AppModalSheet.show<void>(
       context: context,
       title: 'Repeat',
       maxHeightFactor: 0.7,
-      child: Container(
+      child: Padding(
         padding: EdgeInsets.symmetric(vertical: 16.h),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -683,62 +723,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
                 ),
               )
             else
-              ...patterns.map((pattern) {
-                final selected = liveState.recurringPattern == pattern;
-                return Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 16.w,
-                    vertical: 4.h,
-                  ),
-                  child: GestureDetector(
-                    onTap: () {
-                      _formNotifier.setRecurringPattern(pattern);
-                      Navigator.pop(context);
-                    },
-                    child: Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 12.w,
-                        vertical: 12.h,
-                      ),
-                      decoration: BoxDecoration(
-                        color: selected
-                            ? AppColors.primary.withValues(alpha: 0.1)
-                            : AppColors.surface,
-                        borderRadius: BorderRadius.circular(8.r),
-                        border: Border.all(
-                          color: selected
-                              ? AppColors.primary
-                              : AppColors.border,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            selected
-                                ? Icons.check_circle_rounded
-                                : Icons.circle_outlined,
-                            size: 20.sp,
-                            color: selected
-                                ? AppColors.primary
-                                : AppColors.textTertiary,
-                          ),
-                          SizedBox(width: 12.w),
-                          Text(
-                            pattern.label,
-                            style: TextStyle(
-                              fontSize: 13.sp,
-                              fontWeight: selected
-                                  ? FontWeight.w600
-                                  : FontWeight.w500,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              }),
+              ...patterns.map(_buildRecurrencePatternOption),
             SizedBox(height: 8.h),
           ],
         ),
@@ -746,51 +731,75 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
     );
   }
 
-  Future<void> _pickRecurringEndDate() async {
-    final now = DateTime.now();
-    final date = await showDatePicker(
-      context: context,
-      firstDate: now,
-      lastDate: now.add(const Duration(days: 365)),
-      initialDate:
-          _formState.recurringEndDate ?? now.add(const Duration(days: 30)),
-    );
-    if (date != null && context.mounted) {
-      _formNotifier.setRecurringEndDate(date);
-    }
-  }
+  Widget _buildRecurrencePatternOption(RecurrencePattern pattern) {
+    final state = ref.read(editEventFormViewModelProvider(widget.eventId));
+    final isSelected = state.recurringPattern == pattern;
 
-  // ── Cost Split Toggle ────────────────────────────────────────
-  Widget _buildCostSplitToggle() {
-    return SwitchListTile.adaptive(
-      value: _formState.costSplitEnabled,
-      onChanged: (v) {
-        HapticFeedback.selectionClick();
-        _formNotifier.setCostSplitEnabled(v);
-      },
-      title: Text(
-        AppLocalizations.of(context).eventCostSplit,
-        style: TextStyle(
-          fontSize: 14.sp,
-          fontWeight: FontWeight.w600,
-          color: AppColors.textPrimary,
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
+      child: GestureDetector(
+        onTap: () {
+          _editForm.setRecurringPattern(pattern);
+          Navigator.pop(context);
+        },
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? AppColors.primary.withValues(alpha: 0.1)
+                : AppColors.surface,
+            borderRadius: BorderRadius.circular(8.r),
+            border: Border.all(
+              color: isSelected ? AppColors.primary : AppColors.border,
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                isSelected ? Icons.check_circle_rounded : Icons.circle_outlined,
+                size: 20.sp,
+                color: isSelected ? AppColors.primary : AppColors.textTertiary,
+              ),
+              SizedBox(width: 12.w),
+              Text(
+                pattern.label,
+                style: TextStyle(
+                  fontSize: 13.sp,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-      subtitle: Text(
-        AppLocalizations.of(context).eventCostSplitSubtitle,
-        style: TextStyle(fontSize: 12.sp, color: AppColors.textSecondary),
-      ),
-      secondary: Icon(
-        Icons.payments_outlined,
-        size: 22.sp,
-        color: AppColors.primary,
-      ),
-      activeColor: AppColors.primary,
-      contentPadding: EdgeInsets.zero,
-    ).animate().fadeIn(duration: 250.ms, delay: 290.ms);
+    );
   }
 
-  // ── Submit ─────────────────────────────────────────────────
+  Future<void> _pickRecurringEndDate(EditEventFormState state) async {
+    final now = DateTime.now();
+    final firstDate = _dateOnly(state.startsAt ?? now);
+    final latestAllowed = now.add(const Duration(days: 365));
+    final lastDate = latestAllowed.isAfter(firstDate)
+        ? latestAllowed
+        : firstDate.add(const Duration(days: 365));
+    final initialDate = _clampDate(
+      state.recurringEndDate ?? firstDate.add(const Duration(days: 30)),
+      firstDate,
+      lastDate,
+    );
+
+    final picked = await showDatePicker(
+      context: context,
+      firstDate: firstDate,
+      lastDate: lastDate,
+      initialDate: initialDate,
+    );
+
+    if (picked == null || !mounted) return;
+    _editForm.setRecurringEndDate(picked);
+  }
+
   Widget _buildSubmitButton(bool isSubmitting) {
     return PremiumButton(
       text: AppLocalizations.of(context).eventSaveChanges,
@@ -802,95 +811,96 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
   }
 
   Future<void> _submit() async {
-    _form.markAllAsTouched();
-    if (!_form.valid) return;
-    if (_formState.location == null) {
-      AdaptiveSnackBar.show(
-        context,
-        message: AppLocalizations.of(context).selectLocationError,
-        type: AdaptiveSnackBarType.error,
-      );
-      return;
-    }
-    if ((_formState.startsAt ?? DateTime.now()).isBefore(DateTime.now())) {
-      AdaptiveSnackBar.show(
-        context,
-        message: AppLocalizations.of(context).eventStartTimeFuture,
-        type: AdaptiveSnackBarType.error,
-      );
-      return;
-    }
-    if (_formState.endsAt != null &&
-        !_formState.endsAt!.isAfter(_formState.startsAt!)) {
-      AdaptiveSnackBar.show(
-        context,
-        message: AppLocalizations.of(context).eventEndTimeAfterStart,
-        type: AdaptiveSnackBarType.error,
-      );
-      return;
-    }
-
-    await _formNotifier.submit();
+    FocusScope.of(context).unfocus();
+    await _editForm.submit();
   }
 
-  // ════════════════════════════════════════════════════════════
-  // HELPER PICKERS
-  // ════════════════════════════════════════════════════════════
-  Future<void> _pickDate({required bool isStart}) async {
+  Future<void> _pickDate(
+    EditEventFormState state, {
+    required bool isStart,
+  }) async {
     final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final raw = isStart
-        ? (_formState.startsAt ?? now)
-        : (_formState.endsAt ?? _formState.startsAt ?? now);
-    final initial = raw.isBefore(today) ? today : raw;
+    final currentValue = isStart
+        ? state.startsAt!
+        : (state.endsAt ?? state.startsAt!);
+    final firstDate = DateTime(2000);
+    final lastDate = now.add(const Duration(days: 365));
+    final initialDate = _clampDate(currentValue, firstDate, lastDate);
+
     final picked = await showDatePicker(
       context: context,
-      initialDate: initial,
-      firstDate: today,
-      lastDate: now.add(const Duration(days: 365)),
+      initialDate: initialDate,
+      firstDate: firstDate,
+      lastDate: lastDate,
     );
-    if (picked == null) return;
+
+    if (picked == null || !mounted) return;
+
+    final latestState = ref.read(
+      editEventFormViewModelProvider(widget.eventId),
+    );
+    final base = isStart
+        ? latestState.startsAt!
+        : (latestState.endsAt ?? latestState.startsAt!);
+    final nextValue = DateTime(
+      picked.year,
+      picked.month,
+      picked.day,
+      base.hour,
+      base.minute,
+    );
+
     if (isStart) {
-      final base = _formState.startsAt ?? now;
-      _formNotifier.setStartsAt(
-        DateTime(picked.year, picked.month, picked.day, base.hour, base.minute),
-      );
-      return;
+      _editForm.setStartsAt(nextValue);
+    } else {
+      _editForm.setEndsAt(nextValue);
     }
-    final base = _formState.endsAt ?? _formState.startsAt ?? now;
-    _formNotifier.setEndsAt(
-      DateTime(picked.year, picked.month, picked.day, base.hour, base.minute),
-    );
   }
 
-  Future<void> _pickTime({required bool isStart}) async {
-    final initial = isStart
-        ? TimeOfDay.fromDateTime(_formState.startsAt ?? DateTime.now())
-        : TimeOfDay.fromDateTime(
-            _formState.endsAt ?? _formState.startsAt ?? DateTime.now(),
-          );
-    final picked = await showTimePicker(context: context, initialTime: initial);
-    if (picked == null) return;
-    if (isStart) {
-      final base = _formState.startsAt ?? DateTime.now();
-      _formNotifier.setStartsAt(
-        DateTime(base.year, base.month, base.day, picked.hour, picked.minute),
-      );
-      return;
-    }
-    final base = _formState.endsAt ?? _formState.startsAt ?? DateTime.now();
-    _formNotifier.setEndsAt(
-      DateTime(base.year, base.month, base.day, picked.hour, picked.minute),
+  Future<void> _pickTime(
+    EditEventFormState state, {
+    required bool isStart,
+  }) async {
+    final currentValue = isStart
+        ? state.startsAt!
+        : (state.endsAt ?? state.startsAt!);
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(currentValue),
     );
+
+    if (picked == null || !mounted) return;
+
+    final latestState = ref.read(
+      editEventFormViewModelProvider(widget.eventId),
+    );
+    final base = isStart
+        ? latestState.startsAt!
+        : (latestState.endsAt ?? latestState.startsAt!);
+    final nextValue = DateTime(
+      base.year,
+      base.month,
+      base.day,
+      picked.hour,
+      picked.minute,
+    );
+
+    if (isStart) {
+      _editForm.setStartsAt(nextValue);
+    } else {
+      _editForm.setEndsAt(nextValue);
+    }
   }
 
-  // ════════════════════════════════════════════════════════════
-  // DECORATION HELPERS
-  // ════════════════════════════════════════════════════════════
-  InputDecoration _deco(String hint, IconData icon) {
+  InputDecoration _fieldDecoration(
+    String label,
+    IconData icon, {
+    String? errorText,
+  }) {
     return InputDecoration(
-      labelText: hint,
-      hintText: hint,
+      labelText: label,
+      hintText: label,
+      errorText: errorText,
       hintStyle: TextStyle(fontSize: 14.sp, color: AppColors.textTertiary),
       prefixIcon: Icon(icon, size: 20.sp, color: AppColors.textTertiary),
       filled: true,
@@ -911,7 +921,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
     );
   }
 
-  Widget _label(String text) {
+  Widget _sectionLabel(String text) {
     return Text(
       text,
       style: TextStyle(
@@ -922,24 +932,44 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
     );
   }
 
+  String? _titleErrorText(EditEventFormState state) {
+    if (!state.hasAttemptedSubmit) return null;
+
+    final title = state.title.trim();
+    if (title.isEmpty) return AppLocalizations.of(context).eventTitleRequired;
+    if (title.length < 3) {
+      return AppLocalizations.of(context).eventTitleMinLength;
+    }
+    return null;
+  }
+
   String _localizedEventError(String error) {
     final l10n = AppLocalizations.of(context);
     switch (error) {
+      case 'Unable to load event details. Please try again later.':
       case 'Unable to load the original event.':
         return l10n.eventUnableToLoadOriginal;
       case 'Unable to update event. Please try again.':
         return l10n.eventUnableToUpdate;
       case 'Please sign in to create an event.':
         return l10n.eventSignInRequired;
+      case 'Title is required':
+        return l10n.eventTitleRequired;
+      case 'Title must be at least 3 characters':
+        return l10n.eventTitleMinLength;
+      case 'Please select a location.':
+      case 'Please pick a location.':
+        return l10n.selectLocationError;
+      case 'Start time must be in the future.':
+        return l10n.eventStartTimeFuture;
+      case 'End time must be after start time.':
+        return l10n.eventEndTimeAfterStart;
       default:
         return error;
     }
   }
 }
 
-// ═════════════════════════════════════════════════════════════
-// Date/Time Chip (reusable)
-// ═════════════════════════════════════════════════════════════
 class _DateTimeChip extends StatelessWidget {
   const _DateTimeChip({
     required this.icon,
@@ -967,12 +997,15 @@ class _DateTimeChip extends StatelessWidget {
           children: [
             Icon(icon, size: 16.sp, color: AppColors.primary),
             SizedBox(width: 6.w),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 13.sp,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+            Flexible(
+              child: Text(
+                label,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
               ),
             ),
           ],
@@ -980,4 +1013,13 @@ class _DateTimeChip extends StatelessWidget {
       ),
     );
   }
+}
+
+DateTime _dateOnly(DateTime value) =>
+    DateTime(value.year, value.month, value.day);
+
+DateTime _clampDate(DateTime value, DateTime min, DateTime max) {
+  if (value.isBefore(min)) return min;
+  if (value.isAfter(max)) return max;
+  return value;
 }

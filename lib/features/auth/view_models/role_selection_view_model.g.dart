@@ -42,7 +42,7 @@ final class RoleSelectionViewModelProvider
 }
 
 String _$roleSelectionViewModelHash() =>
-    r'ac038c5fedb470980f88a73c8a47804075b68aed';
+    r'095ad255b495e811016bc067db6283c92b09a4e2';
 
 abstract class _$RoleSelectionViewModel extends $Notifier<RoleSelectionState> {
   RoleSelectionState build();

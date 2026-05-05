@@ -10,16 +10,16 @@ import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
-import 'package:sport_connect/core/widgets/skeleton_loader.dart';
+import 'package:sport_connect/core/widgets/app_map_tile_layer.dart';
 import 'package:sport_connect/core/widgets/driver_info_widget.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
+import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/view_models/pending_booking_view_model.dart';
 import 'package:sport_connect/features/rides/views/passenger/ride_countdown_screen.dart'
     show RideCountdownScreen;
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
-import 'package:sport_connect/core/widgets/app_map_tile_layer.dart';
 
 /// Shown immediately after a passenger submits a booking request.
 ///
@@ -108,9 +108,9 @@ class _RideBookingPendingScreenState
   }
 
   Widget _buildLoading() {
-    return AdaptiveScaffold(
+    return const AdaptiveScaffold(
       appBar: AdaptiveAppBar(),
-      body: const SkeletonLoader(type: SkeletonType.rideCard, itemCount: 4),
+      body: SkeletonLoader(),
     );
   }
 
@@ -596,7 +596,7 @@ class _RideBookingPendingScreenState
                 color: AppColors.success,
               ),
               Text(
-                '€${(ride.pricing.pricePerSeatInCents.amountInCents / 100).toStringAsFixed(2)}/seat',
+                '€${(ride.pricing.pricePerSeatInCents / 100).toStringAsFixed(2)}/seat',
                 style: TextStyle(
                   fontSize: 12.sp,
                   color: AppColors.textSecondary,

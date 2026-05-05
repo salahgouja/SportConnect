@@ -27,7 +27,7 @@ class RideService extends _$RideService {
       throw ArgumentError('Ride must have at least 1 available seat');
     }
 
-    if (ride.pricing.pricePerSeatInCents.amountInCents < 0) {
+    if (ride.pricing.pricePerSeatInCents < 0) {
       throw ArgumentError('Price cannot be negative');
     }
 
@@ -40,7 +40,7 @@ class RideService extends _$RideService {
     try {
       final profileRepo = ref.read(profileRepositoryProvider);
       await profileRepo.addXP(ride.driverId, 10);
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('Failed to award ride creation XP: $e');
     }
 
@@ -122,7 +122,7 @@ class RideService extends _$RideService {
           await repo.cancelBooking(rideId: rideId, bookingId: booking.id);
         }
       }
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('Failed to cancel bookings for ride $rideId: $e');
     }
 
@@ -169,7 +169,7 @@ class RideService extends _$RideService {
           completedPassengerIds.add(booking.passengerId);
         }
       }
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('Failed to update booking statuses: $e');
     }
     if (!ref.mounted) return;
@@ -189,7 +189,7 @@ class RideService extends _$RideService {
       final xp = calculateXpReward(ride);
       final distanceKm = ride.route.distanceKm ?? 0.0;
       final estimatedFareInCents =
-          ride.pricing.pricePerSeatInCents.amountInCents * ride.capacity.booked;
+          ride.pricing.pricePerSeatInCents * ride.capacity.booked;
       // Driver earnings are owned by Stripe webhook aggregation from the
       // payments collection. Do not write gross fare estimates here.
 
@@ -217,7 +217,8 @@ class RideService extends _$RideService {
           uid: passengerId,
           asDriver: false,
           distance: distanceKm,
-          fareAmountPaidInCents: ride.pricing.pricePerSeatInCents.amountInCents,
+          fareAmountPaidInCents:
+              ride.pricing.pricePerSeatInCents * ride.capacity.booked,
         );
         if (passengerLevelUp != null) {
           await notificationRepo.sendLevelUpNotification(
@@ -268,7 +269,7 @@ class RideService extends _$RideService {
       TalkerService.info(
         'Ride $rideId completed. XP awarded: $xp, estimated fare: ${estimatedFareInCents / 100}',
       );
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       // Stats failure should NOT roll back the completion
       TalkerService.error('Failed to record ride completion stats: $e');
     }
@@ -347,7 +348,7 @@ class RideService extends _$RideService {
           reason: reason,
         );
       }
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       // Notification failure should not break the main cancellation flow
       TalkerService.error('Failed to notify passengers of cancellation: $e');
     }
@@ -374,7 +375,7 @@ class RideService extends _$RideService {
       final profileRepo = ref.read(profileRepositoryProvider);
       await profileRepo.addXP(passengerId, -20);
       await profileRepo.resetStreak(passengerId);
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('Failed to apply no-show gamification penalty: $e');
     }
 
@@ -406,7 +407,7 @@ class RideService extends _$RideService {
           priority: NotificationPriority.high,
         ),
       );
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('Failed to send no-show notification: $e');
     }
   }
@@ -480,7 +481,7 @@ class RideService extends _$RideService {
           ),
         );
       }
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('Failed to send delay notifications: $e');
     }
   }

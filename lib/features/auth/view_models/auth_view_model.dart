@@ -140,7 +140,7 @@ class LoginViewModel extends _$LoginViewModel {
       await analyticsService.logLogin('email');
       state = const AsyncValue.data(null);
       return true;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!ref.mounted) return false;
 
       state = AsyncValue.error(e, st);
@@ -151,7 +151,7 @@ class LoginViewModel extends _$LoginViewModel {
   Future<void> resetPassword(String email) async {
     try {
       await ref.read(authRepositoryProvider).sendPasswordResetEmail(email);
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!ref.mounted) rethrow;
       state = AsyncValue.error(e, st);
       // Rethrow so calling widgets (e.g. ForgotPasswordScreen) can also
@@ -205,7 +205,7 @@ class RegisterViewModel extends _$RegisterViewModel {
       await analyticsService.logSignUp('email');
       state = const AsyncValue.data(null);
       return true;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!ref.mounted) return false;
 
       state = AsyncValue.error(e, st);

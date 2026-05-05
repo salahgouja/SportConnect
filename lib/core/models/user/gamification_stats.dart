@@ -1,5 +1,4 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:sport_connect/core/converters/timestamp_converter.dart';
 import 'package:sport_connect/core/models/user/achievement.dart';
 
 part 'gamification_stats.freezed.dart';

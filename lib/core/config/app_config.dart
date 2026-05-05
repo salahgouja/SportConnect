@@ -46,7 +46,6 @@ class AppConfig {
   /// Android emulator uses 10.0.2.2 to access the host machine.
   static const bool useAndroidEmulatorHost = bool.fromEnvironment(
     'FIREBASE_USE_ANDROID_EMULATOR_HOST',
-    defaultValue: false,
   );
 
   /// Default local-network host for physical devices.
@@ -58,7 +57,6 @@ class AppConfig {
   static const String defaultPhysicalDeviceEmulatorHost =
       String.fromEnvironment(
         'FIREBASE_DEFAULT_PHYSICAL_DEVICE_EMULATOR_HOST',
-        defaultValue: '192.168.0.120',
       );
 
   /// Firebase emulator host resolution.

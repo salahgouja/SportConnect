@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
+import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
@@ -21,12 +23,18 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
   late Animation<double> _progressAnim;
 
-  // Soft green palette — tweak to match your AppColors exactly
+  Timer? _timeoutTimer;
+
+  // If providers never resolve (no network, slow device) bail out after this
+  // duration so the user isn't stuck on splash forever.
+  static const _splashTimeout = Duration(seconds: 10);
+
+  // Soft green palette
   static const Color _white = Color(0xFFFFFFFF);
-  static const Color _bg = Color(0xFFF7FAF8); // barely-tinted white
-  static const Color _green = Color(0xFF2D9B6F); // primary green
-  static const Color _greenLight = Color(0xFFE8F5EF); // chip background
-  static const Color _greenDeep = Color(0xFF1A6B4A); // logo shadow tint
+  static const Color _bg = Color(0xFFF7FAF8);
+  static const Color _green = Color(0xFF2D9B6F);
+  static const Color _greenLight = Color(0xFFE8F5EF);
+  static const Color _greenDeep = Color(0xFF1A6B4A);
   static const Color _textMain = Color(0xFF111B16);
   static const Color _textSub = Color(0xFF7A9E8E);
 
@@ -49,16 +57,27 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     _dotController = AnimationController(
       duration: const Duration(milliseconds: 900),
       vsync: this,
-    )..repeat(reverse: true);
+    );
+    unawaited(_dotController.repeat(reverse: true));
 
     _progressAnim = CurvedAnimation(
       parent: _progressController,
       curve: Curves.easeInOut,
     );
+
+    // Fallback: if the router hasn't navigated away within _splashTimeout,
+    // force the user to the onboarding/login flow so the app never stalls.
+    _timeoutTimer = Timer(_splashTimeout, _forceNavigate);
+  }
+
+  void _forceNavigate() {
+    if (!mounted) return;
+    context.go(AppRoutes.onboarding.path);
   }
 
   @override
   void dispose() {
+    _timeoutTimer?.cancel();
     _entryController.dispose();
     _progressController.dispose();
     _dotController.dispose();
@@ -78,9 +97,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
             top: -size.width * 0.55,
             right: -size.width * 0.35,
             child: Container(
-              width: size.width * 1.0,
-              height: size.width * 1.0,
-              decoration: BoxDecoration(
+              width: size.width,
+              height: size.width,
+              decoration: const BoxDecoration(
                 shape: BoxShape.circle,
                 color: _greenLight,
               ),
@@ -94,7 +113,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
             child: Container(
               width: 80.w,
               height: 80.w,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 shape: BoxShape.circle,
                 color: _greenLight,
               ),
@@ -104,7 +123,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
           // ── Main content ───────────────────────────────────────────────
           SafeArea(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 SizedBox(height: size.height * 0.14),
 
@@ -120,7 +138,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                         fontSize: 34.sp,
                         fontWeight: FontWeight.w800,
                         color: _textMain,
-                        letterSpacing: -1.0,
+                        letterSpacing: -1,
                         height: 1,
                       ),
                     )
@@ -141,7 +159,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                         borderRadius: BorderRadius.circular(20.r),
                         border: Border.all(
                           color: _green.withValues(alpha: 0.25),
-                          width: 1,
                         ),
                       ),
                       child: Row(
@@ -150,7 +167,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                           Container(
                             width: 6.w,
                             height: 6.w,
-                            decoration: BoxDecoration(
+                            decoration: const BoxDecoration(
                               shape: BoxShape.circle,
                               color: _green,
                             ),
@@ -216,7 +233,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
               BoxShadow(
                 color: _greenDeep.withValues(alpha: 0.18),
                 blurRadius: 32,
-                spreadRadius: 0,
                 offset: const Offset(0, 10),
               ),
               BoxShadow(
@@ -239,7 +255,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
         .fadeIn(duration: 600.ms, curve: Curves.easeOut)
         .scale(
           begin: const Offset(0.75, 0.75),
-          end: const Offset(1.0, 1.0),
+          end: const Offset(1, 1),
           duration: 600.ms,
           curve: Curves.easeOutBack,
         );
@@ -250,44 +266,43 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       children: [
         Padding(
           padding: EdgeInsets.symmetric(horizontal: 48.w),
-          child:
-              AnimatedBuilder(
-                    animation: _progressAnim,
-                    builder: (context, _) {
-                      return Stack(
-                        children: [
-                          // Track
-                          Container(
-                            width: double.infinity,
-                            height: 2.5.h,
-                            decoration: BoxDecoration(
-                              color: _greenLight,
-                              borderRadius: BorderRadius.circular(2.r),
-                            ),
-                          ),
-                          // Fill
-                          FractionallySizedBox(
-                            widthFactor: _progressAnim.value,
-                            child: Container(
-                              height: 2.5.h,
-                              decoration: BoxDecoration(
-                                color: _green,
-                                borderRadius: BorderRadius.circular(2.r),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: _green.withValues(alpha: 0.35),
-                                    blurRadius: 6,
-                                  ),
-                                ],
+          child: AnimatedBuilder(
+                animation: _progressAnim,
+                builder: (context, _) {
+                  return Stack(
+                    children: [
+                      // Track
+                      Container(
+                        width: double.infinity,
+                        height: 2.5.h,
+                        decoration: BoxDecoration(
+                          color: _greenLight,
+                          borderRadius: BorderRadius.circular(2.r),
+                        ),
+                      ),
+                      // Fill
+                      FractionallySizedBox(
+                        widthFactor: _progressAnim.value,
+                        child: Container(
+                          height: 2.5.h,
+                          decoration: BoxDecoration(
+                            color: _green,
+                            borderRadius: BorderRadius.circular(2.r),
+                            boxShadow: [
+                              BoxShadow(
+                                color: _green.withValues(alpha: 0.35),
+                                blurRadius: 6,
                               ),
-                            ),
+                            ],
                           ),
-                        ],
-                      );
-                    },
-                  )
-                  .animate(controller: _entryController)
-                  .fadeIn(delay: 700.ms, duration: 400.ms),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              )
+              .animate(controller: _entryController)
+              .fadeIn(delay: 700.ms, duration: 400.ms),
         ),
 
         SizedBox(height: 14.h),

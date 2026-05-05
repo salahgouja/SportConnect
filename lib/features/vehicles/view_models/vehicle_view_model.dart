@@ -120,7 +120,7 @@ class VehicleViewModel extends _$VehicleViewModel {
       ref.invalidate(userVehiclesStreamProvider(userId));
 
       return true;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!ref.mounted) return false;
       state = state.copyWith(
         isLoading: false,
@@ -162,7 +162,7 @@ class VehicleViewModel extends _$VehicleViewModel {
       ref.invalidate(userVehiclesStreamProvider(userId));
 
       return true;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!ref.mounted) return false;
       state = state.copyWith(
         isLoading: false,
@@ -217,7 +217,7 @@ class VehicleViewModel extends _$VehicleViewModel {
       ref.invalidate(userVehiclesStreamProvider(userId));
 
       return true;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!ref.mounted) return false;
       state = state.copyWith(
         isLoading: false,
@@ -259,7 +259,7 @@ class VehicleViewModel extends _$VehicleViewModel {
       ref.invalidate(activeVehicleStreamProvider(userId));
 
       return true;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!ref.mounted) return false;
       state = state.copyWith(
         isLoading: false,
@@ -296,7 +296,7 @@ class VehicleViewModel extends _$VehicleViewModel {
       state = state.copyWith(isLoading: false, isSuccess: true);
 
       return imageUrl;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!ref.mounted) return null;
       state = state.copyWith(
         isLoading: false,
@@ -336,7 +336,7 @@ class VehicleViewModel extends _$VehicleViewModel {
       }
 
       return true;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!ref.mounted) return false;
       state = state.copyWith(
         isLoading: false,
@@ -368,7 +368,7 @@ class VehicleViewModel extends _$VehicleViewModel {
       }
 
       return true;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!ref.mounted) return false;
       state = state.copyWith(
         errorMessage: 'Failed to update vehicle stats: $e',

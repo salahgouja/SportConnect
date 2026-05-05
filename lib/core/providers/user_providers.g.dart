@@ -178,32 +178,28 @@ String _$premiumMetadataHash() => r'a797ac0a173944832c649f88daba74fb8e5d61ac';
 
 /// Pending user's selected role intent during onboarding setup.
 ///
-/// This is stored on the user document as `selectedRoleIntent` so refresh/restart
-/// can resume onboarding on the correct screen before role finalization.
+/// Derived from [currentUserProvider] — no extra Firestore listener.
 
 @ProviderFor(selectedRoleIntent)
 final selectedRoleIntentProvider = SelectedRoleIntentProvider._();
 
 /// Pending user's selected role intent during onboarding setup.
 ///
-/// This is stored on the user document as `selectedRoleIntent` so refresh/restart
-/// can resume onboarding on the correct screen before role finalization.
+/// Derived from [currentUserProvider] — no extra Firestore listener.
 
 final class SelectedRoleIntentProvider
-    extends
-        $FunctionalProvider<AsyncValue<UserRole?>, UserRole?, Stream<UserRole?>>
-    with $FutureModifier<UserRole?>, $StreamProvider<UserRole?> {
+    extends $FunctionalProvider<UserRole?, UserRole?, UserRole?>
+    with $Provider<UserRole?> {
   /// Pending user's selected role intent during onboarding setup.
   ///
-  /// This is stored on the user document as `selectedRoleIntent` so refresh/restart
-  /// can resume onboarding on the correct screen before role finalization.
+  /// Derived from [currentUserProvider] — no extra Firestore listener.
   SelectedRoleIntentProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
         name: r'selectedRoleIntentProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -213,14 +209,22 @@ final class SelectedRoleIntentProvider
 
   @$internal
   @override
-  $StreamProviderElement<UserRole?> $createElement($ProviderPointer pointer) =>
-      $StreamProviderElement(pointer);
+  $ProviderElement<UserRole?> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
 
   @override
-  Stream<UserRole?> create(Ref ref) {
+  UserRole? create(Ref ref) {
     return selectedRoleIntent(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(UserRole? value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<UserRole?>(value),
+    );
   }
 }
 
 String _$selectedRoleIntentHash() =>
-    r'35c6e1b61f4a205e78cf006a79859d78767fc375';
+    r'5d0f84d219591885f141439e72d648556f9085fe';

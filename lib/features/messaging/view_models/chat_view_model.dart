@@ -322,7 +322,7 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
       );
 
       return true;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!ref.mounted) return false;
       state = state.copyWith(isSending: false, error: e.toString());
       return false;
@@ -390,7 +390,7 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
         replyToMessageId: state.replyToMessage?.id,
         replyToContent: state.replyToMessage?.content,
       );
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!ref.mounted) return false;
       state = state.copyWith(isSending: false, error: e.toString());
       return false;
@@ -426,7 +426,7 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
         replyToMessageId: state.replyToMessage?.id,
         replyToContent: state.replyToMessage?.content,
       );
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!ref.mounted) return false;
       state = state.copyWith(isSending: false, error: e.toString());
       return false;
@@ -470,7 +470,7 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
         isLoadingMore: false,
         hasMoreMessages: hasMore,
       );
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoadingMore: false, error: e.toString());
     }

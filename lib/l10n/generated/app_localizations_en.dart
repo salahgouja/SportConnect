@@ -3966,12 +3966,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get eventRepeatEndDate => 'Repeat end date (optional)';
 
   @override
-  String get eventCostSplit => 'Enable Cost Splitting';
-
-  @override
-  String get eventCostSplitSubtitle => 'Allow attendees to split ride costs';
-
-  @override
   String get eventUploadingCover => 'Uploading cover…';
 
   @override

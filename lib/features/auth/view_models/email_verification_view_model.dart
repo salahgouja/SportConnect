@@ -72,35 +72,35 @@ class EmailVerificationViewModel extends _$EmailVerificationViewModel {
     );
   }
 
-Future<void> checkEmailVerified() async {
-  if (!ref.mounted) return;
-
-  try {
-    final authActions = ref.read(authActionsViewModelProvider.notifier);
-    final user = authActions.currentUser;
-    if (user == null) return;
-
-    await authActions.reloadUser();
+  Future<void> checkEmailVerified() async {
     if (!ref.mounted) return;
 
-    final verified = await authActions.isEmailVerified();
-    if (!ref.mounted) return;
+    try {
+      final authActions = ref.read(authActionsViewModelProvider.notifier);
+      final user = authActions.currentUser;
+      if (user == null) return;
 
-    if (verified) {
-      _pollTimer?.cancel();
+      await authActions.reloadUser();
+      if (!ref.mounted) return;
 
-      // Refresh router-visible auth state before the screen navigates.
-      ref.invalidate(authStateProvider);
+      final verified = await authActions.isEmailVerified();
+      if (!ref.mounted) return;
 
-      state = state.copyWith(
-        isEmailVerified: true,
-        clearError: true,
-      );
+      if (verified) {
+        _pollTimer?.cancel();
+
+        // Refresh router-visible auth state before the screen navigates.
+        ref.invalidate(authStateProvider);
+
+        state = state.copyWith(
+          isEmailVerified: true,
+          clearError: true,
+        );
+      }
+    } on Exception catch (e, st) {
+      TalkerService.debug('Email verification poll error: $e\n$st');
     }
-  } catch (e, st) {
-    TalkerService.debug('Email verification poll error: $e\n$st');
   }
-}
 
   // ── Resend ──────────────────────────────────────────────────────────
 
@@ -121,7 +121,7 @@ Future<void> checkEmailVerified() async {
         clearError: true,
       );
       _startCooldown();
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!ref.mounted) return;
       state = state.copyWith(isSending: false, errorMessage: e.toString());
     }

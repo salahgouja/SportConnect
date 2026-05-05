@@ -51,7 +51,7 @@ class ReauthViewModel extends _$ReauthViewModel {
           .reauthenticateWithPassword(password);
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, isSuccess: true);
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!ref.mounted) return;
       state = state.copyWith(
         isLoading: false,
@@ -65,10 +65,12 @@ class ReauthViewModel extends _$ReauthViewModel {
   Future<void> reauthWithGoogle() async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      await ref.read(authActionsViewModelProvider.notifier).reauthenticateWithGoogle();
+      await ref
+          .read(authActionsViewModelProvider.notifier)
+          .reauthenticateWithGoogle();
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, isSuccess: true);
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, errorCode: 'google');
     }

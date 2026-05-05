@@ -11,9 +11,10 @@ import 'package:latlong2/latlong.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
-import 'package:sport_connect/core/widgets/skeleton_loader.dart';
+import 'package:sport_connect/core/widgets/app_map_tile_layer.dart';
 import 'package:sport_connect/core/widgets/driver_info_widget.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
+import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/messaging/view_models/chat_view_model.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
@@ -23,7 +24,6 @@ import 'package:sport_connect/features/rides/view_models/ride_countdown_view_mod
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:sport_connect/core/widgets/app_map_tile_layer.dart';
 
 class RideCountdownScreen extends ConsumerStatefulWidget {
   const RideCountdownScreen({required this.bookingId, super.key});
@@ -660,7 +660,7 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
         pathParameters: {'id': chat.id},
         extra: driverUser,
       );
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!mounted) return;
       AdaptiveSnackBar.show(
         context,
@@ -687,7 +687,7 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri);
       }
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!mounted) return;
       AdaptiveSnackBar.show(
         context,

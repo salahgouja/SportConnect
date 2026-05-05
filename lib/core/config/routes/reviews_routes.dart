@@ -3,7 +3,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
-import 'package:sport_connect/core/config/routes/route_config.dart';
 import 'package:sport_connect/core/config/routes/route_params.dart';
 // Feature imports - Reviews
 import 'package:sport_connect/features/reviews/models/review_model.dart';
@@ -11,9 +10,7 @@ import 'package:sport_connect/features/reviews/views/reviews_list_screen.dart';
 import 'package:sport_connect/features/reviews/views/submit_review_screen.dart';
 
 /// Reviews module routes
-class ReviewsRoutes implements RouteConfig {
-
-  @override
+class ReviewsRoutes {
   List<RouteBase> getRoutes() {
     return [
       GoRoute(

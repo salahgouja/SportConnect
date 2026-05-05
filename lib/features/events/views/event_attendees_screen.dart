@@ -6,8 +6,8 @@ import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
-import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/core/widgets/skeleton_loader.dart';
+import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/events/view_models/event_view_model.dart';
 import 'package:sport_connect/features/messaging/view_models/chat_view_model.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
@@ -120,7 +120,9 @@ class _AttendeeCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final profile = ref.watch(userProfileProvider(userId).select((a) => a.value));
+    final profile = ref.watch(
+      userProfileProvider(userId).select((a) => a.value),
+    );
     final currentUser = ref.watch(
       currentUserProvider.select((value) {
         final user = value.value;
@@ -286,7 +288,7 @@ class _AttendeeCard extends ConsumerWidget {
         pathParameters: {'id': chat.id},
         extra: profile,
       );
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (context.mounted) {
         AdaptiveSnackBar.show(
           context,

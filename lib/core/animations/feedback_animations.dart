@@ -79,7 +79,6 @@ class FeedbackAnimations {
   }) {
     return showGeneralDialog<void>(
       context: context,
-      useRootNavigator: true,
       barrierDismissible: true,
       barrierLabel: config.barrierLabel,
       barrierColor: Colors.black.withValues(alpha: 0.56),
@@ -159,7 +158,7 @@ class _PremiumFeedbackOverlayState extends State<_PremiumFeedbackOverlay> {
     final config = widget.config;
 
     return PopScope(
-      onPopInvokedWithResult: (_, __) {
+      onPopInvokedWithResult: (_, _) {
         if (!_didDismiss) {
           _didDismiss = true;
           widget.onDismissed?.call();

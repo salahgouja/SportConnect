@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$RidePricing {
 
- Money get pricePerSeatInCents;
+ int get pricePerSeatInCents;
 /// Create a copy of RidePricing
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -48,11 +48,11 @@ abstract mixin class $RidePricingCopyWith<$Res>  {
   factory $RidePricingCopyWith(RidePricing value, $Res Function(RidePricing) _then) = _$RidePricingCopyWithImpl;
 @useResult
 $Res call({
- Money pricePerSeatInCents
+ int pricePerSeatInCents
 });
 
 
-$MoneyCopyWith<$Res> get pricePerSeatInCents;
+
 
 }
 /// @nodoc
@@ -68,19 +68,10 @@ class _$RidePricingCopyWithImpl<$Res>
 @pragma('vm:prefer-inline') @override $Res call({Object? pricePerSeatInCents = null,}) {
   return _then(_self.copyWith(
 pricePerSeatInCents: null == pricePerSeatInCents ? _self.pricePerSeatInCents : pricePerSeatInCents // ignore: cast_nullable_to_non_nullable
-as Money,
+as int,
   ));
 }
-/// Create a copy of RidePricing
-/// with the given fields replaced by the non-null parameter values.
-@override
-@pragma('vm:prefer-inline')
-$MoneyCopyWith<$Res> get pricePerSeatInCents {
-  
-  return $MoneyCopyWith<$Res>(_self.pricePerSeatInCents, (value) {
-    return _then(_self.copyWith(pricePerSeatInCents: value));
-  });
-}
+
 }
 
 
@@ -162,7 +153,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( Money pricePerSeatInCents)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int pricePerSeatInCents)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _RidePricing() when $default != null:
 return $default(_that.pricePerSeatInCents);case _:
@@ -183,7 +174,7 @@ return $default(_that.pricePerSeatInCents);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( Money pricePerSeatInCents)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int pricePerSeatInCents)  $default,) {final _that = this;
 switch (_that) {
 case _RidePricing():
 return $default(_that.pricePerSeatInCents);case _:
@@ -203,7 +194,7 @@ return $default(_that.pricePerSeatInCents);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( Money pricePerSeatInCents)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int pricePerSeatInCents)?  $default,) {final _that = this;
 switch (_that) {
 case _RidePricing() when $default != null:
 return $default(_that.pricePerSeatInCents);case _:
@@ -221,7 +212,7 @@ class _RidePricing extends RidePricing {
   const _RidePricing({required this.pricePerSeatInCents}): super._();
   factory _RidePricing.fromJson(Map<String, dynamic> json) => _$RidePricingFromJson(json);
 
-@override final  Money pricePerSeatInCents;
+@override final  int pricePerSeatInCents;
 
 /// Create a copy of RidePricing
 /// with the given fields replaced by the non-null parameter values.
@@ -256,11 +247,11 @@ abstract mixin class _$RidePricingCopyWith<$Res> implements $RidePricingCopyWith
   factory _$RidePricingCopyWith(_RidePricing value, $Res Function(_RidePricing) _then) = __$RidePricingCopyWithImpl;
 @override @useResult
 $Res call({
- Money pricePerSeatInCents
+ int pricePerSeatInCents
 });
 
 
-@override $MoneyCopyWith<$Res> get pricePerSeatInCents;
+
 
 }
 /// @nodoc
@@ -276,20 +267,11 @@ class __$RidePricingCopyWithImpl<$Res>
 @override @pragma('vm:prefer-inline') $Res call({Object? pricePerSeatInCents = null,}) {
   return _then(_RidePricing(
 pricePerSeatInCents: null == pricePerSeatInCents ? _self.pricePerSeatInCents : pricePerSeatInCents // ignore: cast_nullable_to_non_nullable
-as Money,
+as int,
   ));
 }
 
-/// Create a copy of RidePricing
-/// with the given fields replaced by the non-null parameter values.
-@override
-@pragma('vm:prefer-inline')
-$MoneyCopyWith<$Res> get pricePerSeatInCents {
-  
-  return $MoneyCopyWith<$Res>(_self.pricePerSeatInCents, (value) {
-    return _then(_self.copyWith(pricePerSeatInCents: value));
-  });
-}
+
 }
 
 // dart format on

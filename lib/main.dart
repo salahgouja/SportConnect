@@ -27,40 +27,56 @@ import 'package:sport_connect/features/profile/view_models/settings_view_model.d
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:upgrader/upgrader.dart';
 
-const _enableDebugInstrumentation = bool.fromEnvironment(
-  'SPORT_CONNECT_DEBUG_INSTRUMENTATION',
-);
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  final firebaseService = await FirebaseService.instance.initialize();
-  TalkerService.info('✅ Firebase initialized');
+  // Only fast, local work before runApp so the native launch screen dismisses
+  // immediately. Network-dependent work (App Check, Crashlytics collection
+  // toggle) is deferred to _initializeAppAfterFirstFrame.
+  //
+  // Wrapped in try-catch with a timeout: if Firebase.initializeApp() hangs
+  // (seen on some iPadOS versions), we still call runApp() so the Flutter
+  // splash renders and its 10-second timeout safely redirects the user.
+  // Start Firebase and SharedPreferences in parallel — they're independent.
+  FirebaseService? firebase;
+  final firebaseFuture = FirebaseService.instance.initializeCore().timeout(
+    const Duration(seconds: 8),
+  );
+  final prefsFuture = SharedPreferences.getInstance();
 
-  FlutterError.onError = (details) {
-    unawaited(firebaseService.crashlytics.recordFlutterFatalError(details));
-
+  try {
+    firebase = await firebaseFuture;
+    TalkerService.info('✅ Firebase core initialized');
+  } on TimeoutException {
     TalkerService.error(
-      'FlutterError: ${details.exceptionAsString()}',
-      details.exception,
-      details.stack,
+      '❌ Firebase initialization timed out — continuing without Firebase',
     );
-  };
-
-  PlatformDispatcher.instance.onError = (error, stack) {
-    unawaited(
-      firebaseService.crashlytics.recordError(
-        error,
-        stack,
-        fatal: true,
-      ),
+  } on Exception catch (e, st) {
+    TalkerService.error(
+      '❌ Firebase initialization failed — continuing without Firebase',
+      e,
+      st,
     );
+  }
 
-    TalkerService.error('PlatformDispatcher error', error, stack);
-    return true;
-  };
+  if (firebase != null) {
+    FlutterError.onError = (details) {
+      unawaited(firebase!.crashlytics.recordFlutterFatalError(details));
+      TalkerService.error(
+        'FlutterError: ${details.exceptionAsString()}',
+        details.exception,
+        details.stack,
+      );
+    };
 
-  final prefs = await SharedPreferences.getInstance();
+    PlatformDispatcher.instance.onError = (error, stack) {
+      unawaited(firebase!.crashlytics.recordError(error, stack, fatal: true));
+      TalkerService.error('PlatformDispatcher error', error, stack);
+      return true;
+    };
+  }
+
+  final prefs = await prefsFuture;
 
   _runApp(prefs);
 }
@@ -68,11 +84,14 @@ void main() async {
 /// Runs non-critical startup work after the first frame.
 ///
 /// This prevents App Review/users from getting stuck on the native launch
-/// screen if push notifications, Stripe, update checking, or other
+/// screen if push notifications, Stripe, App Check, or other
 /// network-related startup work is slow.
 Future<void> _initializeAppAfterFirstFrame() async {
   TalkerService.info('🚀 Starting post-launch initialization...');
 
+  // App Check activation makes a network call on production iOS (DeviceCheck).
+  // Running it here keeps the native splash short.
+  await FirebaseService.instance.activateAppCheck();
   await _initializePushNotifications();
   await _initializeStripe();
 
@@ -90,7 +109,7 @@ Future<void> _initializePushNotifications() async {
     );
 
     TalkerService.info('✅ Push notifications initialized');
-  } catch (e, st) {
+  } on Exception catch (e, st) {
     TalkerService.error('❌ Failed to initialize push notifications', e, st);
   }
 }
@@ -109,7 +128,7 @@ Future<void> _initializeStripe() async {
         .timeout(const Duration(seconds: 6));
 
     TalkerService.info('✅ Stripe initialized');
-  } catch (e, st) {
+  } on Exception catch (e, st) {
     TalkerService.error('❌ Failed to initialize Stripe', e, st);
   }
 }
@@ -121,7 +140,7 @@ void _runApp(SharedPreferences prefs) {
         sharedPreferencesProvider.overrideWithValue(prefs),
       ],
       observers: [
-        if (kDebugMode && _enableDebugInstrumentation) ...[
+        if (kDebugMode) ...[
           TalkerService.riverpodObserver,
           RiverpodDevToolsObserver(
             config: TrackerConfig.forPackage('com.sportconnect.app'),
@@ -210,7 +229,7 @@ class _SportConnectAppState extends ConsumerState<SportConnectApp> {
 
     PushNotificationService.navigatorKey = rootNavigatorKey;
 
-    ref.read(deepLinkServiceProvider).initialize(router);
+    unawaited(ref.read(deepLinkServiceProvider).initialize(router));
 
     final context = rootNavigatorKey.currentContext;
 
@@ -230,7 +249,9 @@ class _SportConnectAppState extends ConsumerState<SportConnectApp> {
     if (authUser != null) {
       _fcmTokenSaved = true;
 
-      ref.read(pushNotificationServiceProvider).saveFcmToken(authUser.uid);
+      unawaited(
+        ref.read(pushNotificationServiceProvider).saveFcmToken(authUser.uid),
+      );
     }
   }
 
@@ -263,14 +284,13 @@ class _SportConnectAppState extends ConsumerState<SportConnectApp> {
           builder: (context, child) {
             final appChild = child ?? const SizedBox.shrink();
 
-            Widget wrappedChild = appChild;
+            var wrappedChild = appChild;
 
             if (_isFirebaseInitialized && _showUpgradeAlert) {
               wrappedChild = UpgradeAlert(
                 navigatorKey: rootNavigatorKey,
                 dialogStyle: UpgradeDialogStyle.cupertino,
                 showIgnore: false,
-                showLater: true,
                 showReleaseNotes: false,
                 child: appChild,
               );

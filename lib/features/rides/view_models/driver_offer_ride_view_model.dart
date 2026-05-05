@@ -3,7 +3,6 @@ import 'package:latlong2/latlong.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/config/routes/route_params.dart';
 import 'package:sport_connect/core/models/location/location_point.dart';
-import 'package:sport_connect/core/models/value_objects/money.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/services/routing_service.dart'
     show routingServiceProvider;
@@ -461,7 +460,7 @@ class DriverOfferRideViewModel extends _$DriverOfferRideViewModel {
         eventName: event?.title ?? state.eventName,
         isLoadingSelectedEvent: false,
       );
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoadingSelectedEvent: false);
     }
@@ -510,7 +509,7 @@ class DriverOfferRideViewModel extends _$DriverOfferRideViewModel {
         routeDistanceKm: routeInfo?.distanceKm,
         routeDurationMinutes: routeInfo?.durationMinutes.round(),
       );
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       // Fallback: no route preview, just reset loading state
       if (!ref.mounted) return;
       state = state.copyWith(isLoadingRoute: false);
@@ -530,7 +529,7 @@ class DriverOfferRideViewModel extends _$DriverOfferRideViewModel {
       waypoints: ride.route.waypoints.map((wp) => wp.location).toList(),
       selectedVehicleId: ride.vehicleId,
       availableSeats: ride.capacity.available,
-      pricePerSeatInCents: ride.pricing.pricePerSeatInCents.amountInCents,
+      pricePerSeatInCents: ride.pricing.pricePerSeatInCents,
       isRecurring: ride.schedule.isRecurring,
       recurringDays: ride.schedule.recurringDays,
       recurringEndDate: ride.schedule.recurringEndDate,
@@ -686,7 +685,7 @@ class DriverOfferRideViewModel extends _$DriverOfferRideViewModel {
         ),
         bookingIds: existingBookingIds,
         pricing: RidePricing(
-          pricePerSeatInCents: Money(amountInCents: state.pricePerSeatInCents),
+          pricePerSeatInCents: state.pricePerSeatInCents,
         ),
         preferences: RidePreferences(
           allowPets: state.allowPets,
@@ -718,7 +717,9 @@ class DriverOfferRideViewModel extends _$DriverOfferRideViewModel {
         }
         final rideName =
             '${ride.route.origin.shortDisplay} → ${ride.route.destination.shortDisplay}';
-        await ref.read(chatRepositoryProvider).createRideChat(
+        await ref
+            .read(chatRepositoryProvider)
+            .createRideChat(
               rideId: rideId,
               driverId: driverId,
               driverName:
@@ -731,7 +732,7 @@ class DriverOfferRideViewModel extends _$DriverOfferRideViewModel {
 
       state = state.copyWith(isSubmitting: false);
       return rideId;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!ref.mounted) return null;
       state = state.copyWith(
         isSubmitting: false,

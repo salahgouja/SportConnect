@@ -59,7 +59,7 @@ final class RideDetailUiViewModelProvider
 }
 
 String _$rideDetailUiViewModelHash() =>
-    r'a8f1e68d9971bdeec1dd9782de65b2e08b64d3d2';
+    r'1916435c07fe38ceb64f1f151909b2418d3afff9';
 
 final class RideDetailUiViewModelFamily extends $Family
     with
@@ -234,7 +234,7 @@ final class CancellationReasonViewModelProvider
 }
 
 String _$cancellationReasonViewModelHash() =>
-    r'9d3fe8e2382033bc38e007fbd140ac6f20723397';
+    r'c5621afcda9d3f86306c9e85414b9adeae54fbd8';
 
 final class CancellationReasonViewModelFamily extends $Family
     with
@@ -334,7 +334,7 @@ final class DisputeFormViewModelProvider
 }
 
 String _$disputeFormViewModelHash() =>
-    r'ae29a7f35611d3d71d03886b4b46998a40c30138';
+    r'5c628c326ac8fe91490ecd5b2ecebd14eafb7d74';
 
 final class DisputeFormViewModelFamily extends $Family
     with
@@ -578,7 +578,7 @@ final class RideFormViewModelProvider
   }
 }
 
-String _$rideFormViewModelHash() => r'af3b611a7d0dbf90b6e1c4dadca2e6c6f299fa80';
+String _$rideFormViewModelHash() => r'defa727146615e030ebe779244f678ba43cc2b79';
 
 /// Ride Form View Model
 
@@ -645,7 +645,7 @@ final class RideSearchResultsProvider
   }
 }
 
-String _$rideSearchResultsHash() => r'92f68964f2db20092586e14b65ba217b918bd322';
+String _$rideSearchResultsHash() => r'02423f4db1db36494f445968d0193f650c11bef1';
 
 /// Ride Search View Model
 ///
@@ -699,7 +699,7 @@ final class RideSearchViewModelProvider
 }
 
 String _$rideSearchViewModelHash() =>
-    r'bee8c8da364614025a4114d7c01a55f8d8e6611e';
+    r'f19685f9ca0c1758c5663ecf65af2797b77ea55d';
 
 /// Ride Search View Model
 ///
@@ -783,7 +783,7 @@ final class RideDetailViewModelProvider
 }
 
 String _$rideDetailViewModelHash() =>
-    r'6a4c9b4761dea74ebe877e761d60e2478951a6c4';
+    r'4546a65c6bacc14d0661c814495289f22a24df52';
 
 /// Single Ride Detail View Model — views watch only this, never separate
 /// stream/booking providers directly.
@@ -894,7 +894,7 @@ final class ActiveRideViewModelProvider
 }
 
 String _$activeRideViewModelHash() =>
-    r'bdd97078cb8d783e50ad895891cdadf2903bf7c7';
+    r'7c8e88bef24cce46bacf3613c31025126e57b962';
 
 /// ViewModel for active-ride screens — views watch only this provider.
 

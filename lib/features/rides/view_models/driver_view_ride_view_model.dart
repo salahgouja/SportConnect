@@ -78,7 +78,7 @@ class DriverRideScreenUiViewModel extends _$DriverRideScreenUiViewModel {
         osrmRoutePoints: routeInfo?.coordinates,
         isLoadingOsrmRoute: false,
       );
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoadingOsrmRoute: false);
     }

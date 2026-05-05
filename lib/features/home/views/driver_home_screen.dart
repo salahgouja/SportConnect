@@ -439,7 +439,7 @@ class _DriverDashboard extends ConsumerWidget {
       backgroundColor: AppColors.warning.withAlpha(18),
       child: Row(
         children: [
-          _IconBubble(
+          const _IconBubble(
             icon: Icons.location_off_rounded,
             color: AppColors.warning,
           ),
@@ -769,7 +769,6 @@ class _DriverDashboard extends ConsumerWidget {
     );
 
     return Skeletonizer(
-      enabled: true,
       containersColor: AppColors.surface,
       child: card,
     );
@@ -1045,9 +1044,7 @@ class _NextRideCard extends StatelessWidget {
         ride.route.destination.city ?? ride.route.destination.address;
     final departure = ride.schedule.departureTime;
     final earned =
-        ((ride.pricing.pricePerSeatInCents.amountInCents *
-                    ride.capacity.booked) /
-                100)
+        ((ride.pricing.pricePerSeatInCents * ride.capacity.booked) / 100)
             .toStringAsFixed(2);
 
     return Material(
@@ -1454,7 +1451,7 @@ class _RequestCard extends ConsumerWidget {
           'receiverId': passenger.uid,
           'receiverName': passenger.username,
           if (passenger.photoUrl != null)
-            'receiverPhotoUrl': passenger.photoUrl!,
+            'receiverPhotoUrl': passenger.photoUrl,
         },
         extra: passenger,
       );

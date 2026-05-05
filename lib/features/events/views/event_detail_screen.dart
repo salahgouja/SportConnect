@@ -1,4 +1,5 @@
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -14,10 +15,10 @@ import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
 import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
-import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/core/widgets/map_location_picker.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/core/widgets/premium_card.dart';
+import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/events/models/event_model.dart';
 import 'package:sport_connect/features/events/view_models/event_view_model.dart';
@@ -25,7 +26,6 @@ import 'package:sport_connect/features/profile/view_models/profile_view_model.da
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 
 /// Full-screen event detail with hero banner, info sections and join/leave CTA.
 class EventDetailScreen extends ConsumerStatefulWidget {
@@ -55,9 +55,15 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
   Widget build(BuildContext context) {
     final eventAsync = ref.watch(eventByIdProvider(widget.eventId));
     // Select only action states — event content rebuilds handled by eventByIdProvider
-    ref.watch(eventDetailViewModelProvider(widget.eventId).select((s) => (
-      s.isJoining, s.isLeaving, s.isDeleting,
-    )));
+    ref.watch(
+      eventDetailViewModelProvider(widget.eventId).select(
+        (s) => (
+          s.isJoining,
+          s.isLeaving,
+          s.isDeleting,
+        ),
+      ),
+    );
     final detailVm = ref.read(eventDetailViewModelProvider(widget.eventId));
     final currentUser = ref.watch(
       currentUserProvider.select((value) {
@@ -847,7 +853,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
           );
         }
       }
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (mounted) {
         AdaptiveSnackBar.show(
           context,
@@ -949,7 +955,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
           if (mounted) context.pop();
         });
       }
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (mounted) {
         AdaptiveSnackBar.show(
           context,
@@ -1000,7 +1006,11 @@ class _HeroBanner extends StatelessWidget {
       return Stack(
         fit: StackFit.expand,
         children: [
-          CachedNetworkImage(imageUrl: event.imageUrl!, fit: BoxFit.cover, memCacheWidth: 800),
+          CachedNetworkImage(
+            imageUrl: event.imageUrl!,
+            fit: BoxFit.cover,
+            memCacheWidth: 800,
+          ),
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -1164,7 +1174,9 @@ class _OrganizerRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final organizer = ref.watch(userProfileProvider(creatorId).select((a) => a.value));
+    final organizer = ref.watch(
+      userProfileProvider(creatorId).select((a) => a.value),
+    );
     final name = organizer?.username ?? 'Organizer';
 
     return PremiumCard(
@@ -1296,7 +1308,9 @@ class _ParticipantAvatar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final photoUrl = ref.watch(userProfileProvider(userId).select((a) => a.value))?.photoUrl;
+    final photoUrl = ref
+        .watch(userProfileProvider(userId).select((a) => a.value))
+        ?.photoUrl;
     return Padding(
       padding: EdgeInsets.only(right: 4.w),
       child: CircleAvatar(

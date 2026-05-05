@@ -3847,8 +3847,6 @@
     }
   },
   "eventRepeatEndDate": "Repeat end date (optional)",
-  "eventCostSplit": "Enable Cost Splitting",
-  "eventCostSplitSubtitle": "Allow attendees to split ride costs",
   "eventUploadingCover": "Uploading cover…",
   "eventCreating": "Creating…",
   "eventCreateButton": "Create Event",

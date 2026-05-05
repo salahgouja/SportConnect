@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -332,7 +334,7 @@ class _EmptyTab extends StatelessWidget {
               style: PremiumButtonStyle.ghost,
               onPressed: () {
                 if (isDriver) {
-                  context.goNamed(AppRoutes.events.name);
+                  unawaited(context.push(AppRoutes.eventsBrowse.path));
                 } else {
                   context.goNamed(
                     AppRoutes.events.name,

@@ -3,7 +3,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
-import 'package:sport_connect/core/config/routes/route_config.dart';
 import 'package:sport_connect/core/config/routes/route_params.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/views/driver/active_ride_screen.dart'
@@ -16,6 +15,7 @@ import 'package:sport_connect/features/rides/views/driver/driver_view_ride_scree
 import 'package:sport_connect/features/rides/views/passenger/active_ride_screen.dart'
     as passenger_active;
 import 'package:sport_connect/features/rides/views/passenger/ride_booking_pending_screen.dart';
+import 'package:sport_connect/features/rides/views/passenger/ride_booking_review_screen.dart';
 import 'package:sport_connect/features/rides/views/passenger/ride_countdown_screen.dart';
 import 'package:sport_connect/features/rides/views/passenger/ride_detail_screen.dart';
 import 'package:sport_connect/features/rides/views/passenger/ride_search_screen.dart';
@@ -26,8 +26,7 @@ import 'package:sport_connect/features/rides/views/shared/dispute_screen.dart';
 import 'package:sport_connect/features/rides/views/shared/ride_completion_screen.dart';
 
 /// Ride module routes with type-safe parameters
-class RideRoutes implements RouteConfig {
-  @override
+class RideRoutes {
   List<RouteBase> getRoutes() {
     return [
       // Search Rides
@@ -346,7 +345,23 @@ class RideRoutes implements RouteConfig {
                 );
         },
       ),
+      GoRoute(
+        path: AppRoutes.rideBookingReview.path,
+        name: AppRoutes.rideBookingReview.name,
+        pageBuilder: (context, state) {
+          final rideId = state.pathParameters['rideId'] ?? '';
 
+          return PlatformInfo.isIOS
+              ? CupertinoPage(
+                  key: state.pageKey,
+                  child: RideBookingReviewScreen(rideId: rideId),
+                )
+              : MaterialPage(
+                  key: state.pageKey,
+                  child: RideBookingReviewScreen(rideId: rideId),
+                );
+        },
+      ),
       // Passenger: Ride Countdown (booking accepted, departure approaching)
       GoRoute(
         path: AppRoutes.rideCountdown.path,

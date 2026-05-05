@@ -55,9 +55,10 @@ class RoleSelectionViewModel extends _$RoleSelectionViewModel {
       final currentUser = authActions.currentUser;
       if (currentUser == null) throw StateError('User not authenticated');
 
-      await ref
-          .read(profileActionsViewModelProvider.notifier)
-          .updateProfile(currentUser.uid, {'selectedRoleIntent': role.name});
+      await ref.read(profileActionsViewModelProvider.notifier).updateProfile(
+        currentUser.uid,
+        {'selectedRoleIntent': role.name},
+      );
       if (!ref.mounted) return;
 
       state = state.copyWith(
@@ -65,7 +66,7 @@ class RoleSelectionViewModel extends _$RoleSelectionViewModel {
         isSuccess: true,
         clearError: true,
       );
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }

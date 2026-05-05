@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:dio/dio.dart';
-import 'package:flutter_map/flutter_map.dart' show LatLngBounds;
+import 'package:flutter_map/flutter_map.dart' show LatLngBounds, TileProvider;
 import 'package:flutter_map_cache/flutter_map_cache.dart';
 import 'package:http_cache_hive_store/http_cache_hive_store.dart';
 import 'package:latlong2/latlong.dart';
@@ -61,7 +61,7 @@ class MapService {
         AppConstants.userAgent,
       );
       return data.map(SearchResult.fromNominatim).toList();
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('Place search failed', e, st);
       return [];
     }
@@ -78,7 +78,7 @@ class MapService {
         AppConstants.userAgent,
       );
       return SearchResult.fromNominatim(data);
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('Reverse geocode failed', e, st);
       return null;
     }
@@ -109,7 +109,7 @@ class MapService {
             .toList();
       }
       return [];
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('POI search failed', e, st);
       return [];
     }
@@ -332,6 +332,5 @@ Future<CachedTileProvider> mapTileProvider(Ref ref) async {
       hiveBoxName: 'map_tile_cache',
     ),
     maxStale: const Duration(days: 30),
-    hitCacheOnNetworkFailure: true,
   );
 }

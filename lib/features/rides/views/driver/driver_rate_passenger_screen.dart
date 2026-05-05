@@ -7,8 +7,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
-import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
+import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
@@ -502,7 +502,7 @@ class _DriverRatePassengerScreenState
             revieweeName: passengerProfile?.username ?? 'Passenger',
             revieweePhotoUrl: passengerProfile?.photoUrl,
           );
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (mounted) {
         AdaptiveSnackBar.show(
           context,

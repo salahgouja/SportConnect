@@ -85,31 +85,14 @@ Stream<PremiumMetadata> premiumMetadata(Ref ref) async* {
 
 /// Pending user's selected role intent during onboarding setup.
 ///
-/// This is stored on the user document as `selectedRoleIntent` so refresh/restart
-/// can resume onboarding on the correct screen before role finalization.
-@riverpod
-Stream<UserRole?> selectedRoleIntent(Ref ref) async* {
-  final uid = await ref.watch(currentAuthUidProvider.future);
-
-  if (uid == null) {
-    yield null;
-    return;
-  }
-
-  yield* ref
-      .read(firebaseServiceProvider)
-      .firestore
-      .collection(AppConstants.usersCollection)
-      .doc(uid)
-      .snapshots()
-      .map((doc) {
-        final raw = doc.data()?['selectedRoleIntent'];
-        if (raw is! String) return null;
-
-        return switch (raw) {
-          'rider' => UserRole.rider,
-          'driver' => UserRole.driver,
-          _ => null,
-        };
-      });
+/// Derived from [currentUserProvider] — no extra Firestore listener.
+@Riverpod(keepAlive: true)
+UserRole? selectedRoleIntent(Ref ref) {
+  final user = ref.watch(currentUserProvider).value;
+  if (user is! PendingUserModel) return null;
+  return switch (user.selectedRoleIntent) {
+    'rider' => UserRole.rider,
+    'driver' => UserRole.driver,
+    _ => null,
+  };
 }

@@ -340,7 +340,7 @@ class PendingBookingViewModel extends _$PendingBookingViewModel {
         loadingRouteKey: null,
         isLoadingOsrmRoute: false,
       );
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error(
         'Error loading pending booking OSRM route',
         e,
@@ -477,7 +477,7 @@ class PendingBookingViewModel extends _$PendingBookingViewModel {
               bookingId: booking.id,
               paymentIntentId: paymentIntentId,
             );
-      } catch (e, st) {
+      } on Exception catch (e, st) {
         // Best effort only.
       }
 
@@ -511,7 +511,7 @@ class PendingBookingViewModel extends _$PendingBookingViewModel {
       _enqueueEffect(
         PendingBookingEffect.snackbar('Payment failed: ${error.message}'),
       );
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('Pending booking payment failed', e, st);
       if (!ref.mounted) {
         return;
@@ -551,7 +551,7 @@ class PendingBookingViewModel extends _$PendingBookingViewModel {
         isCancelling: false,
       );
       _enqueueEffect(const PendingBookingEffect.navigateMyRides());
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!ref.mounted) return;
       TalkerService.error(
         'Pending booking cancellation failed',

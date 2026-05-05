@@ -155,7 +155,7 @@ class PremiumCheckoutViewModel extends _$PremiumCheckoutViewModel {
       );
 
       return true;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('Premium checkout failed', e, st);
 
       if (!ref.mounted) return false;
@@ -187,7 +187,7 @@ class PremiumCheckoutViewModel extends _$PremiumCheckoutViewModel {
             },
             existingCustomerId: existingCustomerId,
           );
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       // Keep premium activation successful even if Stripe metadata sync fails.
       TalkerService.warning(
         'Premium purchase succeeded but Stripe customer sync failed: $e',

@@ -173,7 +173,7 @@ class ReviewFormViewModel extends _$ReviewFormViewModel {
       try {
         final profileRepo = ref.read(profileRepositoryProvider);
         await profileRepo.addXP(currentUser.uid, 15);
-      } catch (e, st) {
+      } on Exception catch (e, st) {
         // XP failure is non-fatal
       }
 
@@ -181,7 +181,7 @@ class ReviewFormViewModel extends _$ReviewFormViewModel {
       // Reset form after successful submission
       state = const ReviewFormState();
       return true;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!ref.mounted) return false;
       state = state.copyWith(
         isSubmitting: false,
@@ -205,8 +205,10 @@ class ReviewsListViewModel extends _$ReviewsListViewModel {
   Future<ReviewsListState> _loadReviews() async {
     try {
       final repo = ref.read(reviewRepositoryProvider);
-      final (:reviews, :nextCursor) =
-          await repo.getReviewsForUser(userId, limit: _pageSize);
+      final (:reviews, :nextCursor) = await repo.getReviewsForUser(
+        userId,
+        limit: _pageSize,
+      );
       final stats = await repo.getRatingStatsForUser(userId);
 
       return ReviewsListState(
@@ -215,7 +217,7 @@ class ReviewsListViewModel extends _$ReviewsListViewModel {
         hasMore: nextCursor != null,
         nextCursor: nextCursor,
       );
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       return ReviewsListState(
         error: 'Failed to load reviews: $e',
       );
@@ -260,7 +262,7 @@ class ReviewsListViewModel extends _$ReviewsListViewModel {
           nextCursor: nextCursor,
         ),
       );
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!ref.mounted) return;
       state = AsyncValue.data(
         current.copyWith(
@@ -294,7 +296,7 @@ class ReviewResponseViewModel extends _$ReviewResponseViewModel {
       if (!ref.mounted) return true;
       state = const AsyncValue.data(null);
       return true;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!ref.mounted) return false;
       state = AsyncValue.error(e, st);
       return false;

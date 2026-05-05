@@ -6,9 +6,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:sliver_tools/sliver_tools.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
-import 'package:sliver_tools/sliver_tools.dart';
 import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
@@ -131,7 +131,7 @@ class _DriverSliverAppBar extends StatelessWidget {
                   fontSize: 20.sp,
                   fontWeight: FontWeight.w700,
                   color: Colors.white,
-                  height: 1.0,
+                  height: 1,
                 ),
               ),
               TextSpan(
@@ -139,7 +139,7 @@ class _DriverSliverAppBar extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 11.sp,
                   color: Colors.white.withValues(alpha: 0.8),
-                  height: 1.0,
+                  height: 1,
                 ),
               ),
             ],
@@ -815,7 +815,7 @@ class _HistoryRideCard extends StatelessWidget {
     final isCancelled = ride.status == RideStatus.cancelled;
     final date = DateFormat('d MMM · HH:mm').format(ride.departureTime);
     final earnings =
-        ride.pricing.pricePerSeatInCents.amountInCents * ride.capacity.booked;
+        ride.pricing.pricePerSeatInCents * ride.capacity.booked;
 
     return GestureDetector(
       onTap: () => context.pushNamed(

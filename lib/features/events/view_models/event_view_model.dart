@@ -420,7 +420,7 @@ class CreateEventFormViewModel extends _$CreateEventFormViewModel {
           created = created.copyWith(imageUrl: imageUrl);
           await repo.updateEvent(created);
           if (!ref.mounted) return null;
-        } catch (e, st) {
+        } on Exception catch (e, st) {
           TalkerService.error('createEvent image upload failed', e, st);
           warningMessage =
               'Event created, but the cover image could not be uploaded.';
@@ -441,7 +441,7 @@ class CreateEventFormViewModel extends _$CreateEventFormViewModel {
         event: created,
         warningMessage: warningMessage,
       );
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('createEvent submit failed', e, st);
       if (!ref.mounted) return null;
       state = state.copyWith(
@@ -470,11 +470,14 @@ class EditEventFormState {
     this.recurringPattern,
     this.recurringEndDate,
     this.costSplitEnabled = false,
+    this.isLoading = false,
     this.isSubmitting = false,
     this.hasAttemptedSubmit = false,
-    this.isSaved = false,
+    this.savedEvent,
     this.error,
   });
+
+  const EditEventFormState.loading() : this(isLoading: true);
 
   factory EditEventFormState.fromEvent(EventModel event) => EditEventFormState(
     title: event.title,
@@ -505,10 +508,13 @@ class EditEventFormState {
   final RecurrencePattern? recurringPattern;
   final DateTime? recurringEndDate;
   final bool costSplitEnabled;
+  final bool isLoading;
   final bool isSubmitting;
   final bool hasAttemptedSubmit;
-  final bool isSaved;
+  final EventModel? savedEvent;
   final String? error;
+
+  static const _sentinel = Object();
 
   EditEventFormState copyWith({
     String? title,
@@ -527,9 +533,10 @@ class EditEventFormState {
     bool clearRecurringPattern = false,
     Object? recurringEndDate = _sentinel,
     bool? costSplitEnabled,
+    bool? isLoading,
     bool? isSubmitting,
     bool? hasAttemptedSubmit,
-    bool? isSaved,
+    Object? savedEvent = _sentinel,
     String? error,
     bool clearError = false,
   }) {
@@ -556,23 +563,33 @@ class EditEventFormState {
           ? this.recurringEndDate
           : recurringEndDate as DateTime?,
       costSplitEnabled: costSplitEnabled ?? this.costSplitEnabled,
+      isLoading: isLoading ?? this.isLoading,
       isSubmitting: isSubmitting ?? this.isSubmitting,
       hasAttemptedSubmit: hasAttemptedSubmit ?? this.hasAttemptedSubmit,
-      isSaved: isSaved ?? this.isSaved,
-      error: clearError ? null : error,
+      savedEvent: identical(savedEvent, _sentinel)
+          ? this.savedEvent
+          : savedEvent as EventModel?,
+      error: clearError ? null : (error ?? this.error),
     );
   }
 
-  static const _sentinel = Object();
+  bool get isLoaded => !isLoading && startsAt != null;
+
+  bool get isSaved => savedEvent != null;
+
+  bool get canSubmit => submissionBlockReason == null;
 
   bool get hasExistingImage =>
       !removeExistingImage && (existingImageUrl?.isNotEmpty ?? false);
 
-  /// Get applicable recurrence patterns based on duration between start and end dates
+  String? get visibleImageUrl => hasExistingImage ? existingImageUrl : null;
+
   List<RecurrencePattern> get applicablePatterns {
     if (!isRecurring) return RecurrencePattern.values;
+
     final start = startsAt;
     if (start == null) return RecurrencePattern.values;
+
     return _allowedPatternsForWindow(
       startsAt: start,
       endsAt: endsAt,
@@ -587,17 +604,13 @@ class EditEventFormState {
     return null;
   }
 
-  String? get startsAtError {
-    final start = startsAt;
-    if (start == null) return 'Start time is required';
-    if (!start.isAfter(DateTime.now())) {
-      return 'Start time must be in the future.';
-    }
+  String? get locationError {
+    if (location == null) return 'Please select a location.';
     return null;
   }
 
-  String? get locationError {
-    if (location == null) return 'Please select a location.';
+  String? get startsAtError {
+    if (startsAt == null) return 'Start time is required';
     return null;
   }
 
@@ -612,9 +625,8 @@ class EditEventFormState {
 
   String? get recurringError {
     if (!isRecurring) return null;
-    if (recurringPattern == null) {
-      return 'Select a recurrence pattern.';
-    }
+    if (recurringPattern == null) return 'Select a recurrence pattern.';
+
     final start = startsAt;
     final endDate = recurringEndDate;
     if (start != null &&
@@ -625,59 +637,95 @@ class EditEventFormState {
     return null;
   }
 
-  String? get submissionBlockReason =>
-      titleError ??
-      locationError ??
-      startsAtError ??
-      endsAtError ??
-      recurringError;
+  String? get submissionBlockReason {
+    if (isLoading) return 'Event is still loading.';
+    if (isSubmitting)
+      return 'Please wait for the current submission to finish.';
+    return titleError ??
+        locationError ??
+        startsAtError ??
+        endsAtError ??
+        recurringError;
+  }
 }
 
 @riverpod
 class EditEventFormViewModel extends _$EditEventFormViewModel {
   late final String _eventId;
-  EventModel? _originalEvent;
+  EventModel? _loadedEvent;
 
   @override
   EditEventFormState build(String eventId) {
     _eventId = eventId;
-    return const EditEventFormState();
+
+    // Keep the fetch inside the watched provider instance. Calling this only
+    // from the screen with ref.read(...) can start the fetch on an auto-disposed
+    // instance, then leave the watched provider stuck in its initial loading
+    // state.
+    Future<void>.microtask(_loadEvent);
+
+    return const EditEventFormState.loading();
   }
 
-  void initFromEventId(String eventId) {
-    if (_originalEvent?.id == eventId && state.title.isNotEmpty) {
-      return;
+  Future<void> reloadEvent() => _loadEvent(force: true);
+
+  Future<void> _loadEvent({bool force = false}) async {
+    if (!ref.mounted) return;
+    if (!force && _loadedEvent?.id == _eventId && state.isLoaded) return;
+
+    state = state.copyWith(
+      isLoading: true,
+      savedEvent: null,
+      clearError: true,
+    );
+
+    try {
+      final event = await ref
+          .read(eventRepositoryProvider)
+          .getEventById(_eventId);
+      if (!ref.mounted) return;
+
+      if (event == null) {
+        state = const EditEventFormState(
+          error: 'Unable to load event details. Please try again later.',
+        );
+        return;
+      }
+
+      _loadedEvent = event;
+      state = EditEventFormState.fromEvent(event);
+    } on Exception catch (e, st) {
+      TalkerService.error('Failed to load event for editing', e, st);
+      if (!ref.mounted) return;
+      state = const EditEventFormState(
+        error: 'Unable to load event details. Please try again later.',
+      );
     }
-    final repo = ref.read(eventRepositoryProvider);
-    repo
-        .getEventById(eventId)
-        .then((event) {
-          if (event != null && ref.mounted) {
-            _originalEvent = event;
-            state = EditEventFormState.fromEvent(event);
-          }
-        })
-        .catchError((e) {
-          TalkerService.error('Failed to load event for editing', e);
-          if (ref.mounted) {
-            state = state.copyWith(
-              error: 'Unable to load event details. Please try again later.',
-            );
-          }
-        });
   }
 
-  void setTitle(String value) =>
-      state = state.copyWith(title: value, isSaved: false, clearError: true);
+  void setTitle(String value) {
+    state = state.copyWith(
+      title: value,
+      savedEvent: null,
+      clearError: true,
+    );
+  }
 
-  void setDescription(String value) => state = state.copyWith(
-    description: value,
-    isSaved: false,
-    clearError: true,
-  );
+  void setDescription(String value) {
+    state = state.copyWith(
+      description: value,
+      savedEvent: null,
+      clearError: true,
+    );
+  }
 
-  void setType(EventType value) =>
-      state = state.copyWith(type: value, isSaved: false, clearError: true);
+  void setType(EventType value) {
+    state = state.copyWith(
+      type: value,
+      savedEvent: null,
+      clearError: true,
+    );
+  }
 
   void setStartsAt(DateTime value) {
     final nextStart = DateTime(
@@ -687,147 +735,170 @@ class EditEventFormViewModel extends _$EditEventFormViewModel {
       value.hour,
       value.minute,
     );
-    final nextEnd = state.endsAt != null && !state.endsAt!.isAfter(nextStart)
+    final currentEnd = state.endsAt;
+    final nextEnd = currentEnd != null && !currentEnd.isAfter(nextStart)
         ? nextStart.add(const Duration(hours: 2))
-        : state.endsAt;
-    final nextAllowedPatterns = _allowedPatternsForWindow(
+        : currentEnd;
+    final recurringEnd = state.recurringEndDate;
+    final nextRecurringEnd =
+        recurringEnd != null &&
+            _dateOnly(recurringEnd).isBefore(_dateOnly(nextStart))
+        ? _dateOnly(nextStart)
+        : recurringEnd;
+    final allowedPatterns = _allowedPatternsForWindow(
       startsAt: nextStart,
       endsAt: nextEnd,
-      recurringEndDate: state.recurringEndDate,
+      recurringEndDate: nextRecurringEnd,
     );
-    final shouldClearPattern =
-        state.recurringPattern != null &&
-        !nextAllowedPatterns.contains(state.recurringPattern);
 
     state = state.copyWith(
       startsAt: nextStart,
       endsAt: nextEnd,
-      clearRecurringPattern: shouldClearPattern,
-      isSaved: false,
+      recurringEndDate: nextRecurringEnd,
+      clearRecurringPattern:
+          state.recurringPattern != null &&
+          !allowedPatterns.contains(state.recurringPattern),
+      savedEvent: null,
       clearError: true,
     );
   }
 
   void setEndsAt(DateTime? value) {
     final start = state.startsAt;
-    final nextAllowedPatterns = start == null
+    final allowedPatterns = start == null
         ? RecurrencePattern.values
         : _allowedPatternsForWindow(
             startsAt: start,
             endsAt: value,
             recurringEndDate: state.recurringEndDate,
           );
-    final shouldClearPattern =
-        state.recurringPattern != null &&
-        !nextAllowedPatterns.contains(state.recurringPattern);
 
     state = state.copyWith(
       endsAt: value,
-      clearRecurringPattern: shouldClearPattern,
-      isSaved: false,
+      clearRecurringPattern:
+          state.recurringPattern != null &&
+          !allowedPatterns.contains(state.recurringPattern),
+      savedEvent: null,
       clearError: true,
     );
   }
 
-  void setLocation(LocationPoint value) =>
-      state = state.copyWith(location: value, isSaved: false, clearError: true);
+  void setLocation(LocationPoint value) {
+    state = state.copyWith(
+      location: value,
+      savedEvent: null,
+      clearError: true,
+    );
+  }
 
-  void setMaxParticipants(int value) => state = state.copyWith(
-    maxParticipants: value,
-    isSaved: false,
-    clearError: true,
-  );
+  void setMaxParticipants(int value) {
+    state = state.copyWith(
+      maxParticipants: value,
+      savedEvent: null,
+      clearError: true,
+    );
+  }
 
   void setImageFile(File? value) {
     state = state.copyWith(
       imageFile: value,
-      removeExistingImage: value == null && state.removeExistingImage,
-      isSaved: false,
+      removeExistingImage: false,
+      savedEvent: null,
       clearError: true,
     );
   }
 
   void clearSelectedImage() {
+    final isRemovingExistingImage =
+        state.imageFile == null && state.hasExistingImage;
+
     state = state.copyWith(
       imageFile: null,
-      existingImageUrl: state.hasExistingImage ? null : state.existingImageUrl,
-      removeExistingImage: state.imageFile == null || state.removeExistingImage,
-      isSaved: false,
+      existingImageUrl: isRemovingExistingImage ? null : state.existingImageUrl,
+      removeExistingImage: isRemovingExistingImage || state.removeExistingImage,
+      savedEvent: null,
       clearError: true,
     );
   }
 
-  void setRecurring(bool value) => state = state.copyWith(
-    isRecurring: value,
-    clearRecurringPattern: !value,
-    recurringEndDate: value ? state.recurringEndDate : null,
-    isSaved: false,
-    clearError: true,
-  );
+  void setRecurring(bool value) {
+    state = state.copyWith(
+      isRecurring: value,
+      clearRecurringPattern: !value,
+      recurringEndDate: value ? state.recurringEndDate : null,
+      savedEvent: null,
+      clearError: true,
+    );
+  }
 
-  void setRecurringPattern(RecurrencePattern pattern) => state = state.copyWith(
-    recurringPattern: pattern,
-    isSaved: false,
-    clearError: true,
-  );
+  void setRecurringPattern(RecurrencePattern pattern) {
+    state = state.copyWith(
+      recurringPattern: pattern,
+      savedEvent: null,
+      clearError: true,
+    );
+  }
 
   void setRecurringEndDate(DateTime? value) {
     final normalized = value == null ? null : _dateOnly(value);
     final start = state.startsAt;
-    final nextAllowedPatterns = start == null
+    final allowedPatterns = start == null
         ? RecurrencePattern.values
         : _allowedPatternsForWindow(
             startsAt: start,
             endsAt: state.endsAt,
             recurringEndDate: normalized,
           );
-    final shouldClearPattern =
-        state.recurringPattern != null &&
-        !nextAllowedPatterns.contains(state.recurringPattern);
 
     state = state.copyWith(
       recurringEndDate: normalized,
-      clearRecurringPattern: shouldClearPattern,
-      isSaved: false,
+      clearRecurringPattern:
+          state.recurringPattern != null &&
+          !allowedPatterns.contains(state.recurringPattern),
+      savedEvent: null,
       clearError: true,
     );
   }
 
-  void setCostSplitEnabled(bool value) => state = state.copyWith(
-    costSplitEnabled: value,
-    isSaved: false,
-    clearError: true,
-  );
+  void setCostSplitEnabled(bool value) {
+    state = state.copyWith(
+      costSplitEnabled: value,
+      savedEvent: null,
+      clearError: true,
+    );
+  }
 
   Future<EventModel?> submit() async {
-    if (state.isSubmitting) return null;
-    final originalEvent = _originalEvent;
-    if (originalEvent == null) {
+    final original = _loadedEvent;
+    if (original == null) {
       state = state.copyWith(error: 'Unable to load the original event.');
       return null;
     }
 
     state = state.copyWith(
       hasAttemptedSubmit: true,
-      isSubmitting: true,
-      isSaved: false,
+      savedEvent: null,
       clearError: true,
     );
 
     final validationError = state.submissionBlockReason;
     if (validationError != null) {
-      state = state.copyWith(isSubmitting: false, error: validationError);
+      state = state.copyWith(error: validationError);
       return null;
     }
 
+    state = state.copyWith(isSubmitting: true);
+
     try {
       final repo = ref.read(eventRepositoryProvider);
-      var imageUrl = state.removeExistingImage ? null : state.existingImageUrl;
-      if (state.imageFile != null) {
-        imageUrl = await repo.uploadEventImage(_eventId, state.imageFile!);
-      }
+      final imageFile = state.imageFile;
+      final imageUrl = imageFile == null
+          ? state.visibleImageUrl
+          : await repo.uploadEventImage(_eventId, imageFile);
 
-      final updated = originalEvent.copyWith(
+      if (!ref.mounted) return null;
+
+      final updated = original.copyWith(
         title: state.title.trim(),
         type: state.type,
         location: state.location!,
@@ -847,20 +918,17 @@ class EditEventFormViewModel extends _$EditEventFormViewModel {
 
       await repo.updateEvent(updated);
       if (!ref.mounted) return null;
-      state = state.copyWith(
-        isSubmitting: false,
-        isSaved: true,
-        imageFile: null,
-        existingImageUrl: updated.imageUrl,
+
+      _loadedEvent = updated;
+      state = EditEventFormState.fromEvent(updated).copyWith(
+        savedEvent: updated,
       );
-      _originalEvent = updated;
       return updated;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('editEvent submit failed', e, st);
       if (!ref.mounted) return null;
       state = state.copyWith(
         isSubmitting: false,
-        isSaved: false,
         error: 'Unable to update event. Please try again.',
       );
       return null;
@@ -989,7 +1057,7 @@ class EventSelectionViewModel extends _$EventSelectionViewModel {
       final created = event.copyWith(id: eventId);
       state = state.copyWith(isLoading: false, selectedEvent: created);
       return created;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('createEvent failed', e, st);
       if (!ref.mounted) return null;
       state = state.copyWith(
@@ -1065,7 +1133,7 @@ class EventDetailViewModel extends _$EventDetailViewModel {
         successMessage: 'You joined the event!',
       );
       return true;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('joinEvent failed', e, st);
       if (!ref.mounted) return false;
       state = state.copyWith(
@@ -1091,7 +1159,7 @@ class EventDetailViewModel extends _$EventDetailViewModel {
         successMessage: 'You left the event.',
       );
       return true;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('leaveEvent failed', e, st);
       if (!ref.mounted) return false;
       state = state.copyWith(
@@ -1124,7 +1192,7 @@ class EventDetailViewModel extends _$EventDetailViewModel {
       return await ref
           .read(eventRepositoryProvider)
           .ensureEventGroupChat(event: event, userId: userId);
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('ensureEventGroupChat failed', e, st);
       if (!ref.mounted) return null;
       state = state.copyWith(
@@ -1145,7 +1213,7 @@ class EventDetailViewModel extends _$EventDetailViewModel {
         successMessage: 'Event updated successfully.',
       );
       return true;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('updateEvent failed', e, st);
       if (!ref.mounted) return false;
       state = state.copyWith(
@@ -1165,7 +1233,7 @@ class EventDetailViewModel extends _$EventDetailViewModel {
       if (!ref.mounted) return null;
       state = state.copyWith(isLoading: false);
       return url;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('uploadImage failed', e, st);
       if (!ref.mounted) return null;
       state = state.copyWith(
@@ -1220,7 +1288,7 @@ class EventDetailViewModel extends _$EventDetailViewModel {
         successMessage: 'Event cancelled.',
       );
       return true;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('cancelEvent failed', e, st);
       if (!ref.mounted) return false;
       state = state.copyWith(
@@ -1239,7 +1307,7 @@ class EventDetailViewModel extends _$EventDetailViewModel {
       if (!ref.mounted) return false;
       state = state.copyWith(isDeleting: false);
       return true;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('deleteEvent failed', e, st);
       if (!ref.mounted) return false;
       state = state.copyWith(
@@ -1274,7 +1342,7 @@ class EventDetailViewModel extends _$EventDetailViewModel {
         successMessage: 'Ride status updated!',
       );
       return true;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('setRideStatus failed', e, st);
       if (!ref.mounted) return false;
       state = state.copyWith(
@@ -1300,7 +1368,7 @@ class EventDetailViewModel extends _$EventDetailViewModel {
         successMessage: 'Ride linked to event!',
       );
       return true;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('linkRide failed', e, st);
       if (!ref.mounted) return false;
       state = state.copyWith(isLoading: false, error: 'Unable to link ride.');
@@ -1323,7 +1391,7 @@ class EventDetailViewModel extends _$EventDetailViewModel {
         successMessage: 'Meetup point set!',
       );
       return true;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('setMeetupPin failed', e, st);
       if (!ref.mounted) return false;
       state = state.copyWith(
@@ -1351,7 +1419,7 @@ class EventDetailViewModel extends _$EventDetailViewModel {
         successMessage: 'Event chat created!',
       );
       return true;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('setChatGroup failed', e, st);
       if (!ref.mounted) return false;
       state = state.copyWith(
@@ -1507,7 +1575,7 @@ class EventListViewModel extends _$EventListViewModel {
       } else {
         clearRadiusFilter();
       }
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('Failed to get location for radius filter', e);
       if (!ref.mounted) return;
       clearRadiusFilter();

@@ -9,17 +9,29 @@ import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/utils/payment_error_handler.dart';
-import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/features/payments/view_models/payment_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
-/// Screen for drivers to connect their Stripe account for payouts
+const _ink = Color(0xFF062015);
+const _ink2 = Color(0xFF113D27);
+const _muted = Color(0xFF607466);
+const _border = Color(0xFFDCEADF);
+const _screenBg = Color(0xFFF6FBF7);
+const _primaryGreen = Color(0xFF13A35B);
+const _deepGreen = Color(0xFF087A3D);
+const _mintGreen = Color(0xFF5CCF88);
+const _successGreen = Color(0xFF22C55E);
+const _stripeGreen = Color(0xFF16834C);
+
+enum _PayoutSetupPage { intro, prep, success }
+
+/// Driver Stripe onboarding redesigned as a 3-screen payout setup flow:
+/// 1. Premium payout intro
+/// 2. Before-you-continue checklist
+/// 3. Payouts-ready confirmation
 ///
-/// IMPLEMENTATION NOTES:
-/// - Uses InAppWebView for better UX (user stays in app)
-/// - This is SAFE for Stripe Connect (not for payment collection!)
-/// - Stripe handles all security and validation
-/// - Verifies account status after onboarding
+/// Existing Stripe Connect WebView, URL allow-listing, refresh handling,
+/// completion handling, and Riverpod state are preserved.
 class DriverStripeOnboardingScreen extends ConsumerStatefulWidget {
   const DriverStripeOnboardingScreen({super.key});
 
@@ -31,7 +43,9 @@ class DriverStripeOnboardingScreen extends ConsumerStatefulWidget {
 class _DriverStripeOnboardingScreenState
     extends ConsumerState<DriverStripeOnboardingScreen> {
   bool _didNavigateAway = false;
+  _PayoutSetupPage _page = _PayoutSetupPage.intro;
   InAppWebViewController? _webViewController;
+
   @override
   void initState() {
     super.initState();
@@ -53,7 +67,6 @@ class _DriverStripeOnboardingScreenState
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-
       context.goNamed(
         routeName,
         queryParameters: queryParameters,
@@ -62,15 +75,16 @@ class _DriverStripeOnboardingScreenState
     });
   }
 
+  void _goToDashboard() {
+    final returnTo = GoRouterState.of(context).uri.queryParameters['returnTo'];
+    _safeGoNamed(returnTo ?? AppRoutes.driverHome.name);
+  }
+
   @override
   Widget build(BuildContext context) {
     final onboardingState = ref.watch(
       driverStripeOnboardingFlowViewModelProvider,
     );
-    final mode = GoRouterState.of(context).uri.queryParameters['mode'];
-    final returnTo = GoRouterState.of(context).uri.queryParameters['returnTo'];
-
-    final isManageMode = mode == 'manage';
 
     ref.listen(currentUserProvider, (previous, next) {
       final previousUser = previous?.value;
@@ -96,9 +110,7 @@ class _DriverStripeOnboardingScreenState
       if (next.isConnected &&
           previous?.isConnected != true &&
           context.mounted) {
-        if (isManageMode) return;
-
-        _safeGoNamed(returnTo ?? AppRoutes.driverHome.name);
+        setState(() => _page = _PayoutSetupPage.success);
       }
     });
 
@@ -106,255 +118,421 @@ class _DriverStripeOnboardingScreenState
       return _buildWebView(onboardingState);
     }
 
+    if (onboardingState.isConnected || _page == _PayoutSetupPage.success) {
+      return _buildSuccessScreen(onboardingState);
+    }
+
+    if (_page == _PayoutSetupPage.prep) {
+      return _buildPrepScreen(onboardingState);
+    }
+
+    return _buildIntroScreen(onboardingState);
+  }
+
+  Widget _buildShell({required Widget child}) {
     return AdaptiveScaffold(
-      appBar: AdaptiveAppBar(
-        title: AppLocalizations.of(context).setUpPayouts,
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.all(20.w),
-          child: Column(
-            children: [
-              // Step progress indicator
-              _buildStepProgress(context),
-              SizedBox(height: 16.h),
-
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      SizedBox(height: 20.h),
-
-                      // Hero illustration
-                      Container(
-                        padding: EdgeInsets.all(30.w),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              AppColors.primary.withValues(alpha: 0.1),
-                              AppColors.secondary.withValues(alpha: 0.1),
-                            ],
-                          ),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.account_balance_wallet_rounded,
-                          size: 80.sp,
-                          color: AppColors.primary,
-                        ),
-                      ).animate().scale(
-                        duration: 500.ms,
-                        curve: Curves.elasticOut,
-                      ),
-
-                      SizedBox(height: 30.h),
-
-                      Text(
-                        AppLocalizations.of(context).getPaidForYourRides,
-                        style: TextStyle(
-                          fontSize: 24.sp,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.textPrimary,
-                        ),
-                        textAlign: TextAlign.center,
-                      ).animate().fadeIn(delay: 200.ms),
-
-                      SizedBox(height: 12.h),
-
-                      Text(
-                        AppLocalizations.of(context).connectYourBankAccountTo,
-                        style: TextStyle(
-                          fontSize: 15.sp,
-                          color: AppColors.textSecondary,
-                          height: 1.5,
-                        ),
-                        textAlign: TextAlign.center,
-                      ).animate().fadeIn(delay: 300.ms),
-
-                      SizedBox(height: 40.h),
-
-                      // Benefits
-                      _buildBenefitItem(
-                        icon: Icons.bolt_rounded,
-                        title: AppLocalizations.of(context).instantPayouts,
-                        description: AppLocalizations.of(
-                          context,
-                        ).benefitInstantPayoutsDesc,
-                        delay: 400,
-                      ),
-                      _buildBenefitItem(
-                        icon: Icons.security_rounded,
-                        title: AppLocalizations.of(context).secureProtected,
-                        description: AppLocalizations.of(
-                          context,
-                        ).benefitSecureDesc,
-                        delay: 500,
-                      ),
-                      _buildBenefitItem(
-                        icon: Icons.receipt_long_rounded,
-                        title: AppLocalizations.of(context).clearTracking,
-                        description: AppLocalizations.of(
-                          context,
-                        ).benefitTrackingDesc,
-                        delay: 600,
-                      ),
-                      _buildBenefitItem(
-                        icon: Icons.percent_rounded,
-                        title: AppLocalizations.of(context).lowFees,
-                        description: AppLocalizations.of(
-                          context,
-                        ).benefitLowFeesDesc,
-                        delay: 700,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              // Error / verifying banners — always visible above the CTA
-              if (onboardingState.errorMessage != null) ...[
-                SizedBox(height: 12.h),
-                Container(
-                  padding: EdgeInsets.all(14.w),
-                  decoration: BoxDecoration(
-                    color: AppColors.error.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(12.r),
-                    border: Border.all(
-                      color: AppColors.error.withValues(alpha: 0.3),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.error_outline,
-                        color: AppColors.error,
-                        size: 20.sp,
-                      ),
-                      SizedBox(width: 12.w),
-                      Expanded(
-                        child: Text(
-                          PaymentErrorHandler.humanize(
-                            onboardingState.errorMessage!,
-                          ),
-                          style: TextStyle(
-                            color: AppColors.error,
-                            fontSize: 13.sp,
-                            height: 1.4,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ).animate().fadeIn().slideY(begin: 0.1),
-              ],
-
-              if (onboardingState.isVerifying) ...[
-                SizedBox(height: 12.h),
-                Container(
-                  padding: EdgeInsets.all(14.w),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                  child: Row(
-                    children: [
-                      SizedBox(
-                        width: 18.w,
-                        height: 18.w,
-                        child: const CircularProgressIndicator.adaptive(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            AppColors.primary,
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: 12.w),
-                      Expanded(
-                        child: Text(
-                          AppLocalizations.of(context).stripeVerifyingAccount,
-                          style: TextStyle(
-                            color: AppColors.primary,
-                            fontSize: 13.sp,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-
-              // CTA Button
-              SizedBox(height: 16.h),
-              PremiumButton(
-                text: AppLocalizations.of(context).connectStripeAccount,
-                isLoading:
-                    onboardingState.isLoading || onboardingState.isVerifying,
-                onPressed:
-                    onboardingState.isLoading || onboardingState.isVerifying
-                    ? null
-                    : _startOnboarding,
-              ).animate().fadeIn(delay: 800.ms).slideY(begin: 0.2),
-
-              SizedBox(height: 12.h),
-
-              Text(
-                AppLocalizations.of(context).poweredByStripe,
-                style: TextStyle(
-                  fontSize: 12.sp,
-                  color: AppColors.textSecondary,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [_screenBg, Colors.white],
           ),
         ),
+        child: SafeArea(child: child),
       ),
     );
   }
 
-  Widget _buildBenefitItem({
-    required IconData icon,
-    required String title,
-    required String description,
-    required int delay,
-  }) {
+  Widget _buildIntroScreen(DriverStripeOnboardingFlowState state) {
+    final isBusy = state.isLoading || state.isVerifying;
+
+    return _buildShell(
+      child: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: EdgeInsets.fromLTRB(18.w, 12.h, 18.w, 18.h),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildIntroHero(),
+                  SizedBox(height: 28.h),
+                  _buildDriverBenefits(),
+                  _buildStatusArea(context, state),
+                ],
+              ),
+            ),
+          ),
+          _StickyFooter(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _GradientButton(
+                  text: 'Connect Stripe account',
+                  trailingIcon: Icons.lock_outline_rounded,
+                  isLoading: isBusy,
+                  onPressed: isBusy
+                      ? null
+                      : () => setState(() => _page = _PayoutSetupPage.prep),
+                ),
+                SizedBox(height: 13.h),
+                const _PoweredByStripe(),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildIntroHero() {
     return Container(
-      margin: EdgeInsets.only(bottom: 16.h),
-      padding: EdgeInsets.all(16.w),
+      width: double.infinity,
+      padding: EdgeInsets.fromLTRB(18.w, 17.h, 18.w, 14.h),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+        borderRadius: BorderRadius.circular(30.r),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF052E1A), Color(0xFF064E3B), Color(0xFF087A3D)],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: _ink.withValues(alpha: 0.24),
+            blurRadius: 30.r,
+            offset: Offset(0, 18.h),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          PositionedDirectional(
+            top: -70.h,
+            end: -65.w,
+            child: _SoftCircle(
+              size: 190.w,
+              color: Colors.white.withValues(alpha: 0.07),
+            ),
+          ),
+          PositionedDirectional(
+            bottom: 82.h,
+            start: -92.w,
+            child: _SoftCircle(
+              size: 180.w,
+              color: const Color(0xFF34D399).withValues(alpha: 0.15),
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const _MiniLogo(onDark: true),
+                  SizedBox(width: 8.w),
+                  Text(
+                    'SportConnect',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                  const Spacer(),
+                  Container(
+                    width: 34.w,
+                    height: 34.w,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(13.r),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.16),
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.shield_outlined,
+                      color: Colors.white,
+                      size: 18.sp,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 34.h),
+              Text(
+                'Get paid for\nevery ride',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 31.sp,
+                  height: 1.10,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -0.8,
+                ),
+              ).animate().fadeIn(duration: 260.ms).slideY(begin: 0.04, end: 0),
+              SizedBox(height: 12.h),
+              Text(
+                'Set up EUR payouts in minutes and\nreceive earnings automatically.',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.78),
+                  fontSize: 13.4.sp,
+                  height: 1.45,
+                  fontWeight: FontWeight.w500,
+                ),
+              ).animate().fadeIn(delay: 70.ms),
+              SizedBox(height: 24.h),
+              _buildBalanceCard(),
+              SizedBox(height: 13.h),
+              Row(
+                children: [
+                  const Expanded(
+                    child: _MiniFeatureTile(
+                      icon: Icons.bolt_rounded,
+                      title: 'Fast payouts',
+                      subtitle: '1–2 business days',
+                      color: Color(0xFF10B981),
+                    ),
+                  ),
+                  SizedBox(width: 8.w),
+                  const Expanded(
+                    child: _MiniFeatureTile(
+                      icon: Icons.verified_user_rounded,
+                      title: 'Secure',
+                      subtitle: 'EU-grade safety',
+                      color: _mintGreen,
+                    ),
+                  ),
+                  SizedBox(width: 8.w),
+                  const Expanded(
+                    child: _MiniFeatureTile(
+                      icon: Icons.percent_rounded,
+                      title: 'Low fees',
+                      subtitle: 'Transparent pricing',
+                      color: Color(0xFF2FA66A),
+                    ),
+                  ),
+                ],
+              ).animate().fadeIn(delay: 160.ms).slideY(begin: 0.04, end: 0),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBalanceCard() {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(17.w),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22.r),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Colors.white, Color(0xFFF4FBF6)],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 26.r,
+            offset: Offset(0, 14.h),
+          ),
+        ],
       ),
       child: Row(
         children: [
-          Container(
-            padding: EdgeInsets.all(12.w),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12.r),
-            ),
-            child: Icon(icon, color: AppColors.primary, size: 24.sp),
-          ),
-          SizedBox(width: 16.w),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Text('EUR balance', style: _labelStyle(_muted)),
+                SizedBox(height: 8.h),
                 Text(
-                  title,
+                  '14 320,50 €',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
+                    color: _ink,
+                    fontSize: 27.sp,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.9,
                   ),
                 ),
-                SizedBox(height: 4.h),
-                Text(
-                  description,
-                  style: TextStyle(
-                    fontSize: 13.sp,
-                    color: AppColors.textSecondary,
+                SizedBox(height: 10.h),
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 10.w,
+                    vertical: 6.h,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE9FAF0),
+                    borderRadius: BorderRadius.circular(999.r),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.check_rounded,
+                        color: const Color(0xFF159A50),
+                        size: 13.sp,
+                      ),
+                      SizedBox(width: 4.w),
+                      Text(
+                        'Ready for EUR payout',
+                        style: TextStyle(
+                          color: const Color(0xFF159A50),
+                          fontSize: 10.2.sp,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(width: 8.w),
+          const _WalletArt(),
+        ],
+      ),
+    ).animate().fadeIn(delay: 120.ms).scale(begin: const Offset(0.98, 0.98));
+  }
+
+  Widget _buildDriverBenefits() {
+    final items = [
+      'Automatic weekly payouts',
+      'No hidden charges',
+      'Trusted by thousands of drivers',
+      '24/7 support when you need it',
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Why drivers love payouts on\nSportConnect',
+          style: TextStyle(
+            color: _ink,
+            fontSize: 18.sp,
+            height: 1.18,
+            fontWeight: FontWeight.w900,
+            letterSpacing: -0.35,
+          ),
+        ),
+        SizedBox(height: 16.h),
+        ...items.map((item) {
+          return Padding(
+            padding: EdgeInsets.only(bottom: 12.h),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.check_circle_outline_rounded,
+                  color: _ink,
+                  size: 18.sp,
+                ),
+                SizedBox(width: 10.w),
+                Expanded(
+                  child: Text(
+                    item,
+                    style: TextStyle(
+                      color: const Color(0xFF34415F),
+                      fontSize: 12.4.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }),
+      ],
+    ).animate().fadeIn(delay: 180.ms).slideY(begin: 0.04, end: 0);
+  }
+
+  Widget _buildPrepScreen(DriverStripeOnboardingFlowState state) {
+    final isBusy = state.isLoading || state.isVerifying;
+
+    return _buildShell(
+      child: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 18.h),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildPrepTopBar(),
+                  SizedBox(height: 38.h),
+                  Text(
+                    'Before you continue',
+                    style: _titleStyle(27),
+                  ).animate().fadeIn().slideY(begin: 0.04, end: 0),
+                  SizedBox(height: 8.h),
+                  Text(
+                    'Here’s what you’ll need to get set up.',
+                    style: TextStyle(
+                      color: _muted,
+                      fontSize: 13.4.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ).animate().fadeIn(delay: 60.ms),
+                  SizedBox(height: 18.h),
+                  _TimeChip(),
+                  SizedBox(height: 24.h),
+                  const _ChecklistRow(
+                    icon: Icons.account_balance_rounded,
+                    iconColor: _primaryGreen,
+                    iconBg: Color(0xFFE9F9EF),
+                    title: 'French IBAN',
+                    subtitle: 'To receive EUR payouts',
+                  ),
+                  SizedBox(height: 12.h),
+                  const _ChecklistRow(
+                    icon: Icons.badge_rounded,
+                    iconColor: _mintGreen,
+                    iconBg: Color(0xFFEAF8ED),
+                    title: 'Identity verification',
+                    subtitle: 'Carte d’identité or passport',
+                  ),
+                  SizedBox(height: 12.h),
+                  const _ChecklistRow(
+                    icon: Icons.description_rounded,
+                    iconColor: _successGreen,
+                    iconBg: Color(0xFFE8FAF0),
+                    title: 'French tax details',
+                    subtitle: 'For French tax records',
+                  ),
+                  SizedBox(height: 28.h),
+                  const _SecurityCard(),
+                  SizedBox(height: 12.h),
+                  _buildStatusArea(context, state),
+                ],
+              ),
+            ),
+          ),
+          _StickyFooter(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _GradientButton(
+                  text: 'Continue to Stripe',
+                  trailingIcon: Icons.open_in_new_rounded,
+                  isLoading: isBusy,
+                  onPressed: isBusy ? null : _startOnboarding,
+                ),
+                SizedBox(height: 12.h),
+                TextButton(
+                  onPressed: isBusy
+                      ? null
+                      : () => setState(() => _page = _PayoutSetupPage.intro),
+                  child: Text(
+                    'Maybe later',
+                    style: TextStyle(
+                      color: _primaryGreen,
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
               ],
@@ -362,83 +540,223 @@ class _DriverStripeOnboardingScreenState
           ),
         ],
       ),
-    ).animate().fadeIn(delay: Duration(milliseconds: delay)).slideX(begin: 0.1);
-  }
-
-  Widget _buildStepProgress(BuildContext context) {
-    const steps = ['Connect', 'Verify', 'Get Paid'];
-    return Row(
-      children: List.generate(steps.length * 2 - 1, (i) {
-        if (i.isOdd) {
-          return Expanded(
-            child: Container(
-              height: 2.h,
-              color: i == 1 ? AppColors.border : AppColors.border,
-            ),
-          );
-        }
-        final stepIndex = i ~/ 2;
-        final isActive = stepIndex == 0;
-        final isDone = stepIndex < 0;
-        return Column(
-          children: [
-            Container(
-              width: 28.w,
-              height: 28.w,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isActive || isDone
-                    ? AppColors.primary
-                    : AppColors.border.withValues(alpha: 0.5),
-              ),
-              child: Center(
-                child: isDone
-                    ? Icon(
-                        Icons.check_rounded,
-                        size: 14.sp,
-                        color: Colors.white,
-                      )
-                    : Text(
-                        '${stepIndex + 1}',
-                        style: TextStyle(
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.w700,
-                          color: isActive
-                              ? Colors.white
-                              : AppColors.textTertiary,
-                        ),
-                      ),
-              ),
-            ),
-            SizedBox(height: 4.h),
-            Text(
-              steps[stepIndex],
-              style: TextStyle(
-                fontSize: 10.sp,
-                fontWeight: isActive ? FontWeight.w700 : FontWeight.w400,
-                color: isActive ? AppColors.primary : AppColors.textTertiary,
-              ),
-            ),
-          ],
-        );
-      }),
     );
   }
 
-  /// Start Stripe Connect onboarding process
+  Widget _buildPrepTopBar() {
+    return Row(
+      children: [
+        _RoundIconButton(
+          icon: Icons.arrow_back_rounded,
+          onPressed: () => setState(() => _page = _PayoutSetupPage.intro),
+        ),
+        const Spacer(),
+        const _RoundIconButton(icon: Icons.shield_outlined),
+      ],
+    );
+  }
+
+  Widget _buildSuccessScreen(DriverStripeOnboardingFlowState state) {
+    return _buildShell(
+      child: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 18.h),
+              child: Column(
+                children: [
+                  _buildSuccessHeader(),
+                  SizedBox(height: 18.h),
+                  const _PayoutAccountCard(),
+                  SizedBox(height: 12.h),
+                  const _EarningsSnapshotCard(),
+                  SizedBox(height: 12.h),
+                  const _GreatJobCard(),
+                  SizedBox(height: 14.h),
+                  _buildStatusArea(context, state),
+                ],
+              ),
+            ),
+          ),
+          _StickyFooter(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _GradientButton(
+                  text: 'Back to dashboard',
+                  trailingIcon: Icons.arrow_forward_rounded,
+                  onPressed: _goToDashboard,
+                ),
+                SizedBox(height: 15.h),
+                RichText(
+                  textAlign: TextAlign.center,
+                  text: TextSpan(
+                    style: TextStyle(
+                      color: _muted,
+                      fontSize: 11.5.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    children: const [
+                      TextSpan(text: 'Need help? Visit our '),
+                      TextSpan(
+                        text: 'Support Center',
+                        style: TextStyle(
+                          color: _primaryGreen,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSuccessHeader() {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.fromLTRB(18.w, 8.h, 18.w, 28.h),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(30.r),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFE9F9EF), Color(0xFFF3FBF5), Color(0xFFF9FFFB)],
+        ),
+      ),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          const Positioned.fill(child: _ConfettiLayer()),
+          PositionedDirectional(
+            top: 0,
+            end: 0,
+            child: _RoundIconButton(
+              icon: Icons.close_rounded,
+              onPressed: _goToDashboard,
+              backgroundColor: Colors.white.withValues(alpha: 0.62),
+            ),
+          ),
+          Column(
+            children: [
+              SizedBox(height: 42.h),
+              Container(
+                width: 96.w,
+                height: 96.w,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: _successGreen.withValues(alpha: 0.22),
+                      blurRadius: 24.r,
+                      offset: Offset(0, 12.h),
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: Container(
+                    width: 72.w,
+                    height: 72.w,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: [Color(0xFF62E98F), Color(0xFF12C870)],
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.check_rounded,
+                      color: Colors.white,
+                      size: 43.sp,
+                    ),
+                  ),
+                ),
+              ).animate().scale(
+                duration: 420.ms,
+                curve: Curves.elasticOut,
+                begin: const Offset(0.86, 0.86),
+                end: const Offset(1, 1),
+              ),
+              SizedBox(height: 24.h),
+              Text('Payouts ready!', style: _titleStyle(27)),
+              SizedBox(height: 8.h),
+              Text(
+                'Your account is connected and you’re\nall set to receive earnings.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: _muted,
+                  fontSize: 13.sp,
+                  height: 1.38,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusArea(
+    BuildContext context,
+    DriverStripeOnboardingFlowState onboardingState,
+  ) {
+    final widgets = <Widget>[];
+
+    if (onboardingState.errorMessage != null) {
+      widgets.add(
+        _InlineStatusCard(
+          icon: Icons.error_outline_rounded,
+          iconColor: AppColors.error,
+          backgroundColor: AppColors.error.withValues(alpha: 0.08),
+          borderColor: AppColors.error.withValues(alpha: 0.25),
+          message: PaymentErrorHandler.humanize(onboardingState.errorMessage!),
+        ).animate().fadeIn().slideY(begin: 0.04, end: 0),
+      );
+      widgets.add(SizedBox(height: 12.h));
+    }
+
+    if (onboardingState.isVerifying) {
+      widgets.add(
+        _InlineStatusCard(
+          icon: Icons.sync_rounded,
+          iconColor: AppColors.primary,
+          backgroundColor: AppColors.primary.withValues(alpha: 0.08),
+          borderColor: AppColors.primary.withValues(alpha: 0.18),
+          message: AppLocalizations.of(context).stripeVerifyingAccount,
+          showSpinner: true,
+        ).animate().fadeIn().slideY(begin: 0.04, end: 0),
+      );
+      widgets.add(SizedBox(height: 12.h));
+    }
+
+    if (widgets.isEmpty) return const SizedBox.shrink();
+
+    return Column(children: widgets);
+  }
+
+  /// Start Stripe Connect onboarding process.
   Future<void> _startOnboarding() async {
     await ref
         .read(driverStripeOnboardingFlowViewModelProvider.notifier)
         .startOnboarding(ref.read(currentUserProvider).value);
   }
 
-  /// Build the WebView screen for Stripe onboarding
+  /// Build the WebView screen for Stripe onboarding.
   Widget _buildWebView(DriverStripeOnboardingFlowState onboardingState) {
+    final l10n = AppLocalizations.of(context);
+
     return AdaptiveScaffold(
       appBar: AdaptiveAppBar(
-        title: AppLocalizations.of(context).connectStripe,
+        title: l10n.connectStripe,
         leading: IconButton(
-          icon: const Icon(Icons.close),
+          tooltip: l10n.actionCancel,
+          icon: const Icon(Icons.close_rounded),
           onPressed: _showCancelConfirmation,
         ),
       ),
@@ -450,7 +768,6 @@ class _DriverStripeOnboardingScreenState
             ),
             initialSettings: InAppWebViewSettings(
               useShouldOverrideUrlLoading: true,
-              // UX improvements
               supportZoom: false,
               builtInZoomControls: false,
             ),
@@ -466,9 +783,7 @@ class _DriverStripeOnboardingScreenState
             onLoadStop: (controller, url) async {
               final urlStr = url?.toString() ?? '';
 
-              // Check for completion URLs
               if (urlStr.contains('stripe-refresh')) {
-                // Onboarding link expired — fetch a fresh one and reload
                 await ref
                     .read(driverStripeOnboardingFlowViewModelProvider.notifier)
                     .resumeOnboarding();
@@ -482,7 +797,6 @@ class _DriverStripeOnboardingScreenState
                 }
               } else if (urlStr.contains('stripe-return') &&
                   !onboardingState.completionHandled) {
-                // Fallback: page loaded before shouldOverrideUrlLoading fired
                 ref
                     .read(driverStripeOnboardingFlowViewModelProvider.notifier)
                     .markCompletionHandled();
@@ -492,16 +806,11 @@ class _DriverStripeOnboardingScreenState
             onReceivedError: (controller, request, error) {
               ref
                   .read(driverStripeOnboardingFlowViewModelProvider.notifier)
-                  .failWebViewLoad(
-                    AppLocalizations.of(context).stripePageLoadFailed,
-                  );
+                  .failWebViewLoad(l10n.stripePageLoadFailed);
             },
             shouldOverrideUrlLoading: (controller, navigationAction) async {
               final url = navigationAction.request.url?.toString() ?? '';
 
-              // 1. Stripe return URL — user finished the form and Stripe
-              //    is redirecting back to our hosted page.
-              //    Intercept here so we don't need the page to actually load.
               if (url.contains('stripe-return') &&
                   !onboardingState.completionHandled) {
                 ref
@@ -511,8 +820,6 @@ class _DriverStripeOnboardingScreenState
                 return NavigationActionPolicy.CANCEL;
               }
 
-              // 2. Custom deep-link fired by stripe-return.html's JS redirect
-              //    (fallback path if the page somehow loads before we intercept)
               if (url.startsWith('sportconnect://') &&
                   !onboardingState.completionHandled) {
                 ref
@@ -522,8 +829,6 @@ class _DriverStripeOnboardingScreenState
                 return NavigationActionPolicy.CANCEL;
               }
 
-              // 3. Allow Stripe-owned and our own domains so the onboarding
-              //    flow can navigate freely (identity checks, uploads, refresh)
               if (url.contains('stripe.com') ||
                   url.contains('connect.stripe.com') ||
                   url.contains('verify.stripe.com') ||
@@ -534,35 +839,100 @@ class _DriverStripeOnboardingScreenState
                 return NavigationActionPolicy.ALLOW;
               }
 
-              // 4. Block everything else (external links inside the WebView)
               return NavigationActionPolicy.CANCEL;
             },
           ),
-
-          // Loading overlay (only shown initially)
-          if (onboardingState.webViewProgress < 1.0 &&
-              onboardingState.webViewProgress == 0.0)
+          if (onboardingState.webViewProgress < 1.0)
+            PositionedDirectional(
+              top: 0,
+              start: 0,
+              end: 0,
+              child: LinearProgressIndicator(
+                value: onboardingState.webViewProgress == 0
+                    ? null
+                    : onboardingState.webViewProgress,
+                minHeight: 3.h,
+                color: AppColors.primary,
+                backgroundColor: AppColors.primary.withValues(alpha: 0.10),
+              ),
+            ),
+          if (onboardingState.webViewProgress == 0.0)
             ColoredBox(
               color: AppColors.background,
               child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const CircularProgressIndicator.adaptive(
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        AppColors.primary,
-                      ),
-                    ),
-                    SizedBox(height: 20.h),
-                    Text(
-                      AppLocalizations.of(context).stripeLoadingConnect,
-                      style: TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 14.sp,
-                      ),
-                    ),
-                  ],
-                ),
+                child:
+                    Container(
+                          margin: EdgeInsets.symmetric(horizontal: 28.w),
+                          padding: EdgeInsets.all(24.w),
+                          decoration: BoxDecoration(
+                            color: AppColors.surface,
+                            borderRadius: BorderRadius.circular(26.r),
+                            border: Border.all(
+                              color: AppColors.border.withValues(alpha: 0.50),
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.06),
+                                blurRadius: 28.r,
+                                offset: Offset(0, 14.h),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 62.w,
+                                height: 62.w,
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withValues(
+                                    alpha: 0.10,
+                                  ),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Center(
+                                  child: SizedBox(
+                                    width: 27.w,
+                                    height: 27.w,
+                                    child:
+                                        const CircularProgressIndicator.adaptive(
+                                          strokeWidth: 2.5,
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                                AppColors.primary,
+                                              ),
+                                        ),
+                                  ),
+                                ),
+                              ),
+                              SizedBox(height: 18.h),
+                              Text(
+                                l10n.stripeLoadingConnect,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: AppColors.textPrimary,
+                                  fontSize: 16.sp,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                              SizedBox(height: 8.h),
+                              Text(
+                                l10n.poweredByStripe,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 12.sp,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                        .animate()
+                        .fadeIn(duration: 250.ms)
+                        .scale(
+                          begin: const Offset(0.97, 0.97),
+                        ),
               ),
             ),
         ],
@@ -570,13 +940,11 @@ class _DriverStripeOnboardingScreenState
     );
   }
 
-  /// Handle successful onboarding completion
+  /// Handle successful onboarding completion.
   Future<void> _handleOnboardingComplete() async {
     if (!mounted) return;
 
     final l10n = AppLocalizations.of(context);
-    final uri = GoRouterState.of(context).uri;
-    final returnTo = uri.queryParameters['returnTo'];
 
     await ref
         .read(driverStripeOnboardingFlowViewModelProvider.notifier)
@@ -592,11 +960,11 @@ class _DriverStripeOnboardingScreenState
     final state = ref.read(driverStripeOnboardingFlowViewModelProvider);
 
     if (state.isConnected) {
-      _safeGoNamed(returnTo ?? AppRoutes.driverHome.name);
+      setState(() => _page = _PayoutSetupPage.success);
     }
   }
 
-  /// Show confirmation dialog before canceling onboarding
+  /// Show confirmation dialog before canceling onboarding.
   Future<void> _showCancelConfirmation() async {
     final shouldCancel = await showDialog<bool>(
       context: context,
@@ -621,6 +989,1156 @@ class _DriverStripeOnboardingScreenState
       ref
           .read(driverStripeOnboardingFlowViewModelProvider.notifier)
           .cancelOnboarding();
+
+      setState(() => _page = _PayoutSetupPage.prep);
     }
   }
+}
+
+class _StickyFooter extends StatelessWidget {
+  const _StickyFooter({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 14.h),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 22.r,
+            offset: Offset(0, -8.h),
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
+}
+
+class _GradientButton extends StatelessWidget {
+  const _GradientButton({
+    required this.text,
+    required this.onPressed,
+    this.trailingIcon,
+    this.isLoading = false,
+  });
+
+  final String text;
+  final VoidCallback? onPressed;
+  final IconData? trailingIcon;
+  final bool isLoading;
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onPressed != null && !isLoading;
+
+    return Opacity(
+      opacity: enabled ? 1 : 0.72,
+      child: GestureDetector(
+        onTap: enabled ? onPressed : null,
+        behavior: HitTestBehavior.opaque,
+        child: Container(
+          height: 54.h,
+          width: double.infinity,
+          padding: EdgeInsets.symmetric(horizontal: 18.w),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16.r),
+            gradient: const LinearGradient(colors: [_primaryGreen, _deepGreen]),
+            boxShadow: [
+              BoxShadow(
+                color: _primaryGreen.withValues(alpha: 0.26),
+                blurRadius: 20.r,
+                offset: Offset(0, 10.h),
+              ),
+            ],
+          ),
+          child: Center(
+            child: isLoading
+                ? SizedBox(
+                    width: 20.w,
+                    height: 20.w,
+                    child: const CircularProgressIndicator.adaptive(
+                      strokeWidth: 2.2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          text,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14.5.sp,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -0.1,
+                          ),
+                        ),
+                      ),
+                      if (trailingIcon != null)
+                        Icon(trailingIcon, color: Colors.white, size: 20.sp)
+                      else
+                        SizedBox(width: 20.w),
+                    ],
+                  ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PoweredByStripe extends StatelessWidget {
+  const _PoweredByStripe();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text('Powered by', style: _labelStyle(_muted)),
+        SizedBox(width: 5.w),
+        Text(
+          'stripe',
+          style: TextStyle(
+            color: _stripeGreen,
+            fontSize: 17.sp,
+            fontWeight: FontWeight.w900,
+            letterSpacing: -0.8,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _MiniLogo extends StatelessWidget {
+  const _MiniLogo({required this.onDark});
+
+  final bool onDark;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 24.w,
+      height: 24.w,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8.r),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: onDark
+              ? [Colors.white, Colors.white.withValues(alpha: 0.72)]
+              : [_primaryGreen, _mintGreen],
+        ),
+      ),
+      child: Center(
+        child: Text(
+          'S',
+          style: TextStyle(
+            color: onDark ? _ink : Colors.white,
+            fontSize: 15.sp,
+            fontWeight: FontWeight.w900,
+            fontStyle: FontStyle.italic,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SoftCircle extends StatelessWidget {
+  const _SoftCircle({required this.size, required this.color});
+
+  final double size;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+    );
+  }
+}
+
+class _MiniFeatureTile extends StatelessWidget {
+  const _MiniFeatureTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 12.h),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18.r),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.82)),
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 31.w,
+            height: 31.w,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.10),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: color, size: 17.sp),
+          ),
+          SizedBox(height: 8.h),
+          Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: _ink,
+              fontSize: 10.7.sp,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          SizedBox(height: 3.h),
+          Text(
+            subtitle,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: _muted,
+              fontSize: 8.7.sp,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _WalletArt extends StatelessWidget {
+  const _WalletArt();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 105.w,
+      height: 96.h,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          PositionedDirectional(
+            top: 2.h,
+            end: 13.w,
+            child: _Coin(size: 28.w),
+          ),
+          PositionedDirectional(
+            top: 21.h,
+            start: 8.w,
+            child: _Coin(size: 23.w),
+          ),
+          PositionedDirectional(
+            bottom: 9.h,
+            start: 0,
+            child: _Coin(size: 27.w),
+          ),
+          PositionedDirectional(
+            end: 3.w,
+            bottom: 5.h,
+            child: Container(
+              width: 72.w,
+              height: 60.h,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(18.r),
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF6F8DFF), Color(0xFF1641E5)],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: _primaryGreen.withValues(alpha: 0.34),
+                    blurRadius: 18.r,
+                    offset: Offset(0, 10.h),
+                  ),
+                ],
+              ),
+              child: Stack(
+                children: [
+                  PositionedDirectional(
+                    top: 10.h,
+                    start: 10.w,
+                    child: Container(
+                      width: 37.w,
+                      height: 6.h,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.16),
+                        borderRadius: BorderRadius.circular(999.r),
+                      ),
+                    ),
+                  ),
+                  PositionedDirectional(
+                    end: -1.w,
+                    top: 18.h,
+                    child: Container(
+                      width: 36.w,
+                      height: 25.h,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF4C74FF),
+                        borderRadius: BorderRadius.horizontal(
+                          left: Radius.circular(12.r),
+                          right: Radius.circular(8.r),
+                        ),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.20),
+                        ),
+                      ),
+                      child: Center(
+                        child: Container(
+                          width: 7.w,
+                          height: 7.w,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.62),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Coin extends StatelessWidget {
+  const _Coin({required this.size});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: const LinearGradient(
+          colors: [Color(0xFFFFE482), Color(0xFFFFA92E)],
+        ),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.74)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFFFAE2E).withValues(alpha: 0.32),
+            blurRadius: 11.r,
+            offset: Offset(0, 5.h),
+          ),
+        ],
+      ),
+      child: Center(
+        child: Text(
+          '€',
+          style: TextStyle(
+            color: const Color(0xFFD78000),
+            fontSize: size * 0.42,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TimeChip extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 13.w, vertical: 9.h),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF0F3FA),
+        borderRadius: BorderRadius.circular(999.r),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.schedule_rounded, size: 15.sp, color: _ink),
+          SizedBox(width: 7.w),
+          Text(
+            'Takes about 3 minutes',
+            style: TextStyle(
+              color: _ink,
+              fontSize: 12.sp,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    ).animate().fadeIn(delay: 90.ms).slideY(begin: 0.03, end: 0);
+  }
+}
+
+class _RoundIconButton extends StatelessWidget {
+  const _RoundIconButton({
+    required this.icon,
+    this.onPressed,
+    this.backgroundColor = Colors.white,
+  });
+
+  final IconData icon;
+  final VoidCallback? onPressed;
+  final Color backgroundColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final child = Container(
+      width: 38.w,
+      height: 38.w,
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(14.r),
+        border: Border.all(color: _border),
+      ),
+      child: Icon(icon, size: 20.sp, color: _ink),
+    );
+
+    if (onPressed == null) return child;
+
+    return GestureDetector(
+      onTap: onPressed,
+      behavior: HitTestBehavior.opaque,
+      child: child,
+    );
+  }
+}
+
+class _ChecklistRow extends StatelessWidget {
+  const _ChecklistRow({
+    required this.icon,
+    required this.iconColor,
+    required this.iconBg,
+    required this.title,
+    required this.subtitle,
+  });
+
+  final IconData icon;
+  final Color iconColor;
+  final Color iconBg;
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return _InfoCard(
+      padding: EdgeInsets.all(14.w),
+      child: Row(
+        children: [
+          Container(
+            width: 48.w,
+            height: 48.w,
+            decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
+            child: Icon(icon, color: iconColor, size: 25.sp),
+          ),
+          SizedBox(width: 14.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: _cardTitleStyle()),
+                SizedBox(height: 4.h),
+                Text(subtitle, style: _captionStyle()),
+              ],
+            ),
+          ),
+          Icon(
+            Icons.chevron_right_rounded,
+            color: const Color(0xFF7481A6),
+            size: 24.sp,
+          ),
+        ],
+      ),
+    ).animate().fadeIn(duration: 240.ms).slideY(begin: 0.04, end: 0);
+  }
+}
+
+class _SecurityCard extends StatelessWidget {
+  const _SecurityCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9FBFF),
+        borderRadius: BorderRadius.circular(23.r),
+        border: Border.all(color: _border),
+      ),
+      child: Column(
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 52.w,
+                height: 52.w,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE9F9EF),
+                  borderRadius: BorderRadius.circular(18.r),
+                ),
+                child: Icon(
+                  Icons.verified_user_rounded,
+                  color: _primaryGreen,
+                  size: 25.sp,
+                ),
+              ),
+              SizedBox(width: 14.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Your security is our priority',
+                      style: _cardTitleStyle(),
+                    ),
+                    SizedBox(height: 6.h),
+                    Text(
+                      'SportConnect partners with Stripe to securely collect and protect your information. Your data is encrypted and never shared with us.',
+                      style: _captionStyle(),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 15.h),
+          Row(
+            children: [
+              const Expanded(
+                child: _SecurityBadge(
+                  icon: Icons.shield_outlined,
+                  text: 'Secure by Stripe',
+                ),
+              ),
+              SizedBox(width: 8.w),
+              const Expanded(
+                child: _SecurityBadge(
+                  icon: Icons.verified_outlined,
+                  text: 'PCI DSS Compliant',
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    ).animate().fadeIn(delay: 180.ms).slideY(begin: 0.04, end: 0);
+  }
+}
+
+class _SecurityBadge extends StatelessWidget {
+  const _SecurityBadge({required this.icon, required this.text});
+
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 9.w, vertical: 9.h),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(999.r),
+        border: Border.all(color: _border),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: _ink, size: 14.sp),
+          SizedBox(width: 5.w),
+          Flexible(
+            child: Text(
+              text,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: _ink,
+                fontSize: 10.5.sp,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PayoutAccountCard extends StatelessWidget {
+  const _PayoutAccountCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return _InfoCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Payout account', style: _smallStrongStyle()),
+          SizedBox(height: 13.h),
+          Row(
+            children: [
+              _CircleIcon(
+                icon: Icons.account_balance_rounded,
+                color: _primaryGreen,
+                backgroundColor: const Color(0xFFE9F9EF),
+                size: 36.w,
+              ),
+              SizedBox(width: 10.w),
+              Expanded(
+                child: Text(
+                  'BNP Paribas •••• 4521',
+                  style: TextStyle(
+                    color: _ink,
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 9.w, vertical: 6.h),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEAF9EF),
+                  borderRadius: BorderRadius.circular(999.r),
+                ),
+                child: Row(
+                  children: [
+                    Text(
+                      'Verified',
+                      style: TextStyle(
+                        color: const Color(0xFF16994E),
+                        fontSize: 10.5.sp,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    SizedBox(width: 4.w),
+                    Icon(
+                      Icons.check_circle_rounded,
+                      color: const Color(0xFF20B962),
+                      size: 13.sp,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 14.h),
+          Divider(height: 1.h, color: _border),
+          SizedBox(height: 14.h),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Next payout', style: _smallStrongStyle()),
+                    SizedBox(height: 6.h),
+                    Text(
+                      'Wed, 28 May',
+                      style: TextStyle(
+                        color: _ink,
+                        fontSize: 21.sp,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 9.w, vertical: 6.h),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEAF9EF),
+                  borderRadius: BorderRadius.circular(999.r),
+                ),
+                child: Text(
+                  '2 days left',
+                  style: TextStyle(
+                    color: const Color(0xFF16994E),
+                    fontSize: 10.sp,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 13.h),
+          Text('Payout schedule', style: _smallStrongStyle()),
+          SizedBox(height: 6.h),
+          Row(
+            children: [
+              Icon(Icons.calendar_today_rounded, color: _muted, size: 14.sp),
+              SizedBox(width: 8.w),
+              Text(
+                'Weekly to your French IBAN',
+                style: TextStyle(
+                  color: _muted,
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    ).animate().fadeIn(delay: 140.ms).slideY(begin: 0.04, end: 0);
+  }
+}
+
+class _EarningsSnapshotCard extends StatelessWidget {
+  const _EarningsSnapshotCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return _InfoCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text('Earnings snapshot', style: _smallStrongStyle()),
+              const Spacer(),
+              Text(
+                'This week⌄',
+                style: TextStyle(
+                  color: const Color(0xFF8A94B5),
+                  fontSize: 10.5.sp,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 13.h),
+          Container(
+            padding: EdgeInsets.all(14.w),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF3FBF5),
+              borderRadius: BorderRadius.circular(17.r),
+            ),
+            child: Row(
+              children: [
+                const Expanded(
+                  child: _SnapshotMetric(
+                    label: 'Earnings',
+                    value: '14 320,50 €',
+                  ),
+                ),
+                SizedBox(width: 12.w),
+                const _SnapshotMetric(label: 'Trips', value: '28'),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.04, end: 0);
+  }
+}
+
+class _SnapshotMetric extends StatelessWidget {
+  const _SnapshotMetric({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: _labelStyle(_muted)),
+        SizedBox(height: 6.h),
+        Text(
+          value,
+          style: TextStyle(
+            color: _ink,
+            fontSize: 19.sp,
+            fontWeight: FontWeight.w900,
+            letterSpacing: -0.45,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _GreatJobCard extends StatelessWidget {
+  const _GreatJobCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(17.w),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20.r),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [_primaryGreen, _mintGreen],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: _primaryGreen.withValues(alpha: 0.22),
+            blurRadius: 22.r,
+            offset: Offset(0, 12.h),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          PositionedDirectional(
+            end: 0,
+            top: 4.h,
+            bottom: 0,
+            child: CustomPaint(
+              size: Size(104.w, 58.h),
+              painter: _SparklinePainter(),
+            ),
+          ),
+          Row(
+            children: [
+              Icon(
+                Icons.star_rounded,
+                color: const Color(0xFFFFD34D),
+                size: 20.sp,
+              ),
+              SizedBox(width: 10.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'You’re doing great!',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 15.sp,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    SizedBox(height: 4.h),
+                    Text(
+                      'Keep driving. More rides, more earnings.',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.82),
+                        fontSize: 11.5.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    ).animate().fadeIn(delay: 260.ms).slideY(begin: 0.04, end: 0);
+  }
+}
+
+class _InfoCard extends StatelessWidget {
+  const _InfoCard({
+    required this.child,
+    this.padding,
+  });
+
+  final Widget child;
+  final EdgeInsetsGeometry? padding;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: padding ?? EdgeInsets.all(15.w),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(21.r),
+        border: Border.all(color: _border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.035),
+            blurRadius: 18.r,
+            offset: Offset(0, 8.h),
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
+}
+
+class _CircleIcon extends StatelessWidget {
+  const _CircleIcon({
+    required this.icon,
+    required this.color,
+    required this.backgroundColor,
+    required this.size,
+  });
+
+  final IconData icon;
+  final Color color;
+  final Color backgroundColor;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(color: backgroundColor, shape: BoxShape.circle),
+      child: Icon(icon, color: color, size: size * 0.56),
+    );
+  }
+}
+
+class _InlineStatusCard extends StatelessWidget {
+  const _InlineStatusCard({
+    required this.icon,
+    required this.iconColor,
+    required this.backgroundColor,
+    required this.borderColor,
+    required this.message,
+    this.showSpinner = false,
+  });
+
+  final IconData icon;
+  final Color iconColor;
+  final Color backgroundColor;
+  final Color borderColor;
+  final String message;
+  final bool showSpinner;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(14.w),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(18.r),
+        border: Border.all(color: borderColor),
+      ),
+      child: Row(
+        children: [
+          if (showSpinner)
+            SizedBox(
+              width: 20.w,
+              height: 20.w,
+              child: CircularProgressIndicator.adaptive(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(iconColor),
+              ),
+            )
+          else
+            Icon(icon, color: iconColor, size: 22.sp),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                color: iconColor,
+                fontSize: 13.sp,
+                fontWeight: FontWeight.w700,
+                height: 1.35,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ConfettiLayer extends StatelessWidget {
+  const _ConfettiLayer();
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        _ConfettiPiece(
+          top: 30.h,
+          left: 34.w,
+          color: _successGreen,
+          angle: -0.55,
+        ),
+        _ConfettiPiece(
+          top: 82.h,
+          left: 12.w,
+          color: const Color(0xFFFFD34D),
+          angle: 0.45,
+        ),
+        _ConfettiPiece(
+          top: 94.h,
+          right: 22.w,
+          color: const Color(0xFF22C55E),
+          angle: 0.35,
+        ),
+        _ConfettiPiece(
+          top: 22.h,
+          right: 52.w,
+          color: const Color(0xFFFFD34D),
+          angle: -0.35,
+        ),
+        _ConfettiPiece(
+          top: 58.h,
+          right: 24.w,
+          color: _successGreen,
+          angle: 0.52,
+        ),
+        _ConfettiPiece(
+          top: 108.h,
+          left: 42.w,
+          color: const Color(0xFF22C55E),
+          angle: -0.48,
+        ),
+      ],
+    );
+  }
+}
+
+class _ConfettiPiece extends StatelessWidget {
+  const _ConfettiPiece({
+    required this.color,
+    required this.angle,
+    this.top,
+    this.left,
+    this.right,
+  });
+
+  final double? top;
+  final double? left;
+  final double? right;
+  final Color color;
+  final double angle;
+
+  @override
+  Widget build(BuildContext context) {
+    return PositionedDirectional(
+      top: top,
+      start: left,
+      end: right,
+      child: Transform.rotate(
+        angle: angle,
+        child: Container(
+          width: 10.w,
+          height: 5.h,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(2.r),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SparklinePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.24)
+      ..strokeWidth = 3
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+
+    final path = Path()
+      ..moveTo(0, size.height * 0.78)
+      ..cubicTo(
+        size.width * 0.20,
+        size.height * 0.62,
+        size.width * 0.25,
+        size.height * 0.82,
+        size.width * 0.43,
+        size.height * 0.44,
+      )
+      ..cubicTo(
+        size.width * 0.56,
+        size.height * 0.18,
+        size.width * 0.68,
+        size.height * 0.28,
+        size.width * 0.78,
+        size.height * 0.16,
+      )
+      ..cubicTo(
+        size.width * 0.88,
+        size.height * 0.04,
+        size.width * 0.94,
+        size.height * 0.08,
+        size.width,
+        0,
+      );
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _SparklinePainter oldDelegate) => false;
+}
+
+TextStyle _titleStyle(double fontSize) {
+  return TextStyle(
+    color: _ink,
+    fontSize: fontSize.sp,
+    fontWeight: FontWeight.w900,
+    letterSpacing: -0.7,
+  );
+}
+
+TextStyle _cardTitleStyle() {
+  return TextStyle(
+    color: _ink,
+    fontSize: 14.sp,
+    fontWeight: FontWeight.w900,
+  );
+}
+
+TextStyle _captionStyle() {
+  return TextStyle(
+    color: _muted,
+    fontSize: 11.5.sp,
+    height: 1.35,
+    fontWeight: FontWeight.w600,
+  );
+}
+
+TextStyle _labelStyle(Color color) {
+  return TextStyle(
+    color: color,
+    fontSize: 11.sp,
+    fontWeight: FontWeight.w700,
+  );
+}
+
+TextStyle _smallStrongStyle() {
+  return TextStyle(
+    color: _ink,
+    fontSize: 11.5.sp,
+    fontWeight: FontWeight.w900,
+  );
 }

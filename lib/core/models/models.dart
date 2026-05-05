@@ -11,5 +11,3 @@ export 'user/user_enums.dart';
 // User models
 export 'user/user_model.dart';
 export 'user/user_preferences.dart';
-// Value objects
-export 'value_objects/money.dart';

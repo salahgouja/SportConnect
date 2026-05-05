@@ -542,7 +542,7 @@ class ReportIssueFormViewModel extends _$ReportIssueFormViewModel {
 
       if (!ref.mounted) return;
       state = state.copyWith(isSubmitting: false, isSubmitted: true);
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!ref.mounted) return;
       state = state.copyWith(
         isSubmitting: false,
@@ -680,7 +680,7 @@ class ProfileEditViewModel extends _$ProfileEditViewModel {
         hasChanges: false,
       );
       return true;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!ref.mounted) return false;
       state = state.copyWith(isLoading: false, error: e.toString());
       return false;
@@ -723,7 +723,7 @@ class ProfileEditViewModel extends _$ProfileEditViewModel {
         hasChanges: false,
       );
       return true;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!ref.mounted) return false;
       state = state.copyWith(
         isLoading: false,
@@ -912,7 +912,7 @@ class SocialActionsViewModel extends _$SocialActionsViewModel {
         isFollowing: state.isBlocked && state.isFollowing,
         isLoading: false,
       );
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, error: e.toString());
     }
@@ -962,7 +962,7 @@ class VehicleViewModel extends _$VehicleViewModel {
       await repository.addVehicle(uid, vehicle);
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false);
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, error: e.toString());
     }
@@ -976,7 +976,7 @@ class VehicleViewModel extends _$VehicleViewModel {
       await repository.updateVehicle(uid, vehicle);
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false);
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, error: e.toString());
     }
@@ -990,7 +990,7 @@ class VehicleViewModel extends _$VehicleViewModel {
       await repository.removeVehicle(uid, vehicleId);
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false);
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, error: e.toString());
     }
@@ -1004,7 +1004,7 @@ class VehicleViewModel extends _$VehicleViewModel {
       await repository.setDefaultVehicle(uid, vehicleId);
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false);
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, error: e.toString());
     }

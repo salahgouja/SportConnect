@@ -3,19 +3,32 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
-import 'package:sport_connect/core/config/routes/route_config.dart';
 import 'package:sport_connect/features/events/views/create_event_screen.dart';
 import 'package:sport_connect/features/events/views/edit_event_screen.dart';
 import 'package:sport_connect/features/events/views/event_attendees_screen.dart';
 import 'package:sport_connect/features/events/views/event_detail_screen.dart';
+import 'package:sport_connect/features/events/views/event_list_screen.dart';
 import 'package:sport_connect/features/events/views/my_events_screen.dart';
 
 /// Events module routes
-class EventsRoutes implements RouteConfig {
-
-  @override
+class EventsRoutes {
   List<RouteBase> getRoutes() {
     return [
+      // Events Browse (standalone, accessible to drivers via push)
+      GoRoute(
+        path: AppRoutes.eventsBrowse.path,
+        name: AppRoutes.eventsBrowse.name,
+        pageBuilder: (context, state) => PlatformInfo.isIOS
+            ? CupertinoPage(
+                key: state.pageKey,
+                child: const EventListScreen(),
+              )
+            : MaterialPage(
+                key: state.pageKey,
+                child: const EventListScreen(),
+              ),
+      ),
+
       // Create Event
       GoRoute(
         path: AppRoutes.createEvent.path,

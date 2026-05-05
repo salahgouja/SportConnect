@@ -276,7 +276,7 @@ class DriverViewModel extends _$DriverViewModel {
         isRefreshing: false,
         lastRefreshAt: DateTime.now(),
       );
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!ref.mounted) return;
       state = state.copyWith(
         isRefreshing: false,
@@ -319,7 +319,7 @@ class DriverViewModel extends _$DriverViewModel {
         Success() => true,
         Failure(:final message) => throw Exception(message),
       };
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!ref.mounted) return false;
       state = state.copyWith(
         isLoading: false,
@@ -364,7 +364,7 @@ class DriverViewModel extends _$DriverViewModel {
         Success() => true,
         Failure(:final message) => throw Exception(message),
       };
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (!ref.mounted) return false;
       state = state.copyWith(
         isLoading: false,

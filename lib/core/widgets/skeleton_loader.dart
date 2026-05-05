@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
@@ -40,7 +39,6 @@ class SkeletonLoader extends StatelessWidget {
     );
 
     return Skeletonizer(
-      enabled: true,
       containersColor: AppColors.shimmer,
       child: list,
     );

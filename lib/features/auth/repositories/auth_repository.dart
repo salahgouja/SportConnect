@@ -76,7 +76,7 @@ class AuthRepository {
     } on FirebaseAuthException catch (e) {
       TalkerService.error('Sign in error: ${e.code}');
       throw _handleAuthException(e);
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('Sign in error', e, st);
       rethrow;
     }
@@ -150,7 +150,7 @@ class AuthRepository {
     } on FirebaseAuthException catch (e) {
       TalkerService.error('Register error: ${e.code}');
       throw _handleAuthException(e);
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (credential?.user != null) {
         TalkerService.warning('Rolling back user creation due to error');
         await credential!.user!.delete();
@@ -187,7 +187,7 @@ class AuthRepository {
       // Get the download URL
       final url = await uploadTask.ref.getDownloadURL();
       return url;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('Image upload failed', e, st);
       // We return null so the registration doesn't fail completely
       // just because the image failed.
@@ -204,7 +204,7 @@ class AuthRepository {
       if (doc.exists && doc.data() != null) {
         return doc.data()!;
       }
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('Get user data error', e, st);
     }
     return null;
@@ -230,7 +230,7 @@ class AuthRepository {
       await _firebaseService.auth.signOut();
       unawaited(_signOutGoogleBestEffort());
       TalkerService.info('User signed out');
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('Sign out error', e, st);
       rethrow;
     }
@@ -408,7 +408,7 @@ class AuthRepository {
         );
       }
       throw _handleAuthException(e);
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('Delete account error', e, st);
       rethrow;
     }
@@ -495,7 +495,7 @@ class AuthRepository {
     } on FirebaseAuthException catch (e) {
       TalkerService.error('Google sign in error: ${e.code}');
       throw _handleAuthException(e);
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('Google sign in error', e, st);
       rethrow;
     }
@@ -594,7 +594,7 @@ class AuthRepository {
     } on FirebaseAuthException catch (e) {
       TalkerService.error('Apple sign in Firebase error: ${e.code}');
       throw _handleAuthException(e);
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('Apple sign in error', e, st);
       rethrow;
     }
@@ -626,7 +626,7 @@ class AuthRepository {
       await _usersCollection.doc(user.uid).set(user, SetOptions(merge: true));
       TalkerService.info('User document created/updated for ${user.uid}');
       return user;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('Create user document error', e, st);
       rethrow;
     }
@@ -648,7 +648,7 @@ class AuthRepository {
         ),
       });
       TalkerService.info('User stats updated for $userId');
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('Update user stats error', e, st);
       rethrow;
     }
@@ -662,7 +662,7 @@ class AuthRepository {
         'role': role.name,
       });
       TalkerService.info('User role updated to ${role.name} for $userId');
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('Update user role error', e, st);
       rethrow;
     }
@@ -675,7 +675,7 @@ class AuthRepository {
     } on FirebaseAuthException catch (e) {
       TalkerService.error('Password reset error: ${e.code}');
       throw _handleAuthException(e);
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('Password reset error', e, st);
       rethrow;
     }
@@ -693,7 +693,7 @@ class AuthRepository {
     } on FirebaseAuthException catch (e) {
       TalkerService.error('Update password error: ${e.code}');
       throw _handleAuthException(e);
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('Update password error', e, st);
       rethrow;
     }
@@ -800,7 +800,7 @@ class AuthRepository {
       TalkerService.info('User $uid finalized role as ${role.name}');
 
       return finalized;
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('finalizeRoleAs error', e, st);
       rethrow;
     }
@@ -872,7 +872,7 @@ class AuthRepository {
     } on FirebaseAuthException catch (e) {
       TalkerService.error('Re-authentication error: ${e.code}');
       throw _handleAuthException(e);
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('Re-authentication error', e, st);
       rethrow;
     }
@@ -907,7 +907,7 @@ class AuthRepository {
       }
       await user.reauthenticateWithCredential(credential);
       TalkerService.info('User re-authenticated with Google');
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('Google re-authentication error', e, st);
       rethrow;
     }
@@ -957,7 +957,7 @@ class AuthRepository {
     } on FirebaseAuthException catch (e, st) {
       TalkerService.error('Send verification email error: ${e.code}', e, st);
       throw _handleAuthException(e);
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       TalkerService.error('Send verification email error', e, st);
       rethrow;
     }

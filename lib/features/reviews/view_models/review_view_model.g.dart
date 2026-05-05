@@ -45,7 +45,7 @@ final class ReviewFormViewModelProvider
 }
 
 String _$reviewFormViewModelHash() =>
-    r'2d72cb3a6018e01f48009f81c1d74b1d6689f2fb';
+    r'18c874b725966d62b71a44cf7dd365defa7e81b8';
 
 /// ViewModel for submitting reviews
 
@@ -113,7 +113,7 @@ final class ReviewsListViewModelProvider
 }
 
 String _$reviewsListViewModelHash() =>
-    r'f17186f5e7a1a5be9a336c2b53c6dd3aa05e8d8f';
+    r'20e7cf225ebdb16599eaa6c7834c47c1c0644977';
 
 /// ViewModel for viewing reviews list
 
@@ -205,7 +205,7 @@ final class ReviewResponseViewModelProvider
 }
 
 String _$reviewResponseViewModelHash() =>
-    r'7fe0e0e41769f3b436c801ba695eeff849193b2b';
+    r'191cb7a02db9808556fb645c26a01223e9a4218a';
 
 /// ViewModel for responding to a review
 

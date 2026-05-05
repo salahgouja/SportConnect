@@ -71,7 +71,7 @@ class RouteGuardService {
 
   bool get isDriver => user?.role == UserRole.driver;
 
-  DriverModel? get _driver => user is DriverModel ? user as DriverModel : null;
+  DriverModel? get _driver => user is DriverModel ? user! as DriverModel : null;
   bool get hasCompletedDriverVehicleStep {
     final driver = _driver;
     if (driver == null) return true;
@@ -161,8 +161,8 @@ class RouteGuardService {
     }
 
     if (currentPath == AppRoutes.roleSelection.path && isLoggedIn) {
-      if (needsRoleSelection || _isPendingUser) {
-        return _pendingIntentRoute;
+      if (_isPendingUser) {
+        return null;
       }
       return _getDashboardRoute();
     }

@@ -111,7 +111,7 @@ abstract class ReviewModel with _$ReviewModel {
         .map((t) {
           try {
             return ReviewTag.values.firstWhere((tag) => tag.name == t);
-          } catch (e, st) {
+          } on Exception catch (e, st) {
             return null;
           }
         })

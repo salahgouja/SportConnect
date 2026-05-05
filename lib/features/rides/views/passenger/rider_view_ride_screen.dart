@@ -14,11 +14,12 @@ import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
-import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
+import 'package:sport_connect/core/widgets/app_map_tile_layer.dart';
 import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/core/widgets/driver_info_widget.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
+import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/features/messaging/view_models/chat_view_model.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/features/reviews/models/review_model.dart';
@@ -30,7 +31,6 @@ import 'package:sport_connect/features/rides/view_models/rider_view_ride_view_mo
 import 'package:sport_connect/features/rides/views/passenger/ride_detail_screen.dart'
     show RideDetailScreen;
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
-import 'package:sport_connect/core/widgets/app_map_tile_layer.dart';
 
 /// Rider's personal ride view with booking and review sections.
 ///
@@ -1631,7 +1631,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
           AppRoutes.rideBookingPending.path.replaceFirst(':rideId', ride.id),
         );
       }
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (mounted) {
         AdaptiveSnackBar.show(
           context,

@@ -77,11 +77,9 @@ class HttpService {
           cacheDir.path,
           hiveBoxName: 'sportconnect_http_cache',
         ),
-        policy: CachePolicy.request,
         hitCacheOnNetworkFailure: true,
         hitCacheOnErrorCodes: const [500, 502, 503, 504],
         maxStale: const Duration(days: 7),
-        allowPostMethod: false,
       );
 
       final cacheInterceptor = DioCacheInterceptor(options: cacheOptions);
