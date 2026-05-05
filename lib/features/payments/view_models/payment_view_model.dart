@@ -184,8 +184,10 @@ class PaymentViewModel extends _$PaymentViewModel {
     required RideModel ride,
     required String riderId,
     required String riderName,
+    required String driverName,
     required int seatsBooked,
     required String customerId,
+    required String driverStripeAccountId,
   }) async {
     state = const AsyncValue.loading();
 
@@ -206,11 +208,12 @@ class PaymentViewModel extends _$PaymentViewModel {
         riderId: riderId,
         riderName: riderName,
         driverId: ride.driverId,
-        driverName: '', // Resolved at view layer
+        driverName: driverName,
         amountInCents:
             ride.pricing.pricePerSeatInCents.amountInCents * seatsBooked,
         currency: currency,
         customerId: customerId,
+        driverStripeAccountId: driverStripeAccountId,
         description:
             '${ride.route.origin.address} → ${ride.route.destination.address}',
       );
@@ -441,6 +444,26 @@ class DriverStripeOnboardingFlowViewModel
     final normalized = progress.clamp(0, 1).toDouble();
     if (normalized == state.webViewProgress) return;
     state = state.copyWith(webViewProgress: normalized);
+  }
+
+  /// Called when Stripe hits the refresh_url (link expired).
+  /// Fetches a fresh account link and reloads the WebView.
+  Future<void> resumeOnboarding() async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final stripeService = ref.read(stripeServiceProvider);
+      final result = await stripeService.createAccountLink();
+      if (!ref.mounted) return;
+      final url = result['url'] as String?;
+      if (url == null || url.isEmpty) {
+        state = state.copyWith(isLoading: false, errorMessage: 'Failed to refresh onboarding link.');
+        return;
+      }
+      state = state.copyWith(isLoading: false, onboardingUrl: url);
+    } on Exception catch (e) {
+      if (!ref.mounted) return;
+      state = state.copyWith(isLoading: false, errorMessage: e.toString());
+    }
   }
 
   Future<void> handleOnboardingComplete({

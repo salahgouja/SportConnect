@@ -1,13 +1,15 @@
-import 'dart:ui';
-
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart' show Color, ThemeMode;
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/config/app_config.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
 
 part 'stripe_service.g.dart';
+
+// Must match the Stripe SDK API version bundled in flutter_stripe / stripe-android 23.x
+const _kStripeApiVersion = '2026-04-22.dahlia';
 
 /// Riverpod provider for StripeService singleton
 @Riverpod(keepAlive: true)
@@ -114,6 +116,7 @@ class StripeService {
         'customerId': customerId ?? existingCustomerId,
         'driverStripeAccountId': driverStripeAccountId,
         'description': description,
+        'stripeApiVersion': _kStripeApiVersion,
       });
 
       return response;
@@ -149,19 +152,18 @@ class StripeService {
     try {
       final currencyUpper = currency.toUpperCase();
 
-      // Initialize Payment Sheet with branded appearance
       await Stripe.instance.initPaymentSheet(
         paymentSheetParameters: SetupPaymentSheetParameters(
           paymentIntentClientSecret: paymentIntentClientSecret,
           merchantDisplayName: 'SportConnect',
           customerId: customerId,
           customerEphemeralKeySecret: ephemeralKeySecret,
-          // Apple Pay — shown automatically on iOS when device has a card
+          // Force light mode regardless of device system setting
+          style: ThemeMode.light,
           // applePay: PaymentSheetApplePay(
           //   merchantCountryCode: merchantCountryCode,
           //   buttonType: PlatformButtonType.book,
           // ),
-          // Google Pay — shown automatically on Android when device has a card
           googlePay: PaymentSheetGooglePay(
             merchantCountryCode: merchantCountryCode,
             currencyCode: currencyUpper,
@@ -169,10 +171,9 @@ class StripeService {
             buttonType: PlatformButtonType.book,
           ),
           returnURL: 'flutterstripe://redirect',
-          // Active rides need immediate confirmation. Delayed methods can make
-          // PaymentSheet return before the webhook has actually marked paid.
+          // Delayed methods (SEPA, iDEAL) must be off — passenger could board
+          // before async payment confirms, leaving driver unpaid.
           allowsDelayedPaymentMethods: false,
-          // Collect billing details for fraud prevention
           billingDetailsCollectionConfiguration:
               const BillingDetailsCollectionConfiguration(
                 name: CollectionMode.automatic,
@@ -182,29 +183,47 @@ class StripeService {
               ),
           appearance: const PaymentSheetAppearance(
             colors: PaymentSheetAppearanceColors(
-              primary: Color(0xFF1E88E5),
-              background: Color(0xFFF8FAFF),
-              componentBackground: Color(0xFFFFFFFF),
-              componentBorder: Color(0xFFE0E7FF),
-              componentText: Color(0xFF1A1A2E),
-              primaryText: Color(0xFF1A1A2E),
-              secondaryText: Color(0xFF6B7280),
-              placeholderText: Color(0xFF9CA3AF),
-              icon: Color(0xFF1E88E5),
-              error: Color(0xFFEF4444),
+              // Brand primary — SportConnect emerald
+              primary: Color(0xFF40916C),
+              // Pure white sheet surface
+              background: Color(0xFFFFFFFF),
+              // Slightly off-white input fields
+              componentBackground: Color(0xFFF8FAF9),
+              // Subtle sage border
+              componentBorder: Color(0xFFD8E0DB),
+              // Dividers between rows
+              componentDivider: Color(0xFFE8EDE9),
+              // Input text — dark forest
+              componentText: Color(0xFF1B2E24),
+              // Headings / labels
+              primaryText: Color(0xFF1B2E24),
+              // Subtitles / helper text
+              secondaryText: Color(0xFF5C7266),
+              // Empty-state placeholders
+              placeholderText: Color(0xFF8FA399),
+              // Icons (card brand, lock, etc.)
+              icon: Color(0xFF40916C),
+              // Validation errors
+              error: Color(0xFFC1666B),
             ),
             shapes: PaymentSheetShape(
-              borderRadius: 12,
-              borderWidth: 1.5,
-              shadow: PaymentSheetShadowParams(opacity: 0.04),
+              borderRadius: 14,
+              borderWidth: 1,
+              shadow: PaymentSheetShadowParams(opacity: 0.06),
             ),
             primaryButton: PaymentSheetPrimaryButtonAppearance(
-              shapes: PaymentSheetPrimaryButtonShape(blurRadius: 0),
+              shapes: PaymentSheetPrimaryButtonShape(
+                blurRadius: 0,
+                borderWidth: 0,
+                shadow: PaymentSheetShadowParams(opacity: 0.18),
+              ),
               colors: PaymentSheetPrimaryButtonTheme(
                 light: PaymentSheetPrimaryButtonThemeColors(
-                  background: Color(0xFF1E88E5),
+                  background: Color(0xFF40916C),
                   text: Color(0xFFFFFFFF),
-                  border: Color(0xFF1E88E5),
+                  border: Color(0xFF40916C),
+                  successBackgroundColor: Color(0xFF2D6A4F),
+                  successTextColor: Color(0xFFFFFFFF),
                 ),
               ),
             ),
@@ -225,7 +244,7 @@ class StripeService {
       }
       TalkerService.error('Stripe error: $msg');
       throw StripePaymentException(msg.isNotEmpty ? msg : 'Payment failed');
-    } catch (e) {
+    } on Exception catch (e) {
       TalkerService.error('Payment error: $e');
       throw StripePaymentException('Payment processing failed');
     }
@@ -383,7 +402,9 @@ class StripeService {
 
   /// Fetch SetupIntent + EphemeralKey from Cloud Function
   Future<Map<String, dynamic>> _createCustomerSheetSetup() async {
-    return _callFunction('createCustomerSheetSetup', {});
+    return _callFunction('createCustomerSheetSetup', {
+      'stripeApiVersion': _kStripeApiVersion,
+    });
   }
 
   /// Initialize and present the Customer Sheet for managing saved payment methods.
@@ -402,6 +423,8 @@ class StripeService {
         customerId: customerId,
         customerEphemeralKeySecret: ephemeralKeySecret,
         returnURL: 'flutterstripe://redirect',
+        // Force light mode regardless of device system setting
+        style: ThemeMode.light,
         billingDetailsCollectionConfiguration:
             const BillingDetailsCollectionConfiguration(
               name: CollectionMode.automatic,
@@ -412,28 +435,35 @@ class StripeService {
         appearance: const PaymentSheetAppearance(
           colors: PaymentSheetAppearanceColors(
             primary: Color(0xFF40916C),
-            background: Color(0xFFF8FAF9),
-            componentBackground: Color(0xFFFFFFFF),
-            componentBorder: Color(0xFFD8E4DD),
+            background: Color(0xFFFFFFFF),
+            componentBackground: Color(0xFFF8FAF9),
+            componentBorder: Color(0xFFD8E0DB),
+            componentDivider: Color(0xFFE8EDE9),
             componentText: Color(0xFF1B2E24),
             primaryText: Color(0xFF1B2E24),
-            secondaryText: Color(0xFF6B7280),
-            placeholderText: Color(0xFF9CA3AF),
+            secondaryText: Color(0xFF5C7266),
+            placeholderText: Color(0xFF8FA399),
             icon: Color(0xFF40916C),
             error: Color(0xFFC1666B),
           ),
           shapes: PaymentSheetShape(
-            borderRadius: 12,
-            borderWidth: 1.5,
-            shadow: PaymentSheetShadowParams(opacity: 0.04),
+            borderRadius: 14,
+            borderWidth: 1,
+            shadow: PaymentSheetShadowParams(opacity: 0.06),
           ),
           primaryButton: PaymentSheetPrimaryButtonAppearance(
-            shapes: PaymentSheetPrimaryButtonShape(blurRadius: 0),
+            shapes: PaymentSheetPrimaryButtonShape(
+              blurRadius: 0,
+              borderWidth: 0,
+              shadow: PaymentSheetShadowParams(opacity: 0.18),
+            ),
             colors: PaymentSheetPrimaryButtonTheme(
               light: PaymentSheetPrimaryButtonThemeColors(
                 background: Color(0xFF40916C),
                 text: Color(0xFFFFFFFF),
                 border: Color(0xFF40916C),
+                successBackgroundColor: Color(0xFF2D6A4F),
+                successTextColor: Color(0xFFFFFFFF),
               ),
             ),
           ),

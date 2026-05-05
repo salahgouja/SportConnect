@@ -31,6 +31,7 @@ class DriverStripeOnboardingScreen extends ConsumerStatefulWidget {
 class _DriverStripeOnboardingScreenState
     extends ConsumerState<DriverStripeOnboardingScreen> {
   bool _didNavigateAway = false;
+  InAppWebViewController? _webViewController;
   @override
   void initState() {
     super.initState();
@@ -454,7 +455,7 @@ class _DriverStripeOnboardingScreenState
               builtInZoomControls: false,
             ),
             onWebViewCreated: (controller) {
-              // Controller available for future use if needed
+              _webViewController = controller;
             },
             onProgressChanged: (controller, progress) {
               ref
@@ -467,8 +468,18 @@ class _DriverStripeOnboardingScreenState
 
               // Check for completion URLs
               if (urlStr.contains('stripe-refresh')) {
-                // User clicked "Refresh" - reload the page
-                await controller.reload();
+                // Onboarding link expired — fetch a fresh one and reload
+                await ref
+                    .read(driverStripeOnboardingFlowViewModelProvider.notifier)
+                    .resumeOnboarding();
+                final newUrl = ref
+                    .read(driverStripeOnboardingFlowViewModelProvider)
+                    .onboardingUrl;
+                if (newUrl != null && newUrl.isNotEmpty) {
+                  await controller.loadUrl(
+                    urlRequest: URLRequest(url: WebUri(newUrl)),
+                  );
+                }
               } else if (urlStr.contains('stripe-return') &&
                   !onboardingState.completionHandled) {
                 // Fallback: page loaded before shouldOverrideUrlLoading fired

@@ -13,6 +13,7 @@ import 'package:sport_connect/core/services/deep_link_service.dart';
 import 'package:sport_connect/core/services/map_service.dart';
 import 'package:sport_connect/core/services/routing_service.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
+import 'package:sport_connect/features/events/repositories/event_repository.dart';
 import 'package:sport_connect/features/messaging/models/message_model.dart';
 import 'package:sport_connect/features/messaging/repositories/chat_repository.dart';
 import 'package:sport_connect/features/notifications/repositories/notification_repository.dart';
@@ -1529,6 +1530,19 @@ class RideDetailViewModel extends _$RideDetailViewModel {
       } catch (e, st) {
         TalkerService.error('Failed to send booking notification', e, st);
         // Notification failure is non-fatal
+      }
+
+      // Auto-join the linked event when the ride is tied to one.
+      if (ride.eventId != null && ride.eventId!.isNotEmpty) {
+        if (!ref.mounted) return true;
+        try {
+          await ref
+              .read(eventRepositoryProvider)
+              .joinEvent(ride.eventId!, passengerId);
+        } on Exception catch (e, st) {
+          TalkerService.error('Failed to auto-join event on booking', e, st);
+          // Non-fatal: booking still succeeds
+        }
       }
 
       // Award small XP to passenger for booking a ride

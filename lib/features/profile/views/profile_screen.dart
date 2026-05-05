@@ -45,9 +45,14 @@ class ProfileScreen extends ConsumerWidget {
     final userAsync = userId != null
         ? ref.watch(currentUserProfileProvider(userId!))
         : ref.watch(currentUserProvider);
+
     final totalEarningsInCents = _isOwnProfile
-        ? ref.watch(driverStatsProvider.select((a) => a.value))?.totalEarningsInCents ?? 0
+        ? ref
+                  .watch(driverStatsProvider.select((a) => a.value))
+                  ?.totalEarningsInCents ??
+              0
         : 0;
+
     return AdaptiveScaffold(
       body: userAsync.when(
         data: (user) => _buildContent(
@@ -134,7 +139,6 @@ class ProfileScreen extends ConsumerWidget {
 
     return CustomScrollView(
       slivers: [
-        // App bar
         SliverAppBar(
           backgroundColor: AppColors.background,
           elevation: 0,
@@ -214,7 +218,6 @@ class ProfileScreen extends ConsumerWidget {
           ],
         ),
 
-        // Profile header section
         SliverToBoxAdapter(
           child: _buildProfileHeader(context, ref, user)
               .animate()
@@ -224,7 +227,6 @@ class ProfileScreen extends ConsumerWidget {
 
         SliverToBoxAdapter(child: SizedBox(height: 24.h)),
 
-        // Profile completion progress bar
         if (_isOwnProfile)
           SliverToBoxAdapter(
             child:
@@ -242,7 +244,6 @@ class ProfileScreen extends ConsumerWidget {
 
         if (_isOwnProfile) SliverToBoxAdapter(child: SizedBox(height: 16.h)),
 
-        // XP & Level progress
         if (_isOwnProfile)
           SliverToBoxAdapter(
             child: _buildXPSection(context, user)
@@ -255,7 +256,6 @@ class ProfileScreen extends ConsumerWidget {
 
         SliverToBoxAdapter(child: SizedBox(height: 24.h)),
 
-        // Ride statistics
         SliverToBoxAdapter(
           child: _buildRideStats(context, user, totalEarningsInCents)
               .animate()
@@ -265,42 +265,19 @@ class ProfileScreen extends ConsumerWidget {
 
         SliverToBoxAdapter(child: SizedBox(height: 16.h)),
 
-        // Drive history transparency card
-        if (!_isOwnProfile)
+        if (!_isOwnProfile && user is DriverModel)
           SliverToBoxAdapter(
-            child:
-                Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 20.w),
-                      child: () {
-                        final reliability = ref.watch(
-                          userRideReliabilityProvider(userId!),
-                        );
-                        final rating = switch (user) {
-                          final RiderModel rider =>
-                            rider.asRider?.rating ?? const RatingBreakdown(),
-                          final DriverModel driver =>
-                            driver.asDriver?.rating ?? const RatingBreakdown(),
-                          _ => const RatingBreakdown(),
-                        };
-                        return DriveHistoryCard(
-                          totalRides: user.asDriver!.gamification.totalRides,
-                          averageRating: rating.average,
-                          cancelCount: reliability.value?.cancelCount ?? 0,
-                          noShowCount: reliability.value?.noShowCount ?? 0,
-                          memberSince: user.createdAt ?? DateTime.now(),
-                        );
-                      }(),
-                    )
-                    .animate()
-                    .fadeIn(duration: 400.ms, delay: 250.ms)
-                    .slideY(begin: 0.1, curve: Curves.easeOutCubic),
+            child: _buildDriverHistoryCard(context, ref, user)
+                .animate()
+                .fadeIn(duration: 400.ms, delay: 250.ms)
+                .slideY(begin: 0.1, curve: Curves.easeOutCubic),
           ),
 
-        if (!_isOwnProfile) SliverToBoxAdapter(child: SizedBox(height: 8.h)),
+        if (!_isOwnProfile && user is DriverModel)
+          SliverToBoxAdapter(child: SizedBox(height: 8.h)),
 
         SliverToBoxAdapter(child: SizedBox(height: 24.h)),
 
-        // Quick actions menu
         if (_isOwnProfile)
           SliverToBoxAdapter(
             child: _buildQuickActions(context, user)
@@ -314,6 +291,29 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
+  Widget _buildDriverHistoryCard(
+    BuildContext context,
+    WidgetRef ref,
+    DriverModel user,
+  ) {
+    final reliability = ref.watch(
+      userRideReliabilityProvider(user.uid),
+    );
+
+    final rating = user.asDriver?.rating ?? const RatingBreakdown();
+
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 20.w),
+      child: DriveHistoryCard(
+        totalRides: user.gamification.totalRides,
+        averageRating: rating.average,
+        cancelCount: reliability.value?.cancelCount ?? 0,
+        noShowCount: reliability.value?.noShowCount ?? 0,
+        memberSince: user.createdAt ?? DateTime.now(),
+      ),
+    );
+  }
+
   Future<void> _changeProfilePhoto(
     BuildContext context,
     WidgetRef ref,
@@ -324,6 +324,7 @@ class ProfileScreen extends ConsumerWidget {
       customMessage:
           'Access to your photo library is needed to update your profile picture.',
     );
+
     if (!accepted) return;
 
     final image = await ImagePicker().pickImage(source: ImageSource.gallery);
@@ -333,8 +334,11 @@ class ProfileScreen extends ConsumerWidget {
       await ref
           .read(profileActionsViewModelProvider.notifier)
           .updateProfilePhoto(user.uid, File(image.path));
+
       ref.invalidate(currentUserProvider);
+
       if (!context.mounted) return;
+
       AdaptiveSnackBar.show(
         context,
         message: AppLocalizations.of(context).profileUpdated,
@@ -342,6 +346,7 @@ class ProfileScreen extends ConsumerWidget {
       );
     } on Object catch (error) {
       if (!context.mounted) return;
+
       AdaptiveSnackBar.show(
         context,
         message: AppLocalizations.of(context).errorValue(error.toString()),
@@ -350,7 +355,6 @@ class ProfileScreen extends ConsumerWidget {
     }
   }
 
-  /// Profile header with avatar, name, rating, and member since
   Widget _buildProfileHeader(
     BuildContext context,
     WidgetRef ref,
@@ -363,18 +367,24 @@ class ProfileScreen extends ConsumerWidget {
         driver.asDriver?.rating ?? const RatingBreakdown(),
       _ => const RatingBreakdown(),
     };
+
     final address = switch (user) {
       final RiderModel rider => rider.asRider?.address,
       final DriverModel driver => driver.asDriver?.address,
       _ => null,
     };
-    final memberSince = user.createdAt;
 
+    final memberSince = user.createdAt;
+    final premiumMeta = ref.watch(premiumMetadataProvider);
+
+    final showUpgradeButton = premiumMeta.maybeWhen(
+      data: (meta) => !meta.isPremium,
+      orElse: () => false,
+    );
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 20.w),
       child: Column(
         children: [
-          // Avatar
           Stack(
             alignment: Alignment.bottomRight,
             children: [
@@ -409,7 +419,6 @@ class ProfileScreen extends ConsumerWidget {
 
           SizedBox(height: 16.h),
 
-          // Name
           Text(
             user.username,
             style: TextStyle(
@@ -422,7 +431,6 @@ class ProfileScreen extends ConsumerWidget {
 
           SizedBox(height: 8.h),
 
-          // Rating and member info
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -485,7 +493,6 @@ class ProfileScreen extends ConsumerWidget {
             ],
           ),
 
-          // Location
           if (address != null && address.trim().isNotEmpty) ...[
             SizedBox(height: 8.h),
             Row(
@@ -514,7 +521,6 @@ class ProfileScreen extends ConsumerWidget {
 
           SizedBox(height: 20.h),
 
-          // Edit profile button (for own profile)
           if (_isOwnProfile)
             Column(
               children: [
@@ -528,18 +534,20 @@ class ProfileScreen extends ConsumerWidget {
                     size: ButtonSize.medium,
                   ),
                 ),
-                SizedBox(height: 10.h),
-                SizedBox(
-                  width: double.infinity,
-                  child: PremiumButton(
-                    text: 'Upgrade to Premium',
-                    icon: Icons.workspace_premium_rounded,
-                    onPressed: () =>
-                        context.push(AppRoutes.premiumSubscribe.path),
-                    style: PremiumButtonStyle.gradient,
-                    size: ButtonSize.medium,
+                if (showUpgradeButton) ...[
+                  SizedBox(height: 10.h),
+                  SizedBox(
+                    width: double.infinity,
+                    child: PremiumButton(
+                      text: 'Upgrade to Premium',
+                      icon: Icons.workspace_premium_rounded,
+                      onPressed: () =>
+                          context.push(AppRoutes.premiumSubscribe.path),
+                      style: PremiumButtonStyle.gradient,
+                      size: ButtonSize.medium,
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
         ],
@@ -562,21 +570,21 @@ class ProfileScreen extends ConsumerWidget {
       'Nov',
       'Dec',
     ];
+
     return '${months[date.month - 1]} ${date.year}';
   }
 
-  /// Ride statistics section
   Widget _buildRideStats(
     BuildContext context,
     UserModel user,
     int totalEarningsInCents,
   ) {
-    // Get gamification stats based on user type
     final totalRides = switch (user) {
       final RiderModel rider => rider.asRider?.gamification.totalRides ?? 0,
       final DriverModel driver => driver.asDriver?.gamification.totalRides ?? 0,
       _ => 0,
     };
+
     final double totalDistance;
     final int currentStreak;
 
@@ -592,15 +600,10 @@ class ProfileScreen extends ConsumerWidget {
         currentStreak = 0;
     }
 
-    late final String moneyStatValue;
-    late final String moneyStatLabel;
-    late final IconData moneyStatIcon;
-
-    if (user.isDriver) {
-      moneyStatValue = '€${(totalEarningsInCents / 100).toStringAsFixed(0)}';
-      moneyStatLabel = AppLocalizations.of(context).earned2;
-      moneyStatIcon = Icons.euro_rounded;
-    }
+    final moneyStatValue =
+        '€${(totalEarningsInCents / 100).toStringAsFixed(0)}';
+    final moneyStatLabel = AppLocalizations.of(context).earned2;
+    final moneyStatIcon = Icons.euro_rounded;
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 20.w),
@@ -683,15 +686,17 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  /// XP & Level section with progress bar and streak
   Widget _buildXPSection(BuildContext context, UserModel user) {
     final level = user.userLevel;
+
     final totalXP = switch (user) {
       final RiderModel rider => rider.asRider?.gamification.totalXP ?? 0,
       final DriverModel driver => driver.asDriver?.gamification.totalXP ?? 0,
       _ => 0,
     };
+
     final int currentStreak;
+
     switch (user) {
       case RiderModel(:final gamification):
         currentStreak = gamification.currentStreak;
@@ -835,11 +840,10 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  /// Quick actions menu section
   Widget _buildQuickActions(BuildContext context, UserModel user) {
     final isDriver = user.role == UserRole.driver;
+
     final menuItems = [
-      // Vehicles management is only relevant for drivers
       if (isDriver)
         _MenuItem(
           icon: Icons.directions_car_outlined,
@@ -848,15 +852,6 @@ class ProfileScreen extends ConsumerWidget {
           color: AppColors.primary,
           onTap: () => context.push(AppRoutes.driverVehicles.path),
         ),
-      _MenuItem(
-        icon: Icons.history_rounded,
-        title: 'My Rides',
-        subtitle: 'View your ride history',
-        color: AppColors.info,
-        onTap: () => context.push(
-          isDriver ? AppRoutes.driverRides.path : AppRoutes.riderMyRides.path,
-        ),
-      ),
       _MenuItem(
         icon: Icons.event_rounded,
         title: 'My Events',
@@ -979,7 +974,6 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  /// Shows a confirmation dialog to block a user
   void _showBlockUserDialog(BuildContext context, WidgetRef ref) {
     unawaited(
       showDialog<void>(
@@ -1002,9 +996,11 @@ class ProfileScreen extends ConsumerWidget {
               ),
               onPressed: () async {
                 Navigator.pop(ctx);
+
                 try {
                   final currentUser = ref.read(currentUserProvider).value;
-                  if (currentUser == null) return;
+                  if (currentUser == null || userId == null) return;
+
                   await ref
                       .read(
                         socialActionsViewModelProvider(
@@ -1013,6 +1009,7 @@ class ProfileScreen extends ConsumerWidget {
                         ).notifier,
                       )
                       .toggleBlock();
+
                   if (context.mounted) {
                     AdaptiveSnackBar.show(
                       context,
@@ -1039,7 +1036,6 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  /// User not found state with sync option
   Widget _buildUserNotFoundState(BuildContext context, WidgetRef ref) {
     return Center(
       child: Padding(
@@ -1082,16 +1078,19 @@ class ProfileScreen extends ConsumerWidget {
                 final authActions = ref.read(
                   authActionsViewModelProvider.notifier,
                 );
+
                 final currentUser = authActions.currentUser;
+
                 if (currentUser != null) {
                   final profileActions = ref.read(
                     profileActionsViewModelProvider.notifier,
                   );
+
                   final existingUser = await profileActions.getUserById(
                     currentUser.uid,
                   );
+
                   if (existingUser == null) {
-                    // Create new user as rider by default
                     await authActions.createUserDocument(
                       UserModel.rider(
                         uid: currentUser.uid,
@@ -1102,7 +1101,9 @@ class ProfileScreen extends ConsumerWidget {
                       ),
                     );
                   }
+
                   if (!context.mounted) return;
+
                   ref.invalidate(currentUserProvider);
                 }
               },

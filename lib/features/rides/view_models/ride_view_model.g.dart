@@ -783,7 +783,7 @@ final class RideDetailViewModelProvider
 }
 
 String _$rideDetailViewModelHash() =>
-    r'a761b04aae59a63e69826415ccc6d08c01d4a14e';
+    r'6a4c9b4761dea74ebe877e761d60e2478951a6c4';
 
 /// Single Ride Detail View Model — views watch only this, never separate
 /// stream/booking providers directly.

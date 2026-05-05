@@ -459,8 +459,6 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
         senderPhotoUrl: currentUser?.photoUrl,
       );
 
-      if (await file.exists()) await file.delete();
-
       if (!mounted) return;
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
@@ -477,6 +475,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
               'Failed to send voice message',
         );
       }
+      // Delete temp file only after confirmed success so RETRY can re-send it.
+      if (file.existsSync()) file.deleteSync();
       _scrollToBottom();
     } catch (e, st) {
       if (!mounted) return;
@@ -533,21 +533,22 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
         return;
       }
       context.push(
-        AppRoutes.driverProfile.path.replaceFirst(':id', receiverId),
+        AppRoutes.userProfile.path.replaceFirst(':id', receiverId),
         extra: _receiver,
       );
     }
 
     AppModalSheet.showActions<void>(
       context: context,
-      title: 'Chat options',
+      title: l10n.moreOptions,
       maxHeightFactor: 0.78,
       actions: [
-        AppModalAction(
-          icon: Icons.person_outline_rounded,
-          title: l10n.viewProfile,
-          onTap: onViewProfile,
-        ),
+        if (!widget.isGroup)
+          AppModalAction(
+            icon: Icons.person_outline_rounded,
+            title: l10n.viewProfile,
+            onTap: onViewProfile,
+          ),
         AppModalAction(
           icon: Icons.notifications_off_outlined,
           title: l10n.muteNotifications,
@@ -589,6 +590,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   }
 
   void _confirmDeleteConversation() {
+    final uid = currentUser?.uid;
+    if (uid == null) return;
     showDialog<void>(
       context: context,
       barrierLabel: 'Delete conversation',
@@ -615,7 +618,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                     .read(chatActionsViewModelProvider.notifier)
                     .clearChat(
                       chatId: _chatId,
-                      userId: currentUser!.uid,
+                      userId: uid,
                     );
 
                 if (!mounted) return;
@@ -663,6 +666,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   }
 
   void _confirmBlockUser() {
+    final uid = currentUser?.uid;
+    if (uid == null) return;
     if (_receiver.uid.isEmpty) {
       AdaptiveSnackBar.show(
         context,
@@ -697,7 +702,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                     .read(chatActionsViewModelProvider.notifier)
                     .blockUser(
                       chatId: _isDraftChat ? null : _chatId,
-                      userId: currentUser!.uid,
+                      userId: uid,
                       blockedUserId: _receiver.uid,
                     );
                 if (!mounted) return;
@@ -732,6 +737,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   }
 
   void _confirmUnblockUser() {
+    final uid = currentUser?.uid;
+    if (uid == null) return;
     if (_receiver.uid.isEmpty) {
       AdaptiveSnackBar.show(
         context,
@@ -766,7 +773,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                     .read(chatActionsViewModelProvider.notifier)
                     .unblockUser(
                       chatId: _isDraftChat ? null : _chatId,
-                      userId: currentUser!.uid,
+                      userId: uid,
                       blockedUserId: _receiver.uid,
                     );
                 if (!mounted) return;
@@ -827,11 +834,13 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   }
 
   Future<void> _muteChat() async {
+    final uid = currentUser?.uid;
+    if (uid == null) return;
     await ref
         .read(chatActionsViewModelProvider.notifier)
         .toggleMute(
           chatId: _chatId,
-          userId: currentUser!.uid,
+          userId: uid,
           mute: true,
         );
     if (!mounted) return;
@@ -843,6 +852,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   }
 
   void _confirmClearChatHistory() {
+    final uid = currentUser?.uid;
+    if (uid == null) return;
     showDialog<void>(
       context: context,
       barrierLabel: AppLocalizations.of(context).clearChat,
@@ -869,7 +880,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                     .read(chatActionsViewModelProvider.notifier)
                     .clearChatHistoryForUser(
                       chatId: _chatId,
-                      userId: currentUser!.uid,
+                      userId: uid,
                     );
 
                 if (!mounted) return;

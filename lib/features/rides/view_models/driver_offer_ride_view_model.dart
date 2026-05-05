@@ -4,10 +4,12 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/config/routes/route_params.dart';
 import 'package:sport_connect/core/models/location/location_point.dart';
 import 'package:sport_connect/core/models/value_objects/money.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/services/routing_service.dart'
     show routingServiceProvider;
 import 'package:sport_connect/features/events/models/event_model.dart';
 import 'package:sport_connect/features/events/repositories/event_repository.dart';
+import 'package:sport_connect/features/messaging/repositories/chat_repository.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_capacity.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_preferences.dart';
@@ -268,7 +270,7 @@ class DriverOfferRideFormState {
       return 'Number of seats must be between 1 and 8 — go back to Step 2';
     }
     if (!hasValidPrice) {
-      return 'Price per seat must be at least €${(_minPriceEur / 100).toStringAsFixed(0)} — go back to Step 2';
+      return 'Price per seat must be at least €${_minPriceEur.toStringAsFixed(0)} — go back to Step 2';
     }
     if (isRecurring && recurringDays.isEmpty) {
       return 'Please select at least one recurring day';
@@ -603,7 +605,10 @@ class DriverOfferRideViewModel extends _$DriverOfferRideViewModel {
         final vehicle = await ref
             .read(vehicleRepositoryProvider)
             .getVehicleById(state.selectedVehicleId!);
-        if (!ref.mounted) return null;
+        if (!ref.mounted) {
+          state = state.copyWith(isSubmitting: false);
+          return null;
+        }
         // VE-2: Confirm the vehicle still exists and belongs to this driver.
         if (vehicle == null) {
           state = state.copyWith(
@@ -645,7 +650,10 @@ class DriverOfferRideViewModel extends _$DriverOfferRideViewModel {
         final existing = await ref
             .read(rideRepositoryProvider)
             .getRideById(state.existingRideId!);
-        if (!ref.mounted) return null;
+        if (!ref.mounted) {
+          state = state.copyWith(isSubmitting: false);
+          return null;
+        }
         if (existing != null) {
           existingBooked = existing.capacity.booked;
           existingBookingIds = existing.bookingIds;
@@ -704,6 +712,19 @@ class DriverOfferRideViewModel extends _$DriverOfferRideViewModel {
         rideId = ride.id;
       } else {
         rideId = await ref.read(rideServiceProvider.notifier).createRide(ride);
+        if (!ref.mounted) {
+          state = state.copyWith(isSubmitting: false);
+          return rideId;
+        }
+        final rideName =
+            '${ride.route.origin.shortDisplay} → ${ride.route.destination.shortDisplay}';
+        await ref.read(chatRepositoryProvider).createRideChat(
+              rideId: rideId,
+              driverId: driverId,
+              driverName:
+                  ref.read(currentUserProvider).value?.username ?? driverId,
+              rideName: rideName,
+            );
       }
 
       if (!ref.mounted) return rideId;

@@ -15,13 +15,14 @@ import 'package:sport_connect/core/animations/feedback_animations.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/config/routes/route_params.dart';
 import 'package:sport_connect/core/models/location/location_point.dart';
-import 'package:sport_connect/core/models/user/user_model.dart';
 import 'package:sport_connect/core/models/user/user_enums.dart';
+import 'package:sport_connect/core/models/user/user_model.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
-import 'package:sport_connect/core/widgets/skeleton_loader.dart';
+import 'package:sport_connect/core/widgets/app_map_tile_layer.dart';
 import 'package:sport_connect/core/widgets/map_location_picker.dart';
 import 'package:sport_connect/core/widgets/ride_feature_widgets.dart';
+import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/features/events/models/event_model.dart';
 import 'package:sport_connect/features/events/views/widgets/inline_event_selector.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
@@ -30,7 +31,6 @@ import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
 import 'package:sport_connect/features/vehicles/view_models/vehicle_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
-import 'package:sport_connect/core/widgets/app_map_tile_layer.dart';
 
 class DriverOfferRideScreen extends ConsumerStatefulWidget {
   const DriverOfferRideScreen({
@@ -585,7 +585,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                   height: 36.w,
                   child: IconButton(
                     tooltip: AppLocalizations.of(context).swapLocationsTooltip,
-                    onPressed: _swapLocations,
+                    onPressed: _selectedEvent != null ? null : _swapLocations,
                     icon: Icon(Icons.swap_vert_rounded, size: 20.sp),
                     color: AppColors.primary,
                     style: IconButton.styleFrom(
@@ -604,7 +604,9 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
             placeholder: AppLocalizations.of(context).selectDropoffLocation,
             icon: Icons.location_on_rounded,
             color: AppColors.secondary,
-            onTap: () => _selectLocation(isFrom: false),
+            onTap: _selectedEvent != null
+                ? null
+                : () => _selectLocation(isFrom: false),
           ),
         ],
       ),
@@ -755,7 +757,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
     required String placeholder,
     required IconData icon,
     required Color color,
-    required VoidCallback onTap,
+    required VoidCallback? onTap,
     LocationPoint? location,
   }) {
     return InkWell(
@@ -2261,6 +2263,15 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
   }
 
   Future<void> _selectLocation({required bool isFrom}) async {
+    if (!isFrom && _selectedEvent != null) {
+      AdaptiveSnackBar.show(
+        context,
+        message: 'Destination is locked because an event is selected.',
+        type: AdaptiveSnackBarType.info,
+      );
+      return;
+    }
+
     final result = await MapLocationPicker.show(
       context,
       title: isFrom
@@ -2281,6 +2292,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
         longitude: result.location.longitude,
         address: result.address,
       );
+
       if (isFrom) {
         ref
             .read(driverOfferRideViewModelProvider.notifier)

@@ -62,7 +62,7 @@ class EventRepository {
     required String userId,
   }) {
     return <String>{
-      if (creatorIsPremium) creatorId,
+      creatorId,
       if (userIsPremium) userId,
     }.toList();
   }

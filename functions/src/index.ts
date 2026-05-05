@@ -1080,16 +1080,18 @@ export const onNewMessage = onDocumentCreated(
 // Trigger: New Ride Request
 // ============================================
 
+// FIXED: Was listening to dead "rideRequests" collection. Flutter now writes
+// booking requests to "bookings". Rewritten to fire on bookings/{bookingId}.
 export const onNewRideRequest = onDocumentCreated(
-  "rideRequests/{requestId}",
+  "bookings/{bookingId}",
   async (event) => {
-    const request = event.data?.data();
-    if (!request) return;
+    const booking = event.data?.data();
+    if (!booking) return;
 
     // CF-12: Deduplication — Firestore triggers can be retried on transient
     // errors, sending the same push twice.  We write notificationSentAt before
     // sending; on retry the field is already present and we bail out early.
-    if (request.notificationSentAt) return;
+    if (booking.notificationSentAt) return;
     try {
       await event.data!.ref.update({
         notificationSentAt: FieldValue.serverTimestamp(),
@@ -1099,29 +1101,47 @@ export const onNewRideRequest = onDocumentCreated(
       return;
     }
 
-    const driverId = request.driverId as string;
-    const riderName = (request.riderName as string) || "A rider";
-    const rideId = request.rideId as string;
-    const pickup = (request.pickupAddress as string) || "";
-    const seatsRequested = (request.seatsRequested as number) ?? 1;
+    const rideId = typeof booking.rideId === "string" ? booking.rideId : null;
+    const passengerId =
+      typeof booking.passengerId === "string" ? booking.passengerId : null;
+    const seatsBooked = (booking.seatsBooked as number) ?? 1;
+
+    if (!rideId || !passengerId) return;
+
+    const db = admin.firestore();
+
+    // Fetch ride to get driverId
+    const rideSnap = await db.collection("rides").doc(rideId).get();
+    const rideData = rideSnap.data();
+    if (!rideData) return;
+
+    const driverId = typeof rideData.driverId === "string" ? rideData.driverId : null;
+    if (!driverId) return;
+
+    // Fetch rider name from users collection
+    let riderName = "A rider";
+    try {
+      const userSnap = await db.collection("users").doc(passengerId).get();
+      riderName = (userSnap.data()?.username as string) || riderName;
+    } catch {
+      // Non-critical — fallback to generic name
+    }
+
+    // Pickup location name from the booking's pickupLocation
+    const pickupLocation = booking.pickupLocation as Record<string, unknown> | undefined;
+    const pickup = (pickupLocation?.name as string) || (pickupLocation?.address as string) || "";
 
     // CF-10: Include the fare amount so the driver can evaluate the booking
     // value without opening the app.
     let fareStr = "";
     try {
-      const rideSnap = await admin
-        .firestore()
-        .collection("rides")
-        .doc(rideId)
-        .get();
-      const rideData = rideSnap.data() ?? {};
       const pricePerSeatInCents = getRidePricePerSeatInCents(rideData);
       if (pricePerSeatInCents !== undefined && pricePerSeatInCents > 0) {
-        const total = (pricePerSeatInCents * seatsRequested) / 100;
+        const total = (pricePerSeatInCents * seatsBooked) / 100;
         fareStr = ` — €${total.toFixed(2)}`;
       }
     } catch {
-      // Non-critical — proceed without fare if ride fetch fails.
+      // Non-critical — proceed without fare if pricing fetch fails.
     }
 
     await sendPushToUser(
@@ -1131,7 +1151,7 @@ export const onNewRideRequest = onDocumentCreated(
       {
         type: "ride_request",
         referenceId: rideId,
-        requestId: event.params.requestId,
+        requestId: event.params.bookingId,
       },
     );
   },
@@ -1141,8 +1161,10 @@ export const onNewRideRequest = onDocumentCreated(
 // Trigger: Ride Request Status Changed
 // ============================================
 
+// FIXED: Was listening to dead "rideRequests" collection. Rewritten to fire
+// on "bookings/{bookingId}" which is what Flutter actually writes to.
 export const onRideRequestUpdated = onDocumentUpdated(
-  "rideRequests/{requestId}",
+  "bookings/{bookingId}",
   async (event) => {
     const before = event.data?.before.data();
     const after = event.data?.after.data();
@@ -1150,9 +1172,15 @@ export const onRideRequestUpdated = onDocumentUpdated(
 
     if (before.status === after.status) return;
 
-    const riderId = after.riderId as string;
+    // onBookingCancelled already handles the cancellation → refund flow.
+    // This trigger only handles driver accept/reject notifications.
     const newStatus = after.status as string;
-    const rideId = after.rideId as string;
+    if (newStatus === "cancelled") return;
+
+    const passengerId =
+      typeof after.passengerId === "string" ? after.passengerId : null;
+    const rideId = typeof after.rideId === "string" ? after.rideId : null;
+    if (!passengerId || !rideId) return;
 
     let title = "";
     let body = "";
@@ -1166,15 +1194,11 @@ export const onRideRequestUpdated = onDocumentUpdated(
         title = "Ride Request Declined";
         body = "Unfortunately, your ride request was not accepted.";
         break;
-      case "cancelled":
-        title = "Ride Cancelled";
-        body = "A ride you were part of has been cancelled.";
-        break;
       default:
         return;
     }
 
-    await sendPushToUser(riderId, title, body, {
+    await sendPushToUser(passengerId, title, body, {
       type: "ride_update",
       referenceId: rideId,
       status: newStatus,
@@ -1216,7 +1240,15 @@ export const onRideStatusChanged = onDocumentUpdated(
     if (passengerIds.length === 0) return;
 
     if (isStarting) {
-      const driverName = (after.driverName as string) || "Your driver";
+      // RideModel has no driverName field — fetch from users collection.
+      let driverName = "Your driver";
+      const driverId = typeof after.driverId === "string" ? after.driverId : null;
+      if (driverId) {
+        try {
+          const driverSnap = await db.collection("users").doc(driverId).get();
+          driverName = (driverSnap.data()?.username as string) || driverName;
+        } catch { /* non-critical */ }
+      }
       await sendPushToMultipleUsers(
         passengerIds,
         "Your Ride Has Started! 🚗",
@@ -1334,7 +1366,7 @@ export const onEventUpdated = onDocumentUpdated(
             .collection("users")
             .doc(participantId)
             .get();
-          joinerName = (userDoc.data()?.displayName as string) || joinerName;
+          joinerName = (userDoc.data()?.username as string) || joinerName;
         } catch {
           // Graceful fallback — name is cosmetic only
         }
@@ -2070,6 +2102,7 @@ export const createInstantPayout = onCall(
     const payoutRef = await db.collection("payouts").add({
       driverId: request.auth.uid,
       driverName:
+        (callerData.username as string | undefined) ??
         (callerData.displayName as string | undefined) ??
         (callerData.name as string | undefined) ??
         `${callerData.firstName ?? ""} ${callerData.lastName ?? ""}`.trim(),
@@ -4196,6 +4229,16 @@ export const onRideCancelled = onDocumentUpdated(
     const db = admin.firestore();
     const stripe = getStripeClient(stripeSecretKey.value().trim());
 
+    // RideModel has no driverName field — fetch from users collection.
+    let driverName = "The driver";
+    const driverIdForName = typeof after.driverId === "string" ? after.driverId : null;
+    if (driverIdForName) {
+      try {
+        const driverSnap = await db.collection("users").doc(driverIdForName).get();
+        driverName = (driverSnap.data()?.username as string) || driverName;
+      } catch { /* non-critical */ }
+    }
+
     // Find all accepted bookings for this ride
     const [bookingsSnap, pendingBookingsSnap] = await Promise.all([
       db
@@ -4225,7 +4268,6 @@ export const onRideCancelled = onDocumentUpdated(
         .map((d) => d.data().passengerId as string)
         .filter(Boolean);
       if (pendingPassengerIds.length > 0) {
-        const driverName = (after.driverName as string) || "The driver";
         await sendPushToMultipleUsers(
           pendingPassengerIds,
           "Ride Cancelled",
@@ -4733,7 +4775,7 @@ export const createCustomerSheetSetup = onCall(
     if (!customerId) {
       const customer = await stripe.customers.create({
         email: userData.email,
-        name: userData.displayName,
+        name: (userData.username as string | undefined) ?? (userData.displayName as string | undefined),
         metadata: { userId },
       });
       customerId = customer.id;
@@ -4782,7 +4824,7 @@ export const createCustomerSheetSetup = onCall(
 
     // Create ephemeral key for the customer
     // Must use the client's SDK API version
-    const ephemeralKeyVersion = stripeApiVersion || "2025-12-15.clover";
+    const ephemeralKeyVersion = stripeApiVersion || "2026-04-22.dahlia";
     const ephemeralKey = await stripe.ephemeralKeys.create(
       { customer: customerId },
       { apiVersion: ephemeralKeyVersion },

@@ -14,7 +14,6 @@ import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/services/location_service.dart';
 import 'package:sport_connect/core/services/push_notification_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
-import 'package:sport_connect/core/widgets/gamification_widgets.dart';
 import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
@@ -316,24 +315,6 @@ class _DriverDashboard extends ConsumerWidget {
                 ),
               ),
               SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(hPad, 22.h, hPad, 0),
-                  child: _buildDriverTools(context, l10n),
-                ),
-              ),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(hPad, 22.h, hPad, 0),
-                  child: _buildStatsGrid(l10n, driverStats),
-                ),
-              ),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(hPad, 22.h, hPad, 0),
-                  child: _buildGamificationStrip(user),
-                ),
-              ),
-              SliverToBoxAdapter(
                 child: SizedBox(
                   height: 32.h + MediaQuery.paddingOf(context).bottom,
                 ),
@@ -428,12 +409,9 @@ class _DriverDashboard extends ConsumerWidget {
           ),
           SizedBox(width: 6.w),
           _HeaderIconButton(
-            tooltip: l10n.messages,
-            icon: Icons.chat_bubble_outline_rounded,
-            onTap: () => context.goNamed(
-              AppRoutes.chat.name,
-              extra: {'resetBranch': true},
-            ),
+            tooltip: l10n.events,
+            icon: Icons.event_outlined,
+            onTap: () => context.goNamed(AppRoutes.myEvents.name),
           ),
         ],
       ),
@@ -778,181 +756,6 @@ class _DriverDashboard extends ConsumerWidget {
     return _animateDriverHome(
       section,
       (animation) => animation.fadeIn(duration: 300.ms, delay: 200.ms),
-    );
-  }
-
-  Widget _buildDriverTools(BuildContext context, AppLocalizations l10n) {
-    final section = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const _SectionHeader(title: 'Driver tools'),
-        SizedBox(height: 12.h),
-        Row(
-          children: [
-            Expanded(
-              child: _ToolButton(
-                icon: Icons.add_road_rounded,
-                label: l10n.offerRide,
-                color: AppColors.primary,
-                onTap: () => context.push(AppRoutes.driverOfferRide.path),
-              ),
-            ),
-            SizedBox(width: 10.w),
-            Expanded(
-              child: _ToolButton(
-                icon: Icons.directions_car_rounded,
-                label: l10n.myVehicles,
-                color: AppColors.secondary,
-                onTap: () => context.push(AppRoutes.driverVehicles.path),
-              ),
-            ),
-            SizedBox(width: 10.w),
-            Expanded(
-              child: _ToolButton(
-                icon: Icons.history_rounded,
-                label: l10n.history,
-                color: AppColors.info,
-                onTap: () => context.goNamed(
-                  AppRoutes.driverRides.name,
-                  extra: {'resetBranch': true},
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-
-    return _animateDriverHome(
-      section,
-      (animation) => animation.fadeIn(duration: 300.ms, delay: 250.ms),
-    );
-  }
-
-  Widget _buildStatsGrid(
-    AppLocalizations l10n,
-    AsyncValue<DriverStats> stats,
-  ) {
-    return stats.when(
-      data: (driverStats) {
-        final week = (driverStats.earningsThisWeekInCents / 100)
-            .toStringAsFixed(0);
-        final month = (driverStats.earningsThisMonthInCents / 100)
-            .toStringAsFixed(0);
-
-        final section = Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const _SectionHeader(title: 'Performance'),
-            SizedBox(height: 12.h),
-            Row(
-              children: [
-                Expanded(
-                  child: _StatCard(
-                    icon: Icons.star_rounded,
-                    iconColor: AppColors.starFilled,
-                    value: driverStats.rating > 0
-                        ? driverStats.rating.toStringAsFixed(1)
-                        : '\u2014',
-                    label: l10n.rating,
-                  ),
-                ),
-                SizedBox(width: 10.w),
-                Expanded(
-                  child: _StatCard(
-                    icon: Icons.route_rounded,
-                    iconColor: AppColors.primary,
-                    value: '${driverStats.totalRides}',
-                    label: l10n.totalRides,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 10.h),
-            Row(
-              children: [
-                Expanded(
-                  child: _StatCard(
-                    icon: Icons.calendar_view_week_rounded,
-                    iconColor: AppColors.success,
-                    value: l10n.value6(week),
-                    label: l10n.driverThisWeek,
-                  ),
-                ),
-                SizedBox(width: 10.w),
-                Expanded(
-                  child: _StatCard(
-                    icon: Icons.trending_up_rounded,
-                    iconColor: AppColors.info,
-                    value: l10n.value6(month),
-                    label: l10n.driverThisMonth,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        );
-
-        return _animateDriverHome(
-          section,
-          (animation) => animation.fadeIn(duration: 300.ms, delay: 300.ms),
-        );
-      },
-      loading: () => Column(
-        children: [
-          Row(
-            children: [
-              Expanded(child: _buildShimmerCard(height: 96)),
-              SizedBox(width: 10.w),
-              Expanded(child: _buildShimmerCard(height: 96)),
-            ],
-          ),
-          SizedBox(height: 10.h),
-          Row(
-            children: [
-              Expanded(child: _buildShimmerCard(height: 96)),
-              SizedBox(width: 10.w),
-              Expanded(child: _buildShimmerCard(height: 96)),
-            ],
-          ),
-        ],
-      ),
-      error: (_, _) => const SizedBox.shrink(),
-    );
-  }
-
-  Widget _buildGamificationStrip(AsyncValue<_DriverHomeUserData?> user) {
-    final userData = user.whenOrNull<_DriverHomeUserData?>(
-      data: (data) => data,
-    );
-    if (userData == null) return const SizedBox.shrink();
-
-    final section = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const _SectionHeader(title: 'Progress'),
-        SizedBox(height: 12.h),
-        Row(
-          children: [
-            Expanded(
-              child: XPProgressBar(
-                currentXP: userData.totalXP,
-                maxXP: userData.maxXP,
-                level: userData.level,
-              ),
-            ),
-            if (userData.streak > 0) ...[
-              SizedBox(width: 10.w),
-              StreakCounter(days: userData.streak),
-            ],
-          ],
-        ),
-      ],
-    );
-
-    return _animateDriverHome(
-      section,
-      (animation) => animation.fadeIn(duration: 300.ms, delay: 350.ms),
     );
   }
 
@@ -1777,109 +1580,6 @@ class _DateTile extends StatelessWidget {
               fontWeight: FontWeight.w900,
               color: AppColors.primary,
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ToolButton extends StatelessWidget {
-  const _ToolButton({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () {
-          HapticFeedback.lightImpact();
-          onTap();
-        },
-        borderRadius: BorderRadius.circular(16.r),
-        child: Container(
-          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 14.h),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(16.r),
-            border: Border.all(color: AppColors.border.withAlpha(100)),
-          ),
-          child: Column(
-            children: [
-              Icon(icon, color: color, size: 23.sp),
-              SizedBox(height: 8.h),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12.sp,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _StatCard extends StatelessWidget {
-  const _StatCard({
-    required this.icon,
-    required this.iconColor,
-    required this.value,
-    required this.label,
-  });
-
-  final IconData icon;
-  final Color iconColor;
-  final String value;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return _SoftCard(
-      padding: EdgeInsets.all(14.w),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: iconColor, size: 22.sp),
-          SizedBox(height: 12.h),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 18.sp,
-              fontWeight: FontWeight.w900,
-              color: AppColors.textPrimary,
-              letterSpacing: -0.2,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          SizedBox(height: 2.h),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12.sp,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),

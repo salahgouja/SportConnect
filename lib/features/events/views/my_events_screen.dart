@@ -6,13 +6,14 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/models/models.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/core/widgets/premium_card.dart';
-import 'package:sport_connect/features/events/models/event_model.dart';
 import 'package:sport_connect/core/widgets/skeleton_loader.dart';
+import 'package:sport_connect/features/events/models/event_model.dart';
 import 'package:sport_connect/features/events/view_models/event_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
@@ -28,6 +29,13 @@ class _MyEventsScreenState extends ConsumerState<MyEventsScreen> {
   @override
   Widget build(BuildContext context) {
     final userId = ref.watch(currentAuthUidProvider).value ?? '';
+    final role = ref.watch(
+      currentUserProvider.select(
+        (value) => value.whenData((user) => user?.role),
+      ),
+    );
+
+    final isDriver = role.value == UserRole.driver;
     final l10n = AppLocalizations.of(context);
     final actionButton = AdaptiveFloatingActionButton(
       heroTag: null,
@@ -53,8 +61,8 @@ class _MyEventsScreenState extends ConsumerState<MyEventsScreen> {
         selectedColor: Colors.white,
         backgroundColor: AppColors.primary,
         children: [
-          _CreatedTab(userId: userId),
-          _JoinedTab(userId: userId),
+          _CreatedTab(userId: userId, isDriver: isDriver),
+          _JoinedTab(userId: userId, isDriver: isDriver),
         ],
       ),
       floatingActionButton: actionButton.animate().scale(
@@ -70,22 +78,25 @@ class _MyEventsScreenState extends ConsumerState<MyEventsScreen> {
 // Created Tab
 // =============================================================================
 class _CreatedTab extends ConsumerWidget {
-  const _CreatedTab({required this.userId});
+  const _CreatedTab({required this.userId, required this.isDriver});
   final String userId;
+  final bool isDriver;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    if (userId.isEmpty) return _EmptyTab(message: l10n.signInFirstMessage);
+    if (userId.isEmpty)
+      return _EmptyTab(message: l10n.signInFirstMessage, isDriver: isDriver);
     final stream = ref.watch(eventsByCreatorStreamProvider(userId));
 
     return stream.when(
       loading: () =>
           const SkeletonLoader(type: SkeletonType.eventCard, itemCount: 3),
-      error: (_, _) => _EmptyTab(message: l10n.unableToLoadEvents),
+      error: (_, _) =>
+          _EmptyTab(message: l10n.unableToLoadEvents, isDriver: isDriver),
       data: (events) {
         if (events.isEmpty) {
-          return _EmptyTab(message: l10n.noCreatedEvents);
+          return _EmptyTab(message: l10n.noCreatedEvents, isDriver: isDriver);
         }
         return _EventListView(events: events);
       },
@@ -97,22 +108,25 @@ class _CreatedTab extends ConsumerWidget {
 // Joined Tab
 // =============================================================================
 class _JoinedTab extends ConsumerWidget {
-  const _JoinedTab({required this.userId});
+  const _JoinedTab({required this.userId, required this.isDriver});
   final String userId;
+  final bool isDriver;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    if (userId.isEmpty) return _EmptyTab(message: l10n.signInFirstMessage);
+    if (userId.isEmpty)
+      return _EmptyTab(message: l10n.signInFirstMessage, isDriver: isDriver);
     final stream = ref.watch(joinedEventsStreamProvider(userId));
 
     return stream.when(
       loading: () =>
           const SkeletonLoader(type: SkeletonType.eventCard, itemCount: 3),
-      error: (_, _) => _EmptyTab(message: l10n.unableToLoadEvents),
+      error: (_, _) =>
+          _EmptyTab(message: l10n.unableToLoadEvents, isDriver: isDriver),
       data: (events) {
         if (events.isEmpty) {
-          return _EmptyTab(message: l10n.noJoinedEvents);
+          return _EmptyTab(message: l10n.noJoinedEvents, isDriver: isDriver);
         }
         return _EventListView(events: events);
       },
@@ -280,8 +294,13 @@ class _MyEventCard extends StatelessWidget {
 // Empty tab placeholder
 // =============================================================================
 class _EmptyTab extends StatelessWidget {
-  const _EmptyTab({required this.message});
+  const _EmptyTab({
+    required this.message,
+    required this.isDriver,
+  });
+
   final String message;
+  final bool isDriver;
 
   @override
   Widget build(BuildContext context) {
@@ -300,7 +319,10 @@ class _EmptyTab extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 15.sp, color: AppColors.textSecondary),
+              style: TextStyle(
+                fontSize: 15.sp,
+                color: AppColors.textSecondary,
+              ),
             ),
             SizedBox(height: 20.h),
             PremiumButton(
@@ -308,10 +330,16 @@ class _EmptyTab extends StatelessWidget {
               icon: Icons.explore_rounded,
               size: PremiumButtonSize.small,
               style: PremiumButtonStyle.ghost,
-              onPressed: () => context.goNamed(
-                AppRoutes.events.name,
-                extra: {'resetBranch': true},
-              ),
+              onPressed: () {
+                if (isDriver) {
+                  context.goNamed(AppRoutes.events.name);
+                } else {
+                  context.goNamed(
+                    AppRoutes.events.name,
+                    extra: {'resetBranch': true},
+                  );
+                }
+              },
             ),
           ],
         ),

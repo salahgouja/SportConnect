@@ -38,7 +38,7 @@ class AppConfig {
   /// --dart-define=FIREBASE_EMULATOR_HOST=localhost
   static const String emulatorHostOverride = String.fromEnvironment(
     'FIREBASE_EMULATOR_HOST',
-    defaultValue: '192.168.0.123',
+    defaultValue: '10.173.2.105',
   );
 
   /// Enable Android emulator loopback host.
@@ -117,7 +117,7 @@ class AppConfig {
 
   /// App-level settings.
   static const String appName = 'SportConnect';
-  static const String appVersion = '1.1.7';
+  static const String appVersion = '1.1.8';
 
   static const String supportTicketEmail = String.fromEnvironment(
     'SPORTCONNECT_SUPPORT_EMAIL',

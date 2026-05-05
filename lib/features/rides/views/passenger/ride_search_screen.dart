@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -7,9 +9,9 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:sliver_tools/sliver_tools.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/models/location/location_point.dart';
-import 'package:sliver_tools/sliver_tools.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
 import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
@@ -26,7 +28,7 @@ import 'package:sport_connect/l10n/generated/app_localizations.dart';
 class RideSearchScreen extends ConsumerStatefulWidget {
   const RideSearchScreen({super.key, this.initialDestination});
 
-  /// Optional pre-filled destination (e.g. from event detail).
+  /// Optional pre-filled destination, for example from event detail.
   /// Keys: `destinationAddress`, `destinationLat`, `destinationLng`.
   final Map<String, dynamic>? initialDestination;
 
@@ -36,6 +38,7 @@ class RideSearchScreen extends ConsumerStatefulWidget {
 
 class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
   RideSearchState get _searchState => ref.read(rideSearchViewModelProvider);
+
   RideSearchResultsData get _resultsState =>
       ref.read(rideSearchResultsProvider);
 
@@ -44,8 +47,11 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
   @override
   void initState() {
     super.initState();
+
     _scrollController.addListener(_handleScroll);
+
     final dest = widget.initialDestination;
+
     if (dest != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         ref
@@ -57,6 +63,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
 
   void _handleScroll() {
     if (!_scrollController.hasClients) return;
+
     if (_scrollController.position.extentAfter < 240) {
       ref.read(rideSearchViewModelProvider.notifier).loadMore();
     }
@@ -64,7 +71,10 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
 
   @override
   void dispose() {
-    _scrollController.dispose();
+    _scrollController
+      ..removeListener(_handleScroll)
+      ..dispose();
+
     super.dispose();
   }
 
@@ -95,10 +105,8 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
             parent: BouncingScrollPhysics(),
           ),
           slivers: [
-            // Compact App Bar
             _buildSliverAppBar(),
 
-            // ── Search controls group ─────────────────────────
             MultiSliver(
               children: [
                 SliverToBoxAdapter(child: _buildSearchCard()),
@@ -108,7 +116,6 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
               ],
             ),
 
-            // ── Results group ─────────────────────────────────
             if (!_resultsState.hasSearched &&
                 !_resultsState.isLoading &&
                 _resultsState.visibleResults.isEmpty)
@@ -121,12 +128,10 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
                 ],
               ),
 
-            // Bottom Padding
             SliverToBoxAdapter(child: SizedBox(height: 100.h)),
           ],
         ),
       ),
-      // Floating Filter Button
       floatingActionButton: _buildFloatingFilterButton(),
     );
   }
@@ -136,6 +141,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
       await ref
           .read(rideSearchViewModelProvider.notifier)
           .searchRides(forceRefresh: true);
+
       return;
     }
 
@@ -164,6 +170,8 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
       ),
       title: Text(
         AppLocalizations.of(context).findARide,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: TextStyle(
           fontSize: 18.sp,
           fontWeight: FontWeight.w600,
@@ -198,11 +206,9 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
       ),
       child: Column(
         children: [
-          // Connected Inputs (more compact)
           IntrinsicHeight(
             child: Row(
               children: [
-                // Route indicators
                 Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -266,7 +272,6 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
                   ),
                 ),
                 SizedBox(width: 8.w),
-                // Swap Button
                 GestureDetector(
                   onTap: _swapLocations,
                   child: Container(
@@ -288,15 +293,39 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
 
           SizedBox(height: 12.h),
 
-          // Date, Seats & Search Row (compact)
-          Row(
-            children: [
-              Expanded(child: _buildCompactDateSelector()),
-              SizedBox(width: 8.w),
-              _buildCompactSeatSelector(),
-              SizedBox(width: 8.w),
-              _buildSearchButton(),
-            ],
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final compact = constraints.maxWidth < 340.w;
+
+              if (compact) {
+                return Column(
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(child: _buildCompactDateSelector()),
+                        SizedBox(width: 8.w),
+                        _buildCompactSeatSelector(),
+                      ],
+                    ),
+                    SizedBox(height: 8.h),
+                    SizedBox(
+                      width: double.infinity,
+                      child: _buildSearchButton(expanded: true),
+                    ),
+                  ],
+                );
+              }
+
+              return Row(
+                children: [
+                  Expanded(child: _buildCompactDateSelector()),
+                  SizedBox(width: 8.w),
+                  _buildCompactSeatSelector(),
+                  SizedBox(width: 8.w),
+                  _buildSearchButton(),
+                ],
+              );
+            },
           ),
         ],
       ),
@@ -304,7 +333,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
   }
 
   void _swapLocations() {
-    HapticFeedback.lightImpact();
+    unawaited(HapticFeedback.lightImpact());
     ref.read(rideSearchViewModelProvider.notifier).swapLocations();
   }
 
@@ -316,7 +345,9 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
     final location = isFrom
         ? _searchState.draftOrigin
         : _searchState.draftDestination;
+
     final address = location?.address ?? '';
+
     return GestureDetector(
       onTap: () => _openLocationPicker(isFrom: isFrom),
       child: Container(
@@ -326,6 +357,8 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
             Expanded(
               child: Text(
                 address.isEmpty ? hint : address,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 15.sp,
                   color: address.isEmpty
@@ -334,12 +367,13 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
                   fontWeight: address.isEmpty
                       ? FontWeight.w400
                       : FontWeight.w500,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ),
-            if (address.isNotEmpty)
+            if (address.isNotEmpty) ...[
+              SizedBox(width: 6.w),
               GestureDetector(
+                behavior: HitTestBehavior.opaque,
                 onTap: () {
                   if (isFrom) {
                     ref
@@ -351,12 +385,16 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
                         .setDraftDestination(null);
                   }
                 },
-                child: Icon(
-                  Icons.close_rounded,
-                  size: 16.sp,
-                  color: AppColors.textTertiary,
+                child: Padding(
+                  padding: EdgeInsets.all(4.w),
+                  child: Icon(
+                    Icons.close_rounded,
+                    size: 16.sp,
+                    color: AppColors.textTertiary,
+                  ),
                 ),
               ),
+            ],
           ],
         ),
       ),
@@ -383,21 +421,23 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
             );
           },
         );
+
         if (!mounted) return;
+
         if (date != null) {
           ref.read(rideSearchViewModelProvider.notifier).setDraftDate(date);
           ref.read(rideSearchViewModelProvider.notifier).setSelectedDateChip(2);
         }
       },
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+        constraints: BoxConstraints(minHeight: 42.h),
+        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 9.h),
         decoration: BoxDecoration(
           color: AppColors.surfaceVariant,
           borderRadius: BorderRadius.circular(10.r),
           border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
         ),
         child: Row(
-          mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               Icons.calendar_today_rounded,
@@ -405,12 +445,16 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
               size: 16.sp,
             ),
             SizedBox(width: 6.w),
-            Text(
-              _formatDate(_searchState.draftDate),
-              style: TextStyle(
-                fontSize: 13.sp,
-                fontWeight: FontWeight.w500,
-                color: AppColors.textPrimary,
+            Expanded(
+              child: Text(
+                _formatDate(_searchState.draftDate),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.textPrimary,
+                ),
               ),
             ),
           ],
@@ -421,6 +465,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
 
   Widget _buildCompactSeatSelector() {
     return Container(
+      constraints: BoxConstraints(minHeight: 42.h),
       padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 4.h),
       decoration: BoxDecoration(
         color: AppColors.surfaceVariant,
@@ -431,15 +476,16 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           GestureDetector(
+            behavior: HitTestBehavior.opaque,
             onTap: _searchState.draftSeats > 1
                 ? () {
-                    HapticFeedback.selectionClick();
+                    unawaited(HapticFeedback.selectionClick());
                     ref
                         .read(rideSearchViewModelProvider.notifier)
                         .setDraftSeats(_searchState.draftSeats - 1);
                   }
                 : null,
-            child: Container(
+            child: Padding(
               padding: EdgeInsets.all(4.w),
               child: Icon(
                 Icons.remove_rounded,
@@ -450,9 +496,10 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
               ),
             ),
           ),
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 8.w),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 6.w),
             child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
                   Icons.person_rounded,
@@ -462,6 +509,8 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
                 SizedBox(width: 2.w),
                 Text(
                   AppLocalizations.of(context).value2(_searchState.draftSeats),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w600,
@@ -472,15 +521,16 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
             ),
           ),
           GestureDetector(
+            behavior: HitTestBehavior.opaque,
             onTap: _searchState.draftSeats < 4
                 ? () {
-                    HapticFeedback.selectionClick();
+                    unawaited(HapticFeedback.selectionClick());
                     ref
                         .read(rideSearchViewModelProvider.notifier)
                         .setDraftSeats(_searchState.draftSeats + 1);
                   }
                 : null,
-            child: Container(
+            child: Padding(
               padding: EdgeInsets.all(4.w),
               child: Icon(
                 Icons.add_rounded,
@@ -496,11 +546,15 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
     );
   }
 
-  Widget _buildSearchButton() {
+  Widget _buildSearchButton({bool expanded = false}) {
     return GestureDetector(
       onTap: _performSearch,
       child: Container(
-        padding: EdgeInsets.all(12.w),
+        width: expanded ? double.infinity : null,
+        padding: EdgeInsets.symmetric(
+          horizontal: expanded ? 16.w : 12.w,
+          vertical: 12.h,
+        ),
         decoration: BoxDecoration(
           gradient: AppColors.heroGradient,
           borderRadius: BorderRadius.circular(12.r),
@@ -512,26 +566,50 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
             ),
           ],
         ),
-        child: _searchState.isLoading
-            ? SizedBox(
-                width: 20.w,
-                height: 20.w,
-                child: const CircularProgressIndicator.adaptive(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation(Colors.white),
+        child: Center(
+          child: _searchState.isLoading
+              ? SizedBox(
+                  width: 20.w,
+                  height: 20.w,
+                  child: const CircularProgressIndicator.adaptive(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+              : Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.search_rounded,
+                      color: Colors.white,
+                      size: 22.sp,
+                    ),
+                    if (expanded) ...[
+                      SizedBox(width: 8.w),
+                      Flexible(
+                        child: Text(
+                          AppLocalizations.of(context).findARide,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
-              )
-            : Icon(Icons.search_rounded, color: Colors.white, size: 22.sp),
+        ),
       ),
     );
   }
 
   Future<void> _performSearch() async {
-    if (_searchState.isLoading) {
-      return;
-    }
+    if (_searchState.isLoading) return;
 
-    HapticFeedback.mediumImpact();
+    unawaited(HapticFeedback.mediumImpact());
 
     final error = await ref
         .read(rideSearchViewModelProvider.notifier)
@@ -565,11 +643,12 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
             child: Row(
               children: List.generate(dates.length, (index) {
                 final isSelected = _searchState.selectedDateChip == index;
+
                 return Padding(
                   padding: EdgeInsets.only(right: 8.w),
                   child: GestureDetector(
                     onTap: () {
-                      HapticFeedback.selectionClick();
+                      unawaited(HapticFeedback.selectionClick());
                       ref
                           .read(rideSearchViewModelProvider.notifier)
                           .setSelectedDateChip(index);
@@ -579,6 +658,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
                     },
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
+                      constraints: BoxConstraints(maxWidth: 150.w),
                       padding: EdgeInsets.symmetric(
                         horizontal: 14.w,
                         vertical: 8.h,
@@ -598,6 +678,8 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
                       ),
                       child: Text(
                         dates[index].$1,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 13.sp,
                           fontWeight: FontWeight.w500,
@@ -619,10 +701,11 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
 
   DateTime _getNextWeekend() {
     final now = DateTime.now();
-    // If already Saturday or Sunday, return today
+
     if (now.weekday == DateTime.saturday || now.weekday == DateTime.sunday) {
       return now;
     }
+
     final daysUntilSaturday = DateTime.saturday - now.weekday;
     return now.add(Duration(days: daysUntilSaturday));
   }
@@ -633,9 +716,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
     if (_searchState.draftMaxPrice < 100) {
       filters.add(
         _buildFilterTag(
-          AppLocalizations.of(
-            context,
-          ).maxValue(_searchState.draftMaxPrice),
+          AppLocalizations.of(context).maxValue(_searchState.draftMaxPrice),
           () {
             ref
                 .read(rideSearchViewModelProvider.notifier)
@@ -644,6 +725,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
         ),
       );
     }
+
     if (_searchState.draftFemaleOnly) {
       filters.add(
         _buildFilterTag(AppLocalizations.of(context).femaleOnly, () {
@@ -653,6 +735,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
         }),
       );
     }
+
     if (_searchState.draftVerifiedOnly) {
       filters.add(
         _buildFilterTag(AppLocalizations.of(context).verifiedDriver2, () {
@@ -662,6 +745,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
         }),
       );
     }
+
     if (_searchState.draftPetFriendly) {
       filters.add(
         _buildFilterTag(AppLocalizations.of(context).petFriendly, () {
@@ -671,6 +755,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
         }),
       );
     }
+
     if (_searchState.draftNoSmoking) {
       filters.add(
         _buildFilterTag(AppLocalizations.of(context).noSmoking, () {
@@ -680,6 +765,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
         }),
       );
     }
+
     if (_searchState.draftLuggageRequired) {
       filters.add(
         _buildFilterTag(AppLocalizations.of(context).allowLuggageToggle, () {
@@ -689,6 +775,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
         }),
       );
     }
+
     if (_searchState.draftMinRating > 0) {
       filters.add(
         _buildFilterTag(
@@ -701,6 +788,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
         ),
       );
     }
+
     if (_searchState.draftVehicleType != 'any') {
       filters.add(
         _buildFilterTag(_vehicleTypeLabel(_searchState.draftVehicleType), () {
@@ -717,23 +805,29 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                AppLocalizations.of(context).activeFilters,
-                style: TextStyle(
-                  fontSize: 12.sp,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.textSecondary,
+              Expanded(
+                child: Text(
+                  AppLocalizations.of(context).activeFilters,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ),
+              SizedBox(width: 12.w),
               GestureDetector(
                 onTap: () {
-                  HapticFeedback.lightImpact();
+                  unawaited(HapticFeedback.lightImpact());
                   ref.read(rideSearchViewModelProvider.notifier).resetFilters();
                 },
                 child: Text(
                   AppLocalizations.of(context).clearAll2,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 12.sp,
                     fontWeight: FontWeight.w500,
@@ -752,6 +846,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
 
   Widget _buildFilterTag(String label, VoidCallback onRemove) {
     return Container(
+      constraints: BoxConstraints(maxWidth: 220.w),
       padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
       decoration: BoxDecoration(
         color: AppColors.primarySurface,
@@ -761,18 +856,23 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12.sp,
-              fontWeight: FontWeight.w500,
-              color: AppColors.primary,
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12.sp,
+                fontWeight: FontWeight.w500,
+                color: AppColors.primary,
+              ),
             ),
           ),
           SizedBox(width: 4.w),
           GestureDetector(
+            behavior: HitTestBehavior.opaque,
             onTap: () {
-              HapticFeedback.lightImpact();
+              unawaited(HapticFeedback.lightImpact());
               onRemove();
             },
             child: Icon(
@@ -786,14 +886,10 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
     );
   }
 
-  // ============================================================================
-  // Pre-search Discovery Section
-  // ============================================================================
-
   List<Widget> _buildDiscoverySection() {
     final l10n = AppLocalizations.of(context);
+
     return [
-      // Search prompt hero
       SliverToBoxAdapter(
         child: Container(
           margin: EdgeInsets.fromLTRB(16.w, 20.h, 16.w, 16.h),
@@ -822,6 +918,9 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
               SizedBox(height: 12.h),
               Text(
                 l10n.whereTo,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 20.sp,
                   fontWeight: FontWeight.bold,
@@ -831,6 +930,8 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
               SizedBox(height: 8.h),
               Text(
                 l10n.findARide,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 14.sp,
                   color: AppColors.textSecondary,
@@ -842,8 +943,6 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
           ),
         ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1),
       ),
-
-      // How it works
       SliverToBoxAdapter(
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 16.w),
@@ -852,6 +951,8 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
             children: [
               Text(
                 l10n.howItWorks,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 16.sp,
                   fontWeight: FontWeight.w600,
@@ -886,8 +987,6 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
           ),
         ).animate().fadeIn(delay: 200.ms, duration: 400.ms),
       ),
-
-      // Safety tips
       SliverToBoxAdapter(
         child: Container(
           margin: EdgeInsets.fromLTRB(16.w, 20.h, 16.w, 8.h),
@@ -911,6 +1010,8 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
                   children: [
                     Text(
                       l10n.verifiedDrivers,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontSize: 14.sp,
                         fontWeight: FontWeight.w600,
@@ -920,6 +1021,8 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
                     SizedBox(height: 2.h),
                     Text(
                       l10n.allDriversAreVerified,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontSize: 12.sp,
                         color: AppColors.textSecondary,
@@ -976,6 +1079,8 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
               children: [
                 Text(
                   title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w600,
@@ -984,6 +1089,8 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
                 ),
                 Text(
                   subtitle,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 12.sp,
                     color: AppColors.textSecondary,
@@ -992,6 +1099,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
               ],
             ),
           ),
+          SizedBox(width: 8.w),
           Icon(icon, color: color, size: 20.sp),
         ],
       ),
@@ -1002,41 +1110,49 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
     return Container(
       padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 8.h),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                AppLocalizations.of(
-                  context,
-                ).valueRidesAvailable(_resultsState.totalCount),
-                style: TextStyle(
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  AppLocalizations.of(
+                    context,
+                  ).valueRidesAvailable(_resultsState.totalCount),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
-              ),
-              SizedBox(height: 2.h),
-              Text(
-                _formatDate(_searchState.draftDate),
-                style: TextStyle(
-                  fontSize: 12.sp,
-                  color: AppColors.textSecondary,
+                SizedBox(height: 2.h),
+                Text(
+                  _formatDate(_searchState.draftDate),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
+          SizedBox(width: 12.w),
           GestureDetector(
             onTap: _showSortOptions,
             child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+              constraints: BoxConstraints(maxWidth: 150.w),
+              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
               decoration: BoxDecoration(
                 color: AppColors.cardBg,
                 borderRadius: BorderRadius.circular(10.r),
                 border: Border.all(color: AppColors.border),
               ),
               child: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
                     Icons.sort_rounded,
@@ -1044,12 +1160,16 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
                     color: AppColors.primary,
                   ),
                   SizedBox(width: 4.w),
-                  Text(
-                    _getSortLabel(),
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.textPrimary,
+                  Flexible(
+                    child: Text(
+                      _getSortLabel(),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
                   ),
                   Icon(
@@ -1096,6 +1216,8 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
           AppLocalizations.of(context).filtersValue(
             _hasActiveFilters ? ' (${_getActiveFilterCount()})' : '',
           ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600),
         ),
       ),
@@ -1108,370 +1230,397 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
 
   void _showAdvancedFilters() {
     if (_searchState.isFilterPanelOpen) return;
-    HapticFeedback.mediumImpact();
+
+    unawaited(HapticFeedback.mediumImpact());
     ref.read(rideSearchViewModelProvider.notifier).setFilterPanelOpen(true);
-    AppModalSheet.show<void>(
-      context: context,
-      forceMaxHeight: true,
-      maxHeightFactor: 0.8,
-      showDragHandle: false,
-      showCloseButton: false,
-      child: Consumer(
-        builder: (context, ref, child) {
-          final searchState = ref.watch(rideSearchViewModelProvider);
-          return Container(
-            height: MediaQuery.sizeOf(context).height * 0.75,
-            decoration: BoxDecoration(
-              color: AppColors.cardBg,
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(24.r),
-                topRight: Radius.circular(24.r),
-              ),
-            ),
-            child: Column(
-              children: [
-                // Handle & Header
-                Container(
-                  padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 16.h),
-                  decoration: const BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(color: AppColors.border),
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      Container(
-                        width: 40.w,
-                        height: 4.h,
-                        decoration: BoxDecoration(
-                          color: AppColors.border,
-                          borderRadius: BorderRadius.circular(2.r),
-                        ),
-                      ),
-                      SizedBox(height: 16.h),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            AppLocalizations.of(context).filters,
-                            style: TextStyle(
-                              fontSize: 20.sp,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                          TextButton(
-                            onPressed: () {
-                              ref
-                                  .read(rideSearchViewModelProvider.notifier)
-                                  .resetFilters();
-                            },
-                            child: Text(
-                              AppLocalizations.of(context).reset,
-                              style: const TextStyle(
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+
+    unawaited(
+      AppModalSheet.show<void>(
+        context: context,
+        forceMaxHeight: true,
+        maxHeightFactor: 0.8,
+        showDragHandle: false,
+        showCloseButton: false,
+        child: Consumer(
+          builder: (context, ref, child) {
+            final searchState = ref.watch(rideSearchViewModelProvider);
+
+            return Container(
+              height: MediaQuery.sizeOf(context).height * 0.75,
+              decoration: BoxDecoration(
+                color: AppColors.cardBg,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(24.r),
+                  topRight: Radius.circular(24.r),
                 ),
-
-                // Filter Options
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: EdgeInsets.all(20.w),
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 16.h),
+                    decoration: const BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(color: AppColors.border),
+                      ),
+                    ),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Price Range
-                        _buildFilterSectionTitle(
-                          AppLocalizations.of(context).priceRange,
+                        Container(
+                          width: 40.w,
+                          height: 4.h,
+                          decoration: BoxDecoration(
+                            color: AppColors.border,
+                            borderRadius: BorderRadius.circular(2.r),
+                          ),
                         ),
-                        SizedBox(height: 8.h),
+                        SizedBox(height: 16.h),
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              AppLocalizations.of(context).text52,
-                              style: TextStyle(
-                                fontSize: 13.sp,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 12.w,
-                                vertical: 6.h,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.primarySurface,
-                                borderRadius: BorderRadius.circular(8.r),
-                              ),
+                            Expanded(
                               child: Text(
-                                AppLocalizations.of(
-                                  context,
-                                ).maxValue(searchState.draftMaxPrice),
+                                AppLocalizations.of(context).filters,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
-                                  fontSize: 14.sp,
-                                  fontWeight: FontWeight.w600,
+                                  fontSize: 20.sp,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                            ),
+                            SizedBox(width: 12.w),
+                            TextButton(
+                              onPressed: () {
+                                ref
+                                    .read(rideSearchViewModelProvider.notifier)
+                                    .resetFilters();
+                              },
+                              child: Text(
+                                AppLocalizations.of(context).reset,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
                                   color: AppColors.primary,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
-                            ),
-                            Text(
-                              AppLocalizations.of(context).text100,
-                              style: TextStyle(
-                                fontSize: 13.sp,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                        SliderTheme(
-                          data: SliderTheme.of(context).copyWith(
-                            activeTrackColor: AppColors.primary,
-                            inactiveTrackColor: AppColors.border,
-                            thumbColor: AppColors.primary,
-                            overlayColor: AppColors.primary.withValues(
-                              alpha: 0.2,
-                            ),
-                            trackHeight: 4.h,
-                          ),
-                          child: AdaptiveSlider(
-                            value: searchState.draftMaxPrice.toDouble(),
-                            min: 5,
-                            max: 100,
-                            divisions: 20,
-                            onChanged: (value) {
-                              ref
-                                  .read(rideSearchViewModelProvider.notifier)
-                                  .setDraftMaxPrice(value.toInt());
-                            },
-                          ),
-                        ),
-
-                        SizedBox(height: 20.h),
-
-                        // Driver Rating
-                        _buildFilterSectionTitle(
-                          AppLocalizations.of(context).minimumRating,
-                        ),
-                        SizedBox(height: 12.h),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [0.0, 3.0, 4.0, 4.5, 4.8].map((rating) {
-                            final isSelected =
-                                searchState.draftMinRating == rating;
-                            return GestureDetector(
-                              onTap: () {
-                                HapticFeedback.selectionClick();
-                                ref
-                                    .read(rideSearchViewModelProvider.notifier)
-                                    .setDraftMinRating(rating);
-                              },
-                              child: Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 12.w,
-                                  vertical: 8.h,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: isSelected
-                                      ? AppColors.primary
-                                      : AppColors.surfaceVariant,
-                                  borderRadius: BorderRadius.circular(10.r),
-                                  border: Border.all(
-                                    color: isSelected
-                                        ? AppColors.primary
-                                        : AppColors.border,
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    if (rating > 0) ...[
-                                      Icon(
-                                        Icons.star_rounded,
-                                        size: 14.sp,
-                                        color: isSelected
-                                            ? Colors.white
-                                            : AppColors.xpGold,
-                                      ),
-                                      SizedBox(width: 2.w),
-                                    ],
-                                    Text(
-                                      rating == 0
-                                          ? AppLocalizations.of(context).any
-                                          : AppLocalizations.of(
-                                              context,
-                                            ).value13(rating),
-                                      style: TextStyle(
-                                        fontSize: 13.sp,
-                                        fontWeight: FontWeight.w500,
-                                        color: isSelected
-                                            ? Colors.white
-                                            : AppColors.textPrimary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-
-                        SizedBox(height: 24.h),
-
-                        // Preferences
-                        _buildFilterSectionTitle(
-                          AppLocalizations.of(context).preferences,
-                        ),
-                        SizedBox(height: 12.h),
-                        Wrap(
-                          spacing: 10.w,
-                          runSpacing: 10.h,
-                          children: [
-                            _buildToggleChip(
-                              label: AppLocalizations.of(context).femaleOnly,
-                              icon: Icons.female_rounded,
-                              isSelected: searchState.draftFemaleOnly,
-                              onTap: () {
-                                ref
-                                    .read(rideSearchViewModelProvider.notifier)
-                                    .setDraftFemaleOnly(
-                                      !searchState.draftFemaleOnly,
-                                    );
-                              },
-                            ),
-                            _buildToggleChip(
-                              label: AppLocalizations.of(
-                                context,
-                              ).verifiedDriver2,
-                              icon: Icons.verified_user_rounded,
-                              isSelected: searchState.draftVerifiedOnly,
-                              onTap: () {
-                                ref
-                                    .read(rideSearchViewModelProvider.notifier)
-                                    .setDraftVerifiedOnly(
-                                      !searchState.draftVerifiedOnly,
-                                    );
-                              },
-                            ),
-                            _buildToggleChip(
-                              label: AppLocalizations.of(context).petFriendly,
-                              icon: Icons.pets_rounded,
-                              isSelected: searchState.draftPetFriendly,
-                              onTap: () {
-                                ref
-                                    .read(rideSearchViewModelProvider.notifier)
-                                    .setDraftPetFriendly(
-                                      !searchState.draftPetFriendly,
-                                    );
-                              },
-                            ),
-                            _buildToggleChip(
-                              label: AppLocalizations.of(context).noSmoking,
-                              icon: Icons.smoke_free_rounded,
-                              isSelected: searchState.draftNoSmoking,
-                              onTap: () {
-                                ref
-                                    .read(rideSearchViewModelProvider.notifier)
-                                    .setDraftNoSmoking(
-                                      !searchState.draftNoSmoking,
-                                    );
-                              },
-                            ),
-                            _buildToggleChip(
-                              label: AppLocalizations.of(
-                                context,
-                              ).allowLuggageToggle,
-                              icon: Icons.luggage_rounded,
-                              isSelected: searchState.draftLuggageRequired,
-                              onTap: () {
-                                ref
-                                    .read(rideSearchViewModelProvider.notifier)
-                                    .setDraftLuggageRequired(
-                                      !searchState.draftLuggageRequired,
-                                    );
-                              },
-                            ),
-                          ],
-                        ),
-
-                        SizedBox(height: 24.h),
-
-                        // Vehicle Type (New Feature)
-                        _buildFilterSectionTitle(
-                          AppLocalizations.of(context).vehicleType,
-                        ),
-                        SizedBox(height: 12.h),
-                        Row(
-                          children: [
-                            _buildVehicleOption(
-                              Icons.directions_car,
-                              AppLocalizations.of(context).any,
-                              'any',
-                              searchState.draftVehicleType == 'any',
-                            ),
-                            SizedBox(width: 10.w),
-                            _buildVehicleOption(
-                              Icons.electric_car,
-                              AppLocalizations.of(context).electric,
-                              'electric',
-                              searchState.draftVehicleType == 'electric',
-                            ),
-                            SizedBox(width: 10.w),
-                            _buildVehicleOption(
-                              Icons.local_taxi,
-                              AppLocalizations.of(context).comfort,
-                              'comfort',
-                              searchState.draftVehicleType == 'comfort',
                             ),
                           ],
                         ),
                       ],
                     ),
                   ),
-                ),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: EdgeInsets.all(20.w),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildFilterSectionTitle(
+                            AppLocalizations.of(context).priceRange,
+                          ),
+                          SizedBox(height: 8.h),
+                          Row(
+                            children: [
+                              Text(
+                                AppLocalizations.of(context).text52,
+                                style: TextStyle(
+                                  fontSize: 13.sp,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                              const Spacer(),
+                              Container(
+                                constraints: BoxConstraints(maxWidth: 140.w),
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 12.w,
+                                  vertical: 6.h,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primarySurface,
+                                  borderRadius: BorderRadius.circular(8.r),
+                                ),
+                                child: Text(
+                                  AppLocalizations.of(
+                                    context,
+                                  ).maxValue(searchState.draftMaxPrice),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 14.sp,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                              ),
+                              const Spacer(),
+                              Text(
+                                AppLocalizations.of(context).text100,
+                                style: TextStyle(
+                                  fontSize: 13.sp,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                          SliderTheme(
+                            data: SliderTheme.of(context).copyWith(
+                              activeTrackColor: AppColors.primary,
+                              inactiveTrackColor: AppColors.border,
+                              thumbColor: AppColors.primary,
+                              overlayColor: AppColors.primary.withValues(
+                                alpha: 0.2,
+                              ),
+                              trackHeight: 4.h,
+                            ),
+                            child: AdaptiveSlider(
+                              value: searchState.draftMaxPrice.toDouble(),
+                              min: 5,
+                              max: 100,
+                              divisions: 20,
+                              onChanged: (value) {
+                                ref
+                                    .read(rideSearchViewModelProvider.notifier)
+                                    .setDraftMaxPrice(value.toInt());
+                              },
+                            ),
+                          ),
 
-                // Apply Button
-                Container(
-                  padding: EdgeInsets.all(20.w),
-                  decoration: const BoxDecoration(
-                    color: AppColors.cardBg,
-                    border: Border(
-                      top: BorderSide(color: AppColors.border),
+                          SizedBox(height: 20.h),
+
+                          _buildFilterSectionTitle(
+                            AppLocalizations.of(context).minimumRating,
+                          ),
+                          SizedBox(height: 12.h),
+                          Wrap(
+                            spacing: 8.w,
+                            runSpacing: 8.h,
+                            children: [0.0, 3.0, 4.0, 4.5, 4.8].map((rating) {
+                              final isSelected =
+                                  searchState.draftMinRating == rating;
+
+                              return GestureDetector(
+                                onTap: () {
+                                  unawaited(HapticFeedback.selectionClick());
+                                  ref
+                                      .read(
+                                        rideSearchViewModelProvider.notifier,
+                                      )
+                                      .setDraftMinRating(rating);
+                                },
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 12.w,
+                                    vertical: 8.h,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isSelected
+                                        ? AppColors.primary
+                                        : AppColors.surfaceVariant,
+                                    borderRadius: BorderRadius.circular(10.r),
+                                    border: Border.all(
+                                      color: isSelected
+                                          ? AppColors.primary
+                                          : AppColors.border,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      if (rating > 0) ...[
+                                        Icon(
+                                          Icons.star_rounded,
+                                          size: 14.sp,
+                                          color: isSelected
+                                              ? Colors.white
+                                              : AppColors.xpGold,
+                                        ),
+                                        SizedBox(width: 2.w),
+                                      ],
+                                      Text(
+                                        rating == 0
+                                            ? AppLocalizations.of(context).any
+                                            : AppLocalizations.of(
+                                                context,
+                                              ).value13(rating),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontSize: 13.sp,
+                                          fontWeight: FontWeight.w500,
+                                          color: isSelected
+                                              ? Colors.white
+                                              : AppColors.textPrimary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+
+                          SizedBox(height: 24.h),
+
+                          _buildFilterSectionTitle(
+                            AppLocalizations.of(context).preferences,
+                          ),
+                          SizedBox(height: 12.h),
+                          Wrap(
+                            spacing: 10.w,
+                            runSpacing: 10.h,
+                            children: [
+                              _buildToggleChip(
+                                label: AppLocalizations.of(context).femaleOnly,
+                                icon: Icons.female_rounded,
+                                isSelected: searchState.draftFemaleOnly,
+                                onTap: () {
+                                  ref
+                                      .read(
+                                        rideSearchViewModelProvider.notifier,
+                                      )
+                                      .setDraftFemaleOnly(
+                                        !searchState.draftFemaleOnly,
+                                      );
+                                },
+                              ),
+                              _buildToggleChip(
+                                label: AppLocalizations.of(
+                                  context,
+                                ).verifiedDriver2,
+                                icon: Icons.verified_user_rounded,
+                                isSelected: searchState.draftVerifiedOnly,
+                                onTap: () {
+                                  ref
+                                      .read(
+                                        rideSearchViewModelProvider.notifier,
+                                      )
+                                      .setDraftVerifiedOnly(
+                                        !searchState.draftVerifiedOnly,
+                                      );
+                                },
+                              ),
+                              _buildToggleChip(
+                                label: AppLocalizations.of(context).petFriendly,
+                                icon: Icons.pets_rounded,
+                                isSelected: searchState.draftPetFriendly,
+                                onTap: () {
+                                  ref
+                                      .read(
+                                        rideSearchViewModelProvider.notifier,
+                                      )
+                                      .setDraftPetFriendly(
+                                        !searchState.draftPetFriendly,
+                                      );
+                                },
+                              ),
+                              _buildToggleChip(
+                                label: AppLocalizations.of(context).noSmoking,
+                                icon: Icons.smoke_free_rounded,
+                                isSelected: searchState.draftNoSmoking,
+                                onTap: () {
+                                  ref
+                                      .read(
+                                        rideSearchViewModelProvider.notifier,
+                                      )
+                                      .setDraftNoSmoking(
+                                        !searchState.draftNoSmoking,
+                                      );
+                                },
+                              ),
+                              _buildToggleChip(
+                                label: AppLocalizations.of(
+                                  context,
+                                ).allowLuggageToggle,
+                                icon: Icons.luggage_rounded,
+                                isSelected: searchState.draftLuggageRequired,
+                                onTap: () {
+                                  ref
+                                      .read(
+                                        rideSearchViewModelProvider.notifier,
+                                      )
+                                      .setDraftLuggageRequired(
+                                        !searchState.draftLuggageRequired,
+                                      );
+                                },
+                              ),
+                            ],
+                          ),
+
+                          SizedBox(height: 24.h),
+
+                          _buildFilterSectionTitle(
+                            AppLocalizations.of(context).vehicleType,
+                          ),
+                          SizedBox(height: 12.h),
+                          Row(
+                            children: [
+                              _buildVehicleOption(
+                                Icons.directions_car,
+                                AppLocalizations.of(context).any,
+                                'any',
+                                searchState.draftVehicleType == 'any',
+                              ),
+                              SizedBox(width: 10.w),
+                              _buildVehicleOption(
+                                Icons.electric_car,
+                                AppLocalizations.of(context).electric,
+                                'electric',
+                                searchState.draftVehicleType == 'electric',
+                              ),
+                              SizedBox(width: 10.w),
+                              _buildVehicleOption(
+                                Icons.local_taxi,
+                                AppLocalizations.of(context).comfort,
+                                'comfort',
+                                searchState.draftVehicleType == 'comfort',
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  child: SafeArea(
-                    child: PremiumButton(
-                      text: AppLocalizations.of(context).applyFilters,
-                      onPressed: () {
-                        context.pop();
-                        HapticFeedback.mediumImpact();
-                      },
-                      style: PremiumButtonStyle.gradient,
-                      icon: Icons.check_rounded,
+                  Container(
+                    padding: EdgeInsets.all(20.w),
+                    decoration: const BoxDecoration(
+                      color: AppColors.cardBg,
+                      border: Border(
+                        top: BorderSide(color: AppColors.border),
+                      ),
+                    ),
+                    child: SafeArea(
+                      child: PremiumButton(
+                        text: AppLocalizations.of(context).applyFilters,
+                        onPressed: () {
+                          context.pop();
+                          unawaited(HapticFeedback.mediumImpact());
+                        },
+                        style: PremiumButtonStyle.gradient,
+                        icon: Icons.check_rounded,
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    ).whenComplete(() {
-      if (!mounted) return;
-      ref.read(rideSearchViewModelProvider.notifier).setFilterPanelOpen(false);
-    });
+                ],
+              ),
+            );
+          },
+        ),
+      ).whenComplete(() {
+        if (!mounted) return;
+
+        ref
+            .read(rideSearchViewModelProvider.notifier)
+            .setFilterPanelOpen(false);
+      }),
+    );
   }
 
   Widget _buildFilterSectionTitle(String title) {
     return Text(
       title,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
       style: TextStyle(
         fontSize: 15.sp,
         fontWeight: FontWeight.w600,
@@ -1488,11 +1637,12 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
   }) {
     return GestureDetector(
       onTap: () {
-        HapticFeedback.selectionClick();
+        unawaited(HapticFeedback.selectionClick());
         onTap();
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
+        constraints: BoxConstraints(maxWidth: 220.w),
         padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
         decoration: BoxDecoration(
           color: isSelected ? AppColors.primary : AppColors.surfaceVariant,
@@ -1510,12 +1660,16 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
               color: isSelected ? Colors.white : AppColors.textSecondary,
             ),
             SizedBox(width: 6.w),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 13.sp,
-                fontWeight: FontWeight.w500,
-                color: isSelected ? Colors.white : AppColors.textPrimary,
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.w500,
+                  color: isSelected ? Colors.white : AppColors.textPrimary,
+                ),
               ),
             ),
           ],
@@ -1533,13 +1687,14 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
     return Expanded(
       child: GestureDetector(
         onTap: () {
-          HapticFeedback.selectionClick();
+          unawaited(HapticFeedback.selectionClick());
           ref
               .read(rideSearchViewModelProvider.notifier)
               .setDraftVehicleType(type);
         },
         child: Container(
-          padding: EdgeInsets.symmetric(vertical: 12.h),
+          constraints: BoxConstraints(minHeight: 76.h),
+          padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 12.h),
           decoration: BoxDecoration(
             color: isSelected
                 ? AppColors.primarySurface
@@ -1551,6 +1706,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
             ),
           ),
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
                 icon,
@@ -1560,6 +1716,9 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
               SizedBox(height: 4.h),
               Text(
                 label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 12.sp,
                   fontWeight: FontWeight.w500,
@@ -1577,6 +1736,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
 
   Future<void> _openLocationPicker({required bool isFrom}) async {
     LatLng? initialLocation;
+
     if (isFrom && _searchState.draftOrigin != null) {
       initialLocation = LatLng(
         _searchState.draftOrigin!.latitude,
@@ -1601,6 +1761,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
         latitude: result.location.latitude,
         longitude: result.location.longitude,
       );
+
       if (isFrom) {
         ref
             .read(rideSearchViewModelProvider.notifier)
@@ -1617,12 +1778,15 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final normalizedDate = DateTime(date.year, date.month, date.day);
+
     if (normalizedDate == today) {
       return 'Today';
     }
+
     if (normalizedDate == today.add(const Duration(days: 1))) {
       return 'Tomorrow';
     }
+
     final months = [
       'Jan',
       'Feb',
@@ -1637,6 +1801,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
       'Nov',
       'Dec',
     ];
+
     return '${months[date.month - 1]} ${date.day}';
   }
 
@@ -1660,9 +1825,10 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
           actionText: AppLocalizations.of(context).retry,
           onActionPressed: () {
             if (_resultsState.hasSearched) {
-              _performSearch();
+              unawaited(_performSearch());
               return;
             }
+
             ref.invalidate(activeRidesProvider);
             ref.read(rideSearchViewModelProvider.notifier).resetPagination();
           },
@@ -1689,15 +1855,18 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
     return SliverPadding(
       padding: EdgeInsets.symmetric(horizontal: 16.w),
       sliver: SliverList(
-        delegate: SliverChildBuilderDelegate((context, index) {
-          return _buildRideModelCard(_resultsState.visibleResults[index], index)
-              .animate()
-              .fadeIn(
-                duration: 350.ms,
-                delay: Duration(milliseconds: 50 + (index * 60)),
-              )
-              .slideX(begin: 0.1, curve: Curves.easeOutCubic);
-        }, childCount: _resultsState.visibleResults.length),
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
+            return _buildRideModelCard(_resultsState.visibleResults[index])
+                .animate()
+                .fadeIn(
+                  duration: 350.ms,
+                  delay: Duration(milliseconds: 50 + (index * 60)),
+                )
+                .slideX(begin: 0.1, curve: Curves.easeOutCubic);
+          },
+          childCount: _resultsState.visibleResults.length,
+        ),
       ),
     );
   }
@@ -1713,14 +1882,15 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
     }
   }
 
-  /// Build ride card using RideModel from Firestore
-  Widget _buildRideModelCard(RideModel ride, int index) {
+  Widget _buildRideModelCard(RideModel ride) {
     final departureTimeFormatted = DateFormat(
       'h:mm a',
     ).format(ride.departureTime);
+
     final estimatedArrival = ride.departureTime.add(
       Duration(minutes: ride.durationMinutes ?? 60),
     );
+
     final arrivalTimeFormatted = DateFormat('h:mm a').format(estimatedArrival);
     final durationFormatted = _formatDuration(ride.durationMinutes ?? 60);
 
@@ -1747,19 +1917,15 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
           borderRadius: BorderRadius.circular(16.r),
           child: Column(
             children: [
-              // Main Content
               Padding(
                 padding: EdgeInsets.all(14.w),
                 child: Column(
                   children: [
-                    // Top Row: Driver + Price
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Driver Avatar
                         DriverAvatarWidget(driverId: ride.driverId, radius: 22),
                         SizedBox(width: 10.w),
-                        // Driver info
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1773,7 +1939,10 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
                                 ),
                               ),
                               SizedBox(height: 2.h),
-                              Row(
+                              Wrap(
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                spacing: 8.w,
+                                runSpacing: 2.h,
                                 children: [
                                   DriverRatingWidget(
                                     driverId: ride.driverId,
@@ -1783,16 +1952,10 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
                                       color: AppColors.textSecondary,
                                     ),
                                   ),
-                                  SizedBox(width: 8.w),
-                                  const Text(
-                                    '•',
-                                    style: TextStyle(
-                                      color: AppColors.textSecondary,
-                                    ),
-                                  ),
-                                  SizedBox(width: 8.w),
                                   Text(
                                     durationFormatted,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
                                       fontSize: 12.sp,
                                       color: AppColors.textSecondary,
@@ -1803,8 +1966,9 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
                             ],
                           ),
                         ),
-                        // Price
+                        SizedBox(width: 8.w),
                         Container(
+                          constraints: BoxConstraints(maxWidth: 92.w),
                           padding: EdgeInsets.symmetric(
                             horizontal: 10.w,
                             vertical: 6.h,
@@ -1819,13 +1983,14 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
                             borderRadius: BorderRadius.circular(10.r),
                           ),
                           child: Text(
-                            AppLocalizations.of(
-                              context,
-                            ).value5(
+                            AppLocalizations.of(context).value5(
                               (ride.pricePerSeatInCents / 100).toStringAsFixed(
                                 2,
                               ),
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 14.sp,
                               fontWeight: FontWeight.w700,
@@ -1838,14 +2003,14 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
 
                     SizedBox(height: 12.h),
 
-                    // Route display
                     Row(
                       children: [
-                        // Timeline
                         Column(
                           children: [
                             Text(
                               departureTimeFormatted,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 fontSize: 11.sp,
                                 fontWeight: FontWeight.w600,
@@ -1867,6 +2032,8 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
                             ),
                             Text(
                               arrivalTimeFormatted,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 fontSize: 11.sp,
                                 fontWeight: FontWeight.w600,
@@ -1876,7 +2043,6 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
                           ],
                         ),
                         SizedBox(width: 12.w),
-                        // Locations
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1935,95 +2101,102 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
                   ],
                 ),
               ),
-
-              // Bottom info bar
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
-                decoration: BoxDecoration(
-                  color: AppColors.cardBg.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(16.r),
-                    bottomRight: Radius.circular(16.r),
-                  ),
-                  border: Border(
-                    top: BorderSide(
-                      color: AppColors.border.withValues(alpha: 0.5),
-                    ),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    // Seats chip — replaced with 'FULL' badge when all seats taken
-                    if (ride.status == RideStatus.full)
-                      _buildInfoChip(
-                        Icons.do_not_disturb_rounded,
-                        'FULL',
-                        AppColors.textSecondary,
-                      )
-                    else
-                      _buildInfoChip(
-                        Icons.event_seat_rounded,
-                        AppLocalizations.of(
-                          context,
-                        ).valueSeats(ride.remainingSeats),
-                        AppColors.primary,
-                      ),
-                    SizedBox(width: 8.w),
-                    if (ride.isEco)
-                      _buildInfoChip(
-                        Icons.eco_rounded,
-                        AppLocalizations.of(context).eco,
-                        AppColors.success,
-                      ),
-                    if (ride.isPremium)
-                      Padding(
-                        padding: EdgeInsets.only(left: 8.w),
-                        child: _buildInfoChip(
-                          Icons.star_rounded,
-                          'Premium',
-                          AppColors.warning,
-                        ),
-                      ),
-                    if (ride.xpReward > 0)
-                      Padding(
-                        padding: EdgeInsets.only(left: 8.w),
-                        child: _buildInfoChip(
-                          Icons.bolt_rounded,
-                          '+${ride.xpReward} XP',
-                          AppColors.primary,
-                        ),
-                      ),
-                    const Spacer(),
-                    // Book button — dimmed when ride is full
-                    Opacity(
-                      opacity: ride.status == RideStatus.full ? 0.4 : 1.0,
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 12.w,
-                          vertical: 6.h,
-                        ),
-                        decoration: BoxDecoration(
-                          color: ride.status == RideStatus.full
-                              ? AppColors.textSecondary
-                              : AppColors.primary,
-                          borderRadius: BorderRadius.circular(8.r),
-                        ),
-                        child: Text(
-                          ride.status == RideStatus.full
-                              ? 'Full'
-                              : AppLocalizations.of(context).book,
-                          style: TextStyle(
-                            fontSize: 12.sp,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              _buildRideCardBottomBar(ride),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRideCardBottomBar(RideModel ride) {
+    final chips = <Widget>[
+      if (ride.status == RideStatus.full)
+        _buildInfoChip(
+          Icons.do_not_disturb_rounded,
+          AppLocalizations.of(context).fullyBooked.toUpperCase(),
+          AppColors.textSecondary,
+        )
+      else
+        _buildInfoChip(
+          Icons.event_seat_rounded,
+          AppLocalizations.of(context).valueSeats(ride.remainingSeats),
+          AppColors.primary,
+        ),
+      if (ride.isEco)
+        _buildInfoChip(
+          Icons.eco_rounded,
+          AppLocalizations.of(context).eco,
+          AppColors.success,
+        ),
+      if (ride.isPremium)
+        _buildInfoChip(
+          Icons.star_rounded,
+          'Premium',
+          AppColors.warning,
+        ),
+      if (ride.xpReward > 0)
+        _buildInfoChip(
+          Icons.bolt_rounded,
+          '+${ride.xpReward} XP',
+          AppColors.primary,
+        ),
+    ];
+
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+      decoration: BoxDecoration(
+        color: AppColors.cardBg.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(16.r),
+          bottomRight: Radius.circular(16.r),
+        ),
+        border: Border(
+          top: BorderSide(
+            color: AppColors.border.withValues(alpha: 0.5),
+          ),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Wrap(
+              spacing: 8.w,
+              runSpacing: 6.h,
+              children: chips,
+            ),
+          ),
+          SizedBox(width: 8.w),
+          _buildBookBadge(ride),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBookBadge(RideModel ride) {
+    final isFull = ride.status == RideStatus.full;
+
+    return Opacity(
+      opacity: isFull ? 0.45 : 1.0,
+      child: Container(
+        constraints: BoxConstraints(maxWidth: 96.w),
+        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+        decoration: BoxDecoration(
+          color: isFull ? AppColors.textSecondary : AppColors.primary,
+          borderRadius: BorderRadius.circular(8.r),
+        ),
+        child: Text(
+          isFull
+              ? AppLocalizations.of(context).fullyBooked
+              : AppLocalizations.of(context).book,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 12.sp,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
           ),
         ),
       ),
@@ -2032,6 +2205,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
 
   Widget _buildInfoChip(IconData icon, String label, Color color) {
     return Container(
+      constraints: BoxConstraints(maxWidth: 120.w),
       padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
@@ -2042,12 +2216,16 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
         children: [
           Icon(icon, size: 12.sp, color: color),
           SizedBox(width: 4.w),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11.sp,
-              fontWeight: FontWeight.w500,
-              color: color,
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 11.sp,
+                fontWeight: FontWeight.w500,
+                color: color,
+              ),
             ),
           ),
         ],
@@ -2057,98 +2235,106 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
 
   String _formatDuration(int minutes) {
     if (minutes < 60) return '${minutes}min';
+
     final hours = minutes ~/ 60;
     final mins = minutes % 60;
+
     if (mins == 0) return '${hours}h';
+
     return '${hours}h ${mins}min';
   }
 
   void _showSortOptions() {
-    AppModalSheet.show<void>(
-      context: context,
-      maxHeightFactor: 0.55,
-      showDragHandle: false,
-      showCloseButton: false,
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.cardBg,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(24.r),
-            topRight: Radius.circular(24.r),
+    unawaited(
+      AppModalSheet.show<void>(
+        context: context,
+        maxHeightFactor: 0.55,
+        showDragHandle: false,
+        showCloseButton: false,
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppColors.cardBg,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(24.r),
+              topRight: Radius.circular(24.r),
+            ),
           ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Handle
-            Container(
-              margin: EdgeInsets.only(top: 12.h),
-              width: 40.w,
-              height: 4.h,
-              decoration: BoxDecoration(
-                color: AppColors.border,
-                borderRadius: BorderRadius.circular(2.r),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                margin: EdgeInsets.only(top: 12.h),
+                width: 40.w,
+                height: 4.h,
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2.r),
+                ),
               ),
-            ),
-            Padding(
-              padding: EdgeInsets.all(20.w),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    AppLocalizations.of(context).sortBy2,
-                    style: TextStyle(
-                      fontSize: 20.sp,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
-                    ),
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.all(20.w),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        AppLocalizations.of(context).sortBy2,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 20.sp,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      SizedBox(height: 16.h),
+                      _buildSortOption(
+                        icon: Icons.recommend_rounded,
+                        title: AppLocalizations.of(context).recommended,
+                        subtitle: AppLocalizations.of(
+                          context,
+                        ).bestMatchForYourSearch,
+                        value: 'recommended',
+                      ),
+                      _buildSortOption(
+                        icon: Icons.arrow_downward_rounded,
+                        title: AppLocalizations.of(context).lowestPrice2,
+                        subtitle: AppLocalizations.of(
+                          context,
+                        ).showCheapestRidesFirst,
+                        value: 'price_low',
+                      ),
+                      _buildSortOption(
+                        icon: Icons.access_time_rounded,
+                        title: AppLocalizations.of(context).earliestDeparture2,
+                        subtitle: AppLocalizations.of(
+                          context,
+                        ).showRidesLeavingSoonest,
+                        value: 'departure',
+                      ),
+                      _buildSortOption(
+                        icon: Icons.star_rounded,
+                        title: AppLocalizations.of(context).highestRated2,
+                        subtitle: AppLocalizations.of(
+                          context,
+                        ).showBestRatedDriversFirst,
+                        value: 'rating',
+                      ),
+                      _buildSortOption(
+                        icon: Icons.timer_rounded,
+                        title: AppLocalizations.of(context).shortestDuration,
+                        subtitle: AppLocalizations.of(
+                          context,
+                        ).showFastestRoutesFirst,
+                        value: 'duration',
+                      ),
+                    ],
                   ),
-                  SizedBox(height: 16.h),
-                  _buildSortOption(
-                    icon: Icons.recommend_rounded,
-                    title: AppLocalizations.of(context).recommended,
-                    subtitle: AppLocalizations.of(
-                      context,
-                    ).bestMatchForYourSearch,
-                    value: 'recommended',
-                  ),
-                  _buildSortOption(
-                    icon: Icons.arrow_downward_rounded,
-                    title: AppLocalizations.of(context).lowestPrice2,
-                    subtitle: AppLocalizations.of(
-                      context,
-                    ).showCheapestRidesFirst,
-                    value: 'price_low',
-                  ),
-                  _buildSortOption(
-                    icon: Icons.access_time_rounded,
-                    title: AppLocalizations.of(context).earliestDeparture2,
-                    subtitle: AppLocalizations.of(
-                      context,
-                    ).showRidesLeavingSoonest,
-                    value: 'departure',
-                  ),
-                  _buildSortOption(
-                    icon: Icons.star_rounded,
-                    title: AppLocalizations.of(context).highestRated2,
-                    subtitle: AppLocalizations.of(
-                      context,
-                    ).showBestRatedDriversFirst,
-                    value: 'rating',
-                  ),
-                  _buildSortOption(
-                    icon: Icons.timer_rounded,
-                    title: AppLocalizations.of(context).shortestDuration,
-                    subtitle: AppLocalizations.of(
-                      context,
-                    ).showFastestRoutesFirst,
-                    value: 'duration',
-                  ),
-                ],
+                ),
               ),
-            ),
-            SizedBox(height: MediaQuery.paddingOf(context).bottom),
-          ],
+              SizedBox(height: MediaQuery.paddingOf(context).bottom),
+            ],
+          ),
         ),
       ),
     );
@@ -2161,10 +2347,11 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
     required String value,
   }) {
     final isSelected = _searchState.draftSortBy == value;
+
     return AdaptiveListTile(
       onTap: () {
         context.pop();
-        HapticFeedback.selectionClick();
+        unawaited(HapticFeedback.selectionClick());
         ref.read(rideSearchViewModelProvider.notifier).setDraftSortBy(value);
       },
       leading: Container(
@@ -2181,6 +2368,8 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
       ),
       title: Text(
         title,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: TextStyle(
           fontSize: 15.sp,
           fontWeight: FontWeight.w600,
@@ -2189,6 +2378,8 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
       ),
       subtitle: Text(
         subtitle,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
         style: TextStyle(fontSize: 12.sp, color: AppColors.textSecondary),
       ),
       trailing: isSelected

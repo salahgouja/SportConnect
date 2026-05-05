@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
+import 'package:flutter/foundation.dart' show setEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -61,8 +62,7 @@ class _ChatUserData {
             other.uid == uid &&
             other.username == username &&
             other.photoUrl == photoUrl &&
-            other.blockedIds.length == blockedIds.length &&
-            other.blockedIds.containsAll(blockedIds);
+            setEquals(other.blockedIds, blockedIds);
   }
 
   @override
@@ -621,12 +621,11 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
               ),
               child: AdaptiveListTile(
                 padding: EdgeInsets.symmetric(horizontal: 10.w),
-                leading: user.photoUrl != null
-                    ? CircleAvatar(
-                        radius: 18.r,
-                        backgroundImage: NetworkImage(user.photoUrl!),
-                      )
-                    : PremiumAvatar(name: user.username, size: 36),
+                leading: PremiumAvatar(
+                  imageUrl: user.photoUrl,
+                  name: user.username,
+                  size: 36,
+                ),
                 title: Text(
                   user.username,
                   style: TextStyle(
@@ -930,13 +929,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
         child: Row(
           children: [
             // FIX: Removed unnecessary single-child Stack wrapper.
-            if (photoUrl != null)
-              CircleAvatar(
-                radius: 28.r,
-                backgroundImage: NetworkImage(photoUrl),
-              )
-            else
-              PremiumAvatar(name: title, size: 56),
+            PremiumAvatar(imageUrl: photoUrl, name: title, size: 56),
             SizedBox(width: 12.w),
             Expanded(
               child: Column(

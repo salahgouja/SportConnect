@@ -275,7 +275,7 @@ final class PaymentViewModelProvider
   PaymentViewModel create() => PaymentViewModel();
 }
 
-String _$paymentViewModelHash() => r'680537a9d045dbf81ca381ce80073967123c9d7d';
+String _$paymentViewModelHash() => r'95943fbe6f205d23dfe2b635c740382734d2fc6e';
 
 /// Payment Processing View Model
 
@@ -398,7 +398,7 @@ final class DriverStripeOnboardingFlowViewModelProvider
 }
 
 String _$driverStripeOnboardingFlowViewModelHash() =>
-    r'6f948fae3b2f2aac00ab104dcd5ab95b465592c3';
+    r'76d7d0236107f00691675ed73fcb40997534b763';
 
 abstract class _$DriverStripeOnboardingFlowViewModel
     extends $Notifier<DriverStripeOnboardingFlowState> {

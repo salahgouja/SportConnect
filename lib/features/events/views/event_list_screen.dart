@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
@@ -543,7 +544,7 @@ class _EventCard extends ConsumerWidget {
   const _EventCard({required this.event});
   final EventModel event;
 
-  static final _fmt = DateFormat('EEE, MMM d · h:mm a');
+  static final _fmt = DateFormat('EEE, MMM d · h:mm a', 'en');
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -557,80 +558,87 @@ class _EventCard extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // ── Image banner or colour fallback ──
-          Container(
-            height: 90.h,
-            decoration: BoxDecoration(
-              gradient: event.imageUrl == null || event.imageUrl!.isEmpty
-                  ? LinearGradient(
-                      colors: [
-                        event.type.color,
-                        event.type.color.withValues(alpha: 0.7),
-                      ],
-                    )
-                  : null,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-              image: event.imageUrl != null && event.imageUrl!.isNotEmpty
-                  ? DecorationImage(
-                      image: NetworkImage(event.imageUrl!),
-                      fit: BoxFit.cover,
-                    )
-                  : null,
-            ),
-            child: Stack(
-              children: [
-                Center(
-                  child: Icon(
-                    event.type.icon,
-                    size: 40.sp,
-                    color: Colors.white.withValues(alpha: 0.25),
-                  ),
-                ),
-                Positioned(
-                  top: 10.h,
-                  right: 12.w,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 10.w,
-                      vertical: 4.h,
-                    ),
+          ClipRRect(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+            child: SizedBox(
+              height: 90.h,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  // Gradient base — always visible
+                  Container(
                     decoration: BoxDecoration(
-                      color: Colors.black26,
-                      borderRadius: BorderRadius.circular(12.r),
-                    ),
-                    child: Text(
-                      event.type.label,
-                      style: TextStyle(
-                        fontSize: 11.sp,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
+                      gradient: LinearGradient(
+                        colors: [
+                          event.type.color,
+                          event.type.color.withValues(alpha: 0.7),
+                        ],
                       ),
                     ),
                   ),
-                ),
-                if (!event.isUpcoming)
+                  if (event.imageUrl != null && event.imageUrl!.isNotEmpty)
+                    CachedNetworkImage(
+                      imageUrl: event.imageUrl!,
+                      fit: BoxFit.cover,
+                      errorWidget: (context, url, err) =>
+                          const SizedBox.shrink(),
+                    ),
+                  // Watermark icon
+                  Center(
+                    child: Icon(
+                      event.type.icon,
+                      size: 40.sp,
+                      color: Colors.white.withValues(alpha: 0.25),
+                    ),
+                  ),
+                  // Type badge
                   Positioned(
                     top: 10.h,
-                    left: 12.w,
+                    right: 12.w,
                     child: Container(
                       padding: EdgeInsets.symmetric(
-                        horizontal: 8.w,
-                        vertical: 3.h,
+                        horizontal: 10.w,
+                        vertical: 4.h,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.error.withValues(alpha: 0.85),
-                        borderRadius: BorderRadius.circular(8.r),
+                        color: Colors.black26,
+                        borderRadius: BorderRadius.circular(12.r),
                       ),
                       child: Text(
-                        AppLocalizations.of(context).eventPastStatus,
+                        event.type.label,
                         style: TextStyle(
-                          fontSize: 10.sp,
-                          fontWeight: FontWeight.w700,
+                          fontSize: 11.sp,
+                          fontWeight: FontWeight.w600,
                           color: Colors.white,
                         ),
                       ),
                     ),
                   ),
-              ],
+                  if (!event.isUpcoming)
+                    Positioned(
+                      top: 10.h,
+                      left: 12.w,
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 8.w,
+                          vertical: 3.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.error.withValues(alpha: 0.85),
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
+                        child: Text(
+                          AppLocalizations.of(context).eventPastStatus,
+                          style: TextStyle(
+                            fontSize: 10.sp,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
 
@@ -653,7 +661,7 @@ class _EventCard extends ConsumerWidget {
                 SizedBox(height: 6.h),
                 _iconRow(
                   Icons.calendar_today_rounded,
-                  _fmt.format(event.startsAt),
+                  _fmt.format(event.startsAt.toLocal()),
                 ),
                 if (event.organizerName != null &&
                     event.organizerName!.isNotEmpty) ...[
