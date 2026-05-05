@@ -32,15 +32,14 @@ const _enableDebugInstrumentation = bool.fromEnvironment(
 );
 
 void main() async {
-  // 1. Ensure bindings are initialized first
   WidgetsFlutterBinding.ensureInitialized();
 
   final firebaseService = await FirebaseService.instance.initialize();
   TalkerService.info('✅ Firebase initialized');
 
-  // 2. Set up error handling BEFORE initializing services
-  FlutterError.onError = (details) async {
-    await firebaseService.crashlytics.recordFlutterFatalError(details);
+  FlutterError.onError = (details) {
+    unawaited(firebaseService.crashlytics.recordFlutterFatalError(details));
+
     TalkerService.error(
       'FlutterError: ${details.exceptionAsString()}',
       details.exception,
@@ -49,33 +48,51 @@ void main() async {
   };
 
   PlatformDispatcher.instance.onError = (error, stack) {
-    firebaseService.crashlytics.recordError(error, stack, fatal: true);
+    unawaited(
+      firebaseService.crashlytics.recordError(
+        error,
+        stack,
+        fatal: true,
+      ),
+    );
+
     TalkerService.error('PlatformDispatcher error', error, stack);
     return true;
   };
 
   final prefs = await SharedPreferences.getInstance();
 
-  // 3. Initialize with safety catch to prevent Splash Screen freeze
-  try {
-    await _initializeApp();
-  } catch (e, st) {
-    TalkerService.error('🚨 CRITICAL INITIALIZATION FAILURE', e, st);
-  }
-
   _runApp(prefs);
 }
 
-Future<void> _initializeApp() async {
-  TalkerService.info('🚀 Starting SportConnect App...');
+/// Runs non-critical startup work after the first frame.
+///
+/// This prevents App Review/users from getting stuck on the native launch
+/// screen if push notifications, Stripe, update checking, or other
+/// network-related startup work is slow.
+Future<void> _initializeAppAfterFirstFrame() async {
+  TalkerService.info('🚀 Starting post-launch initialization...');
 
-  if (!kIsWeb) {
-    // FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-    await PushNotificationService.instance.initialize();
-    TalkerService.info('✅ Push notifications initialized');
-  }
-
+  await _initializePushNotifications();
   await _initializeStripe();
+
+  TalkerService.info('✅ Post-launch initialization completed');
+}
+
+Future<void> _initializePushNotifications() async {
+  if (kIsWeb) return;
+
+  try {
+    // FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+
+    await PushNotificationService.instance.initialize().timeout(
+      const Duration(seconds: 6),
+    );
+
+    TalkerService.info('✅ Push notifications initialized');
+  } catch (e, st) {
+    TalkerService.error('❌ Failed to initialize push notifications', e, st);
+  }
 }
 
 Future<void> _initializeStripe() async {
@@ -84,9 +101,13 @@ Future<void> _initializeStripe() async {
       TalkerService.warning('⚠️ Stripe not configured - payments disabled.');
       return;
     }
-    await StripeService().initialize(
-      publishableKey: StripeConfig.publishableKey,
-    );
+
+    await StripeService()
+        .initialize(
+          publishableKey: StripeConfig.publishableKey,
+        )
+        .timeout(const Duration(seconds: 6));
+
     TalkerService.info('✅ Stripe initialized');
   } catch (e, st) {
     TalkerService.error('❌ Failed to initialize Stripe', e, st);
@@ -122,6 +143,9 @@ class SportConnectApp extends ConsumerStatefulWidget {
 class _SportConnectAppState extends ConsumerState<SportConnectApp> {
   bool _deepLinksInitialized = false;
   bool _fcmTokenSaved = false;
+  bool _postLaunchStartupStarted = false;
+  bool _postLaunchStartupCompleted = false;
+  bool _showUpgradeAlert = false;
 
   ProviderSubscription<AsyncValue<User?>>? _authSubscription;
 
@@ -135,17 +159,17 @@ class _SportConnectAppState extends ConsumerState<SportConnectApp> {
       if (!_isFirebaseInitialized) return;
 
       if (next.value != null) {
-        _saveFcmTokenIfNeeded();
+        if (_postLaunchStartupCompleted) {
+          _saveFcmTokenIfNeeded();
+        }
       } else {
         _fcmTokenSaved = false;
       }
     });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_isFirebaseInitialized) return;
-
-      final router = ref.read(appRouterProvider);
-      _initializeDeepLinks(router);
+      if (!mounted) return;
+      unawaited(_runPostLaunchStartup());
     });
   }
 
@@ -153,6 +177,30 @@ class _SportConnectAppState extends ConsumerState<SportConnectApp> {
   void dispose() {
     _authSubscription?.close();
     super.dispose();
+  }
+
+  Future<void> _runPostLaunchStartup() async {
+    if (_postLaunchStartupStarted) return;
+
+    _postLaunchStartupStarted = true;
+
+    await _initializeAppAfterFirstFrame();
+
+    if (!mounted) return;
+
+    _postLaunchStartupCompleted = true;
+
+    if (_isFirebaseInitialized) {
+      final router = ref.read(appRouterProvider);
+      _initializeDeepLinks(router);
+      _saveFcmTokenIfNeeded();
+    }
+
+    if (!mounted) return;
+
+    setState(() {
+      _showUpgradeAlert = true;
+    });
   }
 
   void _initializeDeepLinks(GoRouter router) {
@@ -165,6 +213,7 @@ class _SportConnectAppState extends ConsumerState<SportConnectApp> {
     ref.read(deepLinkServiceProvider).initialize(router);
 
     final context = rootNavigatorKey.currentContext;
+
     if (context != null && mounted) {
       ref
           .read(pushNotificationServiceProvider)
@@ -174,10 +223,13 @@ class _SportConnectAppState extends ConsumerState<SportConnectApp> {
 
   void _saveFcmTokenIfNeeded() {
     if (_fcmTokenSaved || !_isFirebaseInitialized) return;
+    if (!_postLaunchStartupCompleted) return;
 
     final authUser = ref.read(authStateProvider).value;
+
     if (authUser != null) {
       _fcmTokenSaved = true;
+
       ref.read(pushNotificationServiceProvider).saveFcmToken(authUser.uid);
     }
   }
@@ -211,13 +263,20 @@ class _SportConnectAppState extends ConsumerState<SportConnectApp> {
           builder: (context, child) {
             final appChild = child ?? const SizedBox.shrink();
 
-            if (!_isFirebaseInitialized) {
-              return _DismissKeyboardOnTap(child: appChild);
+            Widget wrappedChild = appChild;
+
+            if (_isFirebaseInitialized && _showUpgradeAlert) {
+              wrappedChild = UpgradeAlert(
+                navigatorKey: rootNavigatorKey,
+                dialogStyle: UpgradeDialogStyle.cupertino,
+                showIgnore: false,
+                showLater: true,
+                showReleaseNotes: false,
+                child: appChild,
+              );
             }
 
-            return _DismissKeyboardOnTap(
-              child: UpgradeAlert(child: appChild),
-            );
+            return _DismissKeyboardOnTap(child: wrappedChild);
           },
         );
       },
@@ -236,7 +295,9 @@ class _DismissKeyboardOnTap extends StatelessWidget {
       behavior: HitTestBehavior.translucent,
       onPointerDown: (_) {
         final currentFocus = FocusManager.instance.primaryFocus;
+
         if (currentFocus == null || !currentFocus.hasFocus) return;
+
         currentFocus.unfocus();
       },
       child: child,
