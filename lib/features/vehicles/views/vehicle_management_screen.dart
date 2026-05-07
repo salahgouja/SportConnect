@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -14,12 +15,12 @@ import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/core/widgets/custom_button.dart';
 import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
+import 'package:sport_connect/core/widgets/reactive_adaptive_text_field.dart';
 import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
 import 'package:sport_connect/features/vehicles/view_models/vehicle_management_view_model.dart';
 import 'package:sport_connect/features/vehicles/view_models/vehicle_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 
 class VehicleManagementScreen extends ConsumerWidget {
   const VehicleManagementScreen({super.key});
@@ -1419,41 +1420,13 @@ class _VehicleFormSheetState extends ConsumerState<_VehicleFormSheet> {
     TextCapitalization textCapitalization = TextCapitalization.none,
     Map<String, String Function(Object)>? validationMessages,
   }) {
-    return ReactiveTextField<String>(
+    return AdaptiveReactiveTextField(
       formControlName: name,
       keyboardType: keyboardType,
       textCapitalization: textCapitalization,
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        prefixIcon: Icon(icon, color: AppColors.primary, size: 20.sp),
-        filled: true,
-        fillColor: AppColors.primary.withValues(alpha: 0.05),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14.r),
-          borderSide: BorderSide(
-            color: AppColors.primary.withValues(alpha: 0.18),
-          ),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14.r),
-          borderSide: BorderSide(
-            color: AppColors.primary.withValues(alpha: 0.18),
-          ),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14.r),
-          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14.r),
-          borderSide: const BorderSide(color: AppColors.error, width: 1.5),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14.r),
-          borderSide: const BorderSide(color: AppColors.error, width: 1.5),
-        ),
-      ),
+      labelText: label,
+      hintText: hint,
+      prefixIcon: Icon(icon, color: AppColors.primary, size: 20.sp),
       validationMessages:
           validationMessages ??
           {

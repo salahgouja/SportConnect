@@ -8,6 +8,7 @@ import 'package:reactive_forms/reactive_forms.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/glass_panel.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
+import 'package:sport_connect/core/widgets/reactive_adaptive_text_field.dart';
 import 'package:sport_connect/features/auth/view_models/change_password_view_model.dart';
 import 'package:sport_connect/features/auth/views/reauth_dialog.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
@@ -113,9 +114,10 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
           padding: EdgeInsets.symmetric(horizontal: 24.w),
           child: Column(
             children: [
-              vmState.isSuccess
-                  ? _buildSuccessState()
-                  : _buildFormState(l10n, vmState),
+              if (vmState.isSuccess)
+                _buildSuccessState()
+              else
+                _buildFormState(l10n, vmState),
             ],
           ),
         ),
@@ -171,26 +173,24 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
 
           SizedBox(height: 36.h),
 
-          ReactiveTextField<String>(
+          AdaptiveReactiveTextField(
             formControlName: 'new_password',
-            decoration: InputDecoration(
-              labelText: l10n.changePasswordNew,
-              hintText: l10n.changePasswordNewHint,
-              prefixIcon: const Icon(Icons.lock_outline_rounded),
-              suffixIcon: IconButton(
-                tooltip: vmState.obscureNewPassword
-                    ? l10n.tooltipShowPassword
-                    : l10n.tooltipHidePassword,
-                icon: Icon(
-                  vmState.obscureNewPassword
-                      ? Icons.visibility_outlined
-                      : Icons.visibility_off_outlined,
-                  color: AppColors.textTertiary,
-                ),
-                onPressed: () => ref
-                    .read(changePasswordViewModelProvider.notifier)
-                    .toggleNewPasswordVisibility(),
+            labelText: l10n.changePasswordNew,
+            hintText: l10n.changePasswordNewHint,
+            prefixIcon: const Icon(Icons.lock_outline_rounded),
+            suffixIcon: IconButton(
+              tooltip: vmState.obscureNewPassword
+                  ? l10n.tooltipShowPassword
+                  : l10n.tooltipHidePassword,
+              icon: Icon(
+                vmState.obscureNewPassword
+                    ? Icons.visibility_outlined
+                    : Icons.visibility_off_outlined,
+                color: AppColors.textTertiary,
               ),
+              onPressed: () => ref
+                  .read(changePasswordViewModelProvider.notifier)
+                  .toggleNewPasswordVisibility(),
             ),
             obscureText: vmState.obscureNewPassword,
             validationMessages: {
@@ -203,26 +203,24 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
 
           SizedBox(height: 20.h),
 
-          ReactiveTextField<String>(
+          AdaptiveReactiveTextField(
             formControlName: 'confirm_password',
-            decoration: InputDecoration(
-              labelText: l10n.changePasswordConfirm,
-              hintText: l10n.changePasswordConfirmHint,
-              prefixIcon: const Icon(Icons.lock_outline_rounded),
-              suffixIcon: IconButton(
-                tooltip: vmState.obscureConfirmPassword
-                    ? l10n.tooltipShowPassword
-                    : l10n.tooltipHidePassword,
-                icon: Icon(
-                  vmState.obscureConfirmPassword
-                      ? Icons.visibility_outlined
-                      : Icons.visibility_off_outlined,
-                  color: AppColors.textTertiary,
-                ),
-                onPressed: () => ref
-                    .read(changePasswordViewModelProvider.notifier)
-                    .toggleConfirmPasswordVisibility(),
+            labelText: l10n.changePasswordConfirm,
+            hintText: l10n.changePasswordConfirmHint,
+            prefixIcon: const Icon(Icons.lock_outline_rounded),
+            suffixIcon: IconButton(
+              tooltip: vmState.obscureConfirmPassword
+                  ? l10n.tooltipShowPassword
+                  : l10n.tooltipHidePassword,
+              icon: Icon(
+                vmState.obscureConfirmPassword
+                    ? Icons.visibility_outlined
+                    : Icons.visibility_off_outlined,
+                color: AppColors.textTertiary,
               ),
+              onPressed: () => ref
+                  .read(changePasswordViewModelProvider.notifier)
+                  .toggleConfirmPasswordVisibility(),
             ),
             obscureText: vmState.obscureConfirmPassword,
             validationMessages: {

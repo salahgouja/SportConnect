@@ -44,7 +44,7 @@ final class EmailVerificationViewModelProvider
 }
 
 String _$emailVerificationViewModelHash() =>
-    r'141216f42bfcb2f217812c7e48556792b43be725';
+    r'2d2907390015cee165cc34dcddbb7c12e11e3a45';
 
 abstract class _$EmailVerificationViewModel
     extends $Notifier<EmailVerificationState> {

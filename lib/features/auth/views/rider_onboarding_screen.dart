@@ -21,6 +21,7 @@ import 'package:sport_connect/core/widgets/expertise_picker.dart';
 import 'package:sport_connect/core/widgets/gender_segmented_field.dart';
 import 'package:sport_connect/core/widgets/glass_panel.dart';
 import 'package:sport_connect/core/widgets/intl_phone_input.dart';
+import 'package:sport_connect/core/widgets/reactive_adaptive_text_field.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 import 'package:sport_connect/features/auth/view_models/onboarding_view_model.dart';
@@ -726,16 +727,12 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
                           if (!needsManualName) ...[
                             _buildNameDisplay(displayName, hasPhoto, photoUrl),
                           ] else ...[
-                            ReactiveTextField<String>(
+                            AdaptiveReactiveTextField(
                                   formControlName: _FormFields.name,
-                                  decoration: InputDecoration(
-                                    labelText: l10n.authFullName,
-                                    hintText: l10n.authFullNameHint,
-                                    prefixIcon: const Icon(
-                                      Icons.person_rounded,
-                                    ),
-                                    helperText:
-                                        'We could not read your name from sign-in.',
+                                  labelText: l10n.authFullName,
+                                  hintText: l10n.authFullNameHint,
+                                  prefixIcon: const Icon(
+                                    Icons.person_rounded,
                                   ),
                                   textInputAction: TextInputAction.next,
                                   validationMessages: {

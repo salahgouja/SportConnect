@@ -15,6 +15,7 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/widgets/expertise_picker.dart';
 import 'package:sport_connect/core/widgets/intl_phone_input.dart';
+import 'package:sport_connect/core/widgets/reactive_adaptive_text_field.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 import 'package:sport_connect/features/auth/view_models/social_auth_view_model.dart';
@@ -611,7 +612,6 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
                   .read(signupWizardUiViewModelProvider.notifier)
                   .toggleConfirmPasswordVisibility(),
             ),
-            maxLines: 1,
           ),
           SizedBox(height: 20.h),
 
@@ -1040,7 +1040,7 @@ class _StyledField extends StatelessWidget {
   final void Function(FormControl<String>)? onChanged;
 
   @override
-  Widget build(BuildContext context) => ReactiveTextField<String>(
+  Widget build(BuildContext context) => AdaptiveReactiveTextField(
     formControlName: formControlName,
     obscureText: obscure,
     maxLines: maxLines,
@@ -1048,39 +1048,10 @@ class _StyledField extends StatelessWidget {
     validationMessages: validationMessages,
     textCapitalization: capitalization,
     onChanged: onChanged,
-    style: TextStyle(fontSize: 15.sp, color: theme.text),
-    decoration: InputDecoration(
-      labelText: label,
-      hintText: hint,
-      prefixIcon: Icon(icon, color: theme.accent, size: 20.sp),
-      suffixIcon: suffix,
-      labelStyle: TextStyle(
-        color: theme.accent.withOpacity(0.8),
-        fontSize: 13.sp,
-      ),
-      hintStyle: TextStyle(
-        color: theme.text.withOpacity(0.35),
-        fontSize: 14.sp,
-      ),
-      filled: true,
-      fillColor: theme.accent.withOpacity(0.06),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14.r),
-        borderSide: BorderSide(color: theme.accent.withOpacity(0.2)),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14.r),
-        borderSide: BorderSide(color: theme.accent.withOpacity(0.2)),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14.r),
-        borderSide: BorderSide(color: theme.accent, width: 2),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14.r),
-        borderSide: BorderSide(color: Colors.red.shade400),
-      ),
-    ),
+    labelText: label,
+    hintText: hint,
+    prefixIcon: Icon(icon, color: theme.accent, size: 20.sp),
+    suffixIcon: suffix,
   );
 }
 
@@ -1532,10 +1503,10 @@ class _GoogleButton extends StatelessWidget {
 }
 
 class _PasswordStrengthBar extends StatelessWidget {
+  const _PasswordStrengthBar({required this.password, required this.accent});
   static final _upperCaseRegExp = RegExp('[A-Z]');
   static final _digitRegExp = RegExp('[0-9]');
   static final _specialCharRegExp = RegExp(r'[!@#$%^&*(),.?":{}|<>]');
-  const _PasswordStrengthBar({required this.password, required this.accent});
   final String password;
   final Color accent;
 

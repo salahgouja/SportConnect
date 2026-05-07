@@ -148,6 +148,7 @@ dependencies:
   dio_cache_interceptor: ^4.0.6
   http_cache_hive_store: ^5.1.0
   in_app_purchase_android: ^0.4.0+10
+  reactive_cupertino_text_field: ^2.1.2
 
 dev_dependencies:
   flutter_test:

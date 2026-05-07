@@ -13,6 +13,7 @@ import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
+import 'package:sport_connect/core/widgets/reactive_adaptive_text_field.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
@@ -73,20 +74,20 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
       title: 'Attach image',
       maxHeightFactor: 0.45,
       child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AdaptiveListTile(
-              leading: const Icon(Icons.photo_library_rounded),
-              title: Text(AppLocalizations.of(context).chooseFromGallery),
-              onTap: () => Navigator.pop(context, ImageSource.gallery),
-            ),
-            AdaptiveListTile(
-              leading: const Icon(Icons.camera_alt_rounded),
-              title: Text(AppLocalizations.of(context).takePhoto),
-              onTap: () => Navigator.pop(context, ImageSource.camera),
-            ),
-          ],
-        ),
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AdaptiveListTile(
+            leading: const Icon(Icons.photo_library_rounded),
+            title: Text(AppLocalizations.of(context).chooseFromGallery),
+            onTap: () => Navigator.pop(context, ImageSource.gallery),
+          ),
+          AdaptiveListTile(
+            leading: const Icon(Icons.camera_alt_rounded),
+            title: Text(AppLocalizations.of(context).takePhoto),
+            onTap: () => Navigator.pop(context, ImageSource.camera),
+          ),
+        ],
+      ),
     );
 
     if (source == null) return;
@@ -254,9 +255,8 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
           SizedBox(height: 20.h),
 
           // Subject
-          ReactiveTextField<String>(
+          AdaptiveReactiveTextField(
             formControlName: 'subject',
-            maxLength: 100,
             textCapitalization: TextCapitalization.sentences,
             onChanged: (control) => ref
                 .read(contactSupportViewModelProvider.notifier)
@@ -266,11 +266,9 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
               ValidationMessage.minLength: (_) =>
                   'Subject must be at least 3 characters',
             },
-            decoration: InputDecoration(
-              labelText: l10n.subjectLabel,
-              hintText: l10n.subjectHint,
-              prefixIcon: const Icon(Icons.subject_rounded),
-            ),
+            labelText: l10n.subjectLabel,
+            hintText: l10n.subjectHint,
+            prefixIcon: const Icon(Icons.subject_rounded),
           ).animate().fadeIn(delay: 200.ms),
 
           SizedBox(height: 20.h),
@@ -285,10 +283,9 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
             ),
           ),
           SizedBox(height: 8.h),
-          ReactiveTextField<String>(
+          AdaptiveReactiveTextField(
             formControlName: 'message',
             maxLines: 6,
-            maxLength: 2000,
             textCapitalization: TextCapitalization.sentences,
             onChanged: (control) => ref
                 .read(contactSupportViewModelProvider.notifier)
@@ -298,34 +295,7 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
               ValidationMessage.minLength: (_) =>
                   'Please provide at least 10 characters',
             },
-            decoration: InputDecoration(
-              hintText: l10n.messageFieldHint,
-              hintStyle: TextStyle(
-                fontSize: 14.sp,
-                color: AppColors.textTertiary,
-              ),
-              filled: true,
-              fillColor: Colors.white,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12.r),
-                borderSide: const BorderSide(color: AppColors.border),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12.r),
-                borderSide: const BorderSide(color: AppColors.border),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12.r),
-                borderSide: const BorderSide(
-                  color: AppColors.primary,
-                  width: 1.5,
-                ),
-              ),
-              errorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12.r),
-                borderSide: const BorderSide(color: AppColors.error),
-              ),
-            ),
+            hintText: l10n.messageFieldHint,
           ).animate().fadeIn(delay: 300.ms),
 
           SizedBox(height: 20.h),

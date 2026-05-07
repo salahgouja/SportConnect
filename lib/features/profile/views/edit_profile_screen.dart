@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -20,10 +21,10 @@ import 'package:sport_connect/core/widgets/expertise_picker.dart';
 import 'package:sport_connect/core/widgets/intl_phone_input.dart';
 import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
+import 'package:sport_connect/core/widgets/reactive_adaptive_text_field.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 
 const _kGenderOptions = ['Male', 'Female', 'Other', 'Prefer not to say'];
 
@@ -84,10 +85,14 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     // Defer provider state mutation — modifying a provider inside build() is
     // forbidden by Riverpod and causes the "Tried to modify a provider while
     // the widget tree was building" error.
-    unawaited(Future.microtask(() {
-      if (!mounted) return;
-      ref.read(profileEditViewModelProvider(user.uid).notifier).initFromUser(user);
-    }));
+    unawaited(
+      Future.microtask(() {
+        if (!mounted) return;
+        ref
+            .read(profileEditViewModelProvider(user.uid).notifier)
+            .initFromUser(user);
+      }),
+    );
   }
 
   // ─── Save ──────────────────────────────────────────────────────────────────
@@ -151,51 +156,53 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         (user.photoUrl?.isNotEmpty ?? false) &&
         !ref.read(profileEditViewModelProvider(user.uid)).imageRemoved;
 
-    unawaited(AppModalSheet.show<void>(
-      context: context,
-      title: l10n.changeProfilePhoto,
-      maxHeightFactor: 0.6,
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 16.h),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _PhotoActionTile(
-              icon: Icons.camera_alt_rounded,
-              color: AppColors.primary,
-              label: l10n.takePhoto,
-              onTap: () async {
-                context.pop();
-                await _pickPhoto(ImageSource.camera, notifier);
-              },
-            ),
-            SizedBox(height: 8.h),
-            _PhotoActionTile(
-              icon: Icons.photo_library_rounded,
-              color: AppColors.secondary,
-              label: l10n.chooseFromGallery,
-              onTap: () async {
-                context.pop();
-                await _pickPhoto(ImageSource.gallery, notifier);
-              },
-            ),
-            if (hasExisting) ...[
-              SizedBox(height: 8.h),
+    unawaited(
+      AppModalSheet.show<void>(
+        context: context,
+        title: l10n.changeProfilePhoto,
+        maxHeightFactor: 0.6,
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 16.h),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
               _PhotoActionTile(
-                icon: Icons.delete_outline_rounded,
-                color: AppColors.error,
-                label: l10n.removePhoto,
-                destructive: true,
-                onTap: () {
+                icon: Icons.camera_alt_rounded,
+                color: AppColors.primary,
+                label: l10n.takePhoto,
+                onTap: () async {
                   context.pop();
-                  notifier.removePhoto();
+                  await _pickPhoto(ImageSource.camera, notifier);
                 },
               ),
+              SizedBox(height: 8.h),
+              _PhotoActionTile(
+                icon: Icons.photo_library_rounded,
+                color: AppColors.secondary,
+                label: l10n.chooseFromGallery,
+                onTap: () async {
+                  context.pop();
+                  await _pickPhoto(ImageSource.gallery, notifier);
+                },
+              ),
+              if (hasExisting) ...[
+                SizedBox(height: 8.h),
+                _PhotoActionTile(
+                  icon: Icons.delete_outline_rounded,
+                  color: AppColors.error,
+                  label: l10n.removePhoto,
+                  destructive: true,
+                  onTap: () {
+                    context.pop();
+                    notifier.removePhoto();
+                  },
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
-    ));
+    );
   }
 
   Future<void> _pickPhoto(
@@ -222,29 +229,31 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     final notifier = ref.read(profileEditViewModelProvider(user.uid).notifier);
     final current = ref.read(profileEditViewModelProvider(user.uid)).gender;
 
-    unawaited(AppModalSheet.show<void>(
-      context: context,
-      title: l10n.selectGender,
-      maxHeightFactor: 0.55,
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 16.h),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: _kGenderOptions
-              .map(
-                (g) => _GenderOption(
-                  label: g,
-                  selected: g == current,
-                  onTap: () {
-                    notifier.setGender(g);
-                    context.pop();
-                  },
-                ),
-              )
-              .toList(),
+    unawaited(
+      AppModalSheet.show<void>(
+        context: context,
+        title: l10n.selectGender,
+        maxHeightFactor: 0.55,
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 16.h),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: _kGenderOptions
+                .map(
+                  (g) => _GenderOption(
+                    label: g,
+                    selected: g == current,
+                    onTap: () {
+                      notifier.setGender(g);
+                      context.pop();
+                    },
+                  ),
+                )
+                .toList(),
+          ),
         ),
       ),
-    ));
+    );
   }
 
   Future<void> _selectDateOfBirth() async {
@@ -266,7 +275,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             primary: AppColors.primary,
             onSurface: AppColors.textPrimary,
           ),
-          dialogTheme: const DialogThemeData(backgroundColor: AppColors.surface),
+          dialogTheme: const DialogThemeData(
+            backgroundColor: AppColors.surface,
+          ),
         ),
         child: child!,
       ),
@@ -395,33 +406,37 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   SizedBox(height: 12.h),
                   _Card(
                     children: [
-                      ReactiveTextField<String>(
+                      AdaptiveReactiveTextField(
                         formControlName: 'name',
-                        decoration: _inputDecoration(
-                          label: l10n.authFullName,
-                          icon: Icons.person_outline_rounded,
+                        labelText: l10n.authFullName,
+                        prefixIcon: Icon(
+                          Icons.person_outline_rounded,
+                          color: AppColors.primary,
+                          size: 20.sp,
                         ),
                         validationMessages: {
                           ValidationMessage.required: (_) => l10n.requiredField,
                           ValidationMessage.minLength: (_) =>
                               'Name must be at least 2 characters',
-                          ValidationMessage.maxLength: (_) => 'Name is too long',
+                          ValidationMessage.maxLength: (_) =>
+                              'Name is too long',
                           'name': (error) => error as String,
                         },
                       ),
                       SizedBox(height: 14.h),
-                      ReactiveTextField<String>(
+                      AdaptiveReactiveTextField(
                         formControlName: 'email',
                         readOnly: true,
-                        decoration: _inputDecoration(
-                          label: l10n.authEmail,
-                          icon: Icons.email_outlined,
-                          suffix: Icon(
-                            Icons.lock_outline_rounded,
-                            size: 16.sp,
-                            color: AppColors.textTertiary,
-                          ),
-                          fillColor: AppColors.surfaceVariant,
+                        labelText: l10n.authEmail,
+                        prefixIcon: Icon(
+                          Icons.email_outlined,
+                          color: AppColors.primary,
+                          size: 20.sp,
+                        ),
+                        suffixIcon: Icon(
+                          Icons.lock_outline_rounded,
+                          size: 16.sp,
+                          color: AppColors.textTertiary,
                         ),
                       ),
                       SizedBox(height: 14.h),
@@ -945,9 +960,7 @@ class _GenderOption extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 15.sp,
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                  color: selected
-                      ? AppColors.primary
-                      : AppColors.textPrimary,
+                  color: selected ? AppColors.primary : AppColors.textPrimary,
                 ),
               ),
             ],

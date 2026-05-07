@@ -21,6 +21,7 @@ import 'package:sport_connect/core/widgets/gender_segmented_field.dart';
 import 'package:sport_connect/core/widgets/glass_panel.dart';
 import 'package:sport_connect/core/widgets/intl_phone_input.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
+import 'package:sport_connect/core/widgets/reactive_adaptive_text_field.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 import 'package:sport_connect/features/auth/view_models/onboarding_view_model.dart';
@@ -1020,15 +1021,12 @@ class _DriverOnboardingScreenState
             if (!needsManualName) ...[
               _buildNameDisplay(displayName, hasPhoto, photoUrl),
             ] else ...[
-              ReactiveTextField<String>(
+              AdaptiveReactiveTextField(
                     formControlName: _PF.name,
                     textInputAction: TextInputAction.next,
-                    decoration: InputDecoration(
-                      labelText: l10n.authFullName,
-                      hintText: l10n.authFullNameHint,
-                      prefixIcon: const Icon(Icons.person_rounded),
-                      helperText: 'We could not read your name from sign-in.',
-                    ),
+                    labelText: l10n.authFullName,
+                    hintText: l10n.authFullNameHint,
+                    prefixIcon: const Icon(Icons.person_rounded),
                     validationMessages: {
                       ValidationMessage.required: (_) => l10n.nameRequiredError,
                       ValidationMessage.minLength: (_) =>
@@ -2146,33 +2144,12 @@ class _VehicleTextField extends StatelessWidget {
                   ),
                   SizedBox(width: 10.w),
                   Expanded(
-                    child: ReactiveTextField<String>(
+                    child: AdaptiveReactiveTextField(
                       formControlName: formControlName,
-                      showErrors: (_) => false,
                       keyboardType: keyboardType,
                       textInputAction: textInputAction,
                       textCapitalization: TextCapitalization.sentences,
-                      inputFormatters: inputFormatters,
-                      style: TextStyle(
-                        fontSize: 14.5.sp,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: hintText,
-                        hintStyle: TextStyle(
-                          fontSize: 13.5.sp,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textTertiary,
-                        ),
-                        border: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                        errorBorder: InputBorder.none,
-                        focusedErrorBorder: InputBorder.none,
-                        isDense: true,
-                        contentPadding: EdgeInsets.symmetric(vertical: 15.h),
-                      ),
+                      hintText: hintText,
                     ),
                   ),
                   SizedBox(width: 10.w),
@@ -2501,34 +2478,11 @@ class _CustomVehicleColorInput extends StatelessWidget {
           ),
           SizedBox(width: 10.w),
           Expanded(
-            child: ReactiveTextField<String>(
+            child: AdaptiveReactiveTextField(
               formControlName: formControlName,
-              showErrors: (_) => false,
               textCapitalization: TextCapitalization.words,
               textInputAction: TextInputAction.next,
-              inputFormatters: [
-                LengthLimitingTextInputFormatter(32),
-              ],
-              style: TextStyle(
-                fontSize: 14.5.sp,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
-              decoration: InputDecoration(
-                hintText: hintText,
-                hintStyle: TextStyle(
-                  fontSize: 13.2.sp,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.textTertiary,
-                ),
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                errorBorder: InputBorder.none,
-                focusedErrorBorder: InputBorder.none,
-                isDense: true,
-                contentPadding: EdgeInsets.symmetric(vertical: 15.h),
-              ),
+              hintText: hintText,
             ),
           ),
           SizedBox(width: 10.w),
@@ -2649,46 +2603,12 @@ class _LicensePlateInput extends StatelessWidget {
                   ),
                   SizedBox(width: 10.w),
                   Expanded(
-                    child: ReactiveTextField<String>(
+                    child: AdaptiveReactiveTextField(
                       formControlName: formControlName,
-                      showErrors: (_) => false,
                       textCapitalization: TextCapitalization.characters,
                       keyboardType: TextInputType.text,
                       textInputAction: TextInputAction.next,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.allow(
-                          RegExp(r'[A-Za-z0-9\-\s]'),
-                        ),
-                        LengthLimitingTextInputFormatter(12),
-                        TextInputFormatter.withFunction((oldValue, newValue) {
-                          return newValue.copyWith(
-                            text: newValue.text.toUpperCase(),
-                            selection: newValue.selection,
-                          );
-                        }),
-                      ],
-                      style: TextStyle(
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 1.2,
-                        color: AppColors.textPrimary,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: hintText,
-                        hintStyle: TextStyle(
-                          fontSize: 14.sp,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.7,
-                          color: AppColors.textTertiary,
-                        ),
-                        border: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                        errorBorder: InputBorder.none,
-                        focusedErrorBorder: InputBorder.none,
-                        isDense: true,
-                        contentPadding: EdgeInsets.symmetric(vertical: 16.h),
-                      ),
+                      hintText: hintText,
                     ),
                   ),
                 ],

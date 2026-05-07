@@ -228,7 +228,7 @@ final class AuthActionsViewModelProvider
 }
 
 String _$authActionsViewModelHash() =>
-    r'6142f78e1d9eba3eccdc211ffbd9862ed71b491b';
+    r'5e59e68d1f92931a4b1b4439097accd049495512';
 
 /// Provides shared auth actions (sign-out, social sign-in, role management).
 ///

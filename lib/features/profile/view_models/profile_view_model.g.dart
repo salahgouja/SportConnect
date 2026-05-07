@@ -422,7 +422,7 @@ final class ProfileEditViewModelProvider
 }
 
 String _$profileEditViewModelHash() =>
-    r'0f4b478253a0eb3c136c630b623b151fe80dbb0d';
+    r'c1eb646dc9998d22c5c3d4a7f0ce363e2125cd1a';
 
 /// Profile Edit View Model
 
@@ -585,7 +585,7 @@ final class SocialActionsViewModelProvider
 }
 
 String _$socialActionsViewModelHash() =>
-    r'1e08875c880a573ed6e9c6014c94991a9f64c854';
+    r'5693dd6e7b385a1047f3f0b36a7fb799356f0b01';
 
 /// Social Actions View Model
 
@@ -698,7 +698,7 @@ final class VehicleViewModelProvider
   }
 }
 
-String _$vehicleViewModelHash() => r'adba1ef019ad2ca3a4b2481603119a513eb0195b';
+String _$vehicleViewModelHash() => r'8ffa1d969eb5d168fb4d20ccff31797fcb700a18';
 
 /// Vehicle Management View Model
 

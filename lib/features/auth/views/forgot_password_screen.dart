@@ -1,6 +1,5 @@
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
-import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -9,6 +8,7 @@ import 'package:reactive_forms/reactive_forms.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/glass_panel.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
+import 'package:sport_connect/core/widgets/reactive_adaptive_text_field.dart';
 import 'package:sport_connect/features/auth/view_models/forgot_password_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
@@ -123,13 +123,11 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
           SizedBox(height: 36.h),
 
-          ReactiveTextField<String>(
+          AdaptiveReactiveTextField(
             formControlName: 'email',
-            decoration: InputDecoration(
-              labelText: l10n.authEmail,
-              hintText: l10n.authEmailHint,
-              prefixIcon: const Icon(Icons.email_outlined),
-            ),
+            labelText: l10n.authEmail,
+            hintText: l10n.authEmailHint,
+            prefixIcon: const Icon(Icons.email_outlined),
             keyboardType: TextInputType.emailAddress,
             validationMessages: {
               ValidationMessage.required: (_) => 'Email is required',

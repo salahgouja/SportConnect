@@ -1,13 +1,13 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:reactive_forms/reactive_forms.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
+import 'package:sport_connect/core/widgets/reactive_adaptive_text_field.dart';
 import 'package:sport_connect/features/auth/view_models/reauth_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
@@ -138,9 +138,8 @@ class _ReauthBottomSheetState extends ConsumerState<_ReauthBottomSheet> {
               SizedBox(height: 24.h),
 
               // Password field
-              ReactiveTextField<String>(
+              AdaptiveReactiveTextField(
                 formControlName: 'password',
-                decoration: InputDecoration(
                   labelText: l10n.reauthPassword,
                   hintText: l10n.reauthPasswordHint,
                   prefixIcon: const Icon(Icons.lock_outline_rounded),
@@ -154,7 +153,6 @@ class _ReauthBottomSheetState extends ConsumerState<_ReauthBottomSheet> {
                     ),
                     onPressed: () => setState(() => _obscure = !_obscure),
                   ),
-                ),
                 obscureText: _obscure,
                 validationMessages: {
                   ValidationMessage.required: (_) =>

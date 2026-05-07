@@ -11,6 +11,7 @@ import 'package:reactive_forms/reactive_forms.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/widgets/reactive_adaptive_text_field.dart';
 import 'package:sport_connect/core/widgets/utility_widgets.dart';
 import 'package:sport_connect/features/auth/models/auth_exception.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
@@ -106,7 +107,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     final socialState = ref.watch(socialAuthViewModelProvider);
     final isIos = defaultTargetPlatform == TargetPlatform.iOS;
     final hasApple = _isAppleSignInAvailable;
-    final hasSocialOption = isIos ? hasApple : true;
+    final hasSocialOption = !isIos || hasApple;
 
     ref.listen(loginViewModelProvider, (previous, next) {
       if (next.hasError && previous?.error != next.error) {
@@ -254,7 +255,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     final emailHint = AppLocalizations.of(context).enterYourEmail;
 
     // The prefixIcon is purely decorative — excluded so SR does not read it.
-    return ReactiveTextField<String>(
+    return AdaptiveReactiveTextField(
       formControlName: 'email',
       focusNode: _emailFocus,
       keyboardType: TextInputType.emailAddress,
@@ -263,11 +264,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         ValidationMessage.required: (_) => 'Email is required',
         ValidationMessage.email: (_) => 'Please enter a valid email address',
       },
-      decoration: InputDecoration(
-        labelText: emailLabel,
-        hintText: emailHint,
-        prefixIcon: const ExcludeSemantics(child: Icon(Icons.email_outlined)),
-      ),
+      labelText: emailLabel,
+      hintText: emailHint,
+      prefixIcon: const ExcludeSemantics(child: Icon(Icons.email_outlined)),
     ).animate().fadeIn(duration: 400.ms, delay: 350.ms);
   }
 
@@ -279,7 +278,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         ? AppLocalizations.of(context).showPasswordTooltip
         : AppLocalizations.of(context).hidePasswordTooltip;
 
-    return ReactiveTextField<String>(
+    return AdaptiveReactiveTextField(
       formControlName: 'password',
       focusNode: _passwordFocus,
       obscureText: _obscurePassword,
@@ -289,24 +288,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         ValidationMessage.minLength: (_) =>
             'Password must be at least 8 characters',
       },
-      decoration: InputDecoration(
-        labelText: passwordLabel,
-        hintText: passwordHint,
-        prefixIcon: const ExcludeSemantics(
-          child: Icon(Icons.lock_outline_rounded),
-        ),
-        suffixIcon: IconButton(
-          tooltip: toggleLabel,
-          onPressed: () {
-            setState(() {
-              _obscurePassword = !_obscurePassword;
-            });
-          },
-          icon: Icon(
-            _obscurePassword
-                ? Icons.visibility_outlined
-                : Icons.visibility_off_outlined,
-          ),
+      labelText: passwordLabel,
+      hintText: passwordHint,
+      prefixIcon: const ExcludeSemantics(
+        child: Icon(Icons.lock_outline_rounded),
+      ),
+      suffixIcon: IconButton(
+        tooltip: toggleLabel,
+        onPressed: () {
+          setState(() {
+            _obscurePassword = !_obscurePassword;
+          });
+        },
+        icon: Icon(
+          _obscurePassword
+              ? Icons.visibility_outlined
+              : Icons.visibility_off_outlined,
         ),
       ),
     ).animate().fadeIn(duration: 400.ms, delay: 400.ms);
@@ -536,7 +533,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             onPressed: () => context.push(AppRoutes.terms.path),
             style: TextButton.styleFrom(
               minimumSize: Size.zero,
-              padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0),
+              padding: EdgeInsets.symmetric(horizontal: 2.w),
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               foregroundColor: AppColors.primary,
             ),
@@ -558,7 +555,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             onPressed: () => context.push(AppRoutes.privacy.path),
             style: TextButton.styleFrom(
               minimumSize: Size.zero,
-              padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0),
+              padding: EdgeInsets.symmetric(horizontal: 2.w),
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               foregroundColor: AppColors.primary,
             ),

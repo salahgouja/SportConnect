@@ -15,6 +15,7 @@ import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/core/widgets/map_location_picker.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
+import 'package:sport_connect/core/widgets/reactive_adaptive_text_field.dart';
 import 'package:sport_connect/features/events/models/event_model.dart';
 import 'package:sport_connect/features/events/view_models/event_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
@@ -191,10 +192,9 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
     CreateEventFormState createState,
     AppLocalizations l10n,
   ) {
-    return ReactiveTextField<String>(
+    return AdaptiveReactiveTextField(
       formControlName: 'title',
       textCapitalization: TextCapitalization.words,
-      maxLength: 100,
       onChanged: (control) => ref
           .read(createEventFormViewModelProvider.notifier)
           .setTitle(control.value ?? ''),
@@ -203,7 +203,13 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
         ValidationMessage.minLength: (_) =>
             'Title must be at least 3 characters',
       },
-      decoration: _deco(l10n.eventTitleField, Icons.title_rounded),
+      labelText: l10n.eventTitleField,
+      hintText: l10n.eventTitleField,
+      prefixIcon: Icon(
+        Icons.title_rounded,
+        size: 20.sp,
+        color: AppColors.textTertiary,
+      ),
     ).animate().fadeIn(duration: 250.ms, delay: 60.ms);
   }
 
@@ -212,16 +218,21 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
     CreateEventFormState createState,
     AppLocalizations l10n,
   ) {
-    return ReactiveTextField<String>(
+    return AdaptiveReactiveTextField(
       formControlName: 'description',
       maxLines: 3,
       minLines: 2,
-      maxLength: 500,
       textCapitalization: TextCapitalization.sentences,
       onChanged: (control) => ref
           .read(createEventFormViewModelProvider.notifier)
           .setDescription(control.value ?? ''),
-      decoration: _deco(l10n.eventDescriptionField, Icons.notes_rounded),
+      labelText: l10n.eventDescriptionField,
+      hintText: l10n.eventDescriptionField,
+      prefixIcon: Icon(
+        Icons.notes_rounded,
+        size: 20.sp,
+        color: AppColors.textTertiary,
+      ),
     ).animate().fadeIn(duration: 250.ms, delay: 140.ms);
   }
 
@@ -848,28 +859,6 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
       fontSize: 12.sp,
       fontWeight: FontWeight.w500,
       color: ThemeData.light().colorScheme.error,
-    ),
-  );
-
-  InputDecoration _deco(String hint, IconData icon) => InputDecoration(
-    labelText: hint,
-    hintText: hint,
-    hintStyle: TextStyle(color: AppColors.textTertiary, fontSize: 14.sp),
-    prefixIcon: Icon(icon, size: 20.sp, color: AppColors.textTertiary),
-    filled: true,
-    fillColor: AppColors.surface,
-    contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(14.r),
-      borderSide: BorderSide.none,
-    ),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(14.r),
-      borderSide: const BorderSide(color: AppColors.border),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(14.r),
-      borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
     ),
   );
 
