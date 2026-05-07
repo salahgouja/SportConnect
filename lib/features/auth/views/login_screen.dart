@@ -1,7 +1,5 @@
-import 'dart:io';
-
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
-import 'package:flutter/gestures.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -38,6 +36,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   final FocusNode _passwordFocus = FocusNode();
 
   bool _obscurePassword = true;
+  bool _isAppleSignInAvailable = false;
 
   @override
   void initState() {
@@ -48,10 +47,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         validators: [Validators.required, Validators.email],
       ),
       'password': FormControl<String>(
-        validators: [Validators.required],
+        validators: [Validators.required, Validators.minLength(8)],
       ),
     });
+    _loadAppleSignInAvailability();
     _setupAnimations();
+  }
+
+  Future<void> _loadAppleSignInAvailability() async {
+    final isAvailable = await SignInWithApple.isAvailable();
+    if (!mounted) return;
+    setState(() {
+      _isAppleSignInAvailable = isAvailable;
+    });
   }
 
   void _setupAnimations() {
@@ -96,6 +104,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   Widget build(BuildContext context) {
     final loginState = ref.watch(loginViewModelProvider);
     final socialState = ref.watch(socialAuthViewModelProvider);
+    final isIos = defaultTargetPlatform == TargetPlatform.iOS;
+    final hasApple = _isAppleSignInAvailable;
+    final hasSocialOption = isIos ? hasApple : true;
 
     ref.listen(loginViewModelProvider, (previous, next) {
       if (next.hasError && previous?.error != next.error) {
@@ -117,7 +128,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         opacity: _fadeAnimation,
         child: SingleChildScrollView(
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24.w),
+            padding: EdgeInsets.fromLTRB(
+              24.w,
+              0,
+              24.w,
+              MediaQuery.viewInsetsOf(context).bottom + 16.h,
+            ),
             child: ReactiveForm(
               formGroup: _form,
               child: Column(
@@ -135,11 +151,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                   _buildOptionsRow(),
                   SizedBox(height: 12.h),
                   _buildSignInButton(loginState, socialState),
-                  SizedBox(height: 24.h),
-                  _buildDivider(),
-                  SizedBox(height: 16.h),
-                  _buildSocialButtons(socialState),
-                  SizedBox(height: 28.h),
+                  if (hasSocialOption) ...[
+                    SizedBox(height: 24.h),
+                    _buildDivider(),
+                    SizedBox(height: 16.h),
+                    _buildSocialButtons(socialState),
+                    SizedBox(height: 28.h),
+                  ] else
+                    SizedBox(height: 20.h),
                   _buildSignUpLink(),
                   SizedBox(height: 24.h),
                   _buildLegalFooter(),
@@ -352,22 +371,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   }
 
   Widget _buildSocialButtons(SocialAuthState socialState) {
+    final isIos = defaultTargetPlatform == TargetPlatform.iOS;
+    final canUseApple = _isAppleSignInAvailable;
+    final appleButtonHeight = 44.h.clamp(44.0, 56.0);
+
     return Stack(
       children: [
         Column(
           children: [
-            if (Platform.isAndroid) ...[
+            if (isIos && canUseApple)
+              SignInWithAppleButton(
+                onPressed: socialState.isLoading ? null : _handleAppleSignIn,
+                text: AppLocalizations.of(context).continueWithApple,
+                height: appleButtonHeight,
+                borderRadius: BorderRadius.circular(14.r),
+              ).animate().fadeIn(duration: 300.ms, delay: 300.ms)
+            else if (!isIos) ...[
               _buildGoogleButton(
                 socialState,
               ).animate().fadeIn(duration: 300.ms, delay: 250.ms),
               SizedBox(height: 12.h),
-            ] else
-              SignInWithAppleButton(
-                onPressed: socialState.isLoading ? () {} : _handleAppleSignIn,
-                text: AppLocalizations.of(context).continueWithApple,
-                height: 44.h,
-                borderRadius: BorderRadius.circular(14.r),
-              ).animate().fadeIn(duration: 300.ms, delay: 300.ms),
+            ],
           ],
         ),
         if (socialState.isLoading)
@@ -493,42 +517,61 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   }
 
   Widget _buildLegalFooter() {
-    // TextSpan tappable links require `semanticsLabel` to be announced as
-    // interactive by both TalkBack and VoiceOver. Without it the spans are
-    // read as plain text with no affordance that they are tappable.
+    final l10n = AppLocalizations.of(context);
+
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 24.w),
-      child: Text.rich(
-        TextSpan(
-          style: TextStyle(fontSize: 12.sp, color: AppColors.textTertiary),
-          children: [
-            TextSpan(text: AppLocalizations.of(context).legalConsentPrefix),
-            TextSpan(
-              text: AppLocalizations.of(context).termsOfServiceTitle,
-              semanticsLabel: AppLocalizations.of(context).termsLinkSemantics,
-              style: const TextStyle(
-                color: AppColors.primary,
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 4.w,
+        runSpacing: 2.h,
+        children: [
+          Text(
+            l10n.legalConsentPrefix,
+            style: TextStyle(fontSize: 12.sp, color: AppColors.textTertiary),
+            textAlign: TextAlign.center,
+          ),
+          TextButton(
+            onPressed: () => context.push(AppRoutes.terms.path),
+            style: TextButton.styleFrom(
+              minimumSize: Size.zero,
+              padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              foregroundColor: AppColors.primary,
+            ),
+            child: Text(
+              l10n.termsOfServiceTitle,
+              style: TextStyle(
+                fontSize: 12.sp,
                 fontWeight: FontWeight.w600,
                 decoration: TextDecoration.underline,
               ),
-              recognizer: TapGestureRecognizer()
-                ..onTap = () => context.push(AppRoutes.terms.path),
             ),
-            TextSpan(text: AppLocalizations.of(context).andConnector),
-            TextSpan(
-              text: AppLocalizations.of(context).privacyPolicyTitle,
-              semanticsLabel: AppLocalizations.of(context).privacyLinkSemantics,
-              style: const TextStyle(
-                color: AppColors.primary,
+          ),
+          Text(
+            l10n.andConnector,
+            style: TextStyle(fontSize: 12.sp, color: AppColors.textTertiary),
+            textAlign: TextAlign.center,
+          ),
+          TextButton(
+            onPressed: () => context.push(AppRoutes.privacy.path),
+            style: TextButton.styleFrom(
+              minimumSize: Size.zero,
+              padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              foregroundColor: AppColors.primary,
+            ),
+            child: Text(
+              l10n.privacyPolicyTitle,
+              style: TextStyle(
+                fontSize: 12.sp,
                 fontWeight: FontWeight.w600,
                 decoration: TextDecoration.underline,
               ),
-              recognizer: TapGestureRecognizer()
-                ..onTap = () => context.push(AppRoutes.privacy.path),
             ),
-          ],
-        ),
-        textAlign: TextAlign.center,
+          ),
+        ],
       ),
     ).animate().fadeIn(duration: 400.ms, delay: 600.ms);
   }
