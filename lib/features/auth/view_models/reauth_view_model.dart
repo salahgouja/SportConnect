@@ -10,6 +10,7 @@ part 'reauth_view_model.g.dart';
 /// the correct localised string. Possible values:
 /// - `'wrong-password'`
 /// - `'google'`
+/// - `'apple'`
 /// - `'generic'`
 class ReauthState {
   const ReauthState({
@@ -73,6 +74,20 @@ class ReauthViewModel extends _$ReauthViewModel {
     } on Exception catch (e, st) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, errorCode: 'google');
+    }
+  }
+
+  Future<void> reauthWithApple() async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      await ref
+          .read(authActionsViewModelProvider.notifier)
+          .reauthenticateWithApple();
+      if (!ref.mounted) return;
+      state = state.copyWith(isLoading: false, isSuccess: true);
+    } on Exception catch (e, st) {
+      if (!ref.mounted) return;
+      state = state.copyWith(isLoading: false, errorCode: 'apple');
     }
   }
 }

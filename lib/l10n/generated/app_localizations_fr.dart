@@ -6309,4 +6309,2629 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get receiptRideId => 'ID du trajet';
+
+  @override
+  String get something_went_wrong => 'Something went wrong';
+
+  @override
+  String get your_action_was_completed_successfully =>
+      'Your action was completed successfully.';
+
+  @override
+  String get success => 'success';
+
+  @override
+  String get localhost => 'localhost';
+
+  @override
+  String get production_mode => 'PRODUCTION MODE';
+
+  @override
+  String get none => 'none';
+
+  @override
+  String get signedout => 'signed-out';
+
+  @override
+  String
+  get pk_test_51t0hg4ryc7z72fdkkzbcqr4p1v0mi8nzgsxotoy7stj8a3qfqkdlbofdng5fggsinfcvilbokjbtupskomgywirk00mnaqcfsq =>
+      'pk_test_51T0hg4RYC7Z72fDKkzbCQr4P1v0Mi8nzgSXoToY7Stj8A3QfqKdLBOFDNG5fggSinfCVILBOkjBTupskomgywiRk00MnaqCFSq';
+
+  @override
+  String get passengerreview => 'passengerReview';
+
+  @override
+  String get stripe_not_configured_update_stripeconfig_values =>
+      'Stripe NOT configured - update StripeConfig values';
+
+  @override
+  String get eur => 'EUR';
+
+  @override
+  String get pk_test_your_publishable_key_here =>
+      'pk_test_YOUR_PUBLISHABLE_KEY_HERE';
+
+  @override
+  String get fr => 'FR';
+
+  @override
+  String get tnfr => 'tn,fr';
+
+  @override
+  String get users => 'users';
+
+  @override
+  String get chats => 'Chats';
+
+  @override
+  String get notifications => 'Notifications';
+
+  @override
+  String get payments => 'Payments';
+
+  @override
+  String get reports => 'reports';
+
+  @override
+  String get bookings => 'bookings';
+
+  @override
+  String get support_tickets => 'support_tickets';
+
+  @override
+  String get driver_connected_accounts => 'driver_connected_accounts';
+
+  @override
+  String get driver_stats => 'driver_stats';
+
+  @override
+  String get blockedusers => 'blockedUsers';
+
+  @override
+  String get disputes => 'disputes';
+
+  @override
+  String get archived_transactions => 'archived_transactions';
+
+  @override
+  String get profile_images => 'profile_images';
+
+  @override
+  String get chat_images => 'chat_images';
+
+  @override
+  String get vehicle_images => 'vehicle_images';
+
+  @override
+  String get sportaxitripcom => 'sportaxitrip.com';
+
+  @override
+  String get sportconnect10_contactsportconnectapp =>
+      'SportConnect/1.0 (contact@sportconnect.app)';
+
+  @override
+  String get find_and_book_rides_to_sporting_events =>
+      'Find and book rides to sporting events';
+
+  @override
+  String get offer_rides_and_earn_money => 'Offer rides and earn money';
+
+  @override
+  String get your_application_is_under_review =>
+      'Your application is under review';
+
+  @override
+  String get language_code => 'language_code';
+
+  @override
+  String get notifications_enabled => 'notifications_enabled';
+
+  @override
+  String get ride_reminders => 'ride_reminders';
+
+  @override
+  String get chat_notifications => 'chat_notifications';
+
+  @override
+  String get marketing_emails => 'marketing_emails';
+
+  @override
+  String get show_location => 'show_location';
+
+  @override
+  String get public_profile => 'public_profile';
+
+  @override
+  String get map_style => 'Map Style';
+
+  @override
+  String get notification_dialog_shown => 'notification_dialog_shown';
+
+  @override
+  String get analytics_enabled => 'analytics_enabled';
+
+  @override
+  String get premium_prompt_seen_ => 'premium_prompt_seen_';
+
+  @override
+  String get driver_show_on_map => 'driver_show_on_map';
+
+  @override
+  String get driver_allow_instant_booking => 'driver_allow_instant_booking';
+
+  @override
+  String get driver_max_distance => 'driver_max_distance';
+
+  @override
+  String get driver_navigation_app => 'driver_navigation_app';
+
+  @override
+  String get sc => 'SC';
+
+  @override
+  String get https => 'https';
+
+  @override
+  String get nominatimopenstreetmaporg => 'nominatim.openstreetmap.org';
+
+  @override
+  String get node => 'node[';
+
+  @override
+  String get sports_centre => 'sports_centre';
+
+  @override
+  String get stadium => 'stadium';
+
+  @override
+  String get pitch => 'pitch';
+
+  @override
+  String get university => 'university';
+
+  @override
+  String get college => 'college';
+
+  @override
+  String get parking => 'Parking';
+
+  @override
+  String get fuel => 'fuel';
+
+  @override
+  String get restaurant => 'restaurant';
+
+  @override
+  String get cafe => 'cafe';
+
+  @override
+  String get hospital => 'hospital';
+
+  @override
+  String get clinic => 'clinic';
+
+  @override
+  String get bus_stop => 'bus_stop';
+
+  @override
+  String get station => 'station';
+
+  @override
+  String get tram_stop => 'tram_stop';
+
+  @override
+  String get trip_receipt => 'TRIP RECEIPT';
+
+  @override
+  String get thank_you_for_using_sportconnect =>
+      'Thank you for using SportConnect!';
+
+  @override
+  String get your_ecofriendly_carpooling_choice =>
+      'Your eco-friendly carpooling choice';
+
+  @override
+  String get earnings_report => 'EARNINGS REPORT';
+
+  @override
+  String get trip_history => 'Trip History';
+
+  @override
+  String get sport_connect_messages => 'sport_connect_messages';
+
+  @override
+  String get new_chat_message_notifications => 'New chat message notifications';
+
+  @override
+  String get sport_connect_rides => 'sport_connect_rides';
+
+  @override
+  String get ride_booking_and_status_notifications =>
+      'Ride booking and status notifications';
+
+  @override
+  String get sport_connect_general => 'sport_connect_general';
+
+  @override
+  String get general => 'General';
+
+  @override
+  String get general_app_notifications => 'General app notifications';
+
+  @override
+  String get arrive_at_destination => 'Arrive at destination';
+
+  @override
+  String get take_the_ramp => 'Take the ramp';
+
+  @override
+  String get take_the_exit => 'Take the exit';
+
+  @override
+  String get driving => 'driving';
+
+  @override
+  String get geojson => 'geojson';
+
+  @override
+  String get full => 'Full';
+
+  @override
+  String get ok => 'Ok';
+
+  @override
+  String get polyline => 'polyline';
+
+  @override
+  String get polyline6 => 'polyline6';
+
+  @override
+  String get start_on => 'Start on';
+
+  @override
+  String get inter => 'Inter';
+
+  @override
+  String get name_is_required => 'Name is required';
+
+  @override
+  String get name_must_be_at_least_2_characters =>
+      'Name must be at least 2 characters';
+
+  @override
+  String get name_is_too_long => 'Name is too long';
+
+  @override
+  String get name_cannot_contain_numbers => 'Name cannot contain numbers';
+
+  @override
+  String get name_contains_invalid_characters =>
+      'Name contains invalid characters';
+
+  @override
+  String get email_is_required => 'Email is required';
+
+  @override
+  String get please_enter_a_valid_email_address =>
+      'Please enter a valid email address';
+
+  @override
+  String get phone_number_is_too_short => 'Phone number is too short';
+
+  @override
+  String get phone_number_is_too_long => 'Phone number is too long';
+
+  @override
+  String get phone_number_is_required => 'Phone number is required';
+
+  @override
+  String get password_is_required => 'Password is required';
+
+  @override
+  String get password_must_be_at_least_8_characters =>
+      'Password must be at least 8 characters';
+
+  @override
+  String get include_at_least_one_uppercase_letter =>
+      'Include at least one uppercase letter';
+
+  @override
+  String get include_at_least_one_lowercase_letter =>
+      'Include at least one lowercase letter';
+
+  @override
+  String get include_at_least_one_number => 'Include at least one number';
+
+  @override
+  String get please_confirm_your_password => 'Please confirm your password';
+
+  @override
+  String get passwords_do_not_match => 'Passwords do not match';
+
+  @override
+  String get price_is_required => 'Price is required';
+
+  @override
+  String get please_enter_a_valid_price => 'Please enter a valid price';
+
+  @override
+  String get price_must_be_greater_than_0 => 'Price must be greater than 0';
+
+  @override
+  String get price_seems_too_high => 'Price seems too high';
+
+  @override
+  String get please_select_number_of_seats => 'Please select number of seats';
+
+  @override
+  String get date_is_required => 'Date is required';
+
+  @override
+  String get date_must_be_in_the_future => 'Date must be in the future';
+
+  @override
+  String get date_of_birth_is_required => 'Date of birth is required';
+
+  @override
+  String get license_plate_is_required => 'License plate is required';
+
+  @override
+  String get license_plate_is_too_short => 'License plate is too short';
+
+  @override
+  String get license_plate_is_too_long => 'License plate is too long';
+
+  @override
+  String get invalid_license_plate_format => 'Invalid license plate format';
+
+  @override
+  String get year_is_required => 'Year is required';
+
+  @override
+  String get please_enter_a_valid_year => 'Please enter a valid year';
+
+  @override
+  String get vehicle_is_too_old => 'Vehicle is too old';
+
+  @override
+  String get invalid_year => 'Invalid year';
+
+  @override
+  String get city_name_is_too_short => 'City name is too short';
+
+  @override
+  String get city_name_is_too_long => 'City name is too long';
+
+  @override
+  String get city_name_cannot_contain_numbers =>
+      'City name cannot contain numbers';
+
+  @override
+  String get this_field => 'This field';
+
+  @override
+  String get please_sign_in_to_continue => 'Please sign in to continue.';
+
+  @override
+  String get this_payment_or_payout_could_not_be_found =>
+      'This payment or payout could not be found.';
+
+  @override
+  String get this_request_was_already_processed =>
+      'This request was already processed.';
+
+  @override
+  String get too_many_requests_please_wait_a_moment_and_try_again =>
+      'Too many requests — please wait a moment and try again.';
+
+  @override
+  String get the_request_timed_out_please_check_your_connection_and_try_again =>
+      'The request timed out. Please check your connection and try again.';
+
+  @override
+  String get service_temporarily_unavailable_please_try_again =>
+      'Service temporarily unavailable. Please try again.';
+
+  @override
+  String get security_check_failed_please_refresh_and_try_again =>
+      'Security check failed. Please refresh and try again.';
+
+  @override
+  String get you_don => 'You don';
+
+  @override
+  String
+  get insufficient_balance_ride_earnings_may_still_be_settling_try_again_in_a_few_hours =>
+      'Insufficient balance. Ride earnings may still be settling — try again in a few hours.';
+
+  @override
+  String get no_bank_account_linked_please_complete_your_stripe_setup_first =>
+      'No bank account linked. Please complete your Stripe setup first.';
+
+  @override
+  String
+  get payouts_not_yet_enabled_on_your_account_please_complete_verification =>
+      'Payouts not yet enabled on your account. Please complete verification.';
+
+  @override
+  String get your_stripe_account_isn => 'Your Stripe account isn';
+
+  @override
+  String get tap => 'Tap ';
+
+  @override
+  String get your_card_was_declined_please_try_a_different_payment_method =>
+      'Your card was declined. Please try a different payment method.';
+
+  @override
+  String get payment_declined_insufficient_funds_on_your_card =>
+      'Payment declined — insufficient funds on your card.';
+
+  @override
+  String get your_card_has_expired_please_update_your_payment_method =>
+      'Your card has expired. Please update your payment method.';
+
+  @override
+  String get incorrect_card_security_code_please_check_and_try_again =>
+      'Incorrect card security code. Please check and try again.';
+
+  @override
+  String get this_payout_can_no_longer_be_cancelled_it =>
+      'This payout can no longer be cancelled — it';
+
+  @override
+  String get payout_failed_please_check_your_bank_details_are_correct =>
+      'Payout failed. Please check your bank details are correct.';
+
+  @override
+  String
+  get refund_could_not_be_processed_please_contact_support_if_this_persists =>
+      'Refund could not be processed. Please contact support if this persists.';
+
+  @override
+  String get this_booking_has_already_been_paid =>
+      'This booking has already been paid.';
+
+  @override
+  String get this_ride_is_no_longer_available_for_booking =>
+      'This ride is no longer available for booking.';
+
+  @override
+  String get no_active_booking_found_for_this_ride =>
+      'No active booking found for this ride.';
+
+  @override
+  String get the_driver_hasn => 'The driver hasn';
+
+  @override
+  String get connection_error_please_check_your_internet_and_try_again =>
+      'Connection error. Please check your internet and try again.';
+
+  @override
+  String get request_timed_out_please_try_again =>
+      'Request timed out. Please try again.';
+
+  @override
+  String get something_went_wrong_please_try_again =>
+      'Something went wrong. Please try again.';
+
+  @override
+  String get fastest_way_to_set_your_pickup_point =>
+      'Fastest way to set your pickup point';
+
+  @override
+  String get expand_map_for_exact_pickup_point =>
+      'Expand map for exact pickup point';
+
+  @override
+  String get tap_the_map_to_set_the_exact_point =>
+      'Tap the map to set the exact point';
+
+  @override
+  String get finding_address => 'Finding address...';
+
+  @override
+  String get suggestions => 'SUGGESTIONS';
+
+  @override
+  String get selected_address => 'Selected address';
+
+  @override
+  String get use_this_address => 'Use this address';
+
+  @override
+  String get selected => 'Selected';
+
+  @override
+  String get search_unavailable => 'Search unavailable';
+
+  @override
+  String get no_address_found => 'No address found';
+
+  @override
+  String get try_another_street_or_choose_the_exact_point_on_map =>
+      'Try another street or choose the exact point on map.';
+
+  @override
+  String get unable_to_search_addresses_try_again =>
+      'Unable to search addresses. Try again.';
+
+  @override
+  String get unable_to_read_a_valid_current_location =>
+      'Unable to read a valid current location.';
+
+  @override
+  String get your_current_location_appears_to_be_outside_france =>
+      'Your current location appears to be outside France.';
+
+  @override
+  String get invalid_address_location_please_choose_another_result =>
+      'Invalid address location. Please choose another result.';
+
+  @override
+  String get invalid_map_position_please_choose_another_point =>
+      'Invalid map position. Please choose another point.';
+
+  @override
+  String get please_select_a_location_in_france =>
+      'Please select a location in France.';
+
+  @override
+  String get selected_location => 'Selected location';
+
+  @override
+  String get please_select_an_address => 'Please select an address.';
+
+  @override
+  String get invalid_selected_location_please_choose_another_point =>
+      'Invalid selected location. Please choose another point.';
+
+  @override
+  String get payment_receipt => 'Payment Receipt';
+
+  @override
+  String get thank_you_for_riding_with_sportconnect =>
+      'Thank you for riding with SportConnect!';
+
+  @override
+  String get refund_amount => 'Refund amount';
+
+  @override
+  String get days => 'days';
+
+  @override
+  String get could_not_submit_refund_please_try_again =>
+      'Could not submit refund. Please try again.';
+
+  @override
+  String get no_rides_found => 'No rides found';
+
+  @override
+  String get try_adjusting_your_filters_or_search_for_a_different_route =>
+      'Try adjusting your filters or search for a different route';
+
+  @override
+  String get no_events_yet => 'No events yet';
+
+  @override
+  String get create_an_event_to_bring_your_group_together =>
+      'Create an event to bring your group together';
+
+  @override
+  String get no_messages_yet => 'No messages yet';
+
+  @override
+  String get start_a_conversation_by_booking_a_ride_or_joining_an_event =>
+      'Start a conversation by booking a ride or joining an event';
+
+  @override
+  String get all_caught_up => 'All caught up!';
+
+  @override
+  String get no_reviews_yet => 'No reviews yet';
+
+  @override
+  String get reviews_will_appear_after_completed_rides =>
+      'Reviews will appear after completed rides';
+
+  @override
+  String get no_vehicles_added => 'No vehicles added';
+
+  @override
+  String get add_a_vehicle_to_start_offering_rides =>
+      'Add a vehicle to start offering rides';
+
+  @override
+  String get no_bookings_yet => 'No bookings yet';
+
+  @override
+  String get your_ride_bookings_will_appear_here =>
+      'Your ride bookings will appear here';
+
+  @override
+  String get no_results_found => 'No results found';
+
+  @override
+  String get try_different_search_terms_or_filters =>
+      'Try different search terms or filters';
+
+  @override
+  String get please_try_again => 'Please try again';
+
+  @override
+  String get select_your_expertise_level => 'Select your expertise level';
+
+  @override
+  String get male => 'Male';
+
+  @override
+  String get female => 'Female';
+
+  @override
+  String get enter_a_valid_french_phone_number =>
+      'Enter a valid French phone number.';
+
+  @override
+  String get after_33_enter_the_number_without_the_leading_0 =>
+      'After +33, enter the number without the leading 0.';
+
+  @override
+  String get used_only_for_ride_coordination_and_safety =>
+      'Used only for ride coordination and safety.';
+
+  @override
+  String get no_map_apps_are_available_on_this_device =>
+      'No map apps are available on this device.';
+
+  @override
+  String get unable_to_open_maps_right_now => 'Unable to open maps right now.';
+
+  @override
+  String get select_location => 'Select Location';
+
+  @override
+  String get france => 'France';
+
+  @override
+  String get departure_reminder => 'Departure reminder';
+
+  @override
+  String get search_rides_people_places => 'Search rides, people, places...';
+
+  @override
+  String get explore_nearby_stops => 'Explore nearby stops';
+
+  @override
+  String get gas_stations => 'Gas Stations';
+
+  @override
+  String get restaurants => 'Restaurants';
+
+  @override
+  String get sports => 'Sports';
+
+  @override
+  String get universities => 'Universities';
+
+  @override
+  String get hospitals => 'Hospitals';
+
+  @override
+  String get transport => 'Transport';
+
+  @override
+  String get cafs => 'Cafés';
+
+  @override
+  String get search => 'Search...';
+
+  @override
+  String get switch_vehicle => 'Switch Vehicle';
+
+  @override
+  String get ladies_only => 'Ladies Only';
+
+  @override
+  String get tap_to_apply => 'Tap to apply';
+
+  @override
+  String get ride_progress => 'Ride Progress';
+
+  @override
+  String get ride_confirmed => 'Ride confirmed';
+
+  @override
+  String get on_the_way_to_pickup => 'On the way to pickup';
+
+  @override
+  String get almost_at_pickup_point => 'Almost at pickup point';
+
+  @override
+  String get en_route_to_destination => 'En route to destination';
+
+  @override
+  String get booked => 'Booked';
+
+  @override
+  String get driver_left => 'Driver Left';
+
+  @override
+  String get arriving => 'Arriving';
+
+  @override
+  String get riding => 'Riding';
+
+  @override
+  String get arrived => 'Arrived';
+
+  @override
+  String get driver_history => 'Driver History';
+
+  @override
+  String get please_reauthenticate_before_deleting_your_account =>
+      'Please re-authenticate before deleting your account';
+
+  @override
+  String get your_account_has_been_suspended_please_contact_support =>
+      'Your account has been suspended. Please contact support.';
+
+  @override
+  String get signin_was_cancelled => 'Sign-in was cancelled.';
+
+  @override
+  String get no_user_found_with_this_email => 'No user found with this email';
+
+  @override
+  String get wrong_password => 'Wrong password';
+
+  @override
+  String get invalid_email_or_password => 'Invalid email or password';
+
+  @override
+  String get email_already_in_use => 'Email already in use';
+
+  @override
+  String get invalid_email_address => 'Invalid email address';
+
+  @override
+  String get password_is_too_weak => 'Password is too weak';
+
+  @override
+  String get too_many_attempts_please_try_again_later =>
+      'Too many attempts. Please try again later';
+
+  @override
+  String get please_reauthenticate_to_continue =>
+      'Please re-authenticate to continue';
+
+  @override
+  String get an_account_already_exists_with_a_different_signin_method =>
+      'An account already exists with a different sign-in method. ';
+
+  @override
+  String get the_selected_google_account_does_not_match_your_account_email =>
+      'The selected Google account does not match your account email. ';
+
+  @override
+  String get requiresrecentlogin => 'requires-recent-login';
+
+  @override
+  String get user => 'User';
+
+  @override
+  String get weakpassword => 'weak-password';
+
+  @override
+  String get you_must_accept_the_terms_to_continue =>
+      'You must accept the terms to continue.';
+
+  @override
+  String get from_your_signin_account => 'From your sign-in account';
+
+  @override
+  String get help_riders_recognize_your_car_at_pickup =>
+      'Help riders recognize your car at pickup.';
+
+  @override
+  String get other_color => 'Other color';
+
+  @override
+  String get i_agree_to_the => 'I agree to the ';
+
+  @override
+  String get terms_conditions => 'Terms & Conditions';
+
+  @override
+  String get recognition_details_appear_here =>
+      'Recognition details appear here';
+
+  @override
+  String get what_car_should_riders_look_for =>
+      'What car should riders look for?';
+
+  @override
+  String get keep_this_simple_make_and_model_are_enough_here =>
+      'Keep this simple. Make and model are enough here.';
+
+  @override
+  String get help_passengers_find_you => 'Help passengers find you';
+
+  @override
+  String get color_and_plate_are_the_details_riders_use_at_pickup =>
+      'Color and plate are the details riders use at pickup.';
+
+  @override
+  String get how_many_passengers_can_you_take =>
+      'How many passengers can you take?';
+
+  @override
+  String get this_is_available_passenger_seats_not_total_car_seats =>
+      'This is available passenger seats, not total car seats.';
+
+  @override
+  String get vehicle_details => 'Vehicle details';
+
+  @override
+  String get kept_quieter_because_they_are_less_important_at_pickup =>
+      'Kept quieter because they are less important at pickup.';
+
+  @override
+  String get black => 'Black';
+
+  @override
+  String get white => 'White';
+
+  @override
+  String get grey => 'Grey';
+
+  @override
+  String get silver => 'Silver';
+
+  @override
+  String get blue => 'Blue';
+
+  @override
+  String get red => 'Red';
+
+  @override
+  String get green => 'Green';
+
+  @override
+  String get beige_brown => 'Beige / Brown';
+
+  @override
+  String get address => 'Address';
+
+  @override
+  String get save_driver_profile_and_continue =>
+      'Save driver profile and continue';
+
+  @override
+  String get champagne_pearl_white_bordeaux =>
+      'Champagne, pearl white, bordeaux...';
+
+  @override
+  String get invalid_value => 'Invalid value';
+
+  @override
+  String get address_is_required => 'Address is required';
+
+  @override
+  String get name => 'name';
+
+  @override
+  String get dob => 'dob';
+
+  @override
+  String get expertise => 'expertise';
+
+  @override
+  String get terms => 'terms';
+
+  @override
+  String get license_plate => 'license_plate';
+
+  @override
+  String get fuel_type => 'fuel_type';
+
+  @override
+  String get sign_up => 'Sign up';
+
+  @override
+  String get sportconnect_logo => 'SportConnect logo';
+
+  @override
+  String get signing_in_please_wait => 'Signing in, please wait';
+
+  @override
+  String get discard_changes => 'Discard changes?';
+
+  @override
+  String get your_profile_info_will_not_be_saved_if_you_go_back =>
+      'Your profile info will not be saved if you go back.';
+
+  @override
+  String get keep_editing => 'Keep editing';
+
+  @override
+  String get complete_your_profile => 'Complete your profile';
+
+  @override
+  String get step_2_of_2 => 'Step 2 of 2';
+
+  @override
+  String get rider_onboarding_form => 'Rider onboarding form';
+
+  @override
+  String get complete_rider_onboarding => 'Complete rider onboarding';
+
+  @override
+  String get profile_not_loaded_yet_please_wait_a_moment =>
+      '⚠️ Profile not loaded yet. Please wait a moment.';
+
+  @override
+  String get please_enter_a_valid_phone_number =>
+      'Please enter a valid phone number.';
+
+  @override
+  String get please_enter_your_address => 'Please enter your address.';
+
+  @override
+  String get profile_complete_welcome_aboard =>
+      '🎉 Profile complete! Welcome aboard.';
+
+  @override
+  String get your_saved_info_has_been_prefilled =>
+      'Your saved info has been pre-filled.';
+
+  @override
+  String get failed_to_load_your_profile_some_fields_may_be_empty =>
+      'Failed to load your profile. Some fields may be empty.';
+
+  @override
+  String get verification_requirements => 'Verification Requirements';
+
+  @override
+  String get almost_there => 'Almost there! 📍';
+
+  @override
+  String get skip_for_now => 'Skip for now';
+
+  @override
+  String get confirm_date => 'Confirm Date';
+
+  @override
+  String get account_setup => 'Account Setup';
+
+  @override
+  String get identity => 'Identity';
+
+  @override
+  String get profile => 'Profile';
+
+  @override
+  String get or_continue_with_email => 'Or continue with email';
+
+  @override
+  String get agree_to_terms_of_service_and_privacy_policy =>
+      'Agree to Terms of Service and Privacy Policy';
+
+  @override
+  String get googlesignincanceled => 'google-sign-in-canceled';
+
+  @override
+  String get accountexistswithdifferentcredential =>
+      'account-exists-with-different-credential';
+
+  @override
+  String get wrongpassword => 'wrong-password';
+
+  @override
+  String get every_day => 'Every day';
+
+  @override
+  String get every_week => 'Every week';
+
+  @override
+  String get every_2_weeks => 'Every 2 weeks';
+
+  @override
+  String get every_month => 'Every month';
+
+  @override
+  String get every_year => 'Every year';
+
+  @override
+  String get daily => 'DAILY';
+
+  @override
+  String get weekly => 'WEEKLY';
+
+  @override
+  String get weeklyinterval2 => 'WEEKLY;INTERVAL=2';
+
+  @override
+  String get monthly => 'Monthly';
+
+  @override
+  String get yearly => 'yearly';
+
+  @override
+  String get martial_arts => 'Martial Arts';
+
+  @override
+  String get football => 'Football';
+
+  @override
+  String get basketball => 'Basketball';
+
+  @override
+  String get volleyball => 'Volleyball';
+
+  @override
+  String get tennis => 'Tennis';
+
+  @override
+  String get running => 'Running';
+
+  @override
+  String get gym => 'Gym';
+
+  @override
+  String get swimming => 'Swimming';
+
+  @override
+  String get cycling => 'Cycling';
+
+  @override
+  String get hiking => 'Hiking';
+
+  @override
+  String get yoga => 'Yoga';
+
+  @override
+  String get other => 'Other';
+
+  @override
+  String get no_ride_info_yet => 'No ride info yet';
+
+  @override
+  String get need_ride => 'need_ride';
+
+  @override
+  String get self_arranged => 'self_arranged';
+
+  @override
+  String get repeat => 'Repeat';
+
+  @override
+  String get no_recurrence_pattern_fits_this_startend_window =>
+      'No recurrence pattern fits this start/end window. ';
+
+  @override
+  String get failed_to_load_attendees => 'Failed to load attendees';
+
+  @override
+  String get no_attendees_yet => 'No attendees yet';
+
+  @override
+  String get failed_to_open_chat_please_try_again =>
+      'Failed to open chat. Please try again.';
+
+  @override
+  String get view_all_attendees => 'View all attendees →';
+
+  @override
+  String get cancel_event => 'Cancel Event';
+
+  @override
+  String get keep_event => 'Keep Event';
+
+  @override
+  String get delete_event => 'Delete Event';
+
+  @override
+  String get are_you_sure_you_want_to_delete =>
+      'Are you sure you want to delete ';
+
+  @override
+  String get recurring_event => '⚠️ Recurring Event';
+
+  @override
+  String
+  get this_event_repeats_deleting_it_will_remove_all_occurrences_past_and_future =>
+      'This event repeats. Deleting it will remove ALL occurrences (past and future).';
+
+  @override
+  String
+  get to_delete_only_specific_occurrences_use_google_calendar_tap_the_event =>
+      'To delete only specific occurrences, use Google Calendar: tap the event → ';
+
+  @override
+  String get cancel => 'cancel';
+
+  @override
+  String get delete => 'Delete';
+
+  @override
+  String get premium_event_chat => 'Premium event chat';
+
+  @override
+  String get subscribe_to_premium_to_join_attendee_group_chats_for_events =>
+      'Subscribe to Premium to join attendee group chats for events.';
+
+  @override
+  String get upgrade_to_premium => 'Upgrade to Premium';
+
+  @override
+  String get reason_optional => 'Reason (optional)';
+
+  @override
+  String get event_group_chat_is_available_to_premium_subscribers_only =>
+      'Event group chat is available to Premium subscribers only.';
+
+  @override
+  String
+  get could_not_open_calendar_please_ensure_google_calendar_is_available =>
+      'Could not open calendar. Please ensure Google Calendar is available.';
+
+  @override
+  String get events_near_me => 'Events near me';
+
+  @override
+  String get everywhere => 'Everywhere';
+
+  @override
+  String get retry_loading_events => 'Retry loading events';
+
+  @override
+  String get all_loaded_events_shown => 'All loaded events shown';
+
+  @override
+  String get load_more_events => 'Load more events';
+
+  @override
+  String get create_event => 'Create event';
+
+  @override
+  String get could_not_load_events => 'Could not load events';
+
+  @override
+  String get no_matching_loaded_events => 'No matching loaded events';
+
+  @override
+  String get search_loaded_events_by_title_place_organizer =>
+      'Search loaded events by title, place, organizer';
+
+  @override
+  String get now => 'now';
+
+  @override
+  String get title_is_required => 'Title is required';
+
+  @override
+  String get title_must_be_at_least_3_characters =>
+      'Title must be at least 3 characters';
+
+  @override
+  String get please_pick_a_location => 'Please pick a location.';
+
+  @override
+  String get start_time_must_be_in_the_future =>
+      'Start time must be in the future.';
+
+  @override
+  String get end_time_must_be_after_start_time =>
+      'End time must be after start time.';
+
+  @override
+  String get select_a_recurrence_pattern => 'Select a recurrence pattern.';
+
+  @override
+  String get repeat_end_date_must_be_on_or_after_the_start_date =>
+      'Repeat end date must be on or after the start date.';
+
+  @override
+  String get please_wait_for_the_current_submission_to_finish =>
+      'Please wait for the current submission to finish.';
+
+  @override
+  String get unlimited => 'Unlimited';
+
+  @override
+  String get please_select_a_location => 'Please select a location.';
+
+  @override
+  String get start_time_is_required => 'Start time is required';
+
+  @override
+  String get event_is_still_loading => 'Event is still loading.';
+
+  @override
+  String get event_created_but_the_cover_image_could_not_be_uploaded =>
+      'Event created, but the cover image could not be uploaded.';
+
+  @override
+  String get ride_in_progress => 'RIDE IN PROGRESS';
+
+  @override
+  String get next_ride => 'Next ride';
+
+  @override
+  String get review_and_respond_before_passengers_choose_another_ride =>
+      'Review and respond before passengers choose another ride.';
+
+  @override
+  String get ready_for_your_next_trip => 'Ready for your next trip?';
+
+  @override
+  String get publish_a_ride_and_start_receiving_passenger_requests =>
+      'Publish a ride and start receiving passenger requests.';
+
+  @override
+  String get last_updated_february_23_2026 => 'Last updated: February 23, 2026';
+
+  @override
+  String get en => 'en';
+
+  @override
+  String get utf8 => 'UTF-8';
+
+  @override
+  String get viewport => 'viewport';
+
+  @override
+  String get widthdevicewidth_initialscale10 =>
+      'width=device-width, initial-scale=1.0';
+
+  @override
+  String get subtitle => 'subtitle';
+
+  @override
+  String get highlight => 'highlight';
+
+  @override
+  String get mailtolegalsportconnectapp => 'mailto:legal@sportconnect.app';
+
+  @override
+  String get mailtoprivacysportconnectapp => 'mailto:privacy@sportconnect.app';
+
+  @override
+  String get delete_conversation => 'Delete conversation';
+
+  @override
+  String get this_will_remove_the_conversation_from_your_chat_list =>
+      'This will remove the conversation from your chat list. ';
+
+  @override
+  String get clear_chat_history => 'Clear chat history';
+
+  @override
+  String get this_will_clear_the_messages_from_this_chat_for_you_only =>
+      'This will clear the messages from this chat for you only. ';
+
+  @override
+  String get clear_history => 'Clear history';
+
+  @override
+  String get message_options => 'Message options';
+
+  @override
+  String get attachments => 'Attachments';
+
+  @override
+  String get conversation_deleted => 'Conversation deleted';
+
+  @override
+  String get draft => 'Draft';
+
+  @override
+  String get preview_mode => 'Preview mode';
+
+  @override
+  String get chat_preview => 'Chat preview';
+
+  @override
+  String get person_add => 'person_add';
+
+  @override
+  String get check_circle => 'check_circle';
+
+  @override
+  String get event_busy => 'event_busy';
+
+  @override
+  String get schedule => 'schedule';
+
+  @override
+  String get directions_car => 'directions_car';
+
+  @override
+  String get flag => 'flag';
+
+  @override
+  String get block => 'block';
+
+  @override
+  String get chat_bubble => 'chat_bubble';
+
+  @override
+  String get person => 'person';
+
+  @override
+  String get arrow_upward => 'arrow_upward';
+
+  @override
+  String get emoji_events => 'emoji_events';
+
+  @override
+  String get local_fire_department => 'local_fire_department';
+
+  @override
+  String get star => 'star';
+
+  @override
+  String get warning => 'warning';
+
+  @override
+  String get campaign => 'campaign';
+
+  @override
+  String get gold => 'Gold';
+
+  @override
+  String get new_ride_request => 'New Ride Request';
+
+  @override
+  String get booking_accepted => 'Booking Accepted!';
+
+  @override
+  String get booking_declined => 'Booking Declined';
+
+  @override
+  String get ride_cancelled => 'Ride Cancelled';
+
+  @override
+  String get new_message => 'New Message';
+
+  @override
+  String get achievement_unlocked => 'Achievement Unlocked! 🏆';
+
+  @override
+  String get level_up => 'Level Up! 🎉';
+
+  @override
+  String get driver_has_arrived => 'Driver has arrived! 🚗';
+
+  @override
+  String get event_cancelled => 'Event Cancelled';
+
+  @override
+  String get mark_read => 'mark_read';
+
+  @override
+  String get find_yournride => 'Find Your\\nRide';
+
+  @override
+  String get match_with_runners => 'Match with Runners';
+
+  @override
+  String get offer_anseat => 'Offer a\\nSeat';
+
+  @override
+  String get drive_split_costs => 'Drive & Split Costs';
+
+  @override
+  String get plan_yournroute => 'Plan Your\\nRoute';
+
+  @override
+  String get smart_route_sync => 'Smart Route Sync';
+
+  @override
+  String get connectn_go => 'Connect\\n& Go';
+
+  @override
+  String get community_you_trust => 'Community You Trust';
+
+  @override
+  String get onboarding_complete => 'onboarding_complete';
+
+  @override
+  String get last_onboarding_version => 'last_onboarding_version';
+
+  @override
+  String get ride_to_paris_10k => 'Ride to Paris 10K';
+
+  @override
+  String get offer_your_ride => 'Offer your ride';
+
+  @override
+  String get paris_10k_2_seats_available => 'Paris 10K • 2 seats available';
+
+  @override
+  String get estimated_earning => 'ESTIMATED EARNING';
+
+  @override
+  String get fill_2_seats => 'Fill 2 seats';
+
+  @override
+  String get set_available_seats => 'Set available seats';
+
+  @override
+  String get flexible => 'Flexible';
+
+  @override
+  String get driver_tools => 'Driver tools';
+
+  @override
+  String get pickup_route => 'Pickup route';
+
+  @override
+  String get coordinate_pickup_before_the_event =>
+      'Coordinate pickup before the event';
+
+  @override
+  String get trip_plan => 'Trip plan';
+
+  @override
+  String get sun_15_jun => 'Sun, 15 Jun';
+
+  @override
+  String get paris_10k_2_passengers => 'Paris 10K • 2 passengers';
+
+  @override
+  String get inapp_chat => 'In-app chat';
+
+  @override
+  String get confirm_bags_pickup_spot_and_arrival_time =>
+      'Confirm bags, pickup spot, and arrival time.';
+
+  @override
+  String get runner_carpool_network => 'Runner carpool network';
+
+  @override
+  String get travel_with_people_going_to_the_same_event =>
+      'Travel with people going to the same event.';
+
+  @override
+  String get sun_15_jun_2025 => 'Sun, 15 Jun 2025';
+
+  @override
+  String get pickup_near_paris_france => 'Pickup near Paris, France';
+
+  @override
+  String get passenger_contribution_from_8 => 'Passenger contribution from €8';
+
+  @override
+  String get find_a_ride_to_your_race => 'Find a ride to your race';
+
+  @override
+  String get offer_seats_and_earn => 'Offer seats and earn';
+
+  @override
+  String get plan_the_route_together => 'Plan the route together';
+
+  @override
+  String get connect_safely_and_go => 'Connect safely and go';
+
+  @override
+  String get paris => 'PARIS';
+
+  @override
+  String get driver_starts => 'Driver starts';
+
+  @override
+  String get route_opens_for_passengers => 'Route opens for passengers';
+
+  @override
+  String get pickup_confirmed => 'Pickup confirmed';
+
+  @override
+  String get shared_meeting_point => 'Shared meeting point';
+
+  @override
+  String get arrive_at_event => 'Arrive at event';
+
+  @override
+  String get paris_10k_race_village => 'Paris 10K race village';
+
+  @override
+  String get trusted_runners => 'Trusted runners';
+
+  @override
+  String get chat => 'Chat';
+
+  @override
+  String get before_pickup => 'Before pickup';
+
+  @override
+  String get live_route => 'Live route';
+
+  @override
+  String get trip_visibility => 'Trip visibility';
+
+  @override
+  String get safer_rides => 'Safer rides';
+
+  @override
+  String get event_travel => 'Event travel';
+
+  @override
+  String get from_8 => 'From €8';
+
+  @override
+  String get rides_available => 'RIDES AVAILABLE';
+
+  @override
+  String get fuel_offset => 'Fuel offset';
+
+  @override
+  String get earn => 'Earn';
+
+  @override
+  String get set_time => 'Set time';
+
+  @override
+  String get pickup_0640 => 'Pickup 06:40';
+
+  @override
+  String get previous_step => 'Previous step';
+
+  @override
+  String get month => 'month';
+
+  @override
+  String get cancel_anytime => 'Cancel anytime';
+
+  @override
+  String get save_about_16_compared_to_monthly =>
+      'Save about 16% compared to monthly';
+
+  @override
+  String get actionrequiredrequestedcapabilities =>
+      'actionRequiredRequestedCapabilities';
+
+  @override
+  String get listed => 'listed';
+
+  @override
+  String get platformpaused => 'platformPaused';
+
+  @override
+  String get rejectedfraud => 'rejectedFraud';
+
+  @override
+  String get rejectedincompleteverification => 'rejectedIncompleteVerification';
+
+  @override
+  String get rejectedlisted => 'rejectedListed';
+
+  @override
+  String get rejectedother => 'rejectedOther';
+
+  @override
+  String get rejectedplatformfraud => 'rejectedPlatformFraud';
+
+  @override
+  String get rejectedplatformother => 'rejectedPlatformOther';
+
+  @override
+  String get rejectedplatformtermsofservice => 'rejectedPlatformTermsOfService';
+
+  @override
+  String get rejectedtermsofservice => 'rejectedTermsOfService';
+
+  @override
+  String get requirementspastdue => 'requirementsPastDue';
+
+  @override
+  String get requirementspendingverification =>
+      'requirementsPendingVerification';
+
+  @override
+  String get underreview => 'underReview';
+
+  @override
+  String get canceled => 'canceled';
+
+  @override
+  String get cancelled => 'Cancelled';
+
+  @override
+  String get bankaccount => 'bankAccount';
+
+  @override
+  String get bank_account => 'bank_account';
+
+  @override
+  String get google_play_billing_is_not_available_on_this_app_instance =>
+      'Google Play Billing is not available on this app instance. ';
+
+  @override
+  String get google_play_billing_is_unavailable_on_this_deviceaccount =>
+      'Google Play Billing is unavailable on this device/account.';
+
+  @override
+  String
+  get this_subscription_product_is_not_available_for_your_accountregion_yet =>
+      'This subscription product is not available for your account/region yet.';
+
+  @override
+  String get purchase_cancelled_by_user => 'Purchase cancelled by user.';
+
+  @override
+  String get channelerror => 'channel-error';
+
+  @override
+  String
+  get withdrawable_now_is_your_instantavailable_balance_you_can_transfer_this_to_your_bank_immediatelynn =>
+      'Withdrawable Now is your instant-available balance — you can transfer this to your bank immediately.\\n\\n';
+
+  @override
+  String get got_it => 'Got it';
+
+  @override
+  String
+  get withdrawable_now_is_your_instantavailable_balance_processing_funds_are_in_stripe =>
+      'Withdrawable Now is your instant-available balance. Processing funds are in Stripe';
+
+  @override
+  String
+  get your_stripe_account_id_is_missing_please_reconnect_your_payout_account =>
+      'Your Stripe account ID is missing. Please reconnect your payout account.';
+
+  @override
+  String get writeln_writelnl10nexportearningssummary_writeln =>
+      ')\r\n      ..writeln()\r\n      ..writeln(l10n.exportEarningsSummary)\r\n      ..writeln(\r\n        ';
+
+  @override
+  String get get_paid_fornevery_ride => 'Get paid for\\nevery ride';
+
+  @override
+  String get set_up_eur_payouts_in_minutes_andnreceive_earnings_automatically =>
+      'Set up EUR payouts in minutes and\\nreceive earnings automatically.';
+
+  @override
+  String get eur_balance => 'EUR balance';
+
+  @override
+  String get ready_for_eur_payout => 'Ready for EUR payout';
+
+  @override
+  String get why_drivers_love_payouts_onnsportconnect =>
+      'Why drivers love payouts on\\nSportConnect';
+
+  @override
+  String get before_you_continue => 'Before you continue';
+
+  @override
+  String get heres_what_youll_need_to_get_set_up =>
+      'Here’s what you’ll need to get set up.';
+
+  @override
+  String get maybe_later => 'Maybe later';
+
+  @override
+  String get payouts_ready => 'Payouts ready!';
+
+  @override
+  String get your_account_is_connected_and_yourenall_set_to_receive_earnings =>
+      'Your account is connected and you’re\\nall set to receive earnings.';
+
+  @override
+  String get powered_by => 'Powered by';
+
+  @override
+  String get stripe => 'stripe';
+
+  @override
+  String get s => 'S';
+
+  @override
+  String get takes_about_3_minutes => 'Takes about 3 minutes';
+
+  @override
+  String get your_security_is_our_priority => 'Your security is our priority';
+
+  @override
+  String
+  get sportconnect_partners_with_stripe_to_securely_collect_and_protect_your_information_your_data_is_encrypted_and_never_shared_with_us =>
+      'SportConnect partners with Stripe to securely collect and protect your information. Your data is encrypted and never shared with us.';
+
+  @override
+  String get payout_account => 'Payout account';
+
+  @override
+  String get bnp_paribas_4521 => 'BNP Paribas •••• 4521';
+
+  @override
+  String get next_payout => 'Next payout';
+
+  @override
+  String get wed_28_may => 'Wed, 28 May';
+
+  @override
+  String get payout_schedule => 'Payout schedule';
+
+  @override
+  String get weekly_to_your_french_iban => 'Weekly to your French IBAN';
+
+  @override
+  String get earnings_snapshot => 'Earnings snapshot';
+
+  @override
+  String get this_week => 'This week⌄';
+
+  @override
+  String get youre_doing_great => 'You’re doing great!';
+
+  @override
+  String get keep_driving_more_rides_more_earnings =>
+      'Keep driving. More rides, more earnings.';
+
+  @override
+  String get connect_stripe_account => 'Connect Stripe account';
+
+  @override
+  String get continue_to_stripe => 'Continue to Stripe';
+
+  @override
+  String get back_to_dashboard => 'Back to dashboard';
+
+  @override
+  String get need_help_visit_our => 'Need help? Visit our ';
+
+  @override
+  String get support_center => 'Support Center';
+
+  @override
+  String get secure_by_stripe => 'Secure by Stripe';
+
+  @override
+  String get pci_dss_compliant => 'PCI DSS Compliant';
+
+  @override
+  String get fast_payouts => 'Fast payouts';
+
+  @override
+  String get secure => 'Secure';
+
+  @override
+  String get eugrade_safety => 'EU-grade safety';
+
+  @override
+  String get low_fees => 'Low fees';
+
+  @override
+  String get transparent_pricing => 'Transparent pricing';
+
+  @override
+  String get french_iban => 'French IBAN';
+
+  @override
+  String get to_receive_eur_payouts => 'To receive EUR payouts';
+
+  @override
+  String get identity_verification => 'Identity verification';
+
+  @override
+  String get carte_didentit_or_passport => 'Carte d’identité or passport';
+
+  @override
+  String get french_tax_details => 'French tax details';
+
+  @override
+  String get for_french_tax_records => 'For French tax records';
+
+  @override
+  String get payment_method_saved => 'Payment method saved';
+
+  @override
+  String get total_spent => 'Total Spent';
+
+  @override
+  String
+  get instant_payouts_can_be_cancelled_while_still_pending_once_in_transit_your_bank_is_already_processing_the_transfer =>
+      'Instant payouts can be cancelled while still pending. Once in transit, your bank is already processing the transfer.';
+
+  @override
+  String get payout_progress => 'Payout Progress';
+
+  @override
+  String get why_did_this_fail => 'Why did this fail?';
+
+  @override
+  String get payout_requested => 'Payout Requested';
+
+  @override
+  String get processing => 'Processing';
+
+  @override
+  String get in_transit_to_bank => 'In Transit to Bank';
+
+  @override
+  String get funds_arrived => 'Funds Arrived';
+
+  @override
+  String get method => 'Method';
+
+  @override
+  String get this_payout_cannot_be_cancelled_no_stripe_reference_found =>
+      'This payout cannot be cancelled — no Stripe reference found.';
+
+  @override
+  String get choose_your_plan => 'Choose your plan';
+
+  @override
+  String get upgrade_your_sportconnect_account_in_seconds =>
+      'Upgrade your SportConnect account in seconds.';
+
+  @override
+  String get loading_subscription_plans => 'Loading subscription plans...';
+
+  @override
+  String get retry_loading_plans => 'Retry loading plans';
+
+  @override
+  String get your_payment_details_are_encrypted_and_processed_securely =>
+      'Your payment details are encrypted and processed securely.';
+
+  @override
+  String get subscribe_now => 'Subscribe Now';
+
+  @override
+  String get premium_checkout => 'Premium Checkout';
+
+  @override
+  String get premium_activated_successfully =>
+      'Premium activated successfully.';
+
+  @override
+  String get upgrade_to_pro => 'Upgrade to Pro';
+
+  @override
+  String get premium_carpooling_madenfor_runners_like_you =>
+      'Premium carpooling made\\nfor runners like you';
+
+  @override
+  String get everything_you_get => 'Everything you get';
+
+  @override
+  String get trusted_by_12000_runners => 'Trusted by 12,000+ runners';
+
+  @override
+  String get start_free_trial => 'Start Free Trial';
+
+  @override
+  String get smart_ride_matching => 'Smart Ride Matching';
+
+  @override
+  String get unlimited_saved_routes => 'Unlimited Saved Routes';
+
+  @override
+  String get verified_community => 'Verified Community';
+
+  @override
+  String get crew_coordination => 'Crew Coordination';
+
+  @override
+  String get race_day_priority => 'Race Day Priority';
+
+  @override
+  String get priority_support => 'Priority Support';
+
+  @override
+  String get smart_match => 'Smart Match';
+
+  @override
+  String get unlimited_routes => 'Unlimited Routes';
+
+  @override
+  String get verified_riders => 'Verified Riders';
+
+  @override
+  String get crew_rides => 'Crew Rides';
+
+  @override
+  String get race_priority => 'Race Priority';
+
+  @override
+  String get annual => 'Annual';
+
+  @override
+  String get moneybacknguarantee => 'Money-back\\nguarantee';
+
+  @override
+  String get cancelnanytime => 'Cancel\\nanytime';
+
+  @override
+  String get securenpayment => 'Secure\\npayment';
+
+  @override
+  String get completed => 'Completed';
+
+  @override
+  String get thisweek => 'thisWeek';
+
+  @override
+  String get unable_to_complete_checkout_please_try_again =>
+      'Unable to complete checkout. Please try again.';
+
+  @override
+  String get version_119 => 'Version 1.1.9';
+
+  @override
+  String get built_with_flutter => 'Built with Flutter';
+
+  @override
+  String get sportconnect_is_a_carpooling_and_rideshare_platform_designed =>
+      'SportConnect is a carpooling and rideshare platform designed ';
+
+  @override
+  String get join_the_community => 'Join the Community';
+
+  @override
+  String get open_source_licenses => 'Open Source Licenses';
+
+  @override
+  String get total_xp => 'Total XP';
+
+  @override
+  String get streak => 'Streak';
+
+  @override
+  String get diamond => 'Diamond';
+
+  @override
+  String get platinum => 'Platinum';
+
+  @override
+  String get bronze => 'Bronze';
+
+  @override
+  String get background_check_passed => 'Background Check Passed';
+
+  @override
+  String
+  get your_background_check_is_complete_and_you_are_verified_to_drive_with_sportconnect =>
+      'Your background check is complete and you are verified to drive with SportConnect.';
+
+  @override
+  String get attach_image => 'Attach image';
+
+  @override
+  String get action_required => 'Action Required';
+
+  @override
+  String get driver_license => 'Driver License';
+
+  @override
+  String get vehicle_registration => 'Vehicle Registration';
+
+  @override
+  String get vehicle_insurance => 'Vehicle Insurance';
+
+  @override
+  String get upload_feature_coming_soon => 'Upload feature coming soon';
+
+  @override
+  String get phone_number => 'Phone Number';
+
+  @override
+  String get try_different_keywords_or_contact_support =>
+      'Try different keywords or contact support';
+
+  @override
+  String get getting_started => 'Getting Started';
+
+  @override
+  String get rides_booking => 'Rides & Booking';
+
+  @override
+  String get safety_trust => 'Safety & Trust';
+
+  @override
+  String get account_profile => 'Account & Profile';
+
+  @override
+  String get my_vehicles => 'My Vehicles';
+
+  @override
+  String get manage_your_vehicles => 'Manage your vehicles';
+
+  @override
+  String get my_events => 'My Events';
+
+  @override
+  String get created_joined_events => 'Created & joined events';
+
+  @override
+  String get achievements => 'Achievements';
+
+  @override
+  String get view_your_badges_rewards => 'View your badges & rewards';
+
+  @override
+  String get view_your_notifications => 'View your notifications';
+
+  @override
+  String get settings => 'Settings';
+
+  @override
+  String get app_preferences_privacy => 'App preferences & privacy';
+
+  @override
+  String get report => 'report';
+
+  @override
+  String get attach_evidence => 'Attach evidence';
+
+  @override
+  String get manage_booking_pickup_radius_payout_and_map_visibility =>
+      'Manage booking, pickup radius, payout, and map visibility';
+
+  @override
+  String get choose_map_appearance => 'Choose map appearance';
+
+  @override
+  String
+  get by_using_sportconnect_you_consent_to_the_data_processing_described_above_and_in_our_privacy_policy =>
+      'By using SportConnect, you consent to the data processing described above and in our Privacy Policy.';
+
+  @override
+  String get sportconnect_premium => 'SportConnect Premium';
+
+  @override
+  String get unlock_smart_matching_priority_rides_more =>
+      'Unlock smart matching, priority rides & more';
+
+  @override
+  String get notification_permission => 'Notification Permission';
+
+  @override
+  String get reallow_push_notifications_for_this_device =>
+      'Re-allow push notifications for this device';
+
+  @override
+  String get analytics_crash_reports => 'Analytics & Crash Reports';
+
+  @override
+  String get allow_anonymous_usage_data_and_crash_reports =>
+      'Allow anonymous usage data and crash reports';
+
+  @override
+  String get data_processing_notice => 'Data Processing Notice';
+
+  @override
+  String get how_we_collect_use_and_protect_your_data =>
+      'How we collect, use, and protect your data';
+
+  @override
+  String get withdraw_consent => 'Withdraw Consent';
+
+  @override
+  String get manage_or_withdraw_your_data_consent =>
+      'Manage or withdraw your data consent';
+
+  @override
+  String get download_my_data => 'Download My Data';
+
+  @override
+  String get export_a_copy_of_your_personal_data =>
+      'Export a copy of your personal data';
+
+  @override
+  String get view_your_past_rides_and_charges =>
+      'View your past rides and charges';
+
+  @override
+  String get update_your_account_password => 'Update your account password';
+
+  @override
+  String get get_help_from_our_team => 'Get help from our team';
+
+  @override
+  String get manage_subscription => 'Manage Subscription';
+
+  @override
+  String get cancel_or_change_your_plan_in_the_store =>
+      'Cancel or change your plan in the store';
+
+  @override
+  String get restore_purchases => 'Restore Purchases';
+
+  @override
+  String get reapply_your_active_subscription =>
+      'Re-apply your active subscription';
+
+  @override
+  String get booking => 'Booking';
+
+  @override
+  String get radius => 'Radius';
+
+  @override
+  String get could_not_open_subscription_management =>
+      'Could not open subscription management.';
+
+  @override
+  String get available_forms => 'Available Forms';
+
+  @override
+  String get downloading_document => 'Downloading document...';
+
+  @override
+  String get protect_your_account => 'Protect your account';
+
+  @override
+  String
+  get twofactor_authentication_adds_an_extra_layer_of_security_to_your_account_to_log_in_you =>
+      'Two-factor authentication adds an extra layer of security to your account. To log in, you';
+
+  @override
+  String get sms_verification => 'SMS Verification';
+
+  @override
+  String get receive_codes_via_text_message => 'Receive codes via text message';
+
+  @override
+  String get medium => 'medium';
+
+  @override
+  String get please_describe_the_issue => 'Please describe the issue';
+
+  @override
+  String get inapp => 'In-App';
+
+  @override
+  String get driver_review => 'Driver Review';
+
+  @override
+  String get passenger_review => 'Passenger Review';
+
+  @override
+  String get just_now => 'Just now';
+
+  @override
+  String get as_driver => 'As Driver';
+
+  @override
+  String get as_rider => 'As Rider';
+
+  @override
+  String get report_review => 'Report Review';
+
+  @override
+  String get na => 'N/A';
+
+  @override
+  String get departure_time => 'departure_time';
+
+  @override
+  String get scheduled => 'scheduled';
+
+  @override
+  String get refunded => 'refunded';
+
+  @override
+  String get partiallyrefunded => 'partiallyRefunded';
+
+  @override
+  String get instant => 'instant';
+
+  @override
+  String get marked_as_noshow => 'Marked as No-Show';
+
+  @override
+  String get ride_delayed => 'Ride Delayed';
+
+  @override
+  String get view => 'View';
+
+  @override
+  String get no_pending_requests => 'No pending requests';
+
+  @override
+  String get done => 'Done';
+
+  @override
+  String get destination_is_locked_because_an_event_is_selected =>
+      'Destination is locked because an event is selected.';
+
+  @override
+  String get how_was_your_passenger => 'How was your passenger?';
+
+  @override
+  String get your_honest_feedback_helps_build_a_safer_more_reliable_community =>
+      'Your honest feedback helps build a safer, more reliable community.';
+
+  @override
+  String get no_accepted_passengers_to_rate_for_this_ride =>
+      'No accepted passengers to rate for this ride.';
+
+  @override
+  String get select_passenger_to_rate => 'Select passenger to rate';
+
+  @override
+  String get comment_optional => 'Comment (optional)';
+
+  @override
+  String get passenger => 'Passenger';
+
+  @override
+  String get message_passenger => 'Message passenger';
+
+  @override
+  String get in_progress => 'In Progress';
+
+  @override
+  String get loading_route => 'Loading route...';
+
+  @override
+  String get waiting_for_driver => 'Waiting for driver';
+
+  @override
+  String get location_access_denied_tap_to_open_settings_and_reenable =>
+      'Location access denied. Tap to open Settings and re-enable.';
+
+  @override
+  String get driver_location_unavailable_for_5_min =>
+      'Driver location unavailable for 5+ min';
+
+  @override
+  String get poor_connection_updates_may_be_delayed =>
+      'Poor connection — updates may be delayed';
+
+  @override
+  String get your_pickup_code => 'Your Pickup Code';
+
+  @override
+  String get show_this_to_your_driver => 'Show this to your driver';
+
+  @override
+  String get show_my_pickup_code => 'Show my pickup code';
+
+  @override
+  String get your_pickup_confirmation_code => 'Your pickup confirmation code';
+
+  @override
+  String get trip_is_taking_longer_than_expected_is_everything_okay =>
+      'Trip is taking longer than expected — is everything okay?';
+
+  @override
+  String get complete_payment_to_confirm_your_seat =>
+      'Complete payment to confirm your seat';
+
+  @override
+  String get paid => 'PAID';
+
+  @override
+  String get passed => 'Passed';
+
+  @override
+  String get night_ride_stay_alert_and_share_your_trip_with_someone_you_trust =>
+      'Night ride — stay alert and share your trip with someone you trust';
+
+  @override
+  String get route_deviation_detected => 'Route Deviation Detected';
+
+  @override
+  String get trip_progress => 'Trip Progress';
+
+  @override
+  String get driver_at_pickup => 'Driver at Pickup';
+
+  @override
+  String get price_summary => 'Price summary';
+
+  @override
+  String get cancellation_policy => 'Cancellation policy';
+
+  @override
+  String get you_can_cancel_before_the_driver_accepts_your_request =>
+      'You can cancel before the driver accepts your request.';
+
+  @override
+  String get totaln => 'Total\\n';
+
+  @override
+  String get complete_booking => 'Complete booking';
+
+  @override
+  String get review_your_ride_before_sending_the_request =>
+      'Review your ride before sending the request';
+
+  @override
+  String get choose_how_many_seats_you_need => 'Choose how many seats you need';
+
+  @override
+  String get booking_request => 'Booking request';
+
+  @override
+  String get the_driver_will_approve_your_request =>
+      'The driver will approve your request';
+
+  @override
+  String get protected_booking => 'Protected booking';
+
+  @override
+  String get your_request_is_safely_recorded_in_sportconnect =>
+      'Your request is safely recorded in SportConnect';
+
+  @override
+  String get review => 'Review';
+
+  @override
+  String get pickup_point => 'Pickup point';
+
+  @override
+  String get dropoff_point => 'Drop-off point';
+
+  @override
+  String get seat_price => 'Seat price';
+
+  @override
+  String get seats_selected => 'Seats selected';
+
+  @override
+  String get service_fee => 'Service fee';
+
+  @override
+  String get booking_confirmed => 'Booking Confirmed';
+
+  @override
+  String get price => 'Price ↓';
+
+  @override
+  String get are_you_sure_you_want_to_cancel_this_ride =>
+      'Are you sure you want to cancel this ride?';
+
+  @override
+  String get frequent_cancellations_may_affect_your_account_rating =>
+      'Frequent cancellations may affect your account rating.';
+
+  @override
+  String get please_let_us_know_why_you => 'Please let us know why you';
+
+  @override
+  String get select_a_reason => 'Select a reason';
+
+  @override
+  String get additional_comments_optional => 'Additional comments (optional)';
+
+  @override
+  String get unable_to_load_ride_completion_details =>
+      'Unable to load ride completion details.';
+
+  @override
+  String get trip_completed => 'Trip Completed!';
+
+  @override
+  String get thanks_for_riding_with_sportconnect =>
+      'Thanks for riding with SportConnect';
+
+  @override
+  String get trip_summary => 'Trip Summary';
+
+  @override
+  String get fare_breakdown => 'Fare Breakdown';
+
+  @override
+  String get submitting_ride_please_wait => 'Submitting ride, please wait...';
+
+  @override
+  String get please_set_origin_and_destination_in_step_1 =>
+      'Please set origin and destination in Step 1';
+
+  @override
+  String get origin_and_destination_cannot_be_the_same_location =>
+      'Origin and destination cannot be the same location';
+
+  @override
+  String get please_set_a_departure_date_and_time_in_step_1 =>
+      'Please set a departure date and time in Step 1';
+
+  @override
+  String get departure_time_must_be_in_the_future_go_back_to_step_1 =>
+      'Departure time must be in the future — go back to Step 1';
+
+  @override
+  String get departure_must_be_at_least_15_minutes_from_now =>
+      'Departure must be at least 15 minutes from now';
+
+  @override
+  String get please_select_a_vehicle_in_step_2 =>
+      'Please select a vehicle in Step 2';
+
+  @override
+  String get number_of_seats_must_be_between_1_and_8_go_back_to_step_2 =>
+      'Number of seats must be between 1 and 8 — go back to Step 2';
+
+  @override
+  String get please_select_at_least_one_recurring_day =>
+      'Please select at least one recurring day';
+
+  @override
+  String get please_set_a_recurring_end_date =>
+      'Please set a recurring end date';
+
+  @override
+  String get please_enter_both_locations => 'Please enter both locations';
+
+  @override
+  String get pickup_and_destination_cannot_be_the_same_location =>
+      'Pickup and destination cannot be the same location';
+
+  @override
+  String get cannot_search_for_past_dates => 'Cannot search for past dates';
+
+  @override
+  String get seats_must_be_between_1_and_4 => 'Seats must be between 1 and 4';
+
+  @override
+  String get cancelled_by_user => 'Cancelled by user';
+
+  @override
+  String get gasoline => 'Gasoline';
+
+  @override
+  String get diesel => 'Diesel';
+
+  @override
+  String get hybrid => 'Hybrid';
+
+  @override
+  String get plugin_hybrid => 'Plug-in Hybrid';
+
+  @override
+  String get hydrogen => 'Hydrogen';
+
+  @override
+  String get car => 'Car';
+
+  @override
+  String get motorcycle => 'Motorcycle';
+
+  @override
+  String get van => 'Van';
+
+  @override
+  String get truck => 'Truck';
+
+  @override
+  String get bicycle => 'Bicycle';
+
+  @override
+  String get your_fleet => 'Your Fleet';
+
+  @override
+  String get register_a_new_car_for_carpool_rides =>
+      'Register a new car for carpool rides';
+
+  @override
+  String get in_use => 'In Use';
+
+  @override
+  String get riders_see_this_photo_before_booking =>
+      'Riders see this photo before booking';
+
+  @override
+  String get inlineEventChooseEvent => 'Choose an event';
+
+  @override
+  String get inlineEventLinkOptional => 'Link to a sport event (optional)';
+
+  @override
+  String get inlineEventClearSelected => 'Clear selected event';
+
+  @override
+  String get inlineEventSearchHint =>
+      'Search loaded events by title, place, organizer';
+
+  @override
+  String get inlineEventClearSearch => 'Clear search';
+
+  @override
+  String get inlineEventAll => 'All';
+
+  @override
+  String get inlineEventCouldNotLoad => 'Could not load events';
+
+  @override
+  String get inlineEventNoMatches => 'No matching loaded events';
+
+  @override
+  String get inlineEventLoadMoreOrSearch =>
+      'Load more events or change the search.';
+
+  @override
+  String get inlineEventTryAnotherFilter => 'Try another search or filter.';
+
+  @override
+  String get inlineEventLoadMore => 'Load more';
+
+  @override
+  String get inlineEventRetryLoading => 'Retry loading events';
+
+  @override
+  String get inlineEventAllLoadedShown => 'All loaded events shown';
+
+  @override
+  String get inlineEventLoadMoreEvents => 'Load more events';
+
+  @override
+  String inlineEventShownLoaded(int shown, int loaded) {
+    return '$shown shown - $loaded loaded';
+  }
+
+  @override
+  String get inlineEventNow => 'Now';
+
+  @override
+  String get chatDeleteConversationTitle => 'Delete conversation?';
+
+  @override
+  String get chatClearHistoryTitle => 'Clear chat history?';
+
+  @override
+  String get eventCancelTitle => 'Cancel Event';
+
+  @override
+  String get eventCancelReasonOptional => 'Reason (optional)';
+
+  @override
+  String get eventKeepEvent => 'Keep Event';
+
+  @override
+  String get eventDeleteTitle => 'Delete Event';
+
+  @override
+  String eventDeleteConfirm(String eventTitle) {
+    return 'Are you sure you want to delete \"$eventTitle\"?';
+  }
+
+  @override
+  String get eventAttendees => 'Attendees';
+
+  @override
+  String eventAttendeesCount(int count) {
+    return 'Attendees ($count)';
+  }
+
+  @override
+  String get eventNoAttendeesYet => 'No attendees yet';
+
+  @override
+  String get eventAttendeesFailedOpenChat =>
+      'Failed to open chat. Please try again.';
+
+  @override
+  String get eventAttendeesFailedLoad => 'Failed to load attendees';
+
+  @override
+  String get myLocation => 'My Location';
+
+  @override
+  String get changeSignInAccount => 'Change sign-in account';
+
+  @override
+  String get changeGoogleAccount => 'Change Google account';
+
+  @override
+  String get changeAppleAccount => 'Change Apple account';
+
+  @override
+  String get discardChangesTitle => 'Discard changes?';
+
+  @override
+  String get keepEditing => 'Keep editing';
+
+  @override
+  String get clearAddress => 'Clear address';
+
+  @override
+  String get clearPhoneNumber => 'Clear phone number';
+
+  @override
+  String get openInMaps => 'Open in maps';
 }

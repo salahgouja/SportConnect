@@ -11,6 +11,7 @@ import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/events/view_models/event_view_model.dart';
 import 'package:sport_connect/features/messaging/view_models/chat_view_model.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 class EventAttendeesScreen extends ConsumerWidget {
   const EventAttendeesScreen({required this.eventId, super.key});
@@ -19,6 +20,7 @@ class EventAttendeesScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final eventAsync = ref.watch(eventByIdProvider(eventId));
 
     return AdaptiveScaffold(
@@ -28,18 +30,18 @@ class EventAttendeesScreen extends ConsumerWidget {
           onPressed: () => context.pop(),
         ),
         title: eventAsync.value != null
-            ? 'Attendees (${eventAsync.value!.participantIds.length})'
-            : 'Attendees',
+            ? '${l10n.eventParticipants} (${eventAsync.value!.participantIds.length})'
+            : l10n.eventParticipants,
       ),
       body: eventAsync.when(
         loading: () => const SkeletonLoader(
           type: SkeletonType.profileCard,
           itemCount: 5,
         ),
-        error: (e, _) => const Center(
+        error: (e, _) => Center(
           child: Text(
-            'Failed to load attendees',
-            style: TextStyle(color: AppColors.error),
+            l10n.errorLoadingData,
+            style: const TextStyle(color: AppColors.error),
           ),
         ),
         data: (event) {
@@ -55,7 +57,7 @@ class EventAttendeesScreen extends ConsumerWidget {
                   ),
                   SizedBox(height: 12.h),
                   Text(
-                    'No attendees yet',
+                    l10n.noResultsFound,
                     style: TextStyle(
                       fontSize: 15.sp,
                       color: AppColors.textSecondary,
@@ -192,7 +194,7 @@ class _AttendeeCard extends ConsumerWidget {
                           borderRadius: BorderRadius.circular(6.r),
                         ),
                         child: Text(
-                          'You',
+                          AppLocalizations.of(context).you,
                           style: TextStyle(
                             fontSize: 10.sp,
                             fontWeight: FontWeight.w600,
@@ -253,7 +255,7 @@ class _AttendeeCard extends ConsumerWidget {
                 size: 20.sp,
                 color: AppColors.primary,
               ),
-              tooltip: 'Message',
+              tooltip: AppLocalizations.of(context).messageButton,
               style: IconButton.styleFrom(
                 backgroundColor: AppColors.primary.withValues(alpha: 0.08),
                 padding: EdgeInsets.all(8.w),
@@ -292,7 +294,7 @@ class _AttendeeCard extends ConsumerWidget {
       if (context.mounted) {
         AdaptiveSnackBar.show(
           context,
-          message: 'Failed to open chat. Please try again.',
+          message: AppLocalizations.of(context).failedOpenChatError,
           type: AdaptiveSnackBarType.error,
         );
       }

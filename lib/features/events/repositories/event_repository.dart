@@ -113,24 +113,12 @@ class EventRepository {
   }
 
   Map<String, dynamic> _eventChatMergePayload({
-    required EventModel event,
     required List<String> participantIds,
-    required DateTime now,
   }) {
     return {
-      'type': ChatType.eventGroup.name,
-      'eventId': event.id,
-      'premiumOnly': true,
-      'groupName': event.title,
-      if ((event.imageUrl ?? '').isNotEmpty) 'groupPhotoUrl': event.imageUrl,
-
       if (participantIds.isNotEmpty)
         'participantIds': FieldValue.arrayUnion(participantIds),
 
-      // Remove old boolean visibility field from existing docs.
-      'deletedFor': FieldValue.delete(),
-
-      'isActive': true,
       'updatedAt': FieldValue.serverTimestamp(),
     };
   }
@@ -250,9 +238,7 @@ class EventRepository {
         tx.set(
           chatRef,
           _eventChatMergePayload(
-            event: event,
             participantIds: chatParticipants,
-            now: now,
           ),
           SetOptions(merge: true),
         );
@@ -482,9 +468,7 @@ class EventRepository {
         tx.set(
           chatRef,
           _eventChatMergePayload(
-            event: latestEvent,
             participantIds: participantIds,
-            now: now,
           ),
           SetOptions(merge: true),
         );

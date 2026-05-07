@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
+import 'package:sport_connect/core/utils/user_facing_error.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 
 part 'email_verification_view_model.g.dart';
@@ -123,7 +124,10 @@ class EmailVerificationViewModel extends _$EmailVerificationViewModel {
       _startCooldown();
     } on Exception catch (e, st) {
       if (!ref.mounted) return;
-      state = state.copyWith(isSending: false, errorMessage: e.toString());
+      state = state.copyWith(
+        isSending: false,
+        errorMessage: userFacingError(e),
+      );
     }
   }
 

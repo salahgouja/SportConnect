@@ -1,4 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:sport_connect/core/utils/user_facing_error.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
@@ -167,7 +168,10 @@ class OnboardingViewModel extends _$OnboardingViewModel {
       );
     } on Exception catch (e, st) {
       if (!ref.mounted) return;
-      state = state.copyWith(isLoading: false, errorMessage: e.toString());
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: userFacingError(e),
+      );
     }
   }
 
@@ -192,7 +196,10 @@ class OnboardingViewModel extends _$OnboardingViewModel {
       );
     } on Exception catch (e, st) {
       if (!ref.mounted) return;
-      state = state.copyWith(isLoading: false, errorMessage: e.toString());
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: userFacingError(e),
+      );
     }
   }
 
@@ -214,27 +221,66 @@ class OnboardingViewModel extends _$OnboardingViewModel {
       );
     } on Exception catch (e, st) {
       if (!ref.mounted) return;
-      state = state.copyWith(isLoading: false, errorMessage: e.toString());
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: userFacingError(e),
+      );
     }
   }
 
   /// Clears the role-selection flag and signals navigation to Stripe setup.
   Future<void> finalizeDriverSetupForStripe() async {
-    final authActions = ref.read(authActionsViewModelProvider.notifier);
-    final uid = authActions.currentUser?.uid;
-    if (uid == null) return;
-    await authActions.finalizeRoleAs(uid, UserRole.driver);
-    if (!ref.mounted) return;
-    state = state.copyWith(completedAction: OnboardingAction.finalizedStripe);
+    state = state.copyWith(
+      isLoading: true,
+      clearAction: true,
+      clearError: true,
+    );
+    try {
+      final authActions = ref.read(authActionsViewModelProvider.notifier);
+      final uid = authActions.currentUser?.uid;
+      if (uid == null) {
+        throw StateError('User not authenticated');
+      }
+      await authActions.finalizeRoleAs(uid, UserRole.driver);
+      if (!ref.mounted) return;
+      state = state.copyWith(
+        isLoading: false,
+        completedAction: OnboardingAction.finalizedStripe,
+      );
+    } on Exception catch (e, st) {
+      if (!ref.mounted) return;
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: userFacingError(e),
+      );
+    }
   }
 
   /// Clears the role-selection flag and signals navigation to driver home.
   Future<void> finalizeDriverSetup() async {
-    final authActions = ref.read(authActionsViewModelProvider.notifier);
-    final uid = authActions.currentUser?.uid;
-    if (uid == null) return;
-    await authActions.finalizeRoleAs(uid, UserRole.driver);
-    if (!ref.mounted) return;
-    state = state.copyWith(completedAction: OnboardingAction.finalized);
+    state = state.copyWith(
+      isLoading: true,
+      clearAction: true,
+      clearError: true,
+    );
+    try {
+      final authActions = ref.read(authActionsViewModelProvider.notifier);
+      final uid = authActions.currentUser?.uid;
+      if (uid == null) {
+        throw StateError('User not authenticated');
+      }
+      await authActions.finalizeRoleAs(uid, UserRole.driver);
+      if (!ref.mounted) return;
+      state = state.copyWith(
+        isLoading: false,
+        completedAction: OnboardingAction.finalized,
+      );
+    } on Exception catch (e, st) {
+      if (!ref.mounted) return;
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: userFacingError(e),
+      );
+    }
   }
 }

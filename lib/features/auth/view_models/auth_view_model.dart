@@ -253,6 +253,40 @@ class AuthActionsViewModel extends _$AuthActionsViewModel {
     return result;
   }
 
+  /// Used during onboarding when a user wants to pick a different Google
+  /// account. Signs out first so the account picker is shown.
+  ///
+  /// Returns `true` if sign-in succeeds, `false` if the picker is cancelled.
+  Future<bool> switchGoogleAccountForOnboarding() async {
+    await signOut();
+    try {
+      await signInWithGoogle();
+      return true;
+    } on AuthException catch (e) {
+      if (e.code == 'google-sign-in-canceled') {
+        return false;
+      }
+      rethrow;
+    }
+  }
+
+  /// Used during onboarding when a user wants to pick a different Apple
+  /// account. Signs out first so Apple sign-in can be re-started.
+  ///
+  /// Returns `true` if sign-in succeeds, `false` if the sheet is cancelled.
+  Future<bool> switchAppleAccountForOnboarding() async {
+    await signOut();
+    try {
+      await signInWithApple();
+      return true;
+    } on AuthException catch (e) {
+      if (e.code == 'apple-sign-in-canceled') {
+        return false;
+      }
+      rethrow;
+    }
+  }
+
   Future<SocialSignInResult> signInWithApple() async {
     final result = await ref.read(authRepositoryProvider).signInWithApple();
     if (!ref.mounted) return result;
@@ -279,6 +313,10 @@ class AuthActionsViewModel extends _$AuthActionsViewModel {
 
   Future<void> reauthenticateWithGoogle() {
     return ref.read(authRepositoryProvider).reauthenticateWithGoogle();
+  }
+
+  Future<void> reauthenticateWithApple() {
+    return ref.read(authRepositoryProvider).reauthenticateWithApple();
   }
 
   Future<UserModel> finalizeRoleAs(String uid, UserRole role) {

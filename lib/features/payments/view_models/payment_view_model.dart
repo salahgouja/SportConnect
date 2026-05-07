@@ -6,6 +6,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/services/stripe_service.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
+import 'package:sport_connect/core/utils/user_facing_error.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/payments/payments.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
@@ -464,7 +465,10 @@ class DriverStripeOnboardingFlowViewModel
       state = state.copyWith(isLoading: false, onboardingUrl: url);
     } on Exception catch (e) {
       if (!ref.mounted) return;
-      state = state.copyWith(isLoading: false, errorMessage: e.toString());
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: userFacingError(e),
+      );
     }
   }
 

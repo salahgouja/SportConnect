@@ -22,6 +22,10 @@ class ChatRepository {
 
   final FirebaseFirestore _firestore;
   final FirebaseStorage _storage;
+  final Map<String, ({ChatModel chat, DateTime expiresAt})> _chatCache = {};
+  final Map<String, ({Set<String> blockedUsers, DateTime expiresAt})>
+  _blockedUsersCache = {};
+  static const Duration _cacheTtl = Duration(seconds: 20);
 
   // ── Collection references ────────────────────────────────────────────────
 
@@ -177,8 +181,18 @@ class ChatRepository {
   }
 
   Future<ChatModel?> getChatById(String chatId) async {
+    final now = DateTime.now();
+    final cached = _chatCache[chatId];
+    if (cached != null && now.isBefore(cached.expiresAt)) {
+      return cached.chat;
+    }
+
     final doc = await _chatsCollection.doc(chatId).get();
-    return doc.exists ? doc.data() : null;
+    final chat = doc.exists ? doc.data() : null;
+    if (chat != null) {
+      _chatCache[chatId] = (chat: chat, expiresAt: now.add(_cacheTtl));
+    }
+    return chat;
   }
 
   Future<ChatModel?> getChatByRideId(String rideId) async {
@@ -227,11 +241,11 @@ class ChatRepository {
   }) async {
     await _chatsCollection.doc(chatId).update({
       'participantIds': FieldValue.arrayUnion([participant.userId]),
-      'participants': FieldValue.arrayUnion([participant.toJson()]),
       // FIX: serverTimestamp instead of DateTime.now() — avoids clock skew
       // on devices whose clocks are wrong.
       'updatedAt': FieldValue.serverTimestamp(),
     });
+    _chatCache.remove(chatId);
   }
 
   /// Idempotent — adds [userId] to participants only if not already present.
@@ -253,35 +267,19 @@ class ChatRepository {
       'updatedAt': FieldValue.serverTimestamp(),
     };
 
-    if (displayName != null) {
-      updates['participants'] = FieldValue.arrayUnion([
-        ChatParticipant(
-          userId: userId,
-          username: displayName,
-          photoUrl: photoUrl,
-          joinedAt: DateTime.now(),
-        ).toJson(),
-      ]);
-    }
-
     await _chatsCollection.doc(chatId).update(updates);
+    _chatCache.remove(chatId);
   }
 
   Future<void> removeParticipant({
     required String chatId,
     required String userId,
   }) async {
-    final chat = await getChatById(chatId);
-    if (chat == null) return;
-
     await _chatsCollection.doc(chatId).update({
       'participantIds': FieldValue.arrayRemove([userId]),
-      'participants': chat.participants
-          .where((p) => p.userId != userId)
-          .map((p) => p.toJson())
-          .toList(),
       'updatedAt': FieldValue.serverTimestamp(),
     });
+    _chatCache.remove(chatId);
   }
 
   // ── Chat settings ─────────────────────────────────────────────────────────
@@ -295,6 +293,7 @@ class ChatRepository {
       'mutedBy.$userId': mute,
       'updatedAt': FieldValue.serverTimestamp(),
     });
+    _chatCache.remove(chatId);
   }
 
   Future<void> togglePin({
@@ -306,6 +305,7 @@ class ChatRepository {
       'pinnedBy.$userId': pin,
       'updatedAt': FieldValue.serverTimestamp(),
     });
+    _chatCache.remove(chatId);
   }
 
   Future<void> clearChat({
@@ -317,6 +317,7 @@ class ChatRepository {
       'unreadCounts.$userId': 0,
       'updatedAt': FieldValue.serverTimestamp(),
     });
+    _chatCache.remove(chatId);
   }
 
   Future<void> clearChatHistoryForUser({
@@ -328,6 +329,7 @@ class ChatRepository {
       'unreadCounts.$userId': 0,
       'updatedAt': FieldValue.serverTimestamp(),
     });
+    _chatCache.remove(chatId);
   }
 
   // ── Messages ──────────────────────────────────────────────────────────────
@@ -356,24 +358,22 @@ class ChatRepository {
 
       // FIX: Parallel fetch — was sequential (N+1). Fetches all recipient
       // docs concurrently before checking blocked status.
-      final recipientDocs = await Future.wait(
-        chat.participantIds
-            .where((id) => id != message.senderId)
-            .map(
-              (id) => _firestore
-                  .collection(AppConstants.usersCollection)
-                  .doc(id)
-                  .get(),
-            ),
+      final recipientIds = chat.participantIds
+          .where((id) => id != message.senderId)
+          .toList(growable: false);
+      final blockedChecks = await Future.wait(
+        recipientIds.map(
+          (recipientId) => _hasRecipientBlockedSender(
+            recipientId: recipientId,
+            senderId: message.senderId,
+          ),
+        ),
       );
 
-      for (final doc in recipientDocs) {
-        final blocked = List<String>.from(
-          doc.data()?['blockedUsers'] as List? ?? [],
-        );
-        if (blocked.contains(message.senderId)) {
+      for (var i = 0; i < blockedChecks.length; i++) {
+        if (blockedChecks[i]) {
           throw StateError(
-            'sendMessage: ${doc.id} has blocked ${message.senderId}',
+            'sendMessage: ${recipientIds[i]} has blocked ${message.senderId}',
           );
         }
       }
@@ -424,7 +424,32 @@ class ChatRepository {
     );
 
     await batch.commit();
+    _chatCache.remove(message.chatId);
     return docRef.id;
+  }
+
+  Future<bool> _hasRecipientBlockedSender({
+    required String recipientId,
+    required String senderId,
+  }) async {
+    final now = DateTime.now();
+    final cached = _blockedUsersCache[recipientId];
+    if (cached != null && now.isBefore(cached.expiresAt)) {
+      return cached.blockedUsers.contains(senderId);
+    }
+
+    final doc = await _firestore
+        .collection(AppConstants.usersCollection)
+        .doc(recipientId)
+        .get();
+    final blocked = Set<String>.from(
+      doc.data()?['blockedUsers'] as List? ?? const <String>[],
+    );
+    _blockedUsersCache[recipientId] = (
+      blockedUsers: blocked,
+      expiresAt: now.add(_cacheTtl),
+    );
+    return blocked.contains(senderId);
   }
 
   // FIX: Removed pointless try/catch — String.split and replaceFirst never
@@ -515,6 +540,7 @@ class ChatRepository {
     }
     batch.update(_rawChatRef(chatId), {'unreadCounts.$userId': 0});
     await batch.commit();
+    _chatCache.remove(chatId);
   }
 
   Future<void> deleteMessage({

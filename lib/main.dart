@@ -89,11 +89,15 @@ void main() async {
 Future<void> _initializeAppAfterFirstFrame() async {
   TalkerService.info('🚀 Starting post-launch initialization...');
 
-  // App Check activation makes a network call on production iOS (DeviceCheck).
-  // Running it here keeps the native splash short.
-  await FirebaseService.instance.activateAppCheck();
-  await _initializePushNotifications();
-  await _initializeStripe();
+  // Run non-critical startup tasks in parallel so the app becomes fully
+  // interactive sooner on slow networks/devices.
+  await Future.wait<void>([
+    // App Check activation makes a network call on production iOS
+    // (DeviceCheck). Running it here keeps the native splash short.
+    FirebaseService.instance.activateAppCheck(),
+    _initializePushNotifications(),
+    _initializeStripe(),
+  ]);
 
   TalkerService.info('✅ Post-launch initialization completed');
 }
@@ -203,6 +207,11 @@ class _SportConnectAppState extends ConsumerState<SportConnectApp> {
 
     _postLaunchStartupStarted = true;
 
+    if (_isFirebaseInitialized) {
+      final router = ref.read(appRouterProvider);
+      _initializeDeepLinks(router);
+    }
+
     await _initializeAppAfterFirstFrame();
 
     if (!mounted) return;
@@ -210,8 +219,6 @@ class _SportConnectAppState extends ConsumerState<SportConnectApp> {
     _postLaunchStartupCompleted = true;
 
     if (_isFirebaseInitialized) {
-      final router = ref.read(appRouterProvider);
-      _initializeDeepLinks(router);
       _saveFcmTokenIfNeeded();
     }
 

@@ -321,6 +321,12 @@ class AuthRepository {
           .where('participantIds', arrayContains: uid)
           .get();
       for (final chatDoc in chatsQuery.docs) {
+        final chatMessagesQuery = await chatDoc.reference
+            .collection(AppConstants.messagesCollection)
+            .where('senderId', isEqualTo: uid)
+            .get();
+        refs.addAll(chatMessagesQuery.docs.map((d) => d.reference));
+
         await chatDoc.reference.update({
           'participantIds': FieldValue.arrayRemove([uid]),
           'updatedAt': FieldValue.serverTimestamp(),
@@ -909,6 +915,56 @@ class AuthRepository {
       TalkerService.info('User re-authenticated with Google');
     } on Exception catch (e, st) {
       TalkerService.error('Google re-authentication error', e, st);
+      rethrow;
+    }
+  }
+
+  /// Re-authenticate user with Apple credential for sensitive operations.
+  Future<void> reauthenticateWithApple() async {
+    try {
+      final user = _firebaseService.auth.currentUser;
+      if (user == null) {
+        throw Exception('No user is currently signed in');
+      }
+
+      final rawNonce = _generateNonce();
+      final nonce = _sha256ofString(rawNonce);
+      final appleCredential = await SignInWithApple.getAppleIDCredential(
+        scopes: const [],
+        nonce: nonce,
+      );
+
+      final oauthCredential = OAuthProvider('apple.com').credential(
+        idToken: appleCredential.identityToken,
+        rawNonce: rawNonce,
+      );
+      await user.reauthenticateWithCredential(oauthCredential);
+      TalkerService.info('User re-authenticated with Apple');
+    } on SignInWithAppleAuthorizationException catch (e, st) {
+      if (e.code == AuthorizationErrorCode.canceled) {
+        throw const AuthException(
+          code: 'apple-sign-in-canceled',
+          message: 'Sign-in was cancelled.',
+        );
+      }
+      TalkerService.error(
+        'Apple re-authentication error: ${e.code.name}',
+        e,
+        st,
+      );
+      throw const AuthException(
+        code: 'apple-sign-in-failed',
+        message: 'Apple re-authentication failed. Please try again.',
+      );
+    } on FirebaseAuthException catch (e, st) {
+      TalkerService.error(
+        'Apple re-authentication Firebase error: ${e.code}',
+        e,
+        st,
+      );
+      throw _handleAuthException(e);
+    } on Exception catch (e, st) {
+      TalkerService.error('Apple re-authentication error', e, st);
       rethrow;
     }
   }

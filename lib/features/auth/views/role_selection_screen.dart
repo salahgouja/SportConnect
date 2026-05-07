@@ -1,6 +1,7 @@
+import 'dart:io';
+
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
-import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,9 +9,12 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/utils/user_facing_error.dart';
 import 'package:sport_connect/core/widgets/custom_button.dart';
 import 'package:sport_connect/core/widgets/glass_panel.dart';
+import 'package:sport_connect/features/auth/models/auth_exception.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
+import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 import 'package:sport_connect/features/auth/view_models/role_selection_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
@@ -51,6 +55,62 @@ class RoleSelectionScreen extends ConsumerWidget {
         return;
       }
       ref.read(roleSelectionViewModelProvider.notifier).continueWithRole();
+    }
+
+    Future<void> changeGoogleAccount() async {
+      try {
+        final switched = await ref
+            .read(authActionsViewModelProvider.notifier)
+            .switchGoogleAccountForOnboarding();
+        if (!context.mounted) return;
+        if (!switched) {
+          context.go(AppRoutes.onboarding.path);
+          return;
+        }
+        context.go(AppRoutes.roleSelection.path);
+      } on AuthException catch (e) {
+        if (!context.mounted) return;
+        AdaptiveSnackBar.show(
+          context,
+          message: e.message,
+          type: AdaptiveSnackBarType.error,
+        );
+      } on Exception catch (e) {
+        if (!context.mounted) return;
+        AdaptiveSnackBar.show(
+          context,
+          message: userFacingError(e),
+          type: AdaptiveSnackBarType.error,
+        );
+      }
+    }
+
+    Future<void> changeAppleAccount() async {
+      try {
+        final switched = await ref
+            .read(authActionsViewModelProvider.notifier)
+            .switchAppleAccountForOnboarding();
+        if (!context.mounted) return;
+        if (!switched) {
+          context.go(AppRoutes.onboarding.path);
+          return;
+        }
+        context.go(AppRoutes.roleSelection.path);
+      } on AuthException catch (e) {
+        if (!context.mounted) return;
+        AdaptiveSnackBar.show(
+          context,
+          message: e.message,
+          type: AdaptiveSnackBarType.error,
+        );
+      } on Exception catch (e) {
+        if (!context.mounted) return;
+        AdaptiveSnackBar.show(
+          context,
+          message: userFacingError(e),
+          type: AdaptiveSnackBarType.error,
+        );
+      }
     }
 
     return AdaptiveScaffold(
@@ -124,6 +184,46 @@ class RoleSelectionScreen extends ConsumerWidget {
               ).animate().fadeIn(duration: 500.ms, delay: 400.ms),
 
               SizedBox(height: 16.h),
+
+              Align(
+                alignment: Alignment.centerRight,
+                child: Wrap(
+                  spacing: 8.w,
+                  children: [
+                    TextButton.icon(
+                      onPressed: vmState.isLoading ? null : changeGoogleAccount,
+                      icon: Icon(
+                        Icons.switch_account_rounded,
+                        size: 16.sp,
+                        color: AppColors.textSecondary,
+                      ),
+                      label: Text(
+                        'Change Google',
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ),
+                    if (Platform.isIOS || Platform.isMacOS)
+                      TextButton.icon(
+                        onPressed: vmState.isLoading ? null : changeAppleAccount,
+                        icon: Icon(
+                          Icons.switch_account_rounded,
+                          size: 16.sp,
+                          color: AppColors.textSecondary,
+                        ),
+                        label: Text(
+                          'Change Apple',
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
 
               // Continue button
               SizedBox(

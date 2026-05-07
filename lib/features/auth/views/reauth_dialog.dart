@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -57,6 +59,8 @@ class _ReauthBottomSheetState extends ConsumerState<_ReauthBottomSheet> {
           errorText = l10n.reauthWrongPassword;
         case 'google':
           errorText = l10n.reauthGoogleFailed;
+        case 'apple':
+          errorText = l10n.reauthFailed;
         default:
           errorText = l10n.reauthFailed;
       }
@@ -205,6 +209,25 @@ class _ReauthBottomSheetState extends ConsumerState<_ReauthBottomSheet> {
                   icon: Icons.g_mobiledata_rounded,
                 ),
               ),
+
+              if (Platform.isIOS || Platform.isMacOS) ...[
+                SizedBox(height: 12.h),
+
+                // Apple re-auth option
+                SizedBox(
+                  width: double.infinity,
+                  child: PremiumButton(
+                    text: l10n.continueWithApple,
+                    onPressed: vmState.isLoading
+                        ? null
+                        : () => ref
+                              .read(reauthViewModelProvider.notifier)
+                              .reauthWithApple(),
+                    style: PremiumButtonStyle.secondary,
+                    icon: Icons.apple_rounded,
+                  ),
+                ),
+              ],
 
               SizedBox(height: 8.h),
 

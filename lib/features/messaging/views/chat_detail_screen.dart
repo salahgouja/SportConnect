@@ -599,7 +599,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
         ),
-        title: const Text('Delete conversation?'),
+        title: Text(AppLocalizations.of(context).deleteConversationTitle),
         content: const Text(
           'This will remove the conversation from your chat list. '
           'It will appear again if a new message is sent.',
@@ -861,7 +861,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
         ),
-        title: const Text('Clear chat history?'),
+        title: Text(AppLocalizations.of(context).clearChat),
         content: const Text(
           'This will clear the messages from this chat for you only. '
           'The conversation will stay in your chat list.',

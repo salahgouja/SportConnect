@@ -775,7 +775,7 @@ class AddressAutocompleteFieldState
                   ),
                   if (hasValue && !_expanded)
                     IconButton(
-                      tooltip: 'Clear address',
+                      tooltip: AppLocalizations.of(context).clearAddress,
                       onPressed: widget.enabled ? _clearAddress : null,
                       visualDensity: VisualDensity.compact,
                       padding: EdgeInsets.zero,
@@ -1082,7 +1082,7 @@ class _InlineSearchBoxState extends State<_InlineSearchBox> {
             SizedBox(width: 13.w),
           ] else if (hasText && widget.onClear != null) ...[
             IconButton(
-              tooltip: 'Clear address',
+              tooltip: AppLocalizations.of(context).clearAddress,
               onPressed: widget.onClear,
               visualDensity: VisualDensity.compact,
               padding: EdgeInsets.zero,

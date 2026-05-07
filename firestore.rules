@@ -251,7 +251,8 @@ service cloud.firestore {
           (
             'eventId' in resource.data &&
             resource.data.eventId is string &&
-            request.auth.uid in get(/databases/$(database)/documents/events/$(resource.data.eventId)).data.participantIds
+            request.auth.uid in get(/databases/$(database)/documents/events/$(resource.data.eventId)).data.participantIds &&
+            (!isEventGroupChat(resource.data) || isCurrentUserPremium())
           )
         );
 
@@ -305,7 +306,10 @@ service cloud.firestore {
           // Remove self from chat.
           (
             request.auth.uid in resource.data.participantIds &&
-            request.resource.data.participantIds.size() < resource.data.participantIds.size()
+            changedKeys().hasOnly(['participantIds', 'updatedAt']) &&
+            request.resource.data.participantIds.size() == resource.data.participantIds.size() - 1 &&
+            resource.data.participantIds.hasAll(request.resource.data.participantIds) &&
+            !(request.auth.uid in request.resource.data.participantIds)
           ) ||
 
           // Event chat membership/metadata update.
@@ -315,15 +319,12 @@ service cloud.firestore {
             request.auth.uid in get(/databases/$(database)/documents/events/$(resource.data.eventId)).data.participantIds &&
             changedKeys().hasOnly([
               'participantIds',
-              'groupName',
-              'groupPhotoUrl',
-              'type',
-              'eventId',
-              'premiumOnly',
-              'isActive',
-              'updatedAt',
-              'deletedFor'
-            ])
+              'updatedAt'
+            ]) &&
+            request.resource.data.type == resource.data.type &&
+            request.resource.data.eventId == resource.data.eventId &&
+            request.resource.data.premiumOnly == resource.data.premiumOnly &&
+            request.resource.data.isActive == resource.data.isActive
           )
         );
 
@@ -367,7 +368,8 @@ service cloud.firestore {
       allow read: if isAuthenticated() &&
         resource.data.userId == request.auth.uid;
 
-      allow create: if isAuthenticated();
+      allow create: if isAuthenticated() &&
+        request.resource.data.userId == request.auth.uid;
 
       allow update: if isAuthenticated() &&
         resource.data.userId == request.auth.uid;

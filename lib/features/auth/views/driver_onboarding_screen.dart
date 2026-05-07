@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/gestures.dart';
@@ -11,6 +13,7 @@ import 'package:reactive_forms/reactive_forms.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/utils/user_facing_error.dart';
 import 'package:sport_connect/core/widgets/address_autocomplete_field.dart';
 import 'package:sport_connect/core/widgets/dob_picker.dart';
 import 'package:sport_connect/core/widgets/expertise_picker.dart';
@@ -19,6 +22,7 @@ import 'package:sport_connect/core/widgets/glass_panel.dart';
 import 'package:sport_connect/core/widgets/intl_phone_input.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
+import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 import 'package:sport_connect/features/auth/view_models/onboarding_view_model.dart';
 import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
@@ -237,6 +241,43 @@ class _DriverOnboardingScreenState
       validators: [Validators.requiredTrue],
     ),
   });
+  Future<void> _showAccountSwitcherMenu() async {
+    final l10n = AppLocalizations.of(context);
+
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.g_mobiledata_rounded),
+                title: Text(l10n.continueWithGoogle),
+                onTap: () => Navigator.of(sheetContext).pop('google'),
+              ),
+              if (Platform.isIOS || Platform.isMacOS)
+                ListTile(
+                  leading: const Icon(Icons.apple),
+                  title: Text(l10n.continueWithApple),
+                  onTap: () => Navigator.of(sheetContext).pop('apple'),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (!mounted || selected == null) return;
+
+    switch (selected) {
+      case 'google':
+        await _changeGoogleAccount();
+      case 'apple':
+        await _changeAppleAccount();
+    }
+  }
 
   final _phoneKey = GlobalKey<IntlPhoneInputState>();
   final _addressKey = GlobalKey<AddressAutocompleteFieldState>();
@@ -527,6 +568,62 @@ class _DriverOnboardingScreenState
         .finalizeDriverSetupForStripe();
   }
 
+  Future<void> _changeGoogleAccount() async {
+    try {
+      final switched = await ref
+          .read(authActionsViewModelProvider.notifier)
+          .switchGoogleAccountForOnboarding();
+      if (!mounted) return;
+      if (!switched) {
+        context.go(AppRoutes.onboarding.path);
+        return;
+      }
+      context.go(AppRoutes.roleSelection.path);
+    } on AuthException catch (e) {
+      if (!mounted) return;
+      AdaptiveSnackBar.show(
+        context,
+        message: e.message,
+        type: AdaptiveSnackBarType.error,
+      );
+    } on Exception catch (e) {
+      if (!mounted) return;
+      AdaptiveSnackBar.show(
+        context,
+        message: userFacingError(e),
+        type: AdaptiveSnackBarType.error,
+      );
+    }
+  }
+
+  Future<void> _changeAppleAccount() async {
+    try {
+      final switched = await ref
+          .read(authActionsViewModelProvider.notifier)
+          .switchAppleAccountForOnboarding();
+      if (!mounted) return;
+      if (!switched) {
+        context.go(AppRoutes.onboarding.path);
+        return;
+      }
+      context.go(AppRoutes.roleSelection.path);
+    } on AuthException catch (e) {
+      if (!mounted) return;
+      AdaptiveSnackBar.show(
+        context,
+        message: e.message,
+        type: AdaptiveSnackBarType.error,
+      );
+    } on Exception catch (e) {
+      if (!mounted) return;
+      AdaptiveSnackBar.show(
+        context,
+        message: userFacingError(e),
+        type: AdaptiveSnackBarType.error,
+      );
+    }
+  }
+
   @override
   void dispose() {
     _profileForm.dispose();
@@ -614,6 +711,13 @@ class _DriverOnboardingScreenState
                   ),
                 ),
           title: AppLocalizations.of(context).driverSetup,
+          actions: [
+            AdaptiveAppBarAction(
+              iosSymbol: 'person.crop.circle.badge.arrow.forward',
+              icon: Icons.switch_account_rounded,
+              onPressed: _showAccountSwitcherMenu,
+            ),
+          ],
         ),
         body: SafeArea(
           top: false,

@@ -737,7 +737,7 @@ abstract class AppLocalizations {
   /// Text from _buildColorChip in debug_overlay.dart
   ///
   /// In en, this message translates to:
-  /// **'Primary'**
+  /// **'primary'**
   String get primary;
 
   /// Text from _buildColorChip in debug_overlay.dart
@@ -761,7 +761,7 @@ abstract class AppLocalizations {
   /// Text from _buildColorChip in debug_overlay.dart
   ///
   /// In en, this message translates to:
-  /// **'Error'**
+  /// **'error'**
   String get error;
 
   /// Text from Text in debug_overlay.dart
@@ -1043,7 +1043,7 @@ abstract class AppLocalizations {
   /// Text from _buildStepIndicator in driver_onboarding_screen.dart
   ///
   /// In en, this message translates to:
-  /// **'Payouts'**
+  /// **'payouts'**
   String get payouts;
 
   /// Text from _buildStepHeader.title in driver_onboarding_screen.dart
@@ -1517,7 +1517,7 @@ abstract class AppLocalizations {
   /// Text from _buildStatItem in home_screen.dart
   ///
   /// In en, this message translates to:
-  /// **'rides'**
+  /// **'Rides'**
   String get rides;
 
   /// Text from _buildStatItem in home_screen.dart
@@ -1649,7 +1649,7 @@ abstract class AppLocalizations {
   /// Text from _buildStatItem in quick_stats_card.dart
   ///
   /// In en, this message translates to:
-  /// **'ride'**
+  /// **'Ride'**
   String get ride;
 
   /// Text from _buildStatItem in quick_stats_card.dart
@@ -1721,7 +1721,7 @@ abstract class AppLocalizations {
   /// Text from Text in chat_detail_screen.dart
   ///
   /// In en, this message translates to:
-  /// **'Clear'**
+  /// **'clear'**
   String get clear;
 
   /// Text from Text in chat_detail_screen.dart
@@ -1739,7 +1739,7 @@ abstract class AppLocalizations {
   /// Text from Text in chat_detail_screen.dart
   ///
   /// In en, this message translates to:
-  /// **'typing...'**
+  /// **'typing'**
   String get typing;
 
   /// Text from Text in chat_detail_screen.dart
@@ -3449,7 +3449,7 @@ abstract class AppLocalizations {
   /// Text from _buildNavigationTile.title in settings_screen.dart
   ///
   /// In en, this message translates to:
-  /// **'Vehicles'**
+  /// **'vehicles'**
   String get vehicles;
 
   /// Text from _buildSectionHeader in settings_screen.dart
@@ -4751,7 +4751,7 @@ abstract class AppLocalizations {
   /// Text from _buildInfoItem in active_ride_screen.dart
   ///
   /// In en, this message translates to:
-  /// **'departure'**
+  /// **'Departure'**
   String get departure;
 
   /// Text from Text in active_ride_screen.dart
@@ -5009,7 +5009,7 @@ abstract class AppLocalizations {
   /// Text from _buildSortOption in rider_request_ride_screen.dart
   ///
   /// In en, this message translates to:
-  /// **'Recommended'**
+  /// **'recommended'**
   String get recommended;
 
   /// Text from _buildSortOption in rider_request_ride_screen.dart
@@ -5081,7 +5081,7 @@ abstract class AppLocalizations {
   /// Text from Text in rider_view_ride_screen.dart
   ///
   /// In en, this message translates to:
-  /// **'Reviews'**
+  /// **'reviews'**
   String get reviews;
 
   /// Text from Text in rider_view_ride_screen.dart
@@ -5429,7 +5429,7 @@ abstract class AppLocalizations {
   /// Text from Text in ride_search_screen.dart
   ///
   /// In en, this message translates to:
-  /// **'Any'**
+  /// **'any'**
   String get any;
 
   /// Text from Text in ride_search_screen.dart
@@ -5471,7 +5471,7 @@ abstract class AppLocalizations {
   /// Text from _buildVehicleOption in ride_search_screen.dart
   ///
   /// In en, this message translates to:
-  /// **'Comfort'**
+  /// **'comfort'**
   String get comfort;
 
   /// Text from Text in ride_search_screen.dart
@@ -7061,7 +7061,7 @@ abstract class AppLocalizations {
   /// No description provided for @events.
   ///
   /// In en, this message translates to:
-  /// **'Events'**
+  /// **'events'**
   String get events;
 
   /// No description provided for @satellite.
@@ -11379,6 +11379,4863 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Ride ID'**
   String get receiptRideId;
+
+  /// No description provided for @something_went_wrong.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong'**
+  String get something_went_wrong;
+
+  /// No description provided for @your_action_was_completed_successfully.
+  ///
+  /// In en, this message translates to:
+  /// **'Your action was completed successfully.'**
+  String get your_action_was_completed_successfully;
+
+  /// No description provided for @success.
+  ///
+  /// In en, this message translates to:
+  /// **'success'**
+  String get success;
+
+  /// No description provided for @localhost.
+  ///
+  /// In en, this message translates to:
+  /// **'localhost'**
+  String get localhost;
+
+  /// No description provided for @production_mode.
+  ///
+  /// In en, this message translates to:
+  /// **'PRODUCTION MODE'**
+  String get production_mode;
+
+  /// No description provided for @none.
+  ///
+  /// In en, this message translates to:
+  /// **'none'**
+  String get none;
+
+  /// No description provided for @signedout.
+  ///
+  /// In en, this message translates to:
+  /// **'signed-out'**
+  String get signedout;
+
+  /// No description provided for @pk_test_51t0hg4ryc7z72fdkkzbcqr4p1v0mi8nzgsxotoy7stj8a3qfqkdlbofdng5fggsinfcvilbokjbtupskomgywirk00mnaqcfsq.
+  ///
+  /// In en, this message translates to:
+  /// **'pk_test_51T0hg4RYC7Z72fDKkzbCQr4P1v0Mi8nzgSXoToY7Stj8A3QfqKdLBOFDNG5fggSinfCVILBOkjBTupskomgywiRk00MnaqCFSq'**
+  String
+  get pk_test_51t0hg4ryc7z72fdkkzbcqr4p1v0mi8nzgsxotoy7stj8a3qfqkdlbofdng5fggsinfcvilbokjbtupskomgywirk00mnaqcfsq;
+
+  /// No description provided for @passengerreview.
+  ///
+  /// In en, this message translates to:
+  /// **'passengerReview'**
+  String get passengerreview;
+
+  /// No description provided for @stripe_not_configured_update_stripeconfig_values.
+  ///
+  /// In en, this message translates to:
+  /// **'Stripe NOT configured - update StripeConfig values'**
+  String get stripe_not_configured_update_stripeconfig_values;
+
+  /// No description provided for @eur.
+  ///
+  /// In en, this message translates to:
+  /// **'EUR'**
+  String get eur;
+
+  /// No description provided for @pk_test_your_publishable_key_here.
+  ///
+  /// In en, this message translates to:
+  /// **'pk_test_YOUR_PUBLISHABLE_KEY_HERE'**
+  String get pk_test_your_publishable_key_here;
+
+  /// No description provided for @fr.
+  ///
+  /// In en, this message translates to:
+  /// **'FR'**
+  String get fr;
+
+  /// No description provided for @tnfr.
+  ///
+  /// In en, this message translates to:
+  /// **'tn,fr'**
+  String get tnfr;
+
+  /// No description provided for @users.
+  ///
+  /// In en, this message translates to:
+  /// **'users'**
+  String get users;
+
+  /// No description provided for @chats.
+  ///
+  /// In en, this message translates to:
+  /// **'Chats'**
+  String get chats;
+
+  /// No description provided for @notifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get notifications;
+
+  /// No description provided for @payments.
+  ///
+  /// In en, this message translates to:
+  /// **'Payments'**
+  String get payments;
+
+  /// No description provided for @reports.
+  ///
+  /// In en, this message translates to:
+  /// **'reports'**
+  String get reports;
+
+  /// No description provided for @bookings.
+  ///
+  /// In en, this message translates to:
+  /// **'bookings'**
+  String get bookings;
+
+  /// No description provided for @support_tickets.
+  ///
+  /// In en, this message translates to:
+  /// **'support_tickets'**
+  String get support_tickets;
+
+  /// No description provided for @driver_connected_accounts.
+  ///
+  /// In en, this message translates to:
+  /// **'driver_connected_accounts'**
+  String get driver_connected_accounts;
+
+  /// No description provided for @driver_stats.
+  ///
+  /// In en, this message translates to:
+  /// **'driver_stats'**
+  String get driver_stats;
+
+  /// No description provided for @blockedusers.
+  ///
+  /// In en, this message translates to:
+  /// **'blockedUsers'**
+  String get blockedusers;
+
+  /// No description provided for @disputes.
+  ///
+  /// In en, this message translates to:
+  /// **'disputes'**
+  String get disputes;
+
+  /// No description provided for @archived_transactions.
+  ///
+  /// In en, this message translates to:
+  /// **'archived_transactions'**
+  String get archived_transactions;
+
+  /// No description provided for @profile_images.
+  ///
+  /// In en, this message translates to:
+  /// **'profile_images'**
+  String get profile_images;
+
+  /// No description provided for @chat_images.
+  ///
+  /// In en, this message translates to:
+  /// **'chat_images'**
+  String get chat_images;
+
+  /// No description provided for @vehicle_images.
+  ///
+  /// In en, this message translates to:
+  /// **'vehicle_images'**
+  String get vehicle_images;
+
+  /// No description provided for @sportaxitripcom.
+  ///
+  /// In en, this message translates to:
+  /// **'sportaxitrip.com'**
+  String get sportaxitripcom;
+
+  /// No description provided for @sportconnect10_contactsportconnectapp.
+  ///
+  /// In en, this message translates to:
+  /// **'SportConnect/1.0 (contact@sportconnect.app)'**
+  String get sportconnect10_contactsportconnectapp;
+
+  /// No description provided for @find_and_book_rides_to_sporting_events.
+  ///
+  /// In en, this message translates to:
+  /// **'Find and book rides to sporting events'**
+  String get find_and_book_rides_to_sporting_events;
+
+  /// No description provided for @offer_rides_and_earn_money.
+  ///
+  /// In en, this message translates to:
+  /// **'Offer rides and earn money'**
+  String get offer_rides_and_earn_money;
+
+  /// No description provided for @your_application_is_under_review.
+  ///
+  /// In en, this message translates to:
+  /// **'Your application is under review'**
+  String get your_application_is_under_review;
+
+  /// No description provided for @language_code.
+  ///
+  /// In en, this message translates to:
+  /// **'language_code'**
+  String get language_code;
+
+  /// No description provided for @notifications_enabled.
+  ///
+  /// In en, this message translates to:
+  /// **'notifications_enabled'**
+  String get notifications_enabled;
+
+  /// No description provided for @ride_reminders.
+  ///
+  /// In en, this message translates to:
+  /// **'ride_reminders'**
+  String get ride_reminders;
+
+  /// No description provided for @chat_notifications.
+  ///
+  /// In en, this message translates to:
+  /// **'chat_notifications'**
+  String get chat_notifications;
+
+  /// No description provided for @marketing_emails.
+  ///
+  /// In en, this message translates to:
+  /// **'marketing_emails'**
+  String get marketing_emails;
+
+  /// No description provided for @show_location.
+  ///
+  /// In en, this message translates to:
+  /// **'show_location'**
+  String get show_location;
+
+  /// No description provided for @public_profile.
+  ///
+  /// In en, this message translates to:
+  /// **'public_profile'**
+  String get public_profile;
+
+  /// No description provided for @map_style.
+  ///
+  /// In en, this message translates to:
+  /// **'Map Style'**
+  String get map_style;
+
+  /// No description provided for @notification_dialog_shown.
+  ///
+  /// In en, this message translates to:
+  /// **'notification_dialog_shown'**
+  String get notification_dialog_shown;
+
+  /// No description provided for @analytics_enabled.
+  ///
+  /// In en, this message translates to:
+  /// **'analytics_enabled'**
+  String get analytics_enabled;
+
+  /// No description provided for @premium_prompt_seen_.
+  ///
+  /// In en, this message translates to:
+  /// **'premium_prompt_seen_'**
+  String get premium_prompt_seen_;
+
+  /// No description provided for @driver_show_on_map.
+  ///
+  /// In en, this message translates to:
+  /// **'driver_show_on_map'**
+  String get driver_show_on_map;
+
+  /// No description provided for @driver_allow_instant_booking.
+  ///
+  /// In en, this message translates to:
+  /// **'driver_allow_instant_booking'**
+  String get driver_allow_instant_booking;
+
+  /// No description provided for @driver_max_distance.
+  ///
+  /// In en, this message translates to:
+  /// **'driver_max_distance'**
+  String get driver_max_distance;
+
+  /// No description provided for @driver_navigation_app.
+  ///
+  /// In en, this message translates to:
+  /// **'driver_navigation_app'**
+  String get driver_navigation_app;
+
+  /// No description provided for @sc.
+  ///
+  /// In en, this message translates to:
+  /// **'SC'**
+  String get sc;
+
+  /// No description provided for @https.
+  ///
+  /// In en, this message translates to:
+  /// **'https'**
+  String get https;
+
+  /// No description provided for @nominatimopenstreetmaporg.
+  ///
+  /// In en, this message translates to:
+  /// **'nominatim.openstreetmap.org'**
+  String get nominatimopenstreetmaporg;
+
+  /// No description provided for @node.
+  ///
+  /// In en, this message translates to:
+  /// **'node['**
+  String get node;
+
+  /// No description provided for @sports_centre.
+  ///
+  /// In en, this message translates to:
+  /// **'sports_centre'**
+  String get sports_centre;
+
+  /// No description provided for @stadium.
+  ///
+  /// In en, this message translates to:
+  /// **'stadium'**
+  String get stadium;
+
+  /// No description provided for @pitch.
+  ///
+  /// In en, this message translates to:
+  /// **'pitch'**
+  String get pitch;
+
+  /// No description provided for @university.
+  ///
+  /// In en, this message translates to:
+  /// **'university'**
+  String get university;
+
+  /// No description provided for @college.
+  ///
+  /// In en, this message translates to:
+  /// **'college'**
+  String get college;
+
+  /// No description provided for @parking.
+  ///
+  /// In en, this message translates to:
+  /// **'Parking'**
+  String get parking;
+
+  /// No description provided for @fuel.
+  ///
+  /// In en, this message translates to:
+  /// **'fuel'**
+  String get fuel;
+
+  /// No description provided for @restaurant.
+  ///
+  /// In en, this message translates to:
+  /// **'restaurant'**
+  String get restaurant;
+
+  /// No description provided for @cafe.
+  ///
+  /// In en, this message translates to:
+  /// **'cafe'**
+  String get cafe;
+
+  /// No description provided for @hospital.
+  ///
+  /// In en, this message translates to:
+  /// **'hospital'**
+  String get hospital;
+
+  /// No description provided for @clinic.
+  ///
+  /// In en, this message translates to:
+  /// **'clinic'**
+  String get clinic;
+
+  /// No description provided for @bus_stop.
+  ///
+  /// In en, this message translates to:
+  /// **'bus_stop'**
+  String get bus_stop;
+
+  /// No description provided for @station.
+  ///
+  /// In en, this message translates to:
+  /// **'station'**
+  String get station;
+
+  /// No description provided for @tram_stop.
+  ///
+  /// In en, this message translates to:
+  /// **'tram_stop'**
+  String get tram_stop;
+
+  /// No description provided for @trip_receipt.
+  ///
+  /// In en, this message translates to:
+  /// **'TRIP RECEIPT'**
+  String get trip_receipt;
+
+  /// No description provided for @thank_you_for_using_sportconnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Thank you for using SportConnect!'**
+  String get thank_you_for_using_sportconnect;
+
+  /// No description provided for @your_ecofriendly_carpooling_choice.
+  ///
+  /// In en, this message translates to:
+  /// **'Your eco-friendly carpooling choice'**
+  String get your_ecofriendly_carpooling_choice;
+
+  /// No description provided for @earnings_report.
+  ///
+  /// In en, this message translates to:
+  /// **'EARNINGS REPORT'**
+  String get earnings_report;
+
+  /// No description provided for @trip_history.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip History'**
+  String get trip_history;
+
+  /// No description provided for @sport_connect_messages.
+  ///
+  /// In en, this message translates to:
+  /// **'sport_connect_messages'**
+  String get sport_connect_messages;
+
+  /// No description provided for @new_chat_message_notifications.
+  ///
+  /// In en, this message translates to:
+  /// **'New chat message notifications'**
+  String get new_chat_message_notifications;
+
+  /// No description provided for @sport_connect_rides.
+  ///
+  /// In en, this message translates to:
+  /// **'sport_connect_rides'**
+  String get sport_connect_rides;
+
+  /// No description provided for @ride_booking_and_status_notifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Ride booking and status notifications'**
+  String get ride_booking_and_status_notifications;
+
+  /// No description provided for @sport_connect_general.
+  ///
+  /// In en, this message translates to:
+  /// **'sport_connect_general'**
+  String get sport_connect_general;
+
+  /// No description provided for @general.
+  ///
+  /// In en, this message translates to:
+  /// **'General'**
+  String get general;
+
+  /// No description provided for @general_app_notifications.
+  ///
+  /// In en, this message translates to:
+  /// **'General app notifications'**
+  String get general_app_notifications;
+
+  /// No description provided for @arrive_at_destination.
+  ///
+  /// In en, this message translates to:
+  /// **'Arrive at destination'**
+  String get arrive_at_destination;
+
+  /// No description provided for @take_the_ramp.
+  ///
+  /// In en, this message translates to:
+  /// **'Take the ramp'**
+  String get take_the_ramp;
+
+  /// No description provided for @take_the_exit.
+  ///
+  /// In en, this message translates to:
+  /// **'Take the exit'**
+  String get take_the_exit;
+
+  /// No description provided for @driving.
+  ///
+  /// In en, this message translates to:
+  /// **'driving'**
+  String get driving;
+
+  /// No description provided for @geojson.
+  ///
+  /// In en, this message translates to:
+  /// **'geojson'**
+  String get geojson;
+
+  /// No description provided for @full.
+  ///
+  /// In en, this message translates to:
+  /// **'Full'**
+  String get full;
+
+  /// No description provided for @ok.
+  ///
+  /// In en, this message translates to:
+  /// **'Ok'**
+  String get ok;
+
+  /// No description provided for @polyline.
+  ///
+  /// In en, this message translates to:
+  /// **'polyline'**
+  String get polyline;
+
+  /// No description provided for @polyline6.
+  ///
+  /// In en, this message translates to:
+  /// **'polyline6'**
+  String get polyline6;
+
+  /// No description provided for @start_on.
+  ///
+  /// In en, this message translates to:
+  /// **'Start on'**
+  String get start_on;
+
+  /// No description provided for @inter.
+  ///
+  /// In en, this message translates to:
+  /// **'Inter'**
+  String get inter;
+
+  /// No description provided for @name_is_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Name is required'**
+  String get name_is_required;
+
+  /// No description provided for @name_must_be_at_least_2_characters.
+  ///
+  /// In en, this message translates to:
+  /// **'Name must be at least 2 characters'**
+  String get name_must_be_at_least_2_characters;
+
+  /// No description provided for @name_is_too_long.
+  ///
+  /// In en, this message translates to:
+  /// **'Name is too long'**
+  String get name_is_too_long;
+
+  /// No description provided for @name_cannot_contain_numbers.
+  ///
+  /// In en, this message translates to:
+  /// **'Name cannot contain numbers'**
+  String get name_cannot_contain_numbers;
+
+  /// No description provided for @name_contains_invalid_characters.
+  ///
+  /// In en, this message translates to:
+  /// **'Name contains invalid characters'**
+  String get name_contains_invalid_characters;
+
+  /// No description provided for @email_is_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Email is required'**
+  String get email_is_required;
+
+  /// No description provided for @please_enter_a_valid_email_address.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid email address'**
+  String get please_enter_a_valid_email_address;
+
+  /// No description provided for @phone_number_is_too_short.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone number is too short'**
+  String get phone_number_is_too_short;
+
+  /// No description provided for @phone_number_is_too_long.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone number is too long'**
+  String get phone_number_is_too_long;
+
+  /// No description provided for @phone_number_is_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone number is required'**
+  String get phone_number_is_required;
+
+  /// No description provided for @password_is_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Password is required'**
+  String get password_is_required;
+
+  /// No description provided for @password_must_be_at_least_8_characters.
+  ///
+  /// In en, this message translates to:
+  /// **'Password must be at least 8 characters'**
+  String get password_must_be_at_least_8_characters;
+
+  /// No description provided for @include_at_least_one_uppercase_letter.
+  ///
+  /// In en, this message translates to:
+  /// **'Include at least one uppercase letter'**
+  String get include_at_least_one_uppercase_letter;
+
+  /// No description provided for @include_at_least_one_lowercase_letter.
+  ///
+  /// In en, this message translates to:
+  /// **'Include at least one lowercase letter'**
+  String get include_at_least_one_lowercase_letter;
+
+  /// No description provided for @include_at_least_one_number.
+  ///
+  /// In en, this message translates to:
+  /// **'Include at least one number'**
+  String get include_at_least_one_number;
+
+  /// No description provided for @please_confirm_your_password.
+  ///
+  /// In en, this message translates to:
+  /// **'Please confirm your password'**
+  String get please_confirm_your_password;
+
+  /// No description provided for @passwords_do_not_match.
+  ///
+  /// In en, this message translates to:
+  /// **'Passwords do not match'**
+  String get passwords_do_not_match;
+
+  /// No description provided for @price_is_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Price is required'**
+  String get price_is_required;
+
+  /// No description provided for @please_enter_a_valid_price.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid price'**
+  String get please_enter_a_valid_price;
+
+  /// No description provided for @price_must_be_greater_than_0.
+  ///
+  /// In en, this message translates to:
+  /// **'Price must be greater than 0'**
+  String get price_must_be_greater_than_0;
+
+  /// No description provided for @price_seems_too_high.
+  ///
+  /// In en, this message translates to:
+  /// **'Price seems too high'**
+  String get price_seems_too_high;
+
+  /// No description provided for @please_select_number_of_seats.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select number of seats'**
+  String get please_select_number_of_seats;
+
+  /// No description provided for @date_is_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Date is required'**
+  String get date_is_required;
+
+  /// No description provided for @date_must_be_in_the_future.
+  ///
+  /// In en, this message translates to:
+  /// **'Date must be in the future'**
+  String get date_must_be_in_the_future;
+
+  /// No description provided for @date_of_birth_is_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Date of birth is required'**
+  String get date_of_birth_is_required;
+
+  /// No description provided for @license_plate_is_required.
+  ///
+  /// In en, this message translates to:
+  /// **'License plate is required'**
+  String get license_plate_is_required;
+
+  /// No description provided for @license_plate_is_too_short.
+  ///
+  /// In en, this message translates to:
+  /// **'License plate is too short'**
+  String get license_plate_is_too_short;
+
+  /// No description provided for @license_plate_is_too_long.
+  ///
+  /// In en, this message translates to:
+  /// **'License plate is too long'**
+  String get license_plate_is_too_long;
+
+  /// No description provided for @invalid_license_plate_format.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid license plate format'**
+  String get invalid_license_plate_format;
+
+  /// No description provided for @year_is_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Year is required'**
+  String get year_is_required;
+
+  /// No description provided for @please_enter_a_valid_year.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid year'**
+  String get please_enter_a_valid_year;
+
+  /// No description provided for @vehicle_is_too_old.
+  ///
+  /// In en, this message translates to:
+  /// **'Vehicle is too old'**
+  String get vehicle_is_too_old;
+
+  /// No description provided for @invalid_year.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid year'**
+  String get invalid_year;
+
+  /// No description provided for @city_name_is_too_short.
+  ///
+  /// In en, this message translates to:
+  /// **'City name is too short'**
+  String get city_name_is_too_short;
+
+  /// No description provided for @city_name_is_too_long.
+  ///
+  /// In en, this message translates to:
+  /// **'City name is too long'**
+  String get city_name_is_too_long;
+
+  /// No description provided for @city_name_cannot_contain_numbers.
+  ///
+  /// In en, this message translates to:
+  /// **'City name cannot contain numbers'**
+  String get city_name_cannot_contain_numbers;
+
+  /// No description provided for @this_field.
+  ///
+  /// In en, this message translates to:
+  /// **'This field'**
+  String get this_field;
+
+  /// No description provided for @please_sign_in_to_continue.
+  ///
+  /// In en, this message translates to:
+  /// **'Please sign in to continue.'**
+  String get please_sign_in_to_continue;
+
+  /// No description provided for @this_payment_or_payout_could_not_be_found.
+  ///
+  /// In en, this message translates to:
+  /// **'This payment or payout could not be found.'**
+  String get this_payment_or_payout_could_not_be_found;
+
+  /// No description provided for @this_request_was_already_processed.
+  ///
+  /// In en, this message translates to:
+  /// **'This request was already processed.'**
+  String get this_request_was_already_processed;
+
+  /// No description provided for @too_many_requests_please_wait_a_moment_and_try_again.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many requests — please wait a moment and try again.'**
+  String get too_many_requests_please_wait_a_moment_and_try_again;
+
+  /// No description provided for @the_request_timed_out_please_check_your_connection_and_try_again.
+  ///
+  /// In en, this message translates to:
+  /// **'The request timed out. Please check your connection and try again.'**
+  String get the_request_timed_out_please_check_your_connection_and_try_again;
+
+  /// No description provided for @service_temporarily_unavailable_please_try_again.
+  ///
+  /// In en, this message translates to:
+  /// **'Service temporarily unavailable. Please try again.'**
+  String get service_temporarily_unavailable_please_try_again;
+
+  /// No description provided for @security_check_failed_please_refresh_and_try_again.
+  ///
+  /// In en, this message translates to:
+  /// **'Security check failed. Please refresh and try again.'**
+  String get security_check_failed_please_refresh_and_try_again;
+
+  /// No description provided for @you_don.
+  ///
+  /// In en, this message translates to:
+  /// **'You don'**
+  String get you_don;
+
+  /// No description provided for @insufficient_balance_ride_earnings_may_still_be_settling_try_again_in_a_few_hours.
+  ///
+  /// In en, this message translates to:
+  /// **'Insufficient balance. Ride earnings may still be settling — try again in a few hours.'**
+  String
+  get insufficient_balance_ride_earnings_may_still_be_settling_try_again_in_a_few_hours;
+
+  /// No description provided for @no_bank_account_linked_please_complete_your_stripe_setup_first.
+  ///
+  /// In en, this message translates to:
+  /// **'No bank account linked. Please complete your Stripe setup first.'**
+  String get no_bank_account_linked_please_complete_your_stripe_setup_first;
+
+  /// No description provided for @payouts_not_yet_enabled_on_your_account_please_complete_verification.
+  ///
+  /// In en, this message translates to:
+  /// **'Payouts not yet enabled on your account. Please complete verification.'**
+  String
+  get payouts_not_yet_enabled_on_your_account_please_complete_verification;
+
+  /// No description provided for @your_stripe_account_isn.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Stripe account isn'**
+  String get your_stripe_account_isn;
+
+  /// No description provided for @tap.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap '**
+  String get tap;
+
+  /// No description provided for @your_card_was_declined_please_try_a_different_payment_method.
+  ///
+  /// In en, this message translates to:
+  /// **'Your card was declined. Please try a different payment method.'**
+  String get your_card_was_declined_please_try_a_different_payment_method;
+
+  /// No description provided for @payment_declined_insufficient_funds_on_your_card.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment declined — insufficient funds on your card.'**
+  String get payment_declined_insufficient_funds_on_your_card;
+
+  /// No description provided for @your_card_has_expired_please_update_your_payment_method.
+  ///
+  /// In en, this message translates to:
+  /// **'Your card has expired. Please update your payment method.'**
+  String get your_card_has_expired_please_update_your_payment_method;
+
+  /// No description provided for @incorrect_card_security_code_please_check_and_try_again.
+  ///
+  /// In en, this message translates to:
+  /// **'Incorrect card security code. Please check and try again.'**
+  String get incorrect_card_security_code_please_check_and_try_again;
+
+  /// No description provided for @this_payout_can_no_longer_be_cancelled_it.
+  ///
+  /// In en, this message translates to:
+  /// **'This payout can no longer be cancelled — it'**
+  String get this_payout_can_no_longer_be_cancelled_it;
+
+  /// No description provided for @payout_failed_please_check_your_bank_details_are_correct.
+  ///
+  /// In en, this message translates to:
+  /// **'Payout failed. Please check your bank details are correct.'**
+  String get payout_failed_please_check_your_bank_details_are_correct;
+
+  /// No description provided for @refund_could_not_be_processed_please_contact_support_if_this_persists.
+  ///
+  /// In en, this message translates to:
+  /// **'Refund could not be processed. Please contact support if this persists.'**
+  String
+  get refund_could_not_be_processed_please_contact_support_if_this_persists;
+
+  /// No description provided for @this_booking_has_already_been_paid.
+  ///
+  /// In en, this message translates to:
+  /// **'This booking has already been paid.'**
+  String get this_booking_has_already_been_paid;
+
+  /// No description provided for @this_ride_is_no_longer_available_for_booking.
+  ///
+  /// In en, this message translates to:
+  /// **'This ride is no longer available for booking.'**
+  String get this_ride_is_no_longer_available_for_booking;
+
+  /// No description provided for @no_active_booking_found_for_this_ride.
+  ///
+  /// In en, this message translates to:
+  /// **'No active booking found for this ride.'**
+  String get no_active_booking_found_for_this_ride;
+
+  /// No description provided for @the_driver_hasn.
+  ///
+  /// In en, this message translates to:
+  /// **'The driver hasn'**
+  String get the_driver_hasn;
+
+  /// No description provided for @connection_error_please_check_your_internet_and_try_again.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection error. Please check your internet and try again.'**
+  String get connection_error_please_check_your_internet_and_try_again;
+
+  /// No description provided for @request_timed_out_please_try_again.
+  ///
+  /// In en, this message translates to:
+  /// **'Request timed out. Please try again.'**
+  String get request_timed_out_please_try_again;
+
+  /// No description provided for @something_went_wrong_please_try_again.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Please try again.'**
+  String get something_went_wrong_please_try_again;
+
+  /// No description provided for @fastest_way_to_set_your_pickup_point.
+  ///
+  /// In en, this message translates to:
+  /// **'Fastest way to set your pickup point'**
+  String get fastest_way_to_set_your_pickup_point;
+
+  /// No description provided for @expand_map_for_exact_pickup_point.
+  ///
+  /// In en, this message translates to:
+  /// **'Expand map for exact pickup point'**
+  String get expand_map_for_exact_pickup_point;
+
+  /// No description provided for @tap_the_map_to_set_the_exact_point.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the map to set the exact point'**
+  String get tap_the_map_to_set_the_exact_point;
+
+  /// No description provided for @finding_address.
+  ///
+  /// In en, this message translates to:
+  /// **'Finding address...'**
+  String get finding_address;
+
+  /// No description provided for @suggestions.
+  ///
+  /// In en, this message translates to:
+  /// **'SUGGESTIONS'**
+  String get suggestions;
+
+  /// No description provided for @selected_address.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected address'**
+  String get selected_address;
+
+  /// No description provided for @use_this_address.
+  ///
+  /// In en, this message translates to:
+  /// **'Use this address'**
+  String get use_this_address;
+
+  /// No description provided for @selected.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected'**
+  String get selected;
+
+  /// No description provided for @search_unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Search unavailable'**
+  String get search_unavailable;
+
+  /// No description provided for @no_address_found.
+  ///
+  /// In en, this message translates to:
+  /// **'No address found'**
+  String get no_address_found;
+
+  /// No description provided for @try_another_street_or_choose_the_exact_point_on_map.
+  ///
+  /// In en, this message translates to:
+  /// **'Try another street or choose the exact point on map.'**
+  String get try_another_street_or_choose_the_exact_point_on_map;
+
+  /// No description provided for @unable_to_search_addresses_try_again.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to search addresses. Try again.'**
+  String get unable_to_search_addresses_try_again;
+
+  /// No description provided for @unable_to_read_a_valid_current_location.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to read a valid current location.'**
+  String get unable_to_read_a_valid_current_location;
+
+  /// No description provided for @your_current_location_appears_to_be_outside_france.
+  ///
+  /// In en, this message translates to:
+  /// **'Your current location appears to be outside France.'**
+  String get your_current_location_appears_to_be_outside_france;
+
+  /// No description provided for @invalid_address_location_please_choose_another_result.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid address location. Please choose another result.'**
+  String get invalid_address_location_please_choose_another_result;
+
+  /// No description provided for @invalid_map_position_please_choose_another_point.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid map position. Please choose another point.'**
+  String get invalid_map_position_please_choose_another_point;
+
+  /// No description provided for @please_select_a_location_in_france.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a location in France.'**
+  String get please_select_a_location_in_france;
+
+  /// No description provided for @selected_location.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected location'**
+  String get selected_location;
+
+  /// No description provided for @please_select_an_address.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select an address.'**
+  String get please_select_an_address;
+
+  /// No description provided for @invalid_selected_location_please_choose_another_point.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid selected location. Please choose another point.'**
+  String get invalid_selected_location_please_choose_another_point;
+
+  /// No description provided for @payment_receipt.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment Receipt'**
+  String get payment_receipt;
+
+  /// No description provided for @thank_you_for_riding_with_sportconnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Thank you for riding with SportConnect!'**
+  String get thank_you_for_riding_with_sportconnect;
+
+  /// No description provided for @refund_amount.
+  ///
+  /// In en, this message translates to:
+  /// **'Refund amount'**
+  String get refund_amount;
+
+  /// No description provided for @days.
+  ///
+  /// In en, this message translates to:
+  /// **'days'**
+  String get days;
+
+  /// No description provided for @could_not_submit_refund_please_try_again.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not submit refund. Please try again.'**
+  String get could_not_submit_refund_please_try_again;
+
+  /// No description provided for @no_rides_found.
+  ///
+  /// In en, this message translates to:
+  /// **'No rides found'**
+  String get no_rides_found;
+
+  /// No description provided for @try_adjusting_your_filters_or_search_for_a_different_route.
+  ///
+  /// In en, this message translates to:
+  /// **'Try adjusting your filters or search for a different route'**
+  String get try_adjusting_your_filters_or_search_for_a_different_route;
+
+  /// No description provided for @no_events_yet.
+  ///
+  /// In en, this message translates to:
+  /// **'No events yet'**
+  String get no_events_yet;
+
+  /// No description provided for @create_an_event_to_bring_your_group_together.
+  ///
+  /// In en, this message translates to:
+  /// **'Create an event to bring your group together'**
+  String get create_an_event_to_bring_your_group_together;
+
+  /// No description provided for @no_messages_yet.
+  ///
+  /// In en, this message translates to:
+  /// **'No messages yet'**
+  String get no_messages_yet;
+
+  /// No description provided for @start_a_conversation_by_booking_a_ride_or_joining_an_event.
+  ///
+  /// In en, this message translates to:
+  /// **'Start a conversation by booking a ride or joining an event'**
+  String get start_a_conversation_by_booking_a_ride_or_joining_an_event;
+
+  /// No description provided for @all_caught_up.
+  ///
+  /// In en, this message translates to:
+  /// **'All caught up!'**
+  String get all_caught_up;
+
+  /// No description provided for @no_reviews_yet.
+  ///
+  /// In en, this message translates to:
+  /// **'No reviews yet'**
+  String get no_reviews_yet;
+
+  /// No description provided for @reviews_will_appear_after_completed_rides.
+  ///
+  /// In en, this message translates to:
+  /// **'Reviews will appear after completed rides'**
+  String get reviews_will_appear_after_completed_rides;
+
+  /// No description provided for @no_vehicles_added.
+  ///
+  /// In en, this message translates to:
+  /// **'No vehicles added'**
+  String get no_vehicles_added;
+
+  /// No description provided for @add_a_vehicle_to_start_offering_rides.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a vehicle to start offering rides'**
+  String get add_a_vehicle_to_start_offering_rides;
+
+  /// No description provided for @no_bookings_yet.
+  ///
+  /// In en, this message translates to:
+  /// **'No bookings yet'**
+  String get no_bookings_yet;
+
+  /// No description provided for @your_ride_bookings_will_appear_here.
+  ///
+  /// In en, this message translates to:
+  /// **'Your ride bookings will appear here'**
+  String get your_ride_bookings_will_appear_here;
+
+  /// No description provided for @no_results_found.
+  ///
+  /// In en, this message translates to:
+  /// **'No results found'**
+  String get no_results_found;
+
+  /// No description provided for @try_different_search_terms_or_filters.
+  ///
+  /// In en, this message translates to:
+  /// **'Try different search terms or filters'**
+  String get try_different_search_terms_or_filters;
+
+  /// No description provided for @please_try_again.
+  ///
+  /// In en, this message translates to:
+  /// **'Please try again'**
+  String get please_try_again;
+
+  /// No description provided for @select_your_expertise_level.
+  ///
+  /// In en, this message translates to:
+  /// **'Select your expertise level'**
+  String get select_your_expertise_level;
+
+  /// No description provided for @male.
+  ///
+  /// In en, this message translates to:
+  /// **'Male'**
+  String get male;
+
+  /// No description provided for @female.
+  ///
+  /// In en, this message translates to:
+  /// **'Female'**
+  String get female;
+
+  /// No description provided for @enter_a_valid_french_phone_number.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid French phone number.'**
+  String get enter_a_valid_french_phone_number;
+
+  /// No description provided for @after_33_enter_the_number_without_the_leading_0.
+  ///
+  /// In en, this message translates to:
+  /// **'After +33, enter the number without the leading 0.'**
+  String get after_33_enter_the_number_without_the_leading_0;
+
+  /// No description provided for @used_only_for_ride_coordination_and_safety.
+  ///
+  /// In en, this message translates to:
+  /// **'Used only for ride coordination and safety.'**
+  String get used_only_for_ride_coordination_and_safety;
+
+  /// No description provided for @no_map_apps_are_available_on_this_device.
+  ///
+  /// In en, this message translates to:
+  /// **'No map apps are available on this device.'**
+  String get no_map_apps_are_available_on_this_device;
+
+  /// No description provided for @unable_to_open_maps_right_now.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to open maps right now.'**
+  String get unable_to_open_maps_right_now;
+
+  /// No description provided for @select_location.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Location'**
+  String get select_location;
+
+  /// No description provided for @france.
+  ///
+  /// In en, this message translates to:
+  /// **'France'**
+  String get france;
+
+  /// No description provided for @departure_reminder.
+  ///
+  /// In en, this message translates to:
+  /// **'Departure reminder'**
+  String get departure_reminder;
+
+  /// No description provided for @search_rides_people_places.
+  ///
+  /// In en, this message translates to:
+  /// **'Search rides, people, places...'**
+  String get search_rides_people_places;
+
+  /// No description provided for @explore_nearby_stops.
+  ///
+  /// In en, this message translates to:
+  /// **'Explore nearby stops'**
+  String get explore_nearby_stops;
+
+  /// No description provided for @gas_stations.
+  ///
+  /// In en, this message translates to:
+  /// **'Gas Stations'**
+  String get gas_stations;
+
+  /// No description provided for @restaurants.
+  ///
+  /// In en, this message translates to:
+  /// **'Restaurants'**
+  String get restaurants;
+
+  /// No description provided for @sports.
+  ///
+  /// In en, this message translates to:
+  /// **'Sports'**
+  String get sports;
+
+  /// No description provided for @universities.
+  ///
+  /// In en, this message translates to:
+  /// **'Universities'**
+  String get universities;
+
+  /// No description provided for @hospitals.
+  ///
+  /// In en, this message translates to:
+  /// **'Hospitals'**
+  String get hospitals;
+
+  /// No description provided for @transport.
+  ///
+  /// In en, this message translates to:
+  /// **'Transport'**
+  String get transport;
+
+  /// No description provided for @cafs.
+  ///
+  /// In en, this message translates to:
+  /// **'Cafés'**
+  String get cafs;
+
+  /// No description provided for @search.
+  ///
+  /// In en, this message translates to:
+  /// **'Search...'**
+  String get search;
+
+  /// No description provided for @switch_vehicle.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch Vehicle'**
+  String get switch_vehicle;
+
+  /// No description provided for @ladies_only.
+  ///
+  /// In en, this message translates to:
+  /// **'Ladies Only'**
+  String get ladies_only;
+
+  /// No description provided for @tap_to_apply.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to apply'**
+  String get tap_to_apply;
+
+  /// No description provided for @ride_progress.
+  ///
+  /// In en, this message translates to:
+  /// **'Ride Progress'**
+  String get ride_progress;
+
+  /// No description provided for @ride_confirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Ride confirmed'**
+  String get ride_confirmed;
+
+  /// No description provided for @on_the_way_to_pickup.
+  ///
+  /// In en, this message translates to:
+  /// **'On the way to pickup'**
+  String get on_the_way_to_pickup;
+
+  /// No description provided for @almost_at_pickup_point.
+  ///
+  /// In en, this message translates to:
+  /// **'Almost at pickup point'**
+  String get almost_at_pickup_point;
+
+  /// No description provided for @en_route_to_destination.
+  ///
+  /// In en, this message translates to:
+  /// **'En route to destination'**
+  String get en_route_to_destination;
+
+  /// No description provided for @booked.
+  ///
+  /// In en, this message translates to:
+  /// **'Booked'**
+  String get booked;
+
+  /// No description provided for @driver_left.
+  ///
+  /// In en, this message translates to:
+  /// **'Driver Left'**
+  String get driver_left;
+
+  /// No description provided for @arriving.
+  ///
+  /// In en, this message translates to:
+  /// **'Arriving'**
+  String get arriving;
+
+  /// No description provided for @riding.
+  ///
+  /// In en, this message translates to:
+  /// **'Riding'**
+  String get riding;
+
+  /// No description provided for @arrived.
+  ///
+  /// In en, this message translates to:
+  /// **'Arrived'**
+  String get arrived;
+
+  /// No description provided for @driver_history.
+  ///
+  /// In en, this message translates to:
+  /// **'Driver History'**
+  String get driver_history;
+
+  /// No description provided for @please_reauthenticate_before_deleting_your_account.
+  ///
+  /// In en, this message translates to:
+  /// **'Please re-authenticate before deleting your account'**
+  String get please_reauthenticate_before_deleting_your_account;
+
+  /// No description provided for @your_account_has_been_suspended_please_contact_support.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account has been suspended. Please contact support.'**
+  String get your_account_has_been_suspended_please_contact_support;
+
+  /// No description provided for @signin_was_cancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in was cancelled.'**
+  String get signin_was_cancelled;
+
+  /// No description provided for @no_user_found_with_this_email.
+  ///
+  /// In en, this message translates to:
+  /// **'No user found with this email'**
+  String get no_user_found_with_this_email;
+
+  /// No description provided for @wrong_password.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrong password'**
+  String get wrong_password;
+
+  /// No description provided for @invalid_email_or_password.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid email or password'**
+  String get invalid_email_or_password;
+
+  /// No description provided for @email_already_in_use.
+  ///
+  /// In en, this message translates to:
+  /// **'Email already in use'**
+  String get email_already_in_use;
+
+  /// No description provided for @invalid_email_address.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid email address'**
+  String get invalid_email_address;
+
+  /// No description provided for @password_is_too_weak.
+  ///
+  /// In en, this message translates to:
+  /// **'Password is too weak'**
+  String get password_is_too_weak;
+
+  /// No description provided for @too_many_attempts_please_try_again_later.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many attempts. Please try again later'**
+  String get too_many_attempts_please_try_again_later;
+
+  /// No description provided for @please_reauthenticate_to_continue.
+  ///
+  /// In en, this message translates to:
+  /// **'Please re-authenticate to continue'**
+  String get please_reauthenticate_to_continue;
+
+  /// No description provided for @an_account_already_exists_with_a_different_signin_method.
+  ///
+  /// In en, this message translates to:
+  /// **'An account already exists with a different sign-in method. '**
+  String get an_account_already_exists_with_a_different_signin_method;
+
+  /// No description provided for @the_selected_google_account_does_not_match_your_account_email.
+  ///
+  /// In en, this message translates to:
+  /// **'The selected Google account does not match your account email. '**
+  String get the_selected_google_account_does_not_match_your_account_email;
+
+  /// No description provided for @requiresrecentlogin.
+  ///
+  /// In en, this message translates to:
+  /// **'requires-recent-login'**
+  String get requiresrecentlogin;
+
+  /// No description provided for @user.
+  ///
+  /// In en, this message translates to:
+  /// **'User'**
+  String get user;
+
+  /// No description provided for @weakpassword.
+  ///
+  /// In en, this message translates to:
+  /// **'weak-password'**
+  String get weakpassword;
+
+  /// No description provided for @you_must_accept_the_terms_to_continue.
+  ///
+  /// In en, this message translates to:
+  /// **'You must accept the terms to continue.'**
+  String get you_must_accept_the_terms_to_continue;
+
+  /// No description provided for @from_your_signin_account.
+  ///
+  /// In en, this message translates to:
+  /// **'From your sign-in account'**
+  String get from_your_signin_account;
+
+  /// No description provided for @help_riders_recognize_your_car_at_pickup.
+  ///
+  /// In en, this message translates to:
+  /// **'Help riders recognize your car at pickup.'**
+  String get help_riders_recognize_your_car_at_pickup;
+
+  /// No description provided for @other_color.
+  ///
+  /// In en, this message translates to:
+  /// **'Other color'**
+  String get other_color;
+
+  /// No description provided for @i_agree_to_the.
+  ///
+  /// In en, this message translates to:
+  /// **'I agree to the '**
+  String get i_agree_to_the;
+
+  /// No description provided for @terms_conditions.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms & Conditions'**
+  String get terms_conditions;
+
+  /// No description provided for @recognition_details_appear_here.
+  ///
+  /// In en, this message translates to:
+  /// **'Recognition details appear here'**
+  String get recognition_details_appear_here;
+
+  /// No description provided for @what_car_should_riders_look_for.
+  ///
+  /// In en, this message translates to:
+  /// **'What car should riders look for?'**
+  String get what_car_should_riders_look_for;
+
+  /// No description provided for @keep_this_simple_make_and_model_are_enough_here.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep this simple. Make and model are enough here.'**
+  String get keep_this_simple_make_and_model_are_enough_here;
+
+  /// No description provided for @help_passengers_find_you.
+  ///
+  /// In en, this message translates to:
+  /// **'Help passengers find you'**
+  String get help_passengers_find_you;
+
+  /// No description provided for @color_and_plate_are_the_details_riders_use_at_pickup.
+  ///
+  /// In en, this message translates to:
+  /// **'Color and plate are the details riders use at pickup.'**
+  String get color_and_plate_are_the_details_riders_use_at_pickup;
+
+  /// No description provided for @how_many_passengers_can_you_take.
+  ///
+  /// In en, this message translates to:
+  /// **'How many passengers can you take?'**
+  String get how_many_passengers_can_you_take;
+
+  /// No description provided for @this_is_available_passenger_seats_not_total_car_seats.
+  ///
+  /// In en, this message translates to:
+  /// **'This is available passenger seats, not total car seats.'**
+  String get this_is_available_passenger_seats_not_total_car_seats;
+
+  /// No description provided for @vehicle_details.
+  ///
+  /// In en, this message translates to:
+  /// **'Vehicle details'**
+  String get vehicle_details;
+
+  /// No description provided for @kept_quieter_because_they_are_less_important_at_pickup.
+  ///
+  /// In en, this message translates to:
+  /// **'Kept quieter because they are less important at pickup.'**
+  String get kept_quieter_because_they_are_less_important_at_pickup;
+
+  /// No description provided for @black.
+  ///
+  /// In en, this message translates to:
+  /// **'Black'**
+  String get black;
+
+  /// No description provided for @white.
+  ///
+  /// In en, this message translates to:
+  /// **'White'**
+  String get white;
+
+  /// No description provided for @grey.
+  ///
+  /// In en, this message translates to:
+  /// **'Grey'**
+  String get grey;
+
+  /// No description provided for @silver.
+  ///
+  /// In en, this message translates to:
+  /// **'Silver'**
+  String get silver;
+
+  /// No description provided for @blue.
+  ///
+  /// In en, this message translates to:
+  /// **'Blue'**
+  String get blue;
+
+  /// No description provided for @red.
+  ///
+  /// In en, this message translates to:
+  /// **'Red'**
+  String get red;
+
+  /// No description provided for @green.
+  ///
+  /// In en, this message translates to:
+  /// **'Green'**
+  String get green;
+
+  /// No description provided for @beige_brown.
+  ///
+  /// In en, this message translates to:
+  /// **'Beige / Brown'**
+  String get beige_brown;
+
+  /// No description provided for @address.
+  ///
+  /// In en, this message translates to:
+  /// **'Address'**
+  String get address;
+
+  /// No description provided for @save_driver_profile_and_continue.
+  ///
+  /// In en, this message translates to:
+  /// **'Save driver profile and continue'**
+  String get save_driver_profile_and_continue;
+
+  /// No description provided for @champagne_pearl_white_bordeaux.
+  ///
+  /// In en, this message translates to:
+  /// **'Champagne, pearl white, bordeaux...'**
+  String get champagne_pearl_white_bordeaux;
+
+  /// No description provided for @invalid_value.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid value'**
+  String get invalid_value;
+
+  /// No description provided for @address_is_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Address is required'**
+  String get address_is_required;
+
+  /// No description provided for @name.
+  ///
+  /// In en, this message translates to:
+  /// **'name'**
+  String get name;
+
+  /// No description provided for @dob.
+  ///
+  /// In en, this message translates to:
+  /// **'dob'**
+  String get dob;
+
+  /// No description provided for @expertise.
+  ///
+  /// In en, this message translates to:
+  /// **'expertise'**
+  String get expertise;
+
+  /// No description provided for @terms.
+  ///
+  /// In en, this message translates to:
+  /// **'terms'**
+  String get terms;
+
+  /// No description provided for @license_plate.
+  ///
+  /// In en, this message translates to:
+  /// **'license_plate'**
+  String get license_plate;
+
+  /// No description provided for @fuel_type.
+  ///
+  /// In en, this message translates to:
+  /// **'fuel_type'**
+  String get fuel_type;
+
+  /// No description provided for @sign_up.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign up'**
+  String get sign_up;
+
+  /// No description provided for @sportconnect_logo.
+  ///
+  /// In en, this message translates to:
+  /// **'SportConnect logo'**
+  String get sportconnect_logo;
+
+  /// No description provided for @signing_in_please_wait.
+  ///
+  /// In en, this message translates to:
+  /// **'Signing in, please wait'**
+  String get signing_in_please_wait;
+
+  /// No description provided for @discard_changes.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard changes?'**
+  String get discard_changes;
+
+  /// No description provided for @your_profile_info_will_not_be_saved_if_you_go_back.
+  ///
+  /// In en, this message translates to:
+  /// **'Your profile info will not be saved if you go back.'**
+  String get your_profile_info_will_not_be_saved_if_you_go_back;
+
+  /// No description provided for @keep_editing.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep editing'**
+  String get keep_editing;
+
+  /// No description provided for @complete_your_profile.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete your profile'**
+  String get complete_your_profile;
+
+  /// No description provided for @step_2_of_2.
+  ///
+  /// In en, this message translates to:
+  /// **'Step 2 of 2'**
+  String get step_2_of_2;
+
+  /// No description provided for @rider_onboarding_form.
+  ///
+  /// In en, this message translates to:
+  /// **'Rider onboarding form'**
+  String get rider_onboarding_form;
+
+  /// No description provided for @complete_rider_onboarding.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete rider onboarding'**
+  String get complete_rider_onboarding;
+
+  /// No description provided for @profile_not_loaded_yet_please_wait_a_moment.
+  ///
+  /// In en, this message translates to:
+  /// **'⚠️ Profile not loaded yet. Please wait a moment.'**
+  String get profile_not_loaded_yet_please_wait_a_moment;
+
+  /// No description provided for @please_enter_a_valid_phone_number.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid phone number.'**
+  String get please_enter_a_valid_phone_number;
+
+  /// No description provided for @please_enter_your_address.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter your address.'**
+  String get please_enter_your_address;
+
+  /// No description provided for @profile_complete_welcome_aboard.
+  ///
+  /// In en, this message translates to:
+  /// **'🎉 Profile complete! Welcome aboard.'**
+  String get profile_complete_welcome_aboard;
+
+  /// No description provided for @your_saved_info_has_been_prefilled.
+  ///
+  /// In en, this message translates to:
+  /// **'Your saved info has been pre-filled.'**
+  String get your_saved_info_has_been_prefilled;
+
+  /// No description provided for @failed_to_load_your_profile_some_fields_may_be_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load your profile. Some fields may be empty.'**
+  String get failed_to_load_your_profile_some_fields_may_be_empty;
+
+  /// No description provided for @verification_requirements.
+  ///
+  /// In en, this message translates to:
+  /// **'Verification Requirements'**
+  String get verification_requirements;
+
+  /// No description provided for @almost_there.
+  ///
+  /// In en, this message translates to:
+  /// **'Almost there! 📍'**
+  String get almost_there;
+
+  /// No description provided for @skip_for_now.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip for now'**
+  String get skip_for_now;
+
+  /// No description provided for @confirm_date.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Date'**
+  String get confirm_date;
+
+  /// No description provided for @account_setup.
+  ///
+  /// In en, this message translates to:
+  /// **'Account Setup'**
+  String get account_setup;
+
+  /// No description provided for @identity.
+  ///
+  /// In en, this message translates to:
+  /// **'Identity'**
+  String get identity;
+
+  /// No description provided for @profile.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get profile;
+
+  /// No description provided for @or_continue_with_email.
+  ///
+  /// In en, this message translates to:
+  /// **'Or continue with email'**
+  String get or_continue_with_email;
+
+  /// No description provided for @agree_to_terms_of_service_and_privacy_policy.
+  ///
+  /// In en, this message translates to:
+  /// **'Agree to Terms of Service and Privacy Policy'**
+  String get agree_to_terms_of_service_and_privacy_policy;
+
+  /// No description provided for @googlesignincanceled.
+  ///
+  /// In en, this message translates to:
+  /// **'google-sign-in-canceled'**
+  String get googlesignincanceled;
+
+  /// No description provided for @accountexistswithdifferentcredential.
+  ///
+  /// In en, this message translates to:
+  /// **'account-exists-with-different-credential'**
+  String get accountexistswithdifferentcredential;
+
+  /// No description provided for @wrongpassword.
+  ///
+  /// In en, this message translates to:
+  /// **'wrong-password'**
+  String get wrongpassword;
+
+  /// No description provided for @every_day.
+  ///
+  /// In en, this message translates to:
+  /// **'Every day'**
+  String get every_day;
+
+  /// No description provided for @every_week.
+  ///
+  /// In en, this message translates to:
+  /// **'Every week'**
+  String get every_week;
+
+  /// No description provided for @every_2_weeks.
+  ///
+  /// In en, this message translates to:
+  /// **'Every 2 weeks'**
+  String get every_2_weeks;
+
+  /// No description provided for @every_month.
+  ///
+  /// In en, this message translates to:
+  /// **'Every month'**
+  String get every_month;
+
+  /// No description provided for @every_year.
+  ///
+  /// In en, this message translates to:
+  /// **'Every year'**
+  String get every_year;
+
+  /// No description provided for @daily.
+  ///
+  /// In en, this message translates to:
+  /// **'DAILY'**
+  String get daily;
+
+  /// No description provided for @weekly.
+  ///
+  /// In en, this message translates to:
+  /// **'WEEKLY'**
+  String get weekly;
+
+  /// No description provided for @weeklyinterval2.
+  ///
+  /// In en, this message translates to:
+  /// **'WEEKLY;INTERVAL=2'**
+  String get weeklyinterval2;
+
+  /// No description provided for @monthly.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly'**
+  String get monthly;
+
+  /// No description provided for @yearly.
+  ///
+  /// In en, this message translates to:
+  /// **'yearly'**
+  String get yearly;
+
+  /// No description provided for @martial_arts.
+  ///
+  /// In en, this message translates to:
+  /// **'Martial Arts'**
+  String get martial_arts;
+
+  /// No description provided for @football.
+  ///
+  /// In en, this message translates to:
+  /// **'Football'**
+  String get football;
+
+  /// No description provided for @basketball.
+  ///
+  /// In en, this message translates to:
+  /// **'Basketball'**
+  String get basketball;
+
+  /// No description provided for @volleyball.
+  ///
+  /// In en, this message translates to:
+  /// **'Volleyball'**
+  String get volleyball;
+
+  /// No description provided for @tennis.
+  ///
+  /// In en, this message translates to:
+  /// **'Tennis'**
+  String get tennis;
+
+  /// No description provided for @running.
+  ///
+  /// In en, this message translates to:
+  /// **'Running'**
+  String get running;
+
+  /// No description provided for @gym.
+  ///
+  /// In en, this message translates to:
+  /// **'Gym'**
+  String get gym;
+
+  /// No description provided for @swimming.
+  ///
+  /// In en, this message translates to:
+  /// **'Swimming'**
+  String get swimming;
+
+  /// No description provided for @cycling.
+  ///
+  /// In en, this message translates to:
+  /// **'Cycling'**
+  String get cycling;
+
+  /// No description provided for @hiking.
+  ///
+  /// In en, this message translates to:
+  /// **'Hiking'**
+  String get hiking;
+
+  /// No description provided for @yoga.
+  ///
+  /// In en, this message translates to:
+  /// **'Yoga'**
+  String get yoga;
+
+  /// No description provided for @other.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get other;
+
+  /// No description provided for @no_ride_info_yet.
+  ///
+  /// In en, this message translates to:
+  /// **'No ride info yet'**
+  String get no_ride_info_yet;
+
+  /// No description provided for @need_ride.
+  ///
+  /// In en, this message translates to:
+  /// **'need_ride'**
+  String get need_ride;
+
+  /// No description provided for @self_arranged.
+  ///
+  /// In en, this message translates to:
+  /// **'self_arranged'**
+  String get self_arranged;
+
+  /// No description provided for @repeat.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat'**
+  String get repeat;
+
+  /// No description provided for @no_recurrence_pattern_fits_this_startend_window.
+  ///
+  /// In en, this message translates to:
+  /// **'No recurrence pattern fits this start/end window. '**
+  String get no_recurrence_pattern_fits_this_startend_window;
+
+  /// No description provided for @failed_to_load_attendees.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load attendees'**
+  String get failed_to_load_attendees;
+
+  /// No description provided for @no_attendees_yet.
+  ///
+  /// In en, this message translates to:
+  /// **'No attendees yet'**
+  String get no_attendees_yet;
+
+  /// No description provided for @failed_to_open_chat_please_try_again.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to open chat. Please try again.'**
+  String get failed_to_open_chat_please_try_again;
+
+  /// No description provided for @view_all_attendees.
+  ///
+  /// In en, this message translates to:
+  /// **'View all attendees →'**
+  String get view_all_attendees;
+
+  /// No description provided for @cancel_event.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel Event'**
+  String get cancel_event;
+
+  /// No description provided for @keep_event.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep Event'**
+  String get keep_event;
+
+  /// No description provided for @delete_event.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Event'**
+  String get delete_event;
+
+  /// No description provided for @are_you_sure_you_want_to_delete.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete '**
+  String get are_you_sure_you_want_to_delete;
+
+  /// No description provided for @recurring_event.
+  ///
+  /// In en, this message translates to:
+  /// **'⚠️ Recurring Event'**
+  String get recurring_event;
+
+  /// No description provided for @this_event_repeats_deleting_it_will_remove_all_occurrences_past_and_future.
+  ///
+  /// In en, this message translates to:
+  /// **'This event repeats. Deleting it will remove ALL occurrences (past and future).'**
+  String
+  get this_event_repeats_deleting_it_will_remove_all_occurrences_past_and_future;
+
+  /// No description provided for @to_delete_only_specific_occurrences_use_google_calendar_tap_the_event.
+  ///
+  /// In en, this message translates to:
+  /// **'To delete only specific occurrences, use Google Calendar: tap the event → '**
+  String
+  get to_delete_only_specific_occurrences_use_google_calendar_tap_the_event;
+
+  /// No description provided for @cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'cancel'**
+  String get cancel;
+
+  /// No description provided for @delete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get delete;
+
+  /// No description provided for @premium_event_chat.
+  ///
+  /// In en, this message translates to:
+  /// **'Premium event chat'**
+  String get premium_event_chat;
+
+  /// No description provided for @subscribe_to_premium_to_join_attendee_group_chats_for_events.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscribe to Premium to join attendee group chats for events.'**
+  String get subscribe_to_premium_to_join_attendee_group_chats_for_events;
+
+  /// No description provided for @upgrade_to_premium.
+  ///
+  /// In en, this message translates to:
+  /// **'Upgrade to Premium'**
+  String get upgrade_to_premium;
+
+  /// No description provided for @reason_optional.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason (optional)'**
+  String get reason_optional;
+
+  /// No description provided for @event_group_chat_is_available_to_premium_subscribers_only.
+  ///
+  /// In en, this message translates to:
+  /// **'Event group chat is available to Premium subscribers only.'**
+  String get event_group_chat_is_available_to_premium_subscribers_only;
+
+  /// No description provided for @could_not_open_calendar_please_ensure_google_calendar_is_available.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open calendar. Please ensure Google Calendar is available.'**
+  String get could_not_open_calendar_please_ensure_google_calendar_is_available;
+
+  /// No description provided for @events_near_me.
+  ///
+  /// In en, this message translates to:
+  /// **'Events near me'**
+  String get events_near_me;
+
+  /// No description provided for @everywhere.
+  ///
+  /// In en, this message translates to:
+  /// **'Everywhere'**
+  String get everywhere;
+
+  /// No description provided for @retry_loading_events.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry loading events'**
+  String get retry_loading_events;
+
+  /// No description provided for @all_loaded_events_shown.
+  ///
+  /// In en, this message translates to:
+  /// **'All loaded events shown'**
+  String get all_loaded_events_shown;
+
+  /// No description provided for @load_more_events.
+  ///
+  /// In en, this message translates to:
+  /// **'Load more events'**
+  String get load_more_events;
+
+  /// No description provided for @create_event.
+  ///
+  /// In en, this message translates to:
+  /// **'Create event'**
+  String get create_event;
+
+  /// No description provided for @could_not_load_events.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load events'**
+  String get could_not_load_events;
+
+  /// No description provided for @no_matching_loaded_events.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching loaded events'**
+  String get no_matching_loaded_events;
+
+  /// No description provided for @search_loaded_events_by_title_place_organizer.
+  ///
+  /// In en, this message translates to:
+  /// **'Search loaded events by title, place, organizer'**
+  String get search_loaded_events_by_title_place_organizer;
+
+  /// No description provided for @now.
+  ///
+  /// In en, this message translates to:
+  /// **'now'**
+  String get now;
+
+  /// No description provided for @title_is_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Title is required'**
+  String get title_is_required;
+
+  /// No description provided for @title_must_be_at_least_3_characters.
+  ///
+  /// In en, this message translates to:
+  /// **'Title must be at least 3 characters'**
+  String get title_must_be_at_least_3_characters;
+
+  /// No description provided for @please_pick_a_location.
+  ///
+  /// In en, this message translates to:
+  /// **'Please pick a location.'**
+  String get please_pick_a_location;
+
+  /// No description provided for @start_time_must_be_in_the_future.
+  ///
+  /// In en, this message translates to:
+  /// **'Start time must be in the future.'**
+  String get start_time_must_be_in_the_future;
+
+  /// No description provided for @end_time_must_be_after_start_time.
+  ///
+  /// In en, this message translates to:
+  /// **'End time must be after start time.'**
+  String get end_time_must_be_after_start_time;
+
+  /// No description provided for @select_a_recurrence_pattern.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a recurrence pattern.'**
+  String get select_a_recurrence_pattern;
+
+  /// No description provided for @repeat_end_date_must_be_on_or_after_the_start_date.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat end date must be on or after the start date.'**
+  String get repeat_end_date_must_be_on_or_after_the_start_date;
+
+  /// No description provided for @please_wait_for_the_current_submission_to_finish.
+  ///
+  /// In en, this message translates to:
+  /// **'Please wait for the current submission to finish.'**
+  String get please_wait_for_the_current_submission_to_finish;
+
+  /// No description provided for @unlimited.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlimited'**
+  String get unlimited;
+
+  /// No description provided for @please_select_a_location.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a location.'**
+  String get please_select_a_location;
+
+  /// No description provided for @start_time_is_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Start time is required'**
+  String get start_time_is_required;
+
+  /// No description provided for @event_is_still_loading.
+  ///
+  /// In en, this message translates to:
+  /// **'Event is still loading.'**
+  String get event_is_still_loading;
+
+  /// No description provided for @event_created_but_the_cover_image_could_not_be_uploaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Event created, but the cover image could not be uploaded.'**
+  String get event_created_but_the_cover_image_could_not_be_uploaded;
+
+  /// No description provided for @ride_in_progress.
+  ///
+  /// In en, this message translates to:
+  /// **'RIDE IN PROGRESS'**
+  String get ride_in_progress;
+
+  /// No description provided for @next_ride.
+  ///
+  /// In en, this message translates to:
+  /// **'Next ride'**
+  String get next_ride;
+
+  /// No description provided for @review_and_respond_before_passengers_choose_another_ride.
+  ///
+  /// In en, this message translates to:
+  /// **'Review and respond before passengers choose another ride.'**
+  String get review_and_respond_before_passengers_choose_another_ride;
+
+  /// No description provided for @ready_for_your_next_trip.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready for your next trip?'**
+  String get ready_for_your_next_trip;
+
+  /// No description provided for @publish_a_ride_and_start_receiving_passenger_requests.
+  ///
+  /// In en, this message translates to:
+  /// **'Publish a ride and start receiving passenger requests.'**
+  String get publish_a_ride_and_start_receiving_passenger_requests;
+
+  /// No description provided for @last_updated_february_23_2026.
+  ///
+  /// In en, this message translates to:
+  /// **'Last updated: February 23, 2026'**
+  String get last_updated_february_23_2026;
+
+  /// No description provided for @en.
+  ///
+  /// In en, this message translates to:
+  /// **'en'**
+  String get en;
+
+  /// No description provided for @utf8.
+  ///
+  /// In en, this message translates to:
+  /// **'UTF-8'**
+  String get utf8;
+
+  /// No description provided for @viewport.
+  ///
+  /// In en, this message translates to:
+  /// **'viewport'**
+  String get viewport;
+
+  /// No description provided for @widthdevicewidth_initialscale10.
+  ///
+  /// In en, this message translates to:
+  /// **'width=device-width, initial-scale=1.0'**
+  String get widthdevicewidth_initialscale10;
+
+  /// No description provided for @subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'subtitle'**
+  String get subtitle;
+
+  /// No description provided for @highlight.
+  ///
+  /// In en, this message translates to:
+  /// **'highlight'**
+  String get highlight;
+
+  /// No description provided for @mailtolegalsportconnectapp.
+  ///
+  /// In en, this message translates to:
+  /// **'mailto:legal@sportconnect.app'**
+  String get mailtolegalsportconnectapp;
+
+  /// No description provided for @mailtoprivacysportconnectapp.
+  ///
+  /// In en, this message translates to:
+  /// **'mailto:privacy@sportconnect.app'**
+  String get mailtoprivacysportconnectapp;
+
+  /// No description provided for @delete_conversation.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete conversation'**
+  String get delete_conversation;
+
+  /// No description provided for @this_will_remove_the_conversation_from_your_chat_list.
+  ///
+  /// In en, this message translates to:
+  /// **'This will remove the conversation from your chat list. '**
+  String get this_will_remove_the_conversation_from_your_chat_list;
+
+  /// No description provided for @clear_chat_history.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear chat history'**
+  String get clear_chat_history;
+
+  /// No description provided for @this_will_clear_the_messages_from_this_chat_for_you_only.
+  ///
+  /// In en, this message translates to:
+  /// **'This will clear the messages from this chat for you only. '**
+  String get this_will_clear_the_messages_from_this_chat_for_you_only;
+
+  /// No description provided for @clear_history.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear history'**
+  String get clear_history;
+
+  /// No description provided for @message_options.
+  ///
+  /// In en, this message translates to:
+  /// **'Message options'**
+  String get message_options;
+
+  /// No description provided for @attachments.
+  ///
+  /// In en, this message translates to:
+  /// **'Attachments'**
+  String get attachments;
+
+  /// No description provided for @conversation_deleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversation deleted'**
+  String get conversation_deleted;
+
+  /// No description provided for @draft.
+  ///
+  /// In en, this message translates to:
+  /// **'Draft'**
+  String get draft;
+
+  /// No description provided for @preview_mode.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview mode'**
+  String get preview_mode;
+
+  /// No description provided for @chat_preview.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat preview'**
+  String get chat_preview;
+
+  /// No description provided for @person_add.
+  ///
+  /// In en, this message translates to:
+  /// **'person_add'**
+  String get person_add;
+
+  /// No description provided for @check_circle.
+  ///
+  /// In en, this message translates to:
+  /// **'check_circle'**
+  String get check_circle;
+
+  /// No description provided for @event_busy.
+  ///
+  /// In en, this message translates to:
+  /// **'event_busy'**
+  String get event_busy;
+
+  /// No description provided for @schedule.
+  ///
+  /// In en, this message translates to:
+  /// **'schedule'**
+  String get schedule;
+
+  /// No description provided for @directions_car.
+  ///
+  /// In en, this message translates to:
+  /// **'directions_car'**
+  String get directions_car;
+
+  /// No description provided for @flag.
+  ///
+  /// In en, this message translates to:
+  /// **'flag'**
+  String get flag;
+
+  /// No description provided for @block.
+  ///
+  /// In en, this message translates to:
+  /// **'block'**
+  String get block;
+
+  /// No description provided for @chat_bubble.
+  ///
+  /// In en, this message translates to:
+  /// **'chat_bubble'**
+  String get chat_bubble;
+
+  /// No description provided for @person.
+  ///
+  /// In en, this message translates to:
+  /// **'person'**
+  String get person;
+
+  /// No description provided for @arrow_upward.
+  ///
+  /// In en, this message translates to:
+  /// **'arrow_upward'**
+  String get arrow_upward;
+
+  /// No description provided for @emoji_events.
+  ///
+  /// In en, this message translates to:
+  /// **'emoji_events'**
+  String get emoji_events;
+
+  /// No description provided for @local_fire_department.
+  ///
+  /// In en, this message translates to:
+  /// **'local_fire_department'**
+  String get local_fire_department;
+
+  /// No description provided for @star.
+  ///
+  /// In en, this message translates to:
+  /// **'star'**
+  String get star;
+
+  /// No description provided for @warning.
+  ///
+  /// In en, this message translates to:
+  /// **'warning'**
+  String get warning;
+
+  /// No description provided for @campaign.
+  ///
+  /// In en, this message translates to:
+  /// **'campaign'**
+  String get campaign;
+
+  /// No description provided for @gold.
+  ///
+  /// In en, this message translates to:
+  /// **'Gold'**
+  String get gold;
+
+  /// No description provided for @new_ride_request.
+  ///
+  /// In en, this message translates to:
+  /// **'New Ride Request'**
+  String get new_ride_request;
+
+  /// No description provided for @booking_accepted.
+  ///
+  /// In en, this message translates to:
+  /// **'Booking Accepted!'**
+  String get booking_accepted;
+
+  /// No description provided for @booking_declined.
+  ///
+  /// In en, this message translates to:
+  /// **'Booking Declined'**
+  String get booking_declined;
+
+  /// No description provided for @ride_cancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Ride Cancelled'**
+  String get ride_cancelled;
+
+  /// No description provided for @new_message.
+  ///
+  /// In en, this message translates to:
+  /// **'New Message'**
+  String get new_message;
+
+  /// No description provided for @achievement_unlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Achievement Unlocked! 🏆'**
+  String get achievement_unlocked;
+
+  /// No description provided for @level_up.
+  ///
+  /// In en, this message translates to:
+  /// **'Level Up! 🎉'**
+  String get level_up;
+
+  /// No description provided for @driver_has_arrived.
+  ///
+  /// In en, this message translates to:
+  /// **'Driver has arrived! 🚗'**
+  String get driver_has_arrived;
+
+  /// No description provided for @event_cancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Event Cancelled'**
+  String get event_cancelled;
+
+  /// No description provided for @mark_read.
+  ///
+  /// In en, this message translates to:
+  /// **'mark_read'**
+  String get mark_read;
+
+  /// No description provided for @find_yournride.
+  ///
+  /// In en, this message translates to:
+  /// **'Find Your\\nRide'**
+  String get find_yournride;
+
+  /// No description provided for @match_with_runners.
+  ///
+  /// In en, this message translates to:
+  /// **'Match with Runners'**
+  String get match_with_runners;
+
+  /// No description provided for @offer_anseat.
+  ///
+  /// In en, this message translates to:
+  /// **'Offer a\\nSeat'**
+  String get offer_anseat;
+
+  /// No description provided for @drive_split_costs.
+  ///
+  /// In en, this message translates to:
+  /// **'Drive & Split Costs'**
+  String get drive_split_costs;
+
+  /// No description provided for @plan_yournroute.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan Your\\nRoute'**
+  String get plan_yournroute;
+
+  /// No description provided for @smart_route_sync.
+  ///
+  /// In en, this message translates to:
+  /// **'Smart Route Sync'**
+  String get smart_route_sync;
+
+  /// No description provided for @connectn_go.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect\\n& Go'**
+  String get connectn_go;
+
+  /// No description provided for @community_you_trust.
+  ///
+  /// In en, this message translates to:
+  /// **'Community You Trust'**
+  String get community_you_trust;
+
+  /// No description provided for @onboarding_complete.
+  ///
+  /// In en, this message translates to:
+  /// **'onboarding_complete'**
+  String get onboarding_complete;
+
+  /// No description provided for @last_onboarding_version.
+  ///
+  /// In en, this message translates to:
+  /// **'last_onboarding_version'**
+  String get last_onboarding_version;
+
+  /// No description provided for @ride_to_paris_10k.
+  ///
+  /// In en, this message translates to:
+  /// **'Ride to Paris 10K'**
+  String get ride_to_paris_10k;
+
+  /// No description provided for @offer_your_ride.
+  ///
+  /// In en, this message translates to:
+  /// **'Offer your ride'**
+  String get offer_your_ride;
+
+  /// No description provided for @paris_10k_2_seats_available.
+  ///
+  /// In en, this message translates to:
+  /// **'Paris 10K • 2 seats available'**
+  String get paris_10k_2_seats_available;
+
+  /// No description provided for @estimated_earning.
+  ///
+  /// In en, this message translates to:
+  /// **'ESTIMATED EARNING'**
+  String get estimated_earning;
+
+  /// No description provided for @fill_2_seats.
+  ///
+  /// In en, this message translates to:
+  /// **'Fill 2 seats'**
+  String get fill_2_seats;
+
+  /// No description provided for @set_available_seats.
+  ///
+  /// In en, this message translates to:
+  /// **'Set available seats'**
+  String get set_available_seats;
+
+  /// No description provided for @flexible.
+  ///
+  /// In en, this message translates to:
+  /// **'Flexible'**
+  String get flexible;
+
+  /// No description provided for @driver_tools.
+  ///
+  /// In en, this message translates to:
+  /// **'Driver tools'**
+  String get driver_tools;
+
+  /// No description provided for @pickup_route.
+  ///
+  /// In en, this message translates to:
+  /// **'Pickup route'**
+  String get pickup_route;
+
+  /// No description provided for @coordinate_pickup_before_the_event.
+  ///
+  /// In en, this message translates to:
+  /// **'Coordinate pickup before the event'**
+  String get coordinate_pickup_before_the_event;
+
+  /// No description provided for @trip_plan.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip plan'**
+  String get trip_plan;
+
+  /// No description provided for @sun_15_jun.
+  ///
+  /// In en, this message translates to:
+  /// **'Sun, 15 Jun'**
+  String get sun_15_jun;
+
+  /// No description provided for @paris_10k_2_passengers.
+  ///
+  /// In en, this message translates to:
+  /// **'Paris 10K • 2 passengers'**
+  String get paris_10k_2_passengers;
+
+  /// No description provided for @inapp_chat.
+  ///
+  /// In en, this message translates to:
+  /// **'In-app chat'**
+  String get inapp_chat;
+
+  /// No description provided for @confirm_bags_pickup_spot_and_arrival_time.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm bags, pickup spot, and arrival time.'**
+  String get confirm_bags_pickup_spot_and_arrival_time;
+
+  /// No description provided for @runner_carpool_network.
+  ///
+  /// In en, this message translates to:
+  /// **'Runner carpool network'**
+  String get runner_carpool_network;
+
+  /// No description provided for @travel_with_people_going_to_the_same_event.
+  ///
+  /// In en, this message translates to:
+  /// **'Travel with people going to the same event.'**
+  String get travel_with_people_going_to_the_same_event;
+
+  /// No description provided for @sun_15_jun_2025.
+  ///
+  /// In en, this message translates to:
+  /// **'Sun, 15 Jun 2025'**
+  String get sun_15_jun_2025;
+
+  /// No description provided for @pickup_near_paris_france.
+  ///
+  /// In en, this message translates to:
+  /// **'Pickup near Paris, France'**
+  String get pickup_near_paris_france;
+
+  /// No description provided for @passenger_contribution_from_8.
+  ///
+  /// In en, this message translates to:
+  /// **'Passenger contribution from €8'**
+  String get passenger_contribution_from_8;
+
+  /// No description provided for @find_a_ride_to_your_race.
+  ///
+  /// In en, this message translates to:
+  /// **'Find a ride to your race'**
+  String get find_a_ride_to_your_race;
+
+  /// No description provided for @offer_seats_and_earn.
+  ///
+  /// In en, this message translates to:
+  /// **'Offer seats and earn'**
+  String get offer_seats_and_earn;
+
+  /// No description provided for @plan_the_route_together.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan the route together'**
+  String get plan_the_route_together;
+
+  /// No description provided for @connect_safely_and_go.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect safely and go'**
+  String get connect_safely_and_go;
+
+  /// No description provided for @paris.
+  ///
+  /// In en, this message translates to:
+  /// **'PARIS'**
+  String get paris;
+
+  /// No description provided for @driver_starts.
+  ///
+  /// In en, this message translates to:
+  /// **'Driver starts'**
+  String get driver_starts;
+
+  /// No description provided for @route_opens_for_passengers.
+  ///
+  /// In en, this message translates to:
+  /// **'Route opens for passengers'**
+  String get route_opens_for_passengers;
+
+  /// No description provided for @pickup_confirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Pickup confirmed'**
+  String get pickup_confirmed;
+
+  /// No description provided for @shared_meeting_point.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared meeting point'**
+  String get shared_meeting_point;
+
+  /// No description provided for @arrive_at_event.
+  ///
+  /// In en, this message translates to:
+  /// **'Arrive at event'**
+  String get arrive_at_event;
+
+  /// No description provided for @paris_10k_race_village.
+  ///
+  /// In en, this message translates to:
+  /// **'Paris 10K race village'**
+  String get paris_10k_race_village;
+
+  /// No description provided for @trusted_runners.
+  ///
+  /// In en, this message translates to:
+  /// **'Trusted runners'**
+  String get trusted_runners;
+
+  /// No description provided for @chat.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat'**
+  String get chat;
+
+  /// No description provided for @before_pickup.
+  ///
+  /// In en, this message translates to:
+  /// **'Before pickup'**
+  String get before_pickup;
+
+  /// No description provided for @live_route.
+  ///
+  /// In en, this message translates to:
+  /// **'Live route'**
+  String get live_route;
+
+  /// No description provided for @trip_visibility.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip visibility'**
+  String get trip_visibility;
+
+  /// No description provided for @safer_rides.
+  ///
+  /// In en, this message translates to:
+  /// **'Safer rides'**
+  String get safer_rides;
+
+  /// No description provided for @event_travel.
+  ///
+  /// In en, this message translates to:
+  /// **'Event travel'**
+  String get event_travel;
+
+  /// No description provided for @from_8.
+  ///
+  /// In en, this message translates to:
+  /// **'From €8'**
+  String get from_8;
+
+  /// No description provided for @rides_available.
+  ///
+  /// In en, this message translates to:
+  /// **'RIDES AVAILABLE'**
+  String get rides_available;
+
+  /// No description provided for @fuel_offset.
+  ///
+  /// In en, this message translates to:
+  /// **'Fuel offset'**
+  String get fuel_offset;
+
+  /// No description provided for @earn.
+  ///
+  /// In en, this message translates to:
+  /// **'Earn'**
+  String get earn;
+
+  /// No description provided for @set_time.
+  ///
+  /// In en, this message translates to:
+  /// **'Set time'**
+  String get set_time;
+
+  /// No description provided for @pickup_0640.
+  ///
+  /// In en, this message translates to:
+  /// **'Pickup 06:40'**
+  String get pickup_0640;
+
+  /// No description provided for @previous_step.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous step'**
+  String get previous_step;
+
+  /// No description provided for @month.
+  ///
+  /// In en, this message translates to:
+  /// **'month'**
+  String get month;
+
+  /// No description provided for @cancel_anytime.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel anytime'**
+  String get cancel_anytime;
+
+  /// No description provided for @save_about_16_compared_to_monthly.
+  ///
+  /// In en, this message translates to:
+  /// **'Save about 16% compared to monthly'**
+  String get save_about_16_compared_to_monthly;
+
+  /// No description provided for @actionrequiredrequestedcapabilities.
+  ///
+  /// In en, this message translates to:
+  /// **'actionRequiredRequestedCapabilities'**
+  String get actionrequiredrequestedcapabilities;
+
+  /// No description provided for @listed.
+  ///
+  /// In en, this message translates to:
+  /// **'listed'**
+  String get listed;
+
+  /// No description provided for @platformpaused.
+  ///
+  /// In en, this message translates to:
+  /// **'platformPaused'**
+  String get platformpaused;
+
+  /// No description provided for @rejectedfraud.
+  ///
+  /// In en, this message translates to:
+  /// **'rejectedFraud'**
+  String get rejectedfraud;
+
+  /// No description provided for @rejectedincompleteverification.
+  ///
+  /// In en, this message translates to:
+  /// **'rejectedIncompleteVerification'**
+  String get rejectedincompleteverification;
+
+  /// No description provided for @rejectedlisted.
+  ///
+  /// In en, this message translates to:
+  /// **'rejectedListed'**
+  String get rejectedlisted;
+
+  /// No description provided for @rejectedother.
+  ///
+  /// In en, this message translates to:
+  /// **'rejectedOther'**
+  String get rejectedother;
+
+  /// No description provided for @rejectedplatformfraud.
+  ///
+  /// In en, this message translates to:
+  /// **'rejectedPlatformFraud'**
+  String get rejectedplatformfraud;
+
+  /// No description provided for @rejectedplatformother.
+  ///
+  /// In en, this message translates to:
+  /// **'rejectedPlatformOther'**
+  String get rejectedplatformother;
+
+  /// No description provided for @rejectedplatformtermsofservice.
+  ///
+  /// In en, this message translates to:
+  /// **'rejectedPlatformTermsOfService'**
+  String get rejectedplatformtermsofservice;
+
+  /// No description provided for @rejectedtermsofservice.
+  ///
+  /// In en, this message translates to:
+  /// **'rejectedTermsOfService'**
+  String get rejectedtermsofservice;
+
+  /// No description provided for @requirementspastdue.
+  ///
+  /// In en, this message translates to:
+  /// **'requirementsPastDue'**
+  String get requirementspastdue;
+
+  /// No description provided for @requirementspendingverification.
+  ///
+  /// In en, this message translates to:
+  /// **'requirementsPendingVerification'**
+  String get requirementspendingverification;
+
+  /// No description provided for @underreview.
+  ///
+  /// In en, this message translates to:
+  /// **'underReview'**
+  String get underreview;
+
+  /// No description provided for @canceled.
+  ///
+  /// In en, this message translates to:
+  /// **'canceled'**
+  String get canceled;
+
+  /// No description provided for @cancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled'**
+  String get cancelled;
+
+  /// No description provided for @bankaccount.
+  ///
+  /// In en, this message translates to:
+  /// **'bankAccount'**
+  String get bankaccount;
+
+  /// No description provided for @bank_account.
+  ///
+  /// In en, this message translates to:
+  /// **'bank_account'**
+  String get bank_account;
+
+  /// No description provided for @google_play_billing_is_not_available_on_this_app_instance.
+  ///
+  /// In en, this message translates to:
+  /// **'Google Play Billing is not available on this app instance. '**
+  String get google_play_billing_is_not_available_on_this_app_instance;
+
+  /// No description provided for @google_play_billing_is_unavailable_on_this_deviceaccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Google Play Billing is unavailable on this device/account.'**
+  String get google_play_billing_is_unavailable_on_this_deviceaccount;
+
+  /// No description provided for @this_subscription_product_is_not_available_for_your_accountregion_yet.
+  ///
+  /// In en, this message translates to:
+  /// **'This subscription product is not available for your account/region yet.'**
+  String
+  get this_subscription_product_is_not_available_for_your_accountregion_yet;
+
+  /// No description provided for @purchase_cancelled_by_user.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase cancelled by user.'**
+  String get purchase_cancelled_by_user;
+
+  /// No description provided for @channelerror.
+  ///
+  /// In en, this message translates to:
+  /// **'channel-error'**
+  String get channelerror;
+
+  /// No description provided for @withdrawable_now_is_your_instantavailable_balance_you_can_transfer_this_to_your_bank_immediatelynn.
+  ///
+  /// In en, this message translates to:
+  /// **'Withdrawable Now is your instant-available balance — you can transfer this to your bank immediately.\\n\\n'**
+  String
+  get withdrawable_now_is_your_instantavailable_balance_you_can_transfer_this_to_your_bank_immediatelynn;
+
+  /// No description provided for @got_it.
+  ///
+  /// In en, this message translates to:
+  /// **'Got it'**
+  String get got_it;
+
+  /// No description provided for @withdrawable_now_is_your_instantavailable_balance_processing_funds_are_in_stripe.
+  ///
+  /// In en, this message translates to:
+  /// **'Withdrawable Now is your instant-available balance. Processing funds are in Stripe'**
+  String
+  get withdrawable_now_is_your_instantavailable_balance_processing_funds_are_in_stripe;
+
+  /// No description provided for @your_stripe_account_id_is_missing_please_reconnect_your_payout_account.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Stripe account ID is missing. Please reconnect your payout account.'**
+  String
+  get your_stripe_account_id_is_missing_please_reconnect_your_payout_account;
+
+  /// No description provided for @writeln_writelnl10nexportearningssummary_writeln.
+  ///
+  /// In en, this message translates to:
+  /// **')\r\n      ..writeln()\r\n      ..writeln(l10n.exportEarningsSummary)\r\n      ..writeln(\r\n        '**
+  String get writeln_writelnl10nexportearningssummary_writeln;
+
+  /// No description provided for @get_paid_fornevery_ride.
+  ///
+  /// In en, this message translates to:
+  /// **'Get paid for\\nevery ride'**
+  String get get_paid_fornevery_ride;
+
+  /// No description provided for @set_up_eur_payouts_in_minutes_andnreceive_earnings_automatically.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up EUR payouts in minutes and\\nreceive earnings automatically.'**
+  String get set_up_eur_payouts_in_minutes_andnreceive_earnings_automatically;
+
+  /// No description provided for @eur_balance.
+  ///
+  /// In en, this message translates to:
+  /// **'EUR balance'**
+  String get eur_balance;
+
+  /// No description provided for @ready_for_eur_payout.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready for EUR payout'**
+  String get ready_for_eur_payout;
+
+  /// No description provided for @why_drivers_love_payouts_onnsportconnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Why drivers love payouts on\\nSportConnect'**
+  String get why_drivers_love_payouts_onnsportconnect;
+
+  /// No description provided for @before_you_continue.
+  ///
+  /// In en, this message translates to:
+  /// **'Before you continue'**
+  String get before_you_continue;
+
+  /// No description provided for @heres_what_youll_need_to_get_set_up.
+  ///
+  /// In en, this message translates to:
+  /// **'Here’s what you’ll need to get set up.'**
+  String get heres_what_youll_need_to_get_set_up;
+
+  /// No description provided for @maybe_later.
+  ///
+  /// In en, this message translates to:
+  /// **'Maybe later'**
+  String get maybe_later;
+
+  /// No description provided for @payouts_ready.
+  ///
+  /// In en, this message translates to:
+  /// **'Payouts ready!'**
+  String get payouts_ready;
+
+  /// No description provided for @your_account_is_connected_and_yourenall_set_to_receive_earnings.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account is connected and you’re\\nall set to receive earnings.'**
+  String get your_account_is_connected_and_yourenall_set_to_receive_earnings;
+
+  /// No description provided for @powered_by.
+  ///
+  /// In en, this message translates to:
+  /// **'Powered by'**
+  String get powered_by;
+
+  /// No description provided for @stripe.
+  ///
+  /// In en, this message translates to:
+  /// **'stripe'**
+  String get stripe;
+
+  /// No description provided for @s.
+  ///
+  /// In en, this message translates to:
+  /// **'S'**
+  String get s;
+
+  /// No description provided for @takes_about_3_minutes.
+  ///
+  /// In en, this message translates to:
+  /// **'Takes about 3 minutes'**
+  String get takes_about_3_minutes;
+
+  /// No description provided for @your_security_is_our_priority.
+  ///
+  /// In en, this message translates to:
+  /// **'Your security is our priority'**
+  String get your_security_is_our_priority;
+
+  /// No description provided for @sportconnect_partners_with_stripe_to_securely_collect_and_protect_your_information_your_data_is_encrypted_and_never_shared_with_us.
+  ///
+  /// In en, this message translates to:
+  /// **'SportConnect partners with Stripe to securely collect and protect your information. Your data is encrypted and never shared with us.'**
+  String
+  get sportconnect_partners_with_stripe_to_securely_collect_and_protect_your_information_your_data_is_encrypted_and_never_shared_with_us;
+
+  /// No description provided for @payout_account.
+  ///
+  /// In en, this message translates to:
+  /// **'Payout account'**
+  String get payout_account;
+
+  /// No description provided for @bnp_paribas_4521.
+  ///
+  /// In en, this message translates to:
+  /// **'BNP Paribas •••• 4521'**
+  String get bnp_paribas_4521;
+
+  /// No description provided for @next_payout.
+  ///
+  /// In en, this message translates to:
+  /// **'Next payout'**
+  String get next_payout;
+
+  /// No description provided for @wed_28_may.
+  ///
+  /// In en, this message translates to:
+  /// **'Wed, 28 May'**
+  String get wed_28_may;
+
+  /// No description provided for @payout_schedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Payout schedule'**
+  String get payout_schedule;
+
+  /// No description provided for @weekly_to_your_french_iban.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly to your French IBAN'**
+  String get weekly_to_your_french_iban;
+
+  /// No description provided for @earnings_snapshot.
+  ///
+  /// In en, this message translates to:
+  /// **'Earnings snapshot'**
+  String get earnings_snapshot;
+
+  /// No description provided for @this_week.
+  ///
+  /// In en, this message translates to:
+  /// **'This week⌄'**
+  String get this_week;
+
+  /// No description provided for @youre_doing_great.
+  ///
+  /// In en, this message translates to:
+  /// **'You’re doing great!'**
+  String get youre_doing_great;
+
+  /// No description provided for @keep_driving_more_rides_more_earnings.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep driving. More rides, more earnings.'**
+  String get keep_driving_more_rides_more_earnings;
+
+  /// No description provided for @connect_stripe_account.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect Stripe account'**
+  String get connect_stripe_account;
+
+  /// No description provided for @continue_to_stripe.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue to Stripe'**
+  String get continue_to_stripe;
+
+  /// No description provided for @back_to_dashboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to dashboard'**
+  String get back_to_dashboard;
+
+  /// No description provided for @need_help_visit_our.
+  ///
+  /// In en, this message translates to:
+  /// **'Need help? Visit our '**
+  String get need_help_visit_our;
+
+  /// No description provided for @support_center.
+  ///
+  /// In en, this message translates to:
+  /// **'Support Center'**
+  String get support_center;
+
+  /// No description provided for @secure_by_stripe.
+  ///
+  /// In en, this message translates to:
+  /// **'Secure by Stripe'**
+  String get secure_by_stripe;
+
+  /// No description provided for @pci_dss_compliant.
+  ///
+  /// In en, this message translates to:
+  /// **'PCI DSS Compliant'**
+  String get pci_dss_compliant;
+
+  /// No description provided for @fast_payouts.
+  ///
+  /// In en, this message translates to:
+  /// **'Fast payouts'**
+  String get fast_payouts;
+
+  /// No description provided for @secure.
+  ///
+  /// In en, this message translates to:
+  /// **'Secure'**
+  String get secure;
+
+  /// No description provided for @eugrade_safety.
+  ///
+  /// In en, this message translates to:
+  /// **'EU-grade safety'**
+  String get eugrade_safety;
+
+  /// No description provided for @low_fees.
+  ///
+  /// In en, this message translates to:
+  /// **'Low fees'**
+  String get low_fees;
+
+  /// No description provided for @transparent_pricing.
+  ///
+  /// In en, this message translates to:
+  /// **'Transparent pricing'**
+  String get transparent_pricing;
+
+  /// No description provided for @french_iban.
+  ///
+  /// In en, this message translates to:
+  /// **'French IBAN'**
+  String get french_iban;
+
+  /// No description provided for @to_receive_eur_payouts.
+  ///
+  /// In en, this message translates to:
+  /// **'To receive EUR payouts'**
+  String get to_receive_eur_payouts;
+
+  /// No description provided for @identity_verification.
+  ///
+  /// In en, this message translates to:
+  /// **'Identity verification'**
+  String get identity_verification;
+
+  /// No description provided for @carte_didentit_or_passport.
+  ///
+  /// In en, this message translates to:
+  /// **'Carte d’identité or passport'**
+  String get carte_didentit_or_passport;
+
+  /// No description provided for @french_tax_details.
+  ///
+  /// In en, this message translates to:
+  /// **'French tax details'**
+  String get french_tax_details;
+
+  /// No description provided for @for_french_tax_records.
+  ///
+  /// In en, this message translates to:
+  /// **'For French tax records'**
+  String get for_french_tax_records;
+
+  /// No description provided for @payment_method_saved.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment method saved'**
+  String get payment_method_saved;
+
+  /// No description provided for @total_spent.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Spent'**
+  String get total_spent;
+
+  /// No description provided for @instant_payouts_can_be_cancelled_while_still_pending_once_in_transit_your_bank_is_already_processing_the_transfer.
+  ///
+  /// In en, this message translates to:
+  /// **'Instant payouts can be cancelled while still pending. Once in transit, your bank is already processing the transfer.'**
+  String
+  get instant_payouts_can_be_cancelled_while_still_pending_once_in_transit_your_bank_is_already_processing_the_transfer;
+
+  /// No description provided for @payout_progress.
+  ///
+  /// In en, this message translates to:
+  /// **'Payout Progress'**
+  String get payout_progress;
+
+  /// No description provided for @why_did_this_fail.
+  ///
+  /// In en, this message translates to:
+  /// **'Why did this fail?'**
+  String get why_did_this_fail;
+
+  /// No description provided for @payout_requested.
+  ///
+  /// In en, this message translates to:
+  /// **'Payout Requested'**
+  String get payout_requested;
+
+  /// No description provided for @processing.
+  ///
+  /// In en, this message translates to:
+  /// **'Processing'**
+  String get processing;
+
+  /// No description provided for @in_transit_to_bank.
+  ///
+  /// In en, this message translates to:
+  /// **'In Transit to Bank'**
+  String get in_transit_to_bank;
+
+  /// No description provided for @funds_arrived.
+  ///
+  /// In en, this message translates to:
+  /// **'Funds Arrived'**
+  String get funds_arrived;
+
+  /// No description provided for @method.
+  ///
+  /// In en, this message translates to:
+  /// **'Method'**
+  String get method;
+
+  /// No description provided for @this_payout_cannot_be_cancelled_no_stripe_reference_found.
+  ///
+  /// In en, this message translates to:
+  /// **'This payout cannot be cancelled — no Stripe reference found.'**
+  String get this_payout_cannot_be_cancelled_no_stripe_reference_found;
+
+  /// No description provided for @choose_your_plan.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose your plan'**
+  String get choose_your_plan;
+
+  /// No description provided for @upgrade_your_sportconnect_account_in_seconds.
+  ///
+  /// In en, this message translates to:
+  /// **'Upgrade your SportConnect account in seconds.'**
+  String get upgrade_your_sportconnect_account_in_seconds;
+
+  /// No description provided for @loading_subscription_plans.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading subscription plans...'**
+  String get loading_subscription_plans;
+
+  /// No description provided for @retry_loading_plans.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry loading plans'**
+  String get retry_loading_plans;
+
+  /// No description provided for @your_payment_details_are_encrypted_and_processed_securely.
+  ///
+  /// In en, this message translates to:
+  /// **'Your payment details are encrypted and processed securely.'**
+  String get your_payment_details_are_encrypted_and_processed_securely;
+
+  /// No description provided for @subscribe_now.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscribe Now'**
+  String get subscribe_now;
+
+  /// No description provided for @premium_checkout.
+  ///
+  /// In en, this message translates to:
+  /// **'Premium Checkout'**
+  String get premium_checkout;
+
+  /// No description provided for @premium_activated_successfully.
+  ///
+  /// In en, this message translates to:
+  /// **'Premium activated successfully.'**
+  String get premium_activated_successfully;
+
+  /// No description provided for @upgrade_to_pro.
+  ///
+  /// In en, this message translates to:
+  /// **'Upgrade to Pro'**
+  String get upgrade_to_pro;
+
+  /// No description provided for @premium_carpooling_madenfor_runners_like_you.
+  ///
+  /// In en, this message translates to:
+  /// **'Premium carpooling made\\nfor runners like you'**
+  String get premium_carpooling_madenfor_runners_like_you;
+
+  /// No description provided for @everything_you_get.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything you get'**
+  String get everything_you_get;
+
+  /// No description provided for @trusted_by_12000_runners.
+  ///
+  /// In en, this message translates to:
+  /// **'Trusted by 12,000+ runners'**
+  String get trusted_by_12000_runners;
+
+  /// No description provided for @start_free_trial.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Free Trial'**
+  String get start_free_trial;
+
+  /// No description provided for @smart_ride_matching.
+  ///
+  /// In en, this message translates to:
+  /// **'Smart Ride Matching'**
+  String get smart_ride_matching;
+
+  /// No description provided for @unlimited_saved_routes.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlimited Saved Routes'**
+  String get unlimited_saved_routes;
+
+  /// No description provided for @verified_community.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified Community'**
+  String get verified_community;
+
+  /// No description provided for @crew_coordination.
+  ///
+  /// In en, this message translates to:
+  /// **'Crew Coordination'**
+  String get crew_coordination;
+
+  /// No description provided for @race_day_priority.
+  ///
+  /// In en, this message translates to:
+  /// **'Race Day Priority'**
+  String get race_day_priority;
+
+  /// No description provided for @priority_support.
+  ///
+  /// In en, this message translates to:
+  /// **'Priority Support'**
+  String get priority_support;
+
+  /// No description provided for @smart_match.
+  ///
+  /// In en, this message translates to:
+  /// **'Smart Match'**
+  String get smart_match;
+
+  /// No description provided for @unlimited_routes.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlimited Routes'**
+  String get unlimited_routes;
+
+  /// No description provided for @verified_riders.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified Riders'**
+  String get verified_riders;
+
+  /// No description provided for @crew_rides.
+  ///
+  /// In en, this message translates to:
+  /// **'Crew Rides'**
+  String get crew_rides;
+
+  /// No description provided for @race_priority.
+  ///
+  /// In en, this message translates to:
+  /// **'Race Priority'**
+  String get race_priority;
+
+  /// No description provided for @annual.
+  ///
+  /// In en, this message translates to:
+  /// **'Annual'**
+  String get annual;
+
+  /// No description provided for @moneybacknguarantee.
+  ///
+  /// In en, this message translates to:
+  /// **'Money-back\\nguarantee'**
+  String get moneybacknguarantee;
+
+  /// No description provided for @cancelnanytime.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel\\nanytime'**
+  String get cancelnanytime;
+
+  /// No description provided for @securenpayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Secure\\npayment'**
+  String get securenpayment;
+
+  /// No description provided for @completed.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get completed;
+
+  /// No description provided for @thisweek.
+  ///
+  /// In en, this message translates to:
+  /// **'thisWeek'**
+  String get thisweek;
+
+  /// No description provided for @unable_to_complete_checkout_please_try_again.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to complete checkout. Please try again.'**
+  String get unable_to_complete_checkout_please_try_again;
+
+  /// No description provided for @version_119.
+  ///
+  /// In en, this message translates to:
+  /// **'Version 1.1.9'**
+  String get version_119;
+
+  /// No description provided for @built_with_flutter.
+  ///
+  /// In en, this message translates to:
+  /// **'Built with Flutter'**
+  String get built_with_flutter;
+
+  /// No description provided for @sportconnect_is_a_carpooling_and_rideshare_platform_designed.
+  ///
+  /// In en, this message translates to:
+  /// **'SportConnect is a carpooling and rideshare platform designed '**
+  String get sportconnect_is_a_carpooling_and_rideshare_platform_designed;
+
+  /// No description provided for @join_the_community.
+  ///
+  /// In en, this message translates to:
+  /// **'Join the Community'**
+  String get join_the_community;
+
+  /// No description provided for @open_source_licenses.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Source Licenses'**
+  String get open_source_licenses;
+
+  /// No description provided for @total_xp.
+  ///
+  /// In en, this message translates to:
+  /// **'Total XP'**
+  String get total_xp;
+
+  /// No description provided for @streak.
+  ///
+  /// In en, this message translates to:
+  /// **'Streak'**
+  String get streak;
+
+  /// No description provided for @diamond.
+  ///
+  /// In en, this message translates to:
+  /// **'Diamond'**
+  String get diamond;
+
+  /// No description provided for @platinum.
+  ///
+  /// In en, this message translates to:
+  /// **'Platinum'**
+  String get platinum;
+
+  /// No description provided for @bronze.
+  ///
+  /// In en, this message translates to:
+  /// **'Bronze'**
+  String get bronze;
+
+  /// No description provided for @background_check_passed.
+  ///
+  /// In en, this message translates to:
+  /// **'Background Check Passed'**
+  String get background_check_passed;
+
+  /// No description provided for @your_background_check_is_complete_and_you_are_verified_to_drive_with_sportconnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Your background check is complete and you are verified to drive with SportConnect.'**
+  String
+  get your_background_check_is_complete_and_you_are_verified_to_drive_with_sportconnect;
+
+  /// No description provided for @attach_image.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach image'**
+  String get attach_image;
+
+  /// No description provided for @action_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Action Required'**
+  String get action_required;
+
+  /// No description provided for @driver_license.
+  ///
+  /// In en, this message translates to:
+  /// **'Driver License'**
+  String get driver_license;
+
+  /// No description provided for @vehicle_registration.
+  ///
+  /// In en, this message translates to:
+  /// **'Vehicle Registration'**
+  String get vehicle_registration;
+
+  /// No description provided for @vehicle_insurance.
+  ///
+  /// In en, this message translates to:
+  /// **'Vehicle Insurance'**
+  String get vehicle_insurance;
+
+  /// No description provided for @upload_feature_coming_soon.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload feature coming soon'**
+  String get upload_feature_coming_soon;
+
+  /// No description provided for @phone_number.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone Number'**
+  String get phone_number;
+
+  /// No description provided for @try_different_keywords_or_contact_support.
+  ///
+  /// In en, this message translates to:
+  /// **'Try different keywords or contact support'**
+  String get try_different_keywords_or_contact_support;
+
+  /// No description provided for @getting_started.
+  ///
+  /// In en, this message translates to:
+  /// **'Getting Started'**
+  String get getting_started;
+
+  /// No description provided for @rides_booking.
+  ///
+  /// In en, this message translates to:
+  /// **'Rides & Booking'**
+  String get rides_booking;
+
+  /// No description provided for @safety_trust.
+  ///
+  /// In en, this message translates to:
+  /// **'Safety & Trust'**
+  String get safety_trust;
+
+  /// No description provided for @account_profile.
+  ///
+  /// In en, this message translates to:
+  /// **'Account & Profile'**
+  String get account_profile;
+
+  /// No description provided for @my_vehicles.
+  ///
+  /// In en, this message translates to:
+  /// **'My Vehicles'**
+  String get my_vehicles;
+
+  /// No description provided for @manage_your_vehicles.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage your vehicles'**
+  String get manage_your_vehicles;
+
+  /// No description provided for @my_events.
+  ///
+  /// In en, this message translates to:
+  /// **'My Events'**
+  String get my_events;
+
+  /// No description provided for @created_joined_events.
+  ///
+  /// In en, this message translates to:
+  /// **'Created & joined events'**
+  String get created_joined_events;
+
+  /// No description provided for @achievements.
+  ///
+  /// In en, this message translates to:
+  /// **'Achievements'**
+  String get achievements;
+
+  /// No description provided for @view_your_badges_rewards.
+  ///
+  /// In en, this message translates to:
+  /// **'View your badges & rewards'**
+  String get view_your_badges_rewards;
+
+  /// No description provided for @view_your_notifications.
+  ///
+  /// In en, this message translates to:
+  /// **'View your notifications'**
+  String get view_your_notifications;
+
+  /// No description provided for @settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get settings;
+
+  /// No description provided for @app_preferences_privacy.
+  ///
+  /// In en, this message translates to:
+  /// **'App preferences & privacy'**
+  String get app_preferences_privacy;
+
+  /// No description provided for @report.
+  ///
+  /// In en, this message translates to:
+  /// **'report'**
+  String get report;
+
+  /// No description provided for @attach_evidence.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach evidence'**
+  String get attach_evidence;
+
+  /// No description provided for @manage_booking_pickup_radius_payout_and_map_visibility.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage booking, pickup radius, payout, and map visibility'**
+  String get manage_booking_pickup_radius_payout_and_map_visibility;
+
+  /// No description provided for @choose_map_appearance.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose map appearance'**
+  String get choose_map_appearance;
+
+  /// No description provided for @by_using_sportconnect_you_consent_to_the_data_processing_described_above_and_in_our_privacy_policy.
+  ///
+  /// In en, this message translates to:
+  /// **'By using SportConnect, you consent to the data processing described above and in our Privacy Policy.'**
+  String
+  get by_using_sportconnect_you_consent_to_the_data_processing_described_above_and_in_our_privacy_policy;
+
+  /// No description provided for @sportconnect_premium.
+  ///
+  /// In en, this message translates to:
+  /// **'SportConnect Premium'**
+  String get sportconnect_premium;
+
+  /// No description provided for @unlock_smart_matching_priority_rides_more.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock smart matching, priority rides & more'**
+  String get unlock_smart_matching_priority_rides_more;
+
+  /// No description provided for @notification_permission.
+  ///
+  /// In en, this message translates to:
+  /// **'Notification Permission'**
+  String get notification_permission;
+
+  /// No description provided for @reallow_push_notifications_for_this_device.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-allow push notifications for this device'**
+  String get reallow_push_notifications_for_this_device;
+
+  /// No description provided for @analytics_crash_reports.
+  ///
+  /// In en, this message translates to:
+  /// **'Analytics & Crash Reports'**
+  String get analytics_crash_reports;
+
+  /// No description provided for @allow_anonymous_usage_data_and_crash_reports.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow anonymous usage data and crash reports'**
+  String get allow_anonymous_usage_data_and_crash_reports;
+
+  /// No description provided for @data_processing_notice.
+  ///
+  /// In en, this message translates to:
+  /// **'Data Processing Notice'**
+  String get data_processing_notice;
+
+  /// No description provided for @how_we_collect_use_and_protect_your_data.
+  ///
+  /// In en, this message translates to:
+  /// **'How we collect, use, and protect your data'**
+  String get how_we_collect_use_and_protect_your_data;
+
+  /// No description provided for @withdraw_consent.
+  ///
+  /// In en, this message translates to:
+  /// **'Withdraw Consent'**
+  String get withdraw_consent;
+
+  /// No description provided for @manage_or_withdraw_your_data_consent.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage or withdraw your data consent'**
+  String get manage_or_withdraw_your_data_consent;
+
+  /// No description provided for @download_my_data.
+  ///
+  /// In en, this message translates to:
+  /// **'Download My Data'**
+  String get download_my_data;
+
+  /// No description provided for @export_a_copy_of_your_personal_data.
+  ///
+  /// In en, this message translates to:
+  /// **'Export a copy of your personal data'**
+  String get export_a_copy_of_your_personal_data;
+
+  /// No description provided for @view_your_past_rides_and_charges.
+  ///
+  /// In en, this message translates to:
+  /// **'View your past rides and charges'**
+  String get view_your_past_rides_and_charges;
+
+  /// No description provided for @update_your_account_password.
+  ///
+  /// In en, this message translates to:
+  /// **'Update your account password'**
+  String get update_your_account_password;
+
+  /// No description provided for @get_help_from_our_team.
+  ///
+  /// In en, this message translates to:
+  /// **'Get help from our team'**
+  String get get_help_from_our_team;
+
+  /// No description provided for @manage_subscription.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage Subscription'**
+  String get manage_subscription;
+
+  /// No description provided for @cancel_or_change_your_plan_in_the_store.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel or change your plan in the store'**
+  String get cancel_or_change_your_plan_in_the_store;
+
+  /// No description provided for @restore_purchases.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore Purchases'**
+  String get restore_purchases;
+
+  /// No description provided for @reapply_your_active_subscription.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-apply your active subscription'**
+  String get reapply_your_active_subscription;
+
+  /// No description provided for @booking.
+  ///
+  /// In en, this message translates to:
+  /// **'Booking'**
+  String get booking;
+
+  /// No description provided for @radius.
+  ///
+  /// In en, this message translates to:
+  /// **'Radius'**
+  String get radius;
+
+  /// No description provided for @could_not_open_subscription_management.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open subscription management.'**
+  String get could_not_open_subscription_management;
+
+  /// No description provided for @available_forms.
+  ///
+  /// In en, this message translates to:
+  /// **'Available Forms'**
+  String get available_forms;
+
+  /// No description provided for @downloading_document.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading document...'**
+  String get downloading_document;
+
+  /// No description provided for @protect_your_account.
+  ///
+  /// In en, this message translates to:
+  /// **'Protect your account'**
+  String get protect_your_account;
+
+  /// No description provided for @twofactor_authentication_adds_an_extra_layer_of_security_to_your_account_to_log_in_you.
+  ///
+  /// In en, this message translates to:
+  /// **'Two-factor authentication adds an extra layer of security to your account. To log in, you'**
+  String
+  get twofactor_authentication_adds_an_extra_layer_of_security_to_your_account_to_log_in_you;
+
+  /// No description provided for @sms_verification.
+  ///
+  /// In en, this message translates to:
+  /// **'SMS Verification'**
+  String get sms_verification;
+
+  /// No description provided for @receive_codes_via_text_message.
+  ///
+  /// In en, this message translates to:
+  /// **'Receive codes via text message'**
+  String get receive_codes_via_text_message;
+
+  /// No description provided for @medium.
+  ///
+  /// In en, this message translates to:
+  /// **'medium'**
+  String get medium;
+
+  /// No description provided for @please_describe_the_issue.
+  ///
+  /// In en, this message translates to:
+  /// **'Please describe the issue'**
+  String get please_describe_the_issue;
+
+  /// No description provided for @inapp.
+  ///
+  /// In en, this message translates to:
+  /// **'In-App'**
+  String get inapp;
+
+  /// No description provided for @driver_review.
+  ///
+  /// In en, this message translates to:
+  /// **'Driver Review'**
+  String get driver_review;
+
+  /// No description provided for @passenger_review.
+  ///
+  /// In en, this message translates to:
+  /// **'Passenger Review'**
+  String get passenger_review;
+
+  /// No description provided for @just_now.
+  ///
+  /// In en, this message translates to:
+  /// **'Just now'**
+  String get just_now;
+
+  /// No description provided for @as_driver.
+  ///
+  /// In en, this message translates to:
+  /// **'As Driver'**
+  String get as_driver;
+
+  /// No description provided for @as_rider.
+  ///
+  /// In en, this message translates to:
+  /// **'As Rider'**
+  String get as_rider;
+
+  /// No description provided for @report_review.
+  ///
+  /// In en, this message translates to:
+  /// **'Report Review'**
+  String get report_review;
+
+  /// No description provided for @na.
+  ///
+  /// In en, this message translates to:
+  /// **'N/A'**
+  String get na;
+
+  /// No description provided for @departure_time.
+  ///
+  /// In en, this message translates to:
+  /// **'departure_time'**
+  String get departure_time;
+
+  /// No description provided for @scheduled.
+  ///
+  /// In en, this message translates to:
+  /// **'scheduled'**
+  String get scheduled;
+
+  /// No description provided for @refunded.
+  ///
+  /// In en, this message translates to:
+  /// **'refunded'**
+  String get refunded;
+
+  /// No description provided for @partiallyrefunded.
+  ///
+  /// In en, this message translates to:
+  /// **'partiallyRefunded'**
+  String get partiallyrefunded;
+
+  /// No description provided for @instant.
+  ///
+  /// In en, this message translates to:
+  /// **'instant'**
+  String get instant;
+
+  /// No description provided for @marked_as_noshow.
+  ///
+  /// In en, this message translates to:
+  /// **'Marked as No-Show'**
+  String get marked_as_noshow;
+
+  /// No description provided for @ride_delayed.
+  ///
+  /// In en, this message translates to:
+  /// **'Ride Delayed'**
+  String get ride_delayed;
+
+  /// No description provided for @view.
+  ///
+  /// In en, this message translates to:
+  /// **'View'**
+  String get view;
+
+  /// No description provided for @no_pending_requests.
+  ///
+  /// In en, this message translates to:
+  /// **'No pending requests'**
+  String get no_pending_requests;
+
+  /// No description provided for @done.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get done;
+
+  /// No description provided for @destination_is_locked_because_an_event_is_selected.
+  ///
+  /// In en, this message translates to:
+  /// **'Destination is locked because an event is selected.'**
+  String get destination_is_locked_because_an_event_is_selected;
+
+  /// No description provided for @how_was_your_passenger.
+  ///
+  /// In en, this message translates to:
+  /// **'How was your passenger?'**
+  String get how_was_your_passenger;
+
+  /// No description provided for @your_honest_feedback_helps_build_a_safer_more_reliable_community.
+  ///
+  /// In en, this message translates to:
+  /// **'Your honest feedback helps build a safer, more reliable community.'**
+  String get your_honest_feedback_helps_build_a_safer_more_reliable_community;
+
+  /// No description provided for @no_accepted_passengers_to_rate_for_this_ride.
+  ///
+  /// In en, this message translates to:
+  /// **'No accepted passengers to rate for this ride.'**
+  String get no_accepted_passengers_to_rate_for_this_ride;
+
+  /// No description provided for @select_passenger_to_rate.
+  ///
+  /// In en, this message translates to:
+  /// **'Select passenger to rate'**
+  String get select_passenger_to_rate;
+
+  /// No description provided for @comment_optional.
+  ///
+  /// In en, this message translates to:
+  /// **'Comment (optional)'**
+  String get comment_optional;
+
+  /// No description provided for @passenger.
+  ///
+  /// In en, this message translates to:
+  /// **'Passenger'**
+  String get passenger;
+
+  /// No description provided for @message_passenger.
+  ///
+  /// In en, this message translates to:
+  /// **'Message passenger'**
+  String get message_passenger;
+
+  /// No description provided for @in_progress.
+  ///
+  /// In en, this message translates to:
+  /// **'In Progress'**
+  String get in_progress;
+
+  /// No description provided for @loading_route.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading route...'**
+  String get loading_route;
+
+  /// No description provided for @waiting_for_driver.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for driver'**
+  String get waiting_for_driver;
+
+  /// No description provided for @location_access_denied_tap_to_open_settings_and_reenable.
+  ///
+  /// In en, this message translates to:
+  /// **'Location access denied. Tap to open Settings and re-enable.'**
+  String get location_access_denied_tap_to_open_settings_and_reenable;
+
+  /// No description provided for @driver_location_unavailable_for_5_min.
+  ///
+  /// In en, this message translates to:
+  /// **'Driver location unavailable for 5+ min'**
+  String get driver_location_unavailable_for_5_min;
+
+  /// No description provided for @poor_connection_updates_may_be_delayed.
+  ///
+  /// In en, this message translates to:
+  /// **'Poor connection — updates may be delayed'**
+  String get poor_connection_updates_may_be_delayed;
+
+  /// No description provided for @your_pickup_code.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Pickup Code'**
+  String get your_pickup_code;
+
+  /// No description provided for @show_this_to_your_driver.
+  ///
+  /// In en, this message translates to:
+  /// **'Show this to your driver'**
+  String get show_this_to_your_driver;
+
+  /// No description provided for @show_my_pickup_code.
+  ///
+  /// In en, this message translates to:
+  /// **'Show my pickup code'**
+  String get show_my_pickup_code;
+
+  /// No description provided for @your_pickup_confirmation_code.
+  ///
+  /// In en, this message translates to:
+  /// **'Your pickup confirmation code'**
+  String get your_pickup_confirmation_code;
+
+  /// No description provided for @trip_is_taking_longer_than_expected_is_everything_okay.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip is taking longer than expected — is everything okay?'**
+  String get trip_is_taking_longer_than_expected_is_everything_okay;
+
+  /// No description provided for @complete_payment_to_confirm_your_seat.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete payment to confirm your seat'**
+  String get complete_payment_to_confirm_your_seat;
+
+  /// No description provided for @paid.
+  ///
+  /// In en, this message translates to:
+  /// **'PAID'**
+  String get paid;
+
+  /// No description provided for @passed.
+  ///
+  /// In en, this message translates to:
+  /// **'Passed'**
+  String get passed;
+
+  /// No description provided for @night_ride_stay_alert_and_share_your_trip_with_someone_you_trust.
+  ///
+  /// In en, this message translates to:
+  /// **'Night ride — stay alert and share your trip with someone you trust'**
+  String get night_ride_stay_alert_and_share_your_trip_with_someone_you_trust;
+
+  /// No description provided for @route_deviation_detected.
+  ///
+  /// In en, this message translates to:
+  /// **'Route Deviation Detected'**
+  String get route_deviation_detected;
+
+  /// No description provided for @trip_progress.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip Progress'**
+  String get trip_progress;
+
+  /// No description provided for @driver_at_pickup.
+  ///
+  /// In en, this message translates to:
+  /// **'Driver at Pickup'**
+  String get driver_at_pickup;
+
+  /// No description provided for @price_summary.
+  ///
+  /// In en, this message translates to:
+  /// **'Price summary'**
+  String get price_summary;
+
+  /// No description provided for @cancellation_policy.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancellation policy'**
+  String get cancellation_policy;
+
+  /// No description provided for @you_can_cancel_before_the_driver_accepts_your_request.
+  ///
+  /// In en, this message translates to:
+  /// **'You can cancel before the driver accepts your request.'**
+  String get you_can_cancel_before_the_driver_accepts_your_request;
+
+  /// No description provided for @totaln.
+  ///
+  /// In en, this message translates to:
+  /// **'Total\\n'**
+  String get totaln;
+
+  /// No description provided for @complete_booking.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete booking'**
+  String get complete_booking;
+
+  /// No description provided for @review_your_ride_before_sending_the_request.
+  ///
+  /// In en, this message translates to:
+  /// **'Review your ride before sending the request'**
+  String get review_your_ride_before_sending_the_request;
+
+  /// No description provided for @choose_how_many_seats_you_need.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose how many seats you need'**
+  String get choose_how_many_seats_you_need;
+
+  /// No description provided for @booking_request.
+  ///
+  /// In en, this message translates to:
+  /// **'Booking request'**
+  String get booking_request;
+
+  /// No description provided for @the_driver_will_approve_your_request.
+  ///
+  /// In en, this message translates to:
+  /// **'The driver will approve your request'**
+  String get the_driver_will_approve_your_request;
+
+  /// No description provided for @protected_booking.
+  ///
+  /// In en, this message translates to:
+  /// **'Protected booking'**
+  String get protected_booking;
+
+  /// No description provided for @your_request_is_safely_recorded_in_sportconnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Your request is safely recorded in SportConnect'**
+  String get your_request_is_safely_recorded_in_sportconnect;
+
+  /// No description provided for @review.
+  ///
+  /// In en, this message translates to:
+  /// **'Review'**
+  String get review;
+
+  /// No description provided for @pickup_point.
+  ///
+  /// In en, this message translates to:
+  /// **'Pickup point'**
+  String get pickup_point;
+
+  /// No description provided for @dropoff_point.
+  ///
+  /// In en, this message translates to:
+  /// **'Drop-off point'**
+  String get dropoff_point;
+
+  /// No description provided for @seat_price.
+  ///
+  /// In en, this message translates to:
+  /// **'Seat price'**
+  String get seat_price;
+
+  /// No description provided for @seats_selected.
+  ///
+  /// In en, this message translates to:
+  /// **'Seats selected'**
+  String get seats_selected;
+
+  /// No description provided for @service_fee.
+  ///
+  /// In en, this message translates to:
+  /// **'Service fee'**
+  String get service_fee;
+
+  /// No description provided for @booking_confirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Booking Confirmed'**
+  String get booking_confirmed;
+
+  /// No description provided for @price.
+  ///
+  /// In en, this message translates to:
+  /// **'Price ↓'**
+  String get price;
+
+  /// No description provided for @are_you_sure_you_want_to_cancel_this_ride.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to cancel this ride?'**
+  String get are_you_sure_you_want_to_cancel_this_ride;
+
+  /// No description provided for @frequent_cancellations_may_affect_your_account_rating.
+  ///
+  /// In en, this message translates to:
+  /// **'Frequent cancellations may affect your account rating.'**
+  String get frequent_cancellations_may_affect_your_account_rating;
+
+  /// No description provided for @please_let_us_know_why_you.
+  ///
+  /// In en, this message translates to:
+  /// **'Please let us know why you'**
+  String get please_let_us_know_why_you;
+
+  /// No description provided for @select_a_reason.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a reason'**
+  String get select_a_reason;
+
+  /// No description provided for @additional_comments_optional.
+  ///
+  /// In en, this message translates to:
+  /// **'Additional comments (optional)'**
+  String get additional_comments_optional;
+
+  /// No description provided for @unable_to_load_ride_completion_details.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load ride completion details.'**
+  String get unable_to_load_ride_completion_details;
+
+  /// No description provided for @trip_completed.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip Completed!'**
+  String get trip_completed;
+
+  /// No description provided for @thanks_for_riding_with_sportconnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Thanks for riding with SportConnect'**
+  String get thanks_for_riding_with_sportconnect;
+
+  /// No description provided for @trip_summary.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip Summary'**
+  String get trip_summary;
+
+  /// No description provided for @fare_breakdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Fare Breakdown'**
+  String get fare_breakdown;
+
+  /// No description provided for @submitting_ride_please_wait.
+  ///
+  /// In en, this message translates to:
+  /// **'Submitting ride, please wait...'**
+  String get submitting_ride_please_wait;
+
+  /// No description provided for @please_set_origin_and_destination_in_step_1.
+  ///
+  /// In en, this message translates to:
+  /// **'Please set origin and destination in Step 1'**
+  String get please_set_origin_and_destination_in_step_1;
+
+  /// No description provided for @origin_and_destination_cannot_be_the_same_location.
+  ///
+  /// In en, this message translates to:
+  /// **'Origin and destination cannot be the same location'**
+  String get origin_and_destination_cannot_be_the_same_location;
+
+  /// No description provided for @please_set_a_departure_date_and_time_in_step_1.
+  ///
+  /// In en, this message translates to:
+  /// **'Please set a departure date and time in Step 1'**
+  String get please_set_a_departure_date_and_time_in_step_1;
+
+  /// No description provided for @departure_time_must_be_in_the_future_go_back_to_step_1.
+  ///
+  /// In en, this message translates to:
+  /// **'Departure time must be in the future — go back to Step 1'**
+  String get departure_time_must_be_in_the_future_go_back_to_step_1;
+
+  /// No description provided for @departure_must_be_at_least_15_minutes_from_now.
+  ///
+  /// In en, this message translates to:
+  /// **'Departure must be at least 15 minutes from now'**
+  String get departure_must_be_at_least_15_minutes_from_now;
+
+  /// No description provided for @please_select_a_vehicle_in_step_2.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a vehicle in Step 2'**
+  String get please_select_a_vehicle_in_step_2;
+
+  /// No description provided for @number_of_seats_must_be_between_1_and_8_go_back_to_step_2.
+  ///
+  /// In en, this message translates to:
+  /// **'Number of seats must be between 1 and 8 — go back to Step 2'**
+  String get number_of_seats_must_be_between_1_and_8_go_back_to_step_2;
+
+  /// No description provided for @please_select_at_least_one_recurring_day.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select at least one recurring day'**
+  String get please_select_at_least_one_recurring_day;
+
+  /// No description provided for @please_set_a_recurring_end_date.
+  ///
+  /// In en, this message translates to:
+  /// **'Please set a recurring end date'**
+  String get please_set_a_recurring_end_date;
+
+  /// No description provided for @please_enter_both_locations.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter both locations'**
+  String get please_enter_both_locations;
+
+  /// No description provided for @pickup_and_destination_cannot_be_the_same_location.
+  ///
+  /// In en, this message translates to:
+  /// **'Pickup and destination cannot be the same location'**
+  String get pickup_and_destination_cannot_be_the_same_location;
+
+  /// No description provided for @cannot_search_for_past_dates.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot search for past dates'**
+  String get cannot_search_for_past_dates;
+
+  /// No description provided for @seats_must_be_between_1_and_4.
+  ///
+  /// In en, this message translates to:
+  /// **'Seats must be between 1 and 4'**
+  String get seats_must_be_between_1_and_4;
+
+  /// No description provided for @cancelled_by_user.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled by user'**
+  String get cancelled_by_user;
+
+  /// No description provided for @gasoline.
+  ///
+  /// In en, this message translates to:
+  /// **'Gasoline'**
+  String get gasoline;
+
+  /// No description provided for @diesel.
+  ///
+  /// In en, this message translates to:
+  /// **'Diesel'**
+  String get diesel;
+
+  /// No description provided for @hybrid.
+  ///
+  /// In en, this message translates to:
+  /// **'Hybrid'**
+  String get hybrid;
+
+  /// No description provided for @plugin_hybrid.
+  ///
+  /// In en, this message translates to:
+  /// **'Plug-in Hybrid'**
+  String get plugin_hybrid;
+
+  /// No description provided for @hydrogen.
+  ///
+  /// In en, this message translates to:
+  /// **'Hydrogen'**
+  String get hydrogen;
+
+  /// No description provided for @car.
+  ///
+  /// In en, this message translates to:
+  /// **'Car'**
+  String get car;
+
+  /// No description provided for @motorcycle.
+  ///
+  /// In en, this message translates to:
+  /// **'Motorcycle'**
+  String get motorcycle;
+
+  /// No description provided for @van.
+  ///
+  /// In en, this message translates to:
+  /// **'Van'**
+  String get van;
+
+  /// No description provided for @truck.
+  ///
+  /// In en, this message translates to:
+  /// **'Truck'**
+  String get truck;
+
+  /// No description provided for @bicycle.
+  ///
+  /// In en, this message translates to:
+  /// **'Bicycle'**
+  String get bicycle;
+
+  /// No description provided for @your_fleet.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Fleet'**
+  String get your_fleet;
+
+  /// No description provided for @register_a_new_car_for_carpool_rides.
+  ///
+  /// In en, this message translates to:
+  /// **'Register a new car for carpool rides'**
+  String get register_a_new_car_for_carpool_rides;
+
+  /// No description provided for @in_use.
+  ///
+  /// In en, this message translates to:
+  /// **'In Use'**
+  String get in_use;
+
+  /// No description provided for @riders_see_this_photo_before_booking.
+  ///
+  /// In en, this message translates to:
+  /// **'Riders see this photo before booking'**
+  String get riders_see_this_photo_before_booking;
+
+  /// No description provided for @inlineEventChooseEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose an event'**
+  String get inlineEventChooseEvent;
+
+  /// No description provided for @inlineEventLinkOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Link to a sport event (optional)'**
+  String get inlineEventLinkOptional;
+
+  /// No description provided for @inlineEventClearSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear selected event'**
+  String get inlineEventClearSelected;
+
+  /// No description provided for @inlineEventSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search loaded events by title, place, organizer'**
+  String get inlineEventSearchHint;
+
+  /// No description provided for @inlineEventClearSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear search'**
+  String get inlineEventClearSearch;
+
+  /// No description provided for @inlineEventAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get inlineEventAll;
+
+  /// No description provided for @inlineEventCouldNotLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load events'**
+  String get inlineEventCouldNotLoad;
+
+  /// No description provided for @inlineEventNoMatches.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching loaded events'**
+  String get inlineEventNoMatches;
+
+  /// No description provided for @inlineEventLoadMoreOrSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Load more events or change the search.'**
+  String get inlineEventLoadMoreOrSearch;
+
+  /// No description provided for @inlineEventTryAnotherFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'Try another search or filter.'**
+  String get inlineEventTryAnotherFilter;
+
+  /// No description provided for @inlineEventLoadMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Load more'**
+  String get inlineEventLoadMore;
+
+  /// No description provided for @inlineEventRetryLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry loading events'**
+  String get inlineEventRetryLoading;
+
+  /// No description provided for @inlineEventAllLoadedShown.
+  ///
+  /// In en, this message translates to:
+  /// **'All loaded events shown'**
+  String get inlineEventAllLoadedShown;
+
+  /// No description provided for @inlineEventLoadMoreEvents.
+  ///
+  /// In en, this message translates to:
+  /// **'Load more events'**
+  String get inlineEventLoadMoreEvents;
+
+  /// No description provided for @inlineEventShownLoaded.
+  ///
+  /// In en, this message translates to:
+  /// **'{shown} shown - {loaded} loaded'**
+  String inlineEventShownLoaded(int shown, int loaded);
+
+  /// No description provided for @inlineEventNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Now'**
+  String get inlineEventNow;
+
+  /// No description provided for @chatDeleteConversationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete conversation?'**
+  String get chatDeleteConversationTitle;
+
+  /// No description provided for @chatClearHistoryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear chat history?'**
+  String get chatClearHistoryTitle;
+
+  /// No description provided for @eventCancelTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel Event'**
+  String get eventCancelTitle;
+
+  /// No description provided for @eventCancelReasonOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason (optional)'**
+  String get eventCancelReasonOptional;
+
+  /// No description provided for @eventKeepEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep Event'**
+  String get eventKeepEvent;
+
+  /// No description provided for @eventDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Event'**
+  String get eventDeleteTitle;
+
+  /// No description provided for @eventDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete \"{eventTitle}\"?'**
+  String eventDeleteConfirm(String eventTitle);
+
+  /// No description provided for @eventAttendees.
+  ///
+  /// In en, this message translates to:
+  /// **'Attendees'**
+  String get eventAttendees;
+
+  /// No description provided for @eventAttendeesCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Attendees ({count})'**
+  String eventAttendeesCount(int count);
+
+  /// No description provided for @eventNoAttendeesYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No attendees yet'**
+  String get eventNoAttendeesYet;
+
+  /// No description provided for @eventAttendeesFailedOpenChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to open chat. Please try again.'**
+  String get eventAttendeesFailedOpenChat;
+
+  /// No description provided for @eventAttendeesFailedLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load attendees'**
+  String get eventAttendeesFailedLoad;
+
+  /// No description provided for @myLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'My Location'**
+  String get myLocation;
+
+  /// No description provided for @changeSignInAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Change sign-in account'**
+  String get changeSignInAccount;
+
+  /// No description provided for @changeGoogleAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Change Google account'**
+  String get changeGoogleAccount;
+
+  /// No description provided for @changeAppleAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Change Apple account'**
+  String get changeAppleAccount;
+
+  /// No description provided for @discardChangesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard changes?'**
+  String get discardChangesTitle;
+
+  /// No description provided for @keepEditing.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep editing'**
+  String get keepEditing;
+
+  /// No description provided for @clearAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear address'**
+  String get clearAddress;
+
+  /// No description provided for @clearPhoneNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear phone number'**
+  String get clearPhoneNumber;
+
+  /// No description provided for @openInMaps.
+  ///
+  /// In en, this message translates to:
+  /// **'Open in maps'**
+  String get openInMaps;
 }
 
 class _AppLocalizationsDelegate

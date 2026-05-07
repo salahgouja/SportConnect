@@ -302,7 +302,10 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
       if (next.error != null && next.error != previous?.error) {
         final e = next.error;
         if (e is AuthException) {
-          if (e.code == 'google-sign-in-canceled') return; // silent
+          if (e.code == 'google-sign-in-canceled' ||
+              e.code == 'apple-sign-in-canceled') {
+            return; // silent
+          }
           if (e.code == 'account-exists-with-different-credential') {
             _showError(l10n.accountExistsError);
             return;
@@ -465,7 +468,9 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
   }
 
   Widget _buildStepContent(_StepTheme theme) {
-    final currentStep = ref.watch(signupWizardUiViewModelProvider.select((s) => s.currentStep));
+    final currentStep = ref.watch(
+      signupWizardUiViewModelProvider.select((s) => s.currentStep),
+    );
     return IndexedStack(
       index: currentStep,
       children: [
@@ -864,7 +869,9 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
     AsyncValue<void> registerState,
     SocialAuthState socialState,
   ) {
-    final currentStep = ref.watch(signupWizardUiViewModelProvider.select((s) => s.currentStep));
+    final currentStep = ref.watch(
+      signupWizardUiViewModelProvider.select((s) => s.currentStep),
+    );
     final isLast = currentStep == 2; // UX FIX: 3 steps total
     final isLoading = registerState.isLoading;
     final isDisabled = registerState.isLoading || socialState.isLoading;

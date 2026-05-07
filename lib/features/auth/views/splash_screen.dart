@@ -1,12 +1,9 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
-import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
+import 'dart:async';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -22,12 +19,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   late AnimationController _dotController;
 
   late Animation<double> _progressAnim;
-
-  Timer? _timeoutTimer;
-
-  // If providers never resolve (no network, slow device) bail out after this
-  // duration so the user isn't stuck on splash forever.
-  static const _splashTimeout = Duration(seconds: 10);
 
   // Soft green palette
   static const Color _white = Color(0xFFFFFFFF);
@@ -64,20 +55,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       parent: _progressController,
       curve: Curves.easeInOut,
     );
-
-    // Fallback: if the router hasn't navigated away within _splashTimeout,
-    // force the user to the onboarding/login flow so the app never stalls.
-    _timeoutTimer = Timer(_splashTimeout, _forceNavigate);
-  }
-
-  void _forceNavigate() {
-    if (!mounted) return;
-    context.go(AppRoutes.onboarding.path);
   }
 
   @override
   void dispose() {
-    _timeoutTimer?.cancel();
     _entryController.dispose();
     _progressController.dispose();
     _dotController.dispose();
@@ -266,43 +247,44 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       children: [
         Padding(
           padding: EdgeInsets.symmetric(horizontal: 48.w),
-          child: AnimatedBuilder(
-                animation: _progressAnim,
-                builder: (context, _) {
-                  return Stack(
-                    children: [
-                      // Track
-                      Container(
-                        width: double.infinity,
-                        height: 2.5.h,
-                        decoration: BoxDecoration(
-                          color: _greenLight,
-                          borderRadius: BorderRadius.circular(2.r),
-                        ),
-                      ),
-                      // Fill
-                      FractionallySizedBox(
-                        widthFactor: _progressAnim.value,
-                        child: Container(
-                          height: 2.5.h,
-                          decoration: BoxDecoration(
-                            color: _green,
-                            borderRadius: BorderRadius.circular(2.r),
-                            boxShadow: [
-                              BoxShadow(
-                                color: _green.withValues(alpha: 0.35),
-                                blurRadius: 6,
-                              ),
-                            ],
+          child:
+              AnimatedBuilder(
+                    animation: _progressAnim,
+                    builder: (context, _) {
+                      return Stack(
+                        children: [
+                          // Track
+                          Container(
+                            width: double.infinity,
+                            height: 2.5.h,
+                            decoration: BoxDecoration(
+                              color: _greenLight,
+                              borderRadius: BorderRadius.circular(2.r),
+                            ),
                           ),
-                        ),
-                      ),
-                    ],
-                  );
-                },
-              )
-              .animate(controller: _entryController)
-              .fadeIn(delay: 700.ms, duration: 400.ms),
+                          // Fill
+                          FractionallySizedBox(
+                            widthFactor: _progressAnim.value,
+                            child: Container(
+                              height: 2.5.h,
+                              decoration: BoxDecoration(
+                                color: _green,
+                                borderRadius: BorderRadius.circular(2.r),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: _green.withValues(alpha: 0.35),
+                                    blurRadius: 6,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  )
+                  .animate(controller: _entryController)
+                  .fadeIn(delay: 700.ms, duration: 400.ms),
         ),
 
         SizedBox(height: 14.h),

@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/widgets/address_autocomplete_field.dart';
+import 'package:sport_connect/core/utils/user_facing_error.dart';
 import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/auth/repositories/auth_repository.dart';
 import 'package:sport_connect/features/profile/repositories/profile_repository.dart';
@@ -682,7 +683,7 @@ class ProfileEditViewModel extends _$ProfileEditViewModel {
       return true;
     } on Exception catch (e, st) {
       if (!ref.mounted) return false;
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(isLoading: false, error: userFacingError(e));
       return false;
     }
   }
@@ -728,7 +729,7 @@ class ProfileEditViewModel extends _$ProfileEditViewModel {
       state = state.copyWith(
         isLoading: false,
         isSaved: false,
-        error: e.toString(),
+        error: userFacingError(e),
       );
       return false;
     }
@@ -914,7 +915,7 @@ class SocialActionsViewModel extends _$SocialActionsViewModel {
       );
     } on Exception catch (e, st) {
       if (!ref.mounted) return;
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(isLoading: false, error: userFacingError(e));
     }
   }
 }
@@ -964,7 +965,7 @@ class VehicleViewModel extends _$VehicleViewModel {
       state = state.copyWith(isLoading: false);
     } on Exception catch (e, st) {
       if (!ref.mounted) return;
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(isLoading: false, error: userFacingError(e));
     }
   }
 
@@ -978,7 +979,7 @@ class VehicleViewModel extends _$VehicleViewModel {
       state = state.copyWith(isLoading: false);
     } on Exception catch (e, st) {
       if (!ref.mounted) return;
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(isLoading: false, error: userFacingError(e));
     }
   }
 
@@ -992,7 +993,7 @@ class VehicleViewModel extends _$VehicleViewModel {
       state = state.copyWith(isLoading: false);
     } on Exception catch (e, st) {
       if (!ref.mounted) return;
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(isLoading: false, error: userFacingError(e));
     }
   }
 
@@ -1006,7 +1007,7 @@ class VehicleViewModel extends _$VehicleViewModel {
       state = state.copyWith(isLoading: false);
     } on Exception catch (e, st) {
       if (!ref.mounted) return;
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(isLoading: false, error: userFacingError(e));
     }
   }
 }
@@ -1034,3 +1035,4 @@ Future<int> userRank(Ref ref, String uid) async {
   final repository = ref.read(profileRepositoryProvider);
   return repository.getUserRank(uid);
 }
+

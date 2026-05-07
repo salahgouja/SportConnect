@@ -11,6 +11,7 @@ import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/features/events/models/event_model.dart';
 import 'package:sport_connect/features/events/repositories/event_repository.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 class InlineEventSelector extends ConsumerStatefulWidget {
   const InlineEventSelector({
@@ -73,6 +74,7 @@ class _InlineEventSelectorState extends ConsumerState<InlineEventSelector> {
   }
 
   Widget _buildTrigger() {
+    final l10n = AppLocalizations.of(context);
     final hasEvent = widget.selected != null;
     return AnimatedContainer(
       duration: 200.ms,
@@ -155,8 +157,8 @@ class _InlineEventSelectorState extends ConsumerState<InlineEventSelector> {
                             )
                           : Text(
                               _expanded
-                                  ? 'Choose an event'
-                                  : 'Link to a sport event (optional)',
+                                  ? l10n.eventLabel
+                                  : l10n.searchEventsHint,
                               style: TextStyle(
                                 fontSize: 14.sp,
                                 color: _expanded
@@ -179,7 +181,7 @@ class _InlineEventSelectorState extends ConsumerState<InlineEventSelector> {
           ),
           if (hasEvent)
             IconButton(
-              tooltip: 'Clear selected event',
+              tooltip: l10n.clear,
               visualDensity: VisualDensity.compact,
               onPressed: () {
                 unawaited(HapticFeedback.lightImpact());
@@ -234,11 +236,12 @@ class _InlineEventSelectorState extends ConsumerState<InlineEventSelector> {
   }
 
   Widget _buildSearchField() {
+    final l10n = AppLocalizations.of(context);
     return TextField(
       controller: _searchController,
       textInputAction: TextInputAction.search,
       decoration: InputDecoration(
-        hintText: 'Search loaded events by title, place, organizer',
+        hintText: l10n.searchEventsHint,
         prefixIcon: Icon(
           Icons.search_rounded,
           size: 20.sp,
@@ -247,7 +250,7 @@ class _InlineEventSelectorState extends ConsumerState<InlineEventSelector> {
         suffixIcon: _query.isEmpty
             ? null
             : IconButton(
-                tooltip: 'Clear search',
+                tooltip: l10n.clearSearchTooltip,
                 icon: Icon(Icons.close_rounded, size: 18.sp),
                 onPressed: _searchController.clear,
               ),
@@ -263,6 +266,7 @@ class _InlineEventSelectorState extends ConsumerState<InlineEventSelector> {
   }
 
   Widget _buildTypeFilterRow() {
+    final l10n = AppLocalizations.of(context);
     final filters = <EventType?>[null, ...EventType.values];
     return SizedBox(
       height: 34.h,
@@ -273,7 +277,7 @@ class _InlineEventSelectorState extends ConsumerState<InlineEventSelector> {
           final type = filters[index];
           return _filterChip(
             type,
-            type?.label ?? 'All',
+            type?.label ?? l10n.all,
             type?.icon ?? Icons.auto_awesome_rounded,
             type?.color ?? AppColors.primary,
           );
@@ -321,14 +325,15 @@ class _InlineEventSelectorState extends ConsumerState<InlineEventSelector> {
   }
 
   Widget _buildEventList() {
+    final l10n = AppLocalizations.of(context);
     if (_isLoading) return _loadingList();
 
     if (_error != null && _events.isEmpty) {
       return _MessageState(
         icon: Icons.error_outline_rounded,
-        title: 'Could not load events',
+        title: l10n.errorLoadingData,
         message: _error!,
-        actionLabel: 'Retry',
+        actionLabel: l10n.tryAgain,
         onAction: () => unawaited(_loadFirstPage()),
       );
     }
@@ -338,11 +343,11 @@ class _InlineEventSelectorState extends ConsumerState<InlineEventSelector> {
     if (visibleEvents.isEmpty) {
       return _MessageState(
         icon: Icons.search_off_rounded,
-        title: 'No matching loaded events',
+        title: l10n.noResultsFound,
         message: _hasMore
-            ? 'Load more events or change the search.'
-            : 'Try another search or filter.',
-        actionLabel: _hasMore ? 'Load more' : null,
+            ? l10n.searchFailedPleaseTryAgain
+            : l10n.tryAgain,
+        actionLabel: _hasMore ? l10n.actionContinue : null,
         onAction: _hasMore ? () => unawaited(_loadNextPage()) : null,
       );
     }
@@ -514,7 +519,7 @@ class _InlineEventSelectorState extends ConsumerState<InlineEventSelector> {
         child: OutlinedButton.icon(
           onPressed: () => unawaited(_loadNextPage()),
           icon: Icon(Icons.refresh_rounded, size: 18.sp),
-          label: const Text('Retry loading events'),
+          label: Text(AppLocalizations.of(context).tryAgain),
         ),
       );
     }
@@ -524,7 +529,7 @@ class _InlineEventSelectorState extends ConsumerState<InlineEventSelector> {
         padding: EdgeInsets.symmetric(vertical: 12.h),
         child: Center(
           child: Text(
-            'All loaded events shown',
+            AppLocalizations.of(context).completed,
             style: TextStyle(fontSize: 12.sp, color: AppColors.textTertiary),
           ),
         ),
@@ -536,7 +541,7 @@ class _InlineEventSelectorState extends ConsumerState<InlineEventSelector> {
       child: OutlinedButton.icon(
         onPressed: () => unawaited(_loadNextPage()),
         icon: Icon(Icons.expand_more_rounded, size: 18.sp),
-        label: const Text('Load more events'),
+        label: Text(AppLocalizations.of(context).actionContinue),
       ),
     );
   }
@@ -548,7 +553,7 @@ class _InlineEventSelectorState extends ConsumerState<InlineEventSelector> {
         children: [
           Expanded(
             child: Text(
-              '${_visibleEvents.length} shown - ${_events.length} loaded',
+              '${_visibleEvents.length} / ${_events.length} ${AppLocalizations.of(context).events.toLowerCase()}',
               overflow: TextOverflow.ellipsis,
               style: TextStyle(fontSize: 12.sp, color: AppColors.textTertiary),
             ),
@@ -565,7 +570,7 @@ class _InlineEventSelectorState extends ConsumerState<InlineEventSelector> {
             },
             icon: Icon(Icons.add_rounded, size: 18.sp),
             label: Text(
-              'Create event',
+              AppLocalizations.of(context).createEventTitle,
               style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600),
             ),
           ),
@@ -692,7 +697,7 @@ class _InlineEventSelectorState extends ConsumerState<InlineEventSelector> {
     if (d.inDays > 0) return '${d.inDays}d';
     if (d.inHours > 0) return '${d.inHours}h';
     if (d.inMinutes > 0) return '${d.inMinutes}m';
-    return 'Now';
+    return AppLocalizations.of(context).timeNow;
   }
 }
 

@@ -48,7 +48,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         validators: [Validators.required, Validators.email],
       ),
       'password': FormControl<String>(
-        validators: [Validators.required, Validators.minLength(8)],
+        validators: [Validators.required],
       ),
     });
     _setupAnimations();
@@ -538,6 +538,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     if (error is AuthException) {
       switch (error.code) {
         case 'google-sign-in-canceled':
+        case 'apple-sign-in-canceled':
           return ''; // user dismissed — treat as silent, no snackbar
         case 'google-sign-in-failed':
           return error.message; // contains the raw code name for visibility

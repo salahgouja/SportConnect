@@ -116,8 +116,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
 
     return AdaptiveScaffold(
       body: eventAsync.when(
-        loading: () =>
-            const SkeletonLoader(type: SkeletonType.rideCard, itemCount: 4),
+        loading: () => const SkeletonLoader(),
         error: (e, _) => _ErrorBody(message: e.toString()),
         data: (event) {
           if (event == null) {
@@ -493,7 +492,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
               color: Colors.red.shade300,
               size: 22.sp,
             ),
-            tooltip: 'Delete event',
+            tooltip: AppLocalizations.of(context).eventDelete,
             onPressed: () => _showDeleteConfirmation(event),
           ),
       ],
@@ -566,7 +565,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
         ),
         SizedBox(height: 12.h),
         PremiumButton(
-          text: 'Cancel Event',
+          text: AppLocalizations.of(context).actionCancel,
           icon: Icons.event_busy_rounded,
           style: PremiumButtonStyle.ghost,
           fullWidth: true,
@@ -598,7 +597,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
     final reasonController = TextEditingController();
     final confirmed = await AppModalSheet.show<bool>(
       context: context,
-      title: 'Cancel Event',
+      title: AppLocalizations.of(context).actionCancel,
       maxHeightFactor: 0.7,
       child: Padding(
         padding: EdgeInsets.fromLTRB(
@@ -623,7 +622,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
             ),
             SizedBox(height: 16.h),
             Text(
-              'Cancel Event',
+              AppLocalizations.of(context).actionCancel,
               style: TextStyle(
                 fontSize: 18.sp,
                 fontWeight: FontWeight.w700,
@@ -641,7 +640,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
               maxLines: 3,
               maxLength: 200,
               decoration: InputDecoration(
-                hintText: 'Reason (optional)',
+                hintText: AppLocalizations.of(context).eventOptional,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12.r),
                 ),
@@ -655,7 +654,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () => Navigator.of(context).pop(false),
-                    child: const Text('Keep Event'),
+                    child: Text(AppLocalizations.of(context).actionCancel),
                   ),
                 ),
                 SizedBox(width: 12.w),
@@ -666,7 +665,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                       foregroundColor: Colors.white,
                     ),
                     onPressed: () => Navigator.of(context).pop(true),
-                    child: const Text('Cancel Event'),
+                    child: Text(AppLocalizations.of(context).actionCancel),
                   ),
                 ),
               ],
@@ -849,7 +848,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
             message:
                 'Could not open calendar. Please ensure Google Calendar is available.',
             type: AdaptiveSnackBarType.error,
-            duration: Duration(seconds: 3),
+            duration: const Duration(seconds: 3),
           );
         }
       }
@@ -870,12 +869,12 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog.adaptive(
-        title: const Text('Delete Event'),
+        title: Text(AppLocalizations.of(context).eventDeleteConfirmTitle),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Are you sure you want to delete "${event.title}"?'),
+            Text(AppLocalizations.of(context).eventDeleteWarning),
             if (event.isRecurring) ...[
               SizedBox(height: 16.h),
               Container(
@@ -917,7 +916,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
         actions: [
           TextButton(
             onPressed: () => context.pop(),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).actionCancel),
           ),
           TextButton(
             onPressed: () {
@@ -925,7 +924,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
               _deleteEvent(event);
             },
             style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            child: const Text('Delete'),
+            child: Text(AppLocalizations.of(context).actionDelete),
           ),
         ],
       ),

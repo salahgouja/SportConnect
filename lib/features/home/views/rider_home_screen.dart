@@ -337,7 +337,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
                 onPressed: _onAllowLocationTapped,
                 icon: Icon(Icons.my_location_rounded, size: 20.sp),
                 label: Text(
-                  l10n.allowLocation,
+                  l10n.actionContinue,
                   style: TextStyle(
                     fontSize: 16.sp,
                     fontWeight: FontWeight.w700,
@@ -1272,7 +1272,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
           SizedBox(height: 8.h),
           _buildMapControl(
             icon: Icons.my_location,
-            tooltip: 'My Location',
+            tooltip: l10n.location,
             onTap: () async {
               HapticFeedback.selectionClick();
               await ref

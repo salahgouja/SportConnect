@@ -3482,7 +3482,7 @@
   "@driverThisMonth": {
     "description": "Label for monthly earnings metric"
   },
-  "driverCo2Saved": "CO\u2082 Saved",
+  "driverCo2Saved": "CO₂ Saved",
   "@driverCo2Saved": {
     "description": "Label for CO2 saved stat card"
   },
@@ -3510,7 +3510,6 @@
   "@createARideToStartEarning": {
     "description": "Subtitle for empty upcoming rides state"
   },
-
   "wizardStepWelcome": "Welcome",
   "wizardStepWelcomeSubtitle": "Let's get you started",
   "wizardStepSecurity": "Security",
@@ -3541,7 +3540,6 @@
   "wizardContinue": "Continue",
   "authAgreeTermsError": "Please agree to the Terms of Service",
   "authDobError": "Please enter your date of birth.",
-
   "otpTitle": "Phone Verification",
   "otpEnterPhone": "Enter your phone number",
   "otpPhoneHint": "Phone number",
@@ -3564,7 +3562,6 @@
   "otpInvalidPhone": "Please enter a valid phone number",
   "otpSending": "Sending verification code...",
   "otpVerifying": "Verifying...",
-
   "otpCodeLabel": "OTP Code",
   "otpPhoneVerified": "Phone Verified!",
   "otpPhoneVerifiedDesc": "Your phone number has been verified successfully.",
@@ -3572,7 +3569,6 @@
   "otpChangePhone": "Change phone number",
   "otpTryAgain": "Try Again",
   "otpBackToLogin": "Back to Login",
-
   "reauthTitle": "Verify Your Identity",
   "reauthSubtitle": "For your security, please confirm your identity before continuing with this action.",
   "reauthPassword": "Password",
@@ -3584,7 +3580,6 @@
   "reauthWrongPassword": "Incorrect password. Please try again.",
   "reauthFailed": "Authentication failed. Please try again.",
   "reauthGoogleFailed": "Google re-authentication failed.",
-
   "emailVerifyTitle": "Verify Email",
   "emailVerifyHeading": "Verify Your Email",
   "emailVerifySentTo": "We've sent a verification link to:",
@@ -3603,7 +3598,6 @@
   "emailVerifySendFailed": "Failed to send verification email. Please try again.",
   "emailVerified": "Email Verified!",
   "emailVerifiedRedirecting": "Your email has been verified. Redirecting...",
-
   "changePasswordTitle": "Change Password",
   "changePasswordHeading": "Update Your Password",
   "changePasswordDesc": "Choose a strong password with at least 8 characters, including uppercase, lowercase, and numbers.",
@@ -3617,7 +3611,6 @@
   "changePasswordDone": "Done",
   "changePasswordWeakError": "Password is too weak. Please choose a stronger password.",
   "changePasswordGenericError": "Could not update password. Please try again.",
-
   "forgotPasswordCheckEmail": "Check Your Email",
   "forgotPasswordResendEmail": "Resend Email",
   "forgotPasswordResendIn": "Resend in {seconds}s",
@@ -3632,17 +3625,14 @@
   "forgotPasswordEmailRequired": "Please enter your email",
   "forgotPasswordInvalidEmail": "Please enter a valid email",
   "forgotPasswordSendError": "Could not send reset email right now. Please try again.",
-
   "roleSelectionError": "We could not continue right now. Please try again.",
   "accountExistsError": "An account already exists with a different sign-in method. Try signing in with email/password or the original provider.",
-
   "loginErrorUserNotFound": "No account found with this email.",
   "loginErrorWrongPassword": "Incorrect email or password. Please try again.",
   "loginErrorTooManyRequests": "Too many login attempts. Please try again later.",
   "loginErrorNetwork": "Network error. Please check your connection.",
   "loginErrorInvalidEmail": "Invalid email address.",
   "signUpFailedPleaseTry": "Sign up failed. Please try again.",
-
   "periodToday": "Today",
   "periodThisWeek": "This Week",
   "periodThisMonth": "This Month",
@@ -3690,7 +3680,6 @@
   "retry": "Retry",
   "fees": "Fees",
   "date": "Date",
-
   "payoutAmount": "Payout Amount",
   "instantPayout": "Instant Payout",
   "payoutDetailsSection": "Details",
@@ -3710,7 +3699,6 @@
   "payoutPaidDesc": "Your payout has arrived in your bank account.",
   "payoutFailedDesc": "This payout failed. Check the failure reason below.",
   "payoutCancelledDesc": "This payout was cancelled.",
-
   "stripeVerifyingAccount": "Verifying your account...",
   "stripeAccountCreationFailed": "Failed to create Stripe account. Please try again.",
   "stripeSetupFailed": "Could not start Stripe setup right now. Please try again.",
@@ -3718,7 +3706,6 @@
   "stripeLoadingConnect": "Loading Stripe Connect...",
   "stripeAdditionalInfoNeeded": "Additional information needed. Please complete all fields.",
   "stripeVerifyFailed": "Could not verify account right now. Please try again.",
-
   "periodToday": "Today",
   "periodThisWeek": "This Week",
   "periodThisMonth": "This Month",
@@ -3746,7 +3733,6 @@
   "ratingAverage": "Average",
   "ratingBelowAverage": "Below Average",
   "ratingPoor": "Poor",
-
   "findRidesNearYou": "Find Rides Near You",
   "exploreOnMap": "Explore on Map",
   "@exploreOnMap": {
@@ -3789,29 +3775,38 @@
   "departingValue": "Departing {value}",
   "@departingValue": {
     "placeholders": {
-      "value": { "type": "String" }
+      "value": {
+        "type": "String"
+      }
     }
   },
   "awaitingDriverCount": "{count, plural, one{Awaiting driver} other{Awaiting driver • {count} pending}}",
   "@awaitingDriverCount": {
     "placeholders": {
-      "count": { "type": "int" }
+      "count": {
+        "type": "int"
+      }
     }
   },
   "departingTodayAt": "Departing today at {h}:{m}",
   "@departingTodayAt": {
     "placeholders": {
-      "h": { "type": "String" },
-      "m": { "type": "String" }
+      "h": {
+        "type": "String"
+      },
+      "m": {
+        "type": "String"
+      }
     }
   },
   "departingInDays": "Departing in {days} days",
   "@departingInDays": {
     "placeholders": {
-      "days": { "type": "int" }
+      "days": {
+        "type": "int"
+      }
     }
   },
-
   "@_EVENTS_SCREENS": {},
   "createEventTitle": "Create Event",
   "editEventTitle": "Edit Event",
@@ -3843,7 +3838,9 @@
   "eventRepeatsUntil": "Repeats until {date}",
   "@eventRepeatsUntil": {
     "placeholders": {
-      "date": { "type": "String" }
+      "date": {
+        "type": "String"
+      }
     }
   },
   "eventRepeatEndDate": "Repeat end date (optional)",
@@ -3881,7 +3878,9 @@
   "eventUntilDate": "until {date}",
   "@eventUntilDate": {
     "placeholders": {
-      "date": { "type": "String" }
+      "date": {
+        "type": "String"
+      }
     }
   },
   "eventCostSplitEnabled": "Cost Split Enabled",
@@ -3894,33 +3893,47 @@
   "eventParticipantsCount": "Participants ({count})",
   "@eventParticipantsCount": {
     "placeholders": {
-      "count": { "type": "int" }
+      "count": {
+        "type": "int"
+      }
     }
   },
   "eventSeatsLeftCount": "{count} left",
   "@eventSeatsLeftCount": {
     "placeholders": {
-      "count": { "type": "int" }
+      "count": {
+        "type": "int"
+      }
     }
   },
   "eventCountdownDaysHours": "In {days}d {hours}h",
   "@eventCountdownDaysHours": {
     "placeholders": {
-      "days": { "type": "int" },
-      "hours": { "type": "int" }
+      "days": {
+        "type": "int"
+      },
+      "hours": {
+        "type": "int"
+      }
     }
   },
   "eventCountdownHoursMinutes": "In {hours}h {minutes}m",
   "@eventCountdownHoursMinutes": {
     "placeholders": {
-      "hours": { "type": "int" },
-      "minutes": { "type": "int" }
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
     }
   },
   "eventCountdownMinutes": "In {minutes}m",
   "@eventCountdownMinutes": {
     "placeholders": {
-      "minutes": { "type": "int" }
+      "minutes": {
+        "type": "int"
+      }
     }
   },
   "eventNeedRideHome": "Need Ride Home",
@@ -3942,7 +3955,9 @@
   "noEventsInCategory": "No upcoming {category} events.",
   "@noEventsInCategory": {
     "placeholders": {
-      "category": { "type": "String" }
+      "category": {
+        "type": "String"
+      }
     }
   },
   "beFirstToCreate": "Be the first to create one!",
@@ -3950,21 +3965,21 @@
   "eventByOrganizer": "by {name}",
   "@eventByOrganizer": {
     "placeholders": {
-      "name": { "type": "String" }
+      "name": {
+        "type": "String"
+      }
     }
   },
   "createLabel": "Create",
   "selectLocationError": "Please select a location.",
   "pastStartTimeError": "Start time must be in the future.",
   "endBeforeStartError": "End time must be after start time.",
-
   "@_LEGAL_SCREEN": {},
   "termsOfServiceTitle": "Terms of Service",
   "privacyPolicyTitle": "Privacy Policy",
   "legalVersionBadge": "Feb 2026",
   "loadingTermsOfService": "Loading Terms of Service…",
   "loadingPrivacyPolicy": "Loading Privacy Policy…",
-
   "@_REPORT_ISSUE_SCREEN": {},
   "reportIssueTitle": "Report an Issue",
   "whatHappenedQuestion": "What happened?",
@@ -3976,8 +3991,12 @@
   "filesAttachedCount": "{count}/{max} files attached",
   "@filesAttachedCount": {
     "placeholders": {
-      "count": { "type": "int" },
-      "max": { "type": "int" }
+      "count": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
     }
   },
   "supportsImagesHint": "Supports images (max 10MB each)",
@@ -3990,7 +4009,9 @@
   "rideInfoLabel": "Ride: {id}",
   "@rideInfoLabel": {
     "placeholders": {
-      "id": { "type": "String" }
+      "id": {
+        "type": "String"
+      }
     }
   },
   "reportSafety": "Safety",
@@ -4009,7 +4030,6 @@
   "severityMedium": "Medium",
   "severityHigh": "High",
   "severityCritical": "Critical",
-
   "@_DRIVER_MY_RIDES_SCREEN": {},
   "driverMyRidesTitle": "My Rides",
   "viewRequestsTooltip": "View requests",
@@ -4029,7 +4049,9 @@
   "acceptRequestMessage": "Accept this booking from {name}?",
   "@acceptRequestMessage": {
     "placeholders": {
-      "name": { "type": "String" }
+      "name": {
+        "type": "String"
+      }
     }
   },
   "acceptButton": "Accept",
@@ -4041,10 +4063,11 @@
   "seatsCount": "{count} seat(s)",
   "@seatsCount": {
     "placeholders": {
-      "count": { "type": "int" }
+      "count": {
+        "type": "int"
+      }
     }
   },
-
   "@_DRIVER_OFFER_RIDE_SCREEN": {},
   "offerARideTitle": "Offer a Ride",
   "editRideTitle": "Edit Ride",
@@ -4103,7 +4126,9 @@
   "stopNumberLabel": "Stop {number}",
   "@stopNumberLabel": {
     "placeholders": {
-      "number": { "type": "int" }
+      "number": {
+        "type": "int"
+      }
     }
   },
   "tapToSetLocation": "Tap to set location",
@@ -4112,27 +4137,37 @@
   "selectStopTitle": "Select Stop {number}",
   "@selectStopTitle": {
     "placeholders": {
-      "number": { "type": "int" }
+      "number": {
+        "type": "int"
+      }
     }
   },
   "editStopTitle": "Edit Stop {number}",
   "@editStopTitle": {
     "placeholders": {
-      "number": { "type": "int" }
+      "number": {
+        "type": "int"
+      }
     }
   },
   "vehicleLabel": "Vehicle",
   "totalCapacityCount": "Total Capacity: {count}",
   "@totalCapacityCount": {
     "placeholders": {
-      "count": { "type": "int" }
+      "count": {
+        "type": "int"
+      }
     }
   },
   "totalPriceForSeats": "Total: €{price} for {seats} seats",
   "@totalPriceForSeats": {
     "placeholders": {
-      "price": { "type": "String" },
-      "seats": { "type": "int" }
+      "price": {
+        "type": "String"
+      },
+      "seats": {
+        "type": "int"
+      }
     }
   },
   "decreasePriceTooltip": "Decrease price",
@@ -4147,7 +4182,9 @@
   "intermediateStopsCount": "{count, plural, =1{1 intermediate stop} other{{count} intermediate stops}}",
   "@intermediateStopsCount": {
     "placeholders": {
-      "count": { "type": "int" }
+      "count": {
+        "type": "int"
+      }
     }
   },
   "departureSummaryLabel": "Departure",
@@ -4155,20 +4192,26 @@
   "seatsAvailableCount": "{count} available",
   "@seatsAvailableCount": {
     "placeholders": {
-      "count": { "type": "int" }
+      "count": {
+        "type": "int"
+      }
     }
   },
   "priceSummaryLabel": "Price",
   "pricePerSeatSummary": "€{price} per seat",
   "@pricePerSeatSummary": {
     "placeholders": {
-      "price": { "type": "String" }
+      "price": {
+        "type": "String"
+      }
     }
   },
   "pricePerSeatNegotiableSummary": "€{price} per seat (negotiable)",
   "@pricePerSeatNegotiableSummary": {
     "placeholders": {
-      "price": { "type": "String" }
+      "price": {
+        "type": "String"
+      }
     }
   },
   "eventSummaryLabel": "Event",
@@ -4178,7 +4221,9 @@
   "maxDetourMinutesValue": "{minutes} min",
   "@maxDetourMinutesValue": {
     "placeholders": {
-      "minutes": { "type": "int" }
+      "minutes": {
+        "type": "int"
+      }
     }
   },
   "timeInPastWarning": "Selected time is in the past — the Create Ride button will be disabled",
@@ -4186,7 +4231,6 @@
   "departureAfterEventWarning": "Departure time is after the event ends — please choose an earlier time",
   "rideUpdatedSuccess": "Ride updated successfully!",
   "rideCreatedSuccess": "Ride created successfully!",
-
   "@_BOOKING_PENDING_SCREEN": {},
   "bookingRequestTitle": "Booking Request",
   "requestSentTitle": "Request Sent!",
@@ -4199,7 +4243,6 @@
   "cancelRequestButton": "Cancel Request",
   "viewAllMyRidesButton": "View All My Rides",
   "yourDriverLabel": "Your Driver",
-
   "@_RIDE_COUNTDOWN_SCREEN": {},
   "yourRideTitle": "Your Ride",
   "bookingConfirmedBadge": "Booking Confirmed",
@@ -4219,7 +4262,6 @@
   "estimatedArrivalLabel": "Est. arrival:",
   "joinActiveRideButton": "Join Active Ride",
   "viewRideDetailsButton": "View Ride Details",
-
   "@_DISPUTE_SCREEN": {},
   "fileDisputeTitle": "File a Dispute",
   "rideIdLabel": "Ride ID",
@@ -4248,7 +4290,6 @@
   "submitDisputeButton": "Submit Dispute",
   "disputeSubmittedTitle": "Dispute Submitted",
   "disputeSubmittedMessage": "Our team will review your dispute within 24-48 hours. You'll receive a notification once it's resolved.",
-
   "@_AUTH_SCREENS": {},
   "previousStepTooltip": "Previous step",
   "goBackTooltip": "Go back",
@@ -4286,11 +4327,14 @@
   "stepOfCount": "Step {step} of {total}",
   "@stepOfCount": {
     "placeholders": {
-      "step": { "type": "int" },
-      "total": { "type": "int" }
+      "step": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
     }
   },
-
   "@_MESSAGING_SCREENS": {},
   "sendingVoiceMessage": "Sending voice message...",
   "recordingFailedError": "Failed to start recording. Please try again.",
@@ -4299,17 +4343,17 @@
   "muteChat": "Mute",
   "unmuteChat": "Unmute",
   "deleteChat": "Delete",
-
   "@_PAYMENT_SCREENS": {},
   "paymentDetailsLabel": "Details",
   "ridePaymentLabel": "Ride Payment",
   "unknownDate": "Unknown Date",
-
   "@_PROFILE_SCREENS": {},
   "appVersion": "Version {version}",
   "@appVersion": {
     "placeholders": {
-      "version": { "type": "String" }
+      "version": {
+        "type": "String"
+      }
     }
   },
   "aboutAppDescription": "SportConnect is a social carpooling platform that connects sports enthusiasts. Share rides, reduce your carbon footprint, and build your sports community.",
@@ -4340,7 +4384,6 @@
   "searchByNameHint": "Search by name",
   "clearSearchTooltip": "Clear search",
   "notificationsTooltip": "Notifications",
-
   "@_REVIEW_SCREENS": {},
   "asDriverFilter": "As Driver",
   "asRiderFilter": "As Rider",
@@ -4351,7 +4394,6 @@
   "thankYouForReview": "Thank you for your review!",
   "submitRatingButton": "Submit Rating",
   "skipForNowButton": "Skip for now",
-
   "@_RIDES_SCREENS": {},
   "navigateButton": "Navigate",
   "gettingYourLocation": "Getting your location...",
@@ -4402,7 +4444,6 @@
   "noRidesYetSubtitle": "Find a carpool to your next game, practice, or event. Share the ride, split the cost.",
   "findACarpoolNow": "Find a Carpool",
   "allDriversVerifiedAndRated": "All drivers are verified and rated",
-
   "levelAndXp": "Level & XP",
   "viewAchievements": "View achievements",
   "maxLevel": "Max Level Reached!",
@@ -4474,192 +4515,192 @@
   "syncProfile": "Sync Profile",
   "eventUnableToLoadOriginal": "Unable to load the original event.",
   "eventUnableToUpdate": "Unable to update event. Please try again.",
-  "eventSignInRequired": "Please sign in to continue."
-  ,"supportCategoryOther": "Other"
-  ,"averageResponseTime": "Average response time"
-  ,"backToSettings": "Back to Settings"
-  ,"couldNotClearChatTryAgain": "Could not clear chat. Please try again."
-  ,"recording": "Recording"
-  ,"sendEmoji": "Send Emoji"
-  ,"sendPhoto": "Send Photo"
-  ,"moreOptions": "More options"
-  ,"clearReply": "Clear reply"
-  ,"messageFromLongPressOptions": "Message from {name}. Long press for options"
-  ,"@messageFromLongPressOptions": {
+  "eventSignInRequired": "Please sign in to continue.",
+  "supportCategoryOther": "Other",
+  "averageResponseTime": "Average response time",
+  "backToSettings": "Back to Settings",
+  "couldNotClearChatTryAgain": "Could not clear chat. Please try again.",
+  "recording": "Recording",
+  "sendEmoji": "Send Emoji",
+  "sendPhoto": "Send Photo",
+  "moreOptions": "More options",
+  "clearReply": "Clear reply",
+  "messageFromLongPressOptions": "Message from {name}. Long press for options",
+  "@messageFromLongPressOptions": {
     "placeholders": {
       "name": {
         "type": "String"
       }
     }
-  }
-  ,"attachFile": "Attach file"
-  ,"showKeyboard": "Show keyboard"
-  ,"showEmojiPicker": "Show emoji picker"
-  ,"stopRecording": "Stop recording"
-  ,"sendMessage": "Send message"
-  ,"recordVoiceMessage": "Record voice message"
-  ,"rejected": "Rejected"
-  ,"pleaseEnterValue": "Please enter {value}"
-  ,"@pleaseEnterValue": {
+  },
+  "attachFile": "Attach file",
+  "showKeyboard": "Show keyboard",
+  "showEmojiPicker": "Show emoji picker",
+  "stopRecording": "Stop recording",
+  "sendMessage": "Send message",
+  "recordVoiceMessage": "Record voice message",
+  "rejected": "Rejected",
+  "pleaseEnterValue": "Please enter {value}",
+  "@pleaseEnterValue": {
     "placeholders": {
       "value": {
         "type": "String"
       }
     }
-  }
-  ,"uploadVehiclePhotoPermission": "Access to your photo library is needed to upload a photo of your vehicle."
-  ,"driverVehicleStepSubtitle": "Tell us about your car so riders know what to expect."
-  ,"vehicleMakeHint": "e.g., Toyota, Honda, BMW"
-  ,"pleaseEnterVehicleMake": "Please enter vehicle make"
-  ,"vehicleModelHint": "e.g., Corolla, Civic, 3 Series"
-  ,"pleaseEnterVehicleModel": "Please enter vehicle model"
-  ,"vehicleYearHint": "e.g., 2020"
-  ,"requiredField": "Required"
-  ,"vehicleColorHint": "e.g., White"
-  ,"licensePlateHint": "e.g., ABC 123"
-  ,"licensePlateHelperText": "2-12 characters, letters & numbers"
-  ,"pleaseEnterLicensePlate": "Please enter license plate"
-  ,"pleaseEnterNumberOfSeats": "Please enter number of seats"
-  ,"mustBeWholeNumber": "Must be a whole number"
-  ,"enter1To8Seats": "Enter 1-8 seats"
-  ,"driverStripeStepSubtitle": "Connect your bank account to receive payments from your rides."
-  ,"stripePoweredByMillions": "Powered by Stripe, trusted by millions"
-  ,"stripeFastTransfersDesc": "Get paid within 2-3 business days"
-  ,"stripeEarningsDesc": "View all your earnings in one place"
-  ,"connectWithStripe": "Connect with Stripe"
-  ,"legalConsentPrefix": "By continuing, you agree to our "
-  ,"iAgreeToThe": "I agree to the "
-  ,"andConnector": " and "
-  ,"termsLinkSemantics": "Terms of Service, link"
-  ,"privacyLinkSemantics": "Privacy Policy, link"
-  ,"leaderboard": "Leaderboard"
-  ,"stats": "Stats"
-  ,"searchHelpArticles": "Search help articles..."
-  ,"frequentlyAskedQuestions": "Frequently Asked Questions"
-  ,"closeRouteInfo": "Close route info"
-  ,"requestDataExport": "Request Data Export"
-  ,"withdrawConsent": "Withdraw Consent"
-  ,"downloadMyData": "Download My Data"
-  ,"downloadMyDataDescription": "We will prepare a copy of your personal data including your profile, ride history, and reviews. You will receive an email with a download link within 48 hours."
-  ,"dataProcessingNotice": "Data Processing Notice"
-  ,"withdrawConsentDescription": "You can withdraw your consent for data processing in the following ways:"
-  ,"dataExportRequestSubmitted": "Data export request submitted."
-  ,"deleteKeyword": "DELETE"
-  ,"submitReviewButton": "Submit Review"
-  ,"pleaseSelectRatingToSubmit": "Please select a rating to submit"
-  ,"unknownDriver": "Unknown Driver"
-  ,"errorLoadingDriver": "Error loading driver"
-  ,"passengerNotFound": "Passenger not found"
-  ,"errorLoadingPassenger": "Error loading passenger"
-  ,"unknown": "Unknown"
-  ,"noPhone": "No phone"
-  ,"notAvailableShort": "N/A"
-  ,"permissionLocationAccessTitle": "Location Access"
-  ,"permissionLocationAccessMessage": "SportConnect needs your location to show nearby rides, calculate distances, and provide accurate navigation during your trips."
-  ,"permissionShareLocationTitle": "Share Your Location"
-  ,"permissionShareLocationMessage": "Your current location will be shared with this chat so other participants can see where you are. Your location is only shared when you choose to send it."
-  ,"permissionRideNavigationTitle": "Background Location Required"
-  ,"permissionRideNavigationMessage": "SportConnect accesses your location in the background — even when the app is closed — to detect when you enter pickup and drop-off zones during an active ride and notify your passengers in time. This is used only while a ride is in progress."
-  ,"permissionCameraPhotosTitle": "Camera & Photos"
-  ,"permissionCameraPhotosMessage": "Access to your camera and photo library is needed to attach images. Your photos are only uploaded when you explicitly choose to share them."
-  ,"permissionMicrophoneTitle": "Microphone Access"
-  ,"permissionMicrophoneMessage": "Microphone access is needed to record voice messages. Audio is only recorded when you press and hold the record button."
-  ,"permissionStayUpdatedTitle": "Stay Updated"
-  ,"permissionStayUpdatedMessage": "Enable notifications to receive ride updates, messages from other riders, booking confirmations, and important safety alerts."
-  ,"notNow": "Not Now"
-  ,"actionContinue": "Continue"
-  ,"rideOptions": "Ride options"
-  ,"messagePassenger": "Message passenger"
-  ,"passengerOptions": "Passenger options"
-  ,"markNoShow": "Mark no-show"
-  ,"messageDriver": "Message driver"
-  ,"chatWithDriver": "Chat with driver"
-  ,"chatWithPassenger": "Chat with passenger"
-  ,"callDriver": "Call driver"
-  ,"closePassengerDetails": "Close passenger details"
-  ,"rideRequestDetails": "Ride request details"
-  ,"directions": "Directions"
-  ,"driverArrivingIn": "Driver arriving in ~{minutes} min"
-  ,"@driverArrivingIn": {
+  },
+  "uploadVehiclePhotoPermission": "Access to your photo library is needed to upload a photo of your vehicle.",
+  "driverVehicleStepSubtitle": "Tell us about your car so riders know what to expect.",
+  "vehicleMakeHint": "e.g., Toyota, Honda, BMW",
+  "pleaseEnterVehicleMake": "Please enter vehicle make",
+  "vehicleModelHint": "e.g., Corolla, Civic, 3 Series",
+  "pleaseEnterVehicleModel": "Please enter vehicle model",
+  "vehicleYearHint": "e.g., 2020",
+  "requiredField": "Required",
+  "vehicleColorHint": "e.g., White",
+  "licensePlateHint": "e.g., ABC 123",
+  "licensePlateHelperText": "2-12 characters, letters & numbers",
+  "pleaseEnterLicensePlate": "Please enter license plate",
+  "pleaseEnterNumberOfSeats": "Please enter number of seats",
+  "mustBeWholeNumber": "Must be a whole number",
+  "enter1To8Seats": "Enter 1-8 seats",
+  "driverStripeStepSubtitle": "Connect your bank account to receive payments from your rides.",
+  "stripePoweredByMillions": "Powered by Stripe, trusted by millions",
+  "stripeFastTransfersDesc": "Get paid within 2-3 business days",
+  "stripeEarningsDesc": "View all your earnings in one place",
+  "connectWithStripe": "Connect with Stripe",
+  "legalConsentPrefix": "By continuing, you agree to our ",
+  "iAgreeToThe": "I agree to the ",
+  "andConnector": " and ",
+  "termsLinkSemantics": "Terms of Service, link",
+  "privacyLinkSemantics": "Privacy Policy, link",
+  "leaderboard": "Leaderboard",
+  "stats": "Stats",
+  "searchHelpArticles": "Search help articles...",
+  "frequentlyAskedQuestions": "Frequently Asked Questions",
+  "closeRouteInfo": "Close route info",
+  "requestDataExport": "Request Data Export",
+  "withdrawConsent": "Withdraw Consent",
+  "downloadMyData": "Download My Data",
+  "downloadMyDataDescription": "We will prepare a copy of your personal data including your profile, ride history, and reviews. You will receive an email with a download link within 48 hours.",
+  "dataProcessingNotice": "Data Processing Notice",
+  "withdrawConsentDescription": "You can withdraw your consent for data processing in the following ways:",
+  "dataExportRequestSubmitted": "Data export request submitted.",
+  "deleteKeyword": "DELETE",
+  "submitReviewButton": "Submit Review",
+  "pleaseSelectRatingToSubmit": "Please select a rating to submit",
+  "unknownDriver": "Unknown Driver",
+  "errorLoadingDriver": "Error loading driver",
+  "passengerNotFound": "Passenger not found",
+  "errorLoadingPassenger": "Error loading passenger",
+  "unknown": "Unknown",
+  "noPhone": "No phone",
+  "notAvailableShort": "N/A",
+  "permissionLocationAccessTitle": "Location Access",
+  "permissionLocationAccessMessage": "SportConnect needs your location to show nearby rides, calculate distances, and provide accurate navigation during your trips.",
+  "permissionShareLocationTitle": "Share Your Location",
+  "permissionShareLocationMessage": "Your current location will be shared with this chat so other participants can see where you are. Your location is only shared when you choose to send it.",
+  "permissionRideNavigationTitle": "Background Location Required",
+  "permissionRideNavigationMessage": "SportConnect accesses your location in the background — even when the app is closed — to detect when you enter pickup and drop-off zones during an active ride and notify your passengers in time. This is used only while a ride is in progress.",
+  "permissionCameraPhotosTitle": "Camera & Photos",
+  "permissionCameraPhotosMessage": "Access to your camera and photo library is needed to attach images. Your photos are only uploaded when you explicitly choose to share them.",
+  "permissionMicrophoneTitle": "Microphone Access",
+  "permissionMicrophoneMessage": "Microphone access is needed to record voice messages. Audio is only recorded when you press and hold the record button.",
+  "permissionStayUpdatedTitle": "Stay Updated",
+  "permissionStayUpdatedMessage": "Enable notifications to receive ride updates, messages from other riders, booking confirmations, and important safety alerts.",
+  "notNow": "Not Now",
+  "actionContinue": "Continue",
+  "rideOptions": "Ride options",
+  "messagePassenger": "Message passenger",
+  "passengerOptions": "Passenger options",
+  "markNoShow": "Mark no-show",
+  "messageDriver": "Message driver",
+  "chatWithDriver": "Chat with driver",
+  "chatWithPassenger": "Chat with passenger",
+  "callDriver": "Call driver",
+  "closePassengerDetails": "Close passenger details",
+  "rideRequestDetails": "Ride request details",
+  "directions": "Directions",
+  "driverArrivingIn": "Driver arriving in ~{minutes} min",
+  "@driverArrivingIn": {
     "placeholders": {
       "minutes": {
         "type": "int"
       }
     }
-  }
-  ,"estimatedWait": "Est. wait: ~{minutes} min"
-  ,"@estimatedWait": {
+  },
+  "estimatedWait": "Est. wait: ~{minutes} min",
+  "@estimatedWait": {
     "placeholders": {
       "minutes": {
         "type": "int"
       }
     }
-  }
-  ,"customPickupPoint": "Custom pickup point"
-  ,"dropPinForPickup": "Drop a pin for pickup"
-  ,"clearPin": "Clear pin"
-  ,"setPin": "Set Pin"
-  ,"markNoShowPrompt": "Mark {name} as a no-show? This will be recorded and may affect their rating."
-  ,"@markNoShowPrompt": {
+  },
+  "customPickupPoint": "Custom pickup point",
+  "dropPinForPickup": "Drop a pin for pickup",
+  "clearPin": "Clear pin",
+  "setPin": "Set Pin",
+  "markNoShowPrompt": "Mark {name} as a no-show? This will be recorded and may affect their rating.",
+  "@markNoShowPrompt": {
     "placeholders": {
       "name": {
         "type": "String"
       }
     }
-  }
-  ,"switchVehicle": "Switch vehicle"
-  ,"copyLink": "Copy link"
-  ,"cloneThisRide": "Clone This Ride"
-  ,"rateYourRide": "Rate your ride"
-  ,"howWasYourRide": "How was your ride?"
-  ,"rateYourExperienceWith": "Rate your experience with {name}"
-  ,"@rateYourExperienceWith": {
+  },
+  "switchVehicle": "Switch vehicle",
+  "copyLink": "Copy link",
+  "cloneThisRide": "Clone This Ride",
+  "rateYourRide": "Rate your ride",
+  "howWasYourRide": "How was your ride?",
+  "rateYourExperienceWith": "Rate your experience with {name}",
+  "@rateYourExperienceWith": {
     "placeholders": {
       "name": {
         "type": "String"
       }
     }
-  }
-  ,"addToCalendar": "Add to Calendar"
-  ,"reportIncident": "Report incident"
-  ,"incidentType": "Type of incident"
-  ,"describeWhatHappened": "Describe what happened..."
-  ,"submitReport": "Submit Report"
-  ,"requestRefund": "Request Refund"
-  ,"amountPaid": "Amount paid: {amount}"
-  ,"@amountPaid": {
+  },
+  "addToCalendar": "Add to Calendar",
+  "reportIncident": "Report incident",
+  "incidentType": "Type of incident",
+  "describeWhatHappened": "Describe what happened...",
+  "submitReport": "Submit Report",
+  "requestRefund": "Request Refund",
+  "amountPaid": "Amount paid: {amount}",
+  "@amountPaid": {
     "placeholders": {
       "amount": {
         "type": "String"
       }
     }
-  }
-  ,"reasonForRefund": "Reason for refund"
-  ,"additionalDetailsOptional": "Additional details (optional)"
-  ,"submitRefundRequest": "Submit Refund Request"
-  ,"rideSummary": "Ride summary"
-  ,"expandedView": "Expanded view"
-  ,"compactView": "Compact view"
-  ,"pickOnMap": "Pick on map"
-  ,"searchCountryOrCode": "Search country or code..."
-  ,"severity": "Severity"
-  ,"safetyCheckInConfirmed": "Safety check-in confirmed!"
-  ,"markAsNoShowQuestion": "Mark as No-Show?"
-  ,"markNoShowDialogMessage": "This will cancel {passengerId}'s booking and notify them. You will have 30 seconds to undo."
-  ,"@markNoShowDialogMessage": {
+  },
+  "reasonForRefund": "Reason for refund",
+  "additionalDetailsOptional": "Additional details (optional)",
+  "submitRefundRequest": "Submit Refund Request",
+  "rideSummary": "Ride summary",
+  "expandedView": "Expanded view",
+  "compactView": "Compact view",
+  "pickOnMap": "Pick on map",
+  "searchCountryOrCode": "Search country or code...",
+  "severity": "Severity",
+  "safetyCheckInConfirmed": "Safety check-in confirmed!",
+  "markAsNoShowQuestion": "Mark as No-Show?",
+  "markNoShowDialogMessage": "This will cancel {passengerId}'s booking and notify them. You will have 30 seconds to undo.",
+  "@markNoShowDialogMessage": {
     "placeholders": {
       "passengerId": {
         "type": "String"
       }
     }
-  }
-  ,"passengerMarkedNoShow": "Passenger marked as no-show"
-  ,"undo": "UNDO"
-  ,"locationUnavailable": "Location unavailable"
-  ,"requestedStop": "Requested stop"
-  ,"createReturnRideQuestion": "Create Return Ride?"
-  ,"createReturnRideMessage": "Would you like to create a return ride from {destination} back to {origin}?"
-  ,"@createReturnRideMessage": {
+  },
+  "passengerMarkedNoShow": "Passenger marked as no-show",
+  "undo": "UNDO",
+  "locationUnavailable": "Location unavailable",
+  "requestedStop": "Requested stop",
+  "createReturnRideQuestion": "Create Return Ride?",
+  "createReturnRideMessage": "Would you like to create a return ride from {destination} back to {origin}?",
+  "@createReturnRideMessage": {
     "placeholders": {
       "destination": {
         "type": "String"
@@ -4668,182 +4709,1085 @@
         "type": "String"
       }
     }
-  }
-  ,"noThanks": "No, thanks"
-  ,"returnRideCreated": "Return ride created!"
-  ,"createReturnRide": "Create Return Ride"
-  ,"confirmDeparture": "Confirm Departure"
-  ,"allPassengersPickedUpConfirm": "All passengers picked up? You will begin driving to the destination."
-  ,"departNow": "Depart Now"
-  ,"passengerProfileNotFound": "Passenger profile not found"
-  ,"failedToOpenChatTryAgain": "Failed to open chat. Please try again."
-  ,"emergencySos": "Emergency SOS"
-  ,"sosShareConfirmationMessage": "This will share your ride details and current location with your contacts. Continue?"
-  ,"shareSos": "Share SOS"
-  ,"requestAStop": "Request a Stop"
-  ,"requestStopDescription": "Describe where you'd like the driver to stop. The driver can accept or decline."
-  ,"requestStopHint": "e.g. Gas station, pharmacy..."
-  ,"stopRequestSentToDriver": "Stop request sent to driver"
-  ,"requestStop": "Request Stop"
-  ,"sos": "SOS"
-  ,"bookingNotFoundTryAgain": "Booking not found. Please try again."
-  ,"noShowReported": "No-show reported"
-  ,"incidentReportSubmitted": "Incident report submitted"
-  ,"ratingSubmittedThankYou": "Rating submitted - thank you!"
-  ,"ratePassenger": "Rate Passenger"
-  ,"ratePassengerCommentHint": "What made this passenger great (or not)?"
-  ,"failedToSubmitValue": "Failed to submit: {value}"
-  ,"@failedToSubmitValue": {
+  },
+  "noThanks": "No, thanks",
+  "returnRideCreated": "Return ride created!",
+  "createReturnRide": "Create Return Ride",
+  "confirmDeparture": "Confirm Departure",
+  "allPassengersPickedUpConfirm": "All passengers picked up? You will begin driving to the destination.",
+  "departNow": "Depart Now",
+  "passengerProfileNotFound": "Passenger profile not found",
+  "failedToOpenChatTryAgain": "Failed to open chat. Please try again.",
+  "emergencySos": "Emergency SOS",
+  "sosShareConfirmationMessage": "This will share your ride details and current location with your contacts. Continue?",
+  "shareSos": "Share SOS",
+  "requestAStop": "Request a Stop",
+  "requestStopDescription": "Describe where you'd like the driver to stop. The driver can accept or decline.",
+  "requestStopHint": "e.g. Gas station, pharmacy...",
+  "stopRequestSentToDriver": "Stop request sent to driver",
+  "requestStop": "Request Stop",
+  "sos": "SOS",
+  "bookingNotFoundTryAgain": "Booking not found. Please try again.",
+  "noShowReported": "No-show reported",
+  "incidentReportSubmitted": "Incident report submitted",
+  "ratingSubmittedThankYou": "Rating submitted - thank you!",
+  "ratePassenger": "Rate Passenger",
+  "ratePassengerCommentHint": "What made this passenger great (or not)?",
+  "failedToSubmitValue": "Failed to submit: {value}",
+  "@failedToSubmitValue": {
     "placeholders": {
       "value": {
         "type": "String"
       }
     }
-  }
-  ,"sentMessage": "Sent: {message}"
-  ,"@sentMessage": {
+  },
+  "sentMessage": "Sent: {message}",
+  "@sentMessage": {
     "placeholders": {
       "message": {
         "type": "String"
       }
     }
-  }
-  ,"decline": "Decline"
-  ,"acceptStop": "Accept Stop"
-  ,"dismiss": "Dismiss"
-  ,"cancellationReasonHint": "Tell us more about why you're cancelling..."
-  ,"failedToLoadBookingValue": "Failed to load booking: {value}"
-  ,"@failedToLoadBookingValue": {
+  },
+  "decline": "Decline",
+  "acceptStop": "Accept Stop",
+  "dismiss": "Dismiss",
+  "cancellationReasonHint": "Tell us more about why you're cancelling...",
+  "failedToLoadBookingValue": "Failed to load booking: {value}",
+  "@failedToLoadBookingValue": {
     "placeholders": {
       "value": {
         "type": "String"
       }
     }
-  }
-  ,"bookingNotFoundMayBeCancelled": "Booking not found. It may have been cancelled."
-  ,"rideHasBeenCancelled": "This ride has been cancelled."
-  ,"yourRide": "Your Ride"
-  ,"bookingRefCopied": "Booking ref {code} copied!"
-  ,"@bookingRefCopied": {
+  },
+  "bookingNotFoundMayBeCancelled": "Booking not found. It may have been cancelled.",
+  "rideHasBeenCancelled": "This ride has been cancelled.",
+  "yourRide": "Your Ride",
+  "bookingRefCopied": "Booking ref {code} copied!",
+  "@bookingRefCopied": {
     "placeholders": {
       "code": {
         "type": "String"
       }
     }
-  }
-  ,"bookingFailedTryAgain": "Booking failed. Please try again."
-  ,"editRide": "Edit Ride"
-  ,"addedToCalendar": "Added to calendar"
-  ,"dismissSuccess": "Dismiss success"
-  ,"dismissError": "Dismiss error"
-  ,"bookingConfirmedTitle": "Booking Confirmed!"
-  ,"great": "Great!"
-  ,"lastCheckedInMinutesAgo": "Last checked in {minutes} min ago"
-  ,"@lastCheckedInMinutesAgo": {
+  },
+  "bookingFailedTryAgain": "Booking failed. Please try again.",
+  "editRide": "Edit Ride",
+  "addedToCalendar": "Added to calendar",
+  "dismissSuccess": "Dismiss success",
+  "dismissError": "Dismiss error",
+  "bookingConfirmedTitle": "Booking Confirmed!",
+  "great": "Great!",
+  "lastCheckedInMinutesAgo": "Last checked in {minutes} min ago",
+  "@lastCheckedInMinutesAgo": {
     "placeholders": {
       "minutes": {
         "type": "int"
       }
     }
-  }
-  ,"letContactsKnowSafe": "Let your contacts know you're safe"
-  ,"imOk": "I'm OK"
-  ,"incidentTypeUnsafeDriving": "Unsafe Driving"
-  ,"incidentTypeHarassment": "Harassment"
-  ,"incidentTypeRouteDeviation": "Route Deviation"
-  ,"incidentTypeVehicleIssue": "Vehicle Issue"
-  ,"incidentTypeNoShow": "No-Show"
-  ,"incidentTypeOther": "Other"
-  ,"refundReasonDriverNoShow": "Driver did not show up"
-  ,"refundReasonRideNotAsDescribed": "Ride was not as described"
-  ,"refundReasonUnsafeExperience": "Felt unsafe during ride"
-  ,"refundReasonOvercharged": "Was overcharged"
-  ,"refundReasonCancelledByDriver": "Driver cancelled last minute"
-  ,"refundReasonOther": "Other reason"
-  ,"origin": "Origin"
-  ,"estimatedArrival": "Est. Arrival"
-  ,"partlyCloudy": "Partly Cloudy"
-  ,"rideShareSubject": "Carpool ride on SportConnect"
-  ,"rideShareText": "🚗 Check out this ride on SportConnect!\n\n📍 {from} → {to}\n📅 {departure}\n💰 {price} € per seat\n🪑 {seats} seats available\n\nJoin me for a comfortable ride! 🌱\n\n🔗 {link}"
-  ,"@rideShareText": {
+  },
+  "letContactsKnowSafe": "Let your contacts know you're safe",
+  "imOk": "I'm OK",
+  "incidentTypeUnsafeDriving": "Unsafe Driving",
+  "incidentTypeHarassment": "Harassment",
+  "incidentTypeRouteDeviation": "Route Deviation",
+  "incidentTypeVehicleIssue": "Vehicle Issue",
+  "incidentTypeNoShow": "No-Show",
+  "incidentTypeOther": "Other",
+  "refundReasonDriverNoShow": "Driver did not show up",
+  "refundReasonRideNotAsDescribed": "Ride was not as described",
+  "refundReasonUnsafeExperience": "Felt unsafe during ride",
+  "refundReasonOvercharged": "Was overcharged",
+  "refundReasonCancelledByDriver": "Driver cancelled last minute",
+  "refundReasonOther": "Other reason",
+  "origin": "Origin",
+  "estimatedArrival": "Est. Arrival",
+  "partlyCloudy": "Partly Cloudy",
+  "rideShareSubject": "Carpool ride on SportConnect",
+  "rideShareText": "🚗 Check out this ride on SportConnect!\n\n📍 {from} → {to}\n📅 {departure}\n💰 {price} € per seat\n🪑 {seats} seats available\n\nJoin me for a comfortable ride! 🌱\n\n🔗 {link}",
+  "@rideShareText": {
     "placeholders": {
-      "from": {"type": "String"},
-      "to": {"type": "String"},
-      "departure": {"type": "String"},
-      "price": {"type": "String"},
-      "seats": {"type": "int"},
-      "link": {"type": "String"}
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      },
+      "departure": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      },
+      "seats": {
+        "type": "int"
+      },
+      "link": {
+        "type": "String"
+      }
     }
-  }
-  ,"tripShareSubject": "Trip on SportConnect"
-  ,"tripShareMessage": "{userName} is {status} with SportConnect.\n\nFrom: {origin}\nTo: {destination}\nRide ID: {rideId}\n\nDeparture: {departure}"
-  ,"@tripShareMessage": {
+  },
+  "tripShareSubject": "Trip on SportConnect",
+  "tripShareMessage": "{userName} is {status} with SportConnect.\n\nFrom: {origin}\nTo: {destination}\nRide ID: {rideId}\n\nDeparture: {departure}",
+  "@tripShareMessage": {
     "placeholders": {
-      "userName": {"type": "String"},
-      "status": {"type": "String"},
-      "origin": {"type": "String"},
-      "destination": {"type": "String"},
-      "rideId": {"type": "String"},
-      "departure": {"type": "String"}
+      "userName": {
+        "type": "String"
+      },
+      "status": {
+        "type": "String"
+      },
+      "origin": {
+        "type": "String"
+      },
+      "destination": {
+        "type": "String"
+      },
+      "rideId": {
+        "type": "String"
+      },
+      "departure": {
+        "type": "String"
+      }
     }
-  }
-  ,"tripStatusInProgress": "currently on a ride"
-  ,"tripStatusScheduled": "about to ride"
-  ,"rideCompatibility": "Ride Compatibility"
-  ,"greatMatch": "Great match"
-  ,"goodMatch": "Good match"
-  ,"fairMatch": "Fair match"
-  ,"nonSmoking": "Non-smoking"
-  ,"directRoute": "Direct route"
-  ,"spacious": "Spacious"
-  ,"viewActiveRide": "View Active Ride"
-  ,"setPickupLocation": "Set pickup location"
-  ,"optionalSetYourPickupPoint": "Optional - set your pickup point"
-  ,"eventLabel": "Event"
-  ,"aPassenger": "A passenger"
-  ,"rateAndReview": "Rate & Review"
-  ,"shareReceipt": "Share Receipt"
-  ,"reportIssue": "Report Issue"
-  ,"bookThisRouteAgain": "Book This Route Again"
-  ,"waitingForDriverApproval": "Waiting for driver approval"
-  ,"eta": "ETA"
-  ,"speed": "Speed"
-  ,"addAsStop": "Add as Stop"
-  ,"signInToSeeYourRides": "Sign in to see your rides"
-  ,"logIn": "Log In"
-  ,"accepted": "Accepted"
-  ,"declined": "Declined"
-  ,"dateAtTime": "{date} at {time}"
-  ,"@dateAtTime": {
+  },
+  "tripStatusInProgress": "currently on a ride",
+  "tripStatusScheduled": "about to ride",
+  "rideCompatibility": "Ride Compatibility",
+  "greatMatch": "Great match",
+  "goodMatch": "Good match",
+  "fairMatch": "Fair match",
+  "nonSmoking": "Non-smoking",
+  "directRoute": "Direct route",
+  "spacious": "Spacious",
+  "viewActiveRide": "View Active Ride",
+  "setPickupLocation": "Set pickup location",
+  "optionalSetYourPickupPoint": "Optional - set your pickup point",
+  "eventLabel": "Event",
+  "aPassenger": "A passenger",
+  "rateAndReview": "Rate & Review",
+  "shareReceipt": "Share Receipt",
+  "reportIssue": "Report Issue",
+  "bookThisRouteAgain": "Book This Route Again",
+  "waitingForDriverApproval": "Waiting for driver approval",
+  "eta": "ETA",
+  "speed": "Speed",
+  "addAsStop": "Add as Stop",
+  "signInToSeeYourRides": "Sign in to see your rides",
+  "logIn": "Log In",
+  "accepted": "Accepted",
+  "declined": "Declined",
+  "dateAtTime": "{date} at {time}",
+  "@dateAtTime": {
     "placeholders": {
-      "date": {"type": "String"},
-      "time": {"type": "String"}
+      "date": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
     }
-  }
-  ,"applyFilters": "Apply Filters"
-  ,"searchFailed": "Search failed"
-  ,"unableToLoadRidesTryAgain": "Unable to load rides. Please try again."
-  ,"clearFilters": "Clear Filters"
-  ,"tryAdjustingFiltersOrDifferentDate": "Try adjusting your filters or search for a different date"
-  ,"bestMatchForYourSearch": "Best match for your search"
-  ,"showCheapestRidesFirst": "Show cheapest rides first"
-  ,"showRidesLeavingSoonest": "Show rides leaving soonest"
-  ,"showBestRatedDriversFirst": "Show best-rated drivers first"
-  ,"showFastestRoutesFirst": "Show fastest routes first"
-  ,"submitRating": "Submit Rating"
-  ,"eventShareText": "{title} — {eventType}\n{date}\n{address}\n\nJoin me on SportConnect!\n{link}"
-  ,"@eventShareText": {
+  },
+  "applyFilters": "Apply Filters",
+  "searchFailed": "Search failed",
+  "unableToLoadRidesTryAgain": "Unable to load rides. Please try again.",
+  "clearFilters": "Clear Filters",
+  "tryAdjustingFiltersOrDifferentDate": "Try adjusting your filters or search for a different date",
+  "bestMatchForYourSearch": "Best match for your search",
+  "showCheapestRidesFirst": "Show cheapest rides first",
+  "showRidesLeavingSoonest": "Show rides leaving soonest",
+  "showBestRatedDriversFirst": "Show best-rated drivers first",
+  "showFastestRoutesFirst": "Show fastest routes first",
+  "submitRating": "Submit Rating",
+  "eventShareText": "{title} — {eventType}\n{date}\n{address}\n\nJoin me on SportConnect!\n{link}",
+  "@eventShareText": {
     "placeholders": {
-      "title": {"type": "String"},
-      "eventType": {"type": "String"},
-      "date": {"type": "String"},
-      "address": {"type": "String"},
-      "link": {"type": "String"}
+      "title": {
+        "type": "String"
+      },
+      "eventType": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      },
+      "address": {
+        "type": "String"
+      },
+      "link": {
+        "type": "String"
+      }
     }
-  }
-  ,"receiptTitle": "SportConnect - Trip Receipt"
-  ,"receiptBaseFare": "Base Fare"
-  ,"receiptServiceFee": "Service Fee"
-  ,"receiptRideId": "Ride ID"
-
+  },
+  "receiptTitle": "SportConnect - Trip Receipt",
+  "receiptBaseFare": "Base Fare",
+  "receiptServiceFee": "Service Fee",
+  "receiptRideId": "Ride ID",
+  "something_went_wrong": "Something went wrong",
+  "your_action_was_completed_successfully": "Your action was completed successfully.",
+  "success": "success",
+  "localhost": "localhost",
+  "production_mode": "PRODUCTION MODE",
+  "sportconnect": "SportConnect",
+  "none": "none",
+  "signedout": "signed-out",
+  "pk_test_51t0hg4ryc7z72fdkkzbcqr4p1v0mi8nzgsxotoy7stj8a3qfqkdlbofdng5fggsinfcvilbokjbtupskomgywirk00mnaqcfsq": "pk_test_51T0hg4RYC7Z72fDKkzbCQr4P1v0Mi8nzgSXoToY7Stj8A3QfqKdLBOFDNG5fggSinfCVILBOkjBTupskomgywiRk00MnaqCFSq",
+  "passengerreview": "passengerReview",
+  "stripe_not_configured_update_stripeconfig_values": "Stripe NOT configured - update StripeConfig values",
+  "eur": "EUR",
+  "pk_test_your_publishable_key_here": "pk_test_YOUR_PUBLISHABLE_KEY_HERE",
+  "fr": "FR",
+  "tnfr": "tn,fr",
+  "users": "users",
+  "rides": "Rides",
+  "events": "events",
+  "messages": "Messages",
+  "chats": "Chats",
+  "notifications": "Notifications",
+  "vehicles": "vehicles",
+  "payments": "Payments",
+  "payouts": "payouts",
+  "reviews": "reviews",
+  "reports": "reports",
+  "bookings": "bookings",
+  "support_tickets": "support_tickets",
+  "driver_connected_accounts": "driver_connected_accounts",
+  "driver_stats": "driver_stats",
+  "typing": "typing",
+  "blockedusers": "blockedUsers",
+  "disputes": "disputes",
+  "archived_transactions": "archived_transactions",
+  "profile_images": "profile_images",
+  "chat_images": "chat_images",
+  "vehicle_images": "vehicle_images",
+  "sportaxitripcom": "sportaxitrip.com",
+  "sportconnect10_contactsportconnectapp": "SportConnect/1.0 (contact@sportconnect.app)",
+  "find_and_book_rides_to_sporting_events": "Find and book rides to sporting events",
+  "offer_rides_and_earn_money": "Offer rides and earn money",
+  "your_application_is_under_review": "Your application is under review",
+  "language_code": "language_code",
+  "notifications_enabled": "notifications_enabled",
+  "ride_reminders": "ride_reminders",
+  "chat_notifications": "chat_notifications",
+  "marketing_emails": "marketing_emails",
+  "show_location": "show_location",
+  "public_profile": "public_profile",
+  "map_style": "Map Style",
+  "notification_dialog_shown": "notification_dialog_shown",
+  "analytics_enabled": "analytics_enabled",
+  "premium_prompt_seen_": "premium_prompt_seen_",
+  "driver_show_on_map": "driver_show_on_map",
+  "driver_allow_instant_booking": "driver_allow_instant_booking",
+  "driver_max_distance": "driver_max_distance",
+  "driver_navigation_app": "driver_navigation_app",
+  "sc": "SC",
+  "https": "https",
+  "open": "Open",
+  "nominatimopenstreetmaporg": "nominatim.openstreetmap.org",
+  "node": "node[",
+  "sports_centre": "sports_centre",
+  "stadium": "stadium",
+  "pitch": "pitch",
+  "university": "university",
+  "college": "college",
+  "parking": "Parking",
+  "fuel": "fuel",
+  "restaurant": "restaurant",
+  "cafe": "cafe",
+  "hospital": "hospital",
+  "clinic": "clinic",
+  "bus_stop": "bus_stop",
+  "station": "station",
+  "tram_stop": "tram_stop",
+  "trip_receipt": "TRIP RECEIPT",
+  "thank_you_for_using_sportconnect": "Thank you for using SportConnect!",
+  "your_ecofriendly_carpooling_choice": "Your eco-friendly carpooling choice",
+  "earnings_report": "EARNINGS REPORT",
+  "trip_history": "Trip History",
+  "sport_connect_messages": "sport_connect_messages",
+  "new_chat_message_notifications": "New chat message notifications",
+  "sport_connect_rides": "sport_connect_rides",
+  "ride_booking_and_status_notifications": "Ride booking and status notifications",
+  "sport_connect_general": "sport_connect_general",
+  "general": "General",
+  "general_app_notifications": "General app notifications",
+  "arrive_at_destination": "Arrive at destination",
+  "take_the_ramp": "Take the ramp",
+  "take_the_exit": "Take the exit",
+  "driving": "driving",
+  "geojson": "geojson",
+  "full": "Full",
+  "ok": "Ok",
+  "polyline": "polyline",
+  "polyline6": "polyline6",
+  "start_on": "Start on",
+  "inter": "Inter",
+  "name_is_required": "Name is required",
+  "name_must_be_at_least_2_characters": "Name must be at least 2 characters",
+  "name_is_too_long": "Name is too long",
+  "name_cannot_contain_numbers": "Name cannot contain numbers",
+  "name_contains_invalid_characters": "Name contains invalid characters",
+  "email_is_required": "Email is required",
+  "please_enter_a_valid_email_address": "Please enter a valid email address",
+  "phone_number_is_too_short": "Phone number is too short",
+  "phone_number_is_too_long": "Phone number is too long",
+  "phone_number_is_required": "Phone number is required",
+  "password_is_required": "Password is required",
+  "password_must_be_at_least_8_characters": "Password must be at least 8 characters",
+  "include_at_least_one_uppercase_letter": "Include at least one uppercase letter",
+  "include_at_least_one_lowercase_letter": "Include at least one lowercase letter",
+  "include_at_least_one_number": "Include at least one number",
+  "please_confirm_your_password": "Please confirm your password",
+  "passwords_do_not_match": "Passwords do not match",
+  "price_is_required": "Price is required",
+  "please_enter_a_valid_price": "Please enter a valid price",
+  "price_must_be_greater_than_0": "Price must be greater than 0",
+  "price_seems_too_high": "Price seems too high",
+  "please_select_number_of_seats": "Please select number of seats",
+  "date_is_required": "Date is required",
+  "date_must_be_in_the_future": "Date must be in the future",
+  "date_of_birth_is_required": "Date of birth is required",
+  "license_plate_is_required": "License plate is required",
+  "license_plate_is_too_short": "License plate is too short",
+  "license_plate_is_too_long": "License plate is too long",
+  "invalid_license_plate_format": "Invalid license plate format",
+  "year_is_required": "Year is required",
+  "please_enter_a_valid_year": "Please enter a valid year",
+  "vehicle_is_too_old": "Vehicle is too old",
+  "invalid_year": "Invalid year",
+  "city_name_is_too_short": "City name is too short",
+  "city_name_is_too_long": "City name is too long",
+  "city_name_cannot_contain_numbers": "City name cannot contain numbers",
+  "this_field": "This field",
+  "please_sign_in_to_continue": "Please sign in to continue.",
+  "this_payment_or_payout_could_not_be_found": "This payment or payout could not be found.",
+  "this_request_was_already_processed": "This request was already processed.",
+  "too_many_requests_please_wait_a_moment_and_try_again": "Too many requests — please wait a moment and try again.",
+  "the_request_timed_out_please_check_your_connection_and_try_again": "The request timed out. Please check your connection and try again.",
+  "service_temporarily_unavailable_please_try_again": "Service temporarily unavailable. Please try again.",
+  "security_check_failed_please_refresh_and_try_again": "Security check failed. Please refresh and try again.",
+  "you_don": "You don",
+  "insufficient_balance_ride_earnings_may_still_be_settling_try_again_in_a_few_hours": "Insufficient balance. Ride earnings may still be settling — try again in a few hours.",
+  "no_bank_account_linked_please_complete_your_stripe_setup_first": "No bank account linked. Please complete your Stripe setup first.",
+  "payouts_not_yet_enabled_on_your_account_please_complete_verification": "Payouts not yet enabled on your account. Please complete verification.",
+  "your_stripe_account_isn": "Your Stripe account isn",
+  "tap": "Tap ",
+  "your_card_was_declined_please_try_a_different_payment_method": "Your card was declined. Please try a different payment method.",
+  "payment_declined_insufficient_funds_on_your_card": "Payment declined — insufficient funds on your card.",
+  "your_card_has_expired_please_update_your_payment_method": "Your card has expired. Please update your payment method.",
+  "incorrect_card_security_code_please_check_and_try_again": "Incorrect card security code. Please check and try again.",
+  "this_payout_can_no_longer_be_cancelled_it": "This payout can no longer be cancelled — it",
+  "payout_failed_please_check_your_bank_details_are_correct": "Payout failed. Please check your bank details are correct.",
+  "refund_could_not_be_processed_please_contact_support_if_this_persists": "Refund could not be processed. Please contact support if this persists.",
+  "this_booking_has_already_been_paid": "This booking has already been paid.",
+  "this_ride_is_no_longer_available_for_booking": "This ride is no longer available for booking.",
+  "no_active_booking_found_for_this_ride": "No active booking found for this ride.",
+  "the_driver_hasn": "The driver hasn",
+  "connection_error_please_check_your_internet_and_try_again": "Connection error. Please check your internet and try again.",
+  "request_timed_out_please_try_again": "Request timed out. Please try again.",
+  "something_went_wrong_please_try_again": "Something went wrong. Please try again.",
+  "fastest_way_to_set_your_pickup_point": "Fastest way to set your pickup point",
+  "expand_map_for_exact_pickup_point": "Expand map for exact pickup point",
+  "tap_the_map_to_set_the_exact_point": "Tap the map to set the exact point",
+  "finding_address": "Finding address...",
+  "suggestions": "SUGGESTIONS",
+  "selected_address": "Selected address",
+  "use_this_address": "Use this address",
+  "selected": "Selected",
+  "search_unavailable": "Search unavailable",
+  "no_address_found": "No address found",
+  "try_another_street_or_choose_the_exact_point_on_map": "Try another street or choose the exact point on map.",
+  "unable_to_search_addresses_try_again": "Unable to search addresses. Try again.",
+  "unable_to_read_a_valid_current_location": "Unable to read a valid current location.",
+  "your_current_location_appears_to_be_outside_france": "Your current location appears to be outside France.",
+  "invalid_address_location_please_choose_another_result": "Invalid address location. Please choose another result.",
+  "invalid_map_position_please_choose_another_point": "Invalid map position. Please choose another point.",
+  "please_select_a_location_in_france": "Please select a location in France.",
+  "selected_location": "Selected location",
+  "please_select_an_address": "Please select an address.",
+  "invalid_selected_location_please_choose_another_point": "Invalid selected location. Please choose another point.",
+  "payment_receipt": "Payment Receipt",
+  "thank_you_for_riding_with_sportconnect": "Thank you for riding with SportConnect!",
+  "refund_amount": "Refund amount",
+  "days": "days",
+  "could_not_submit_refund_please_try_again": "Could not submit refund. Please try again.",
+  "no_rides_found": "No rides found",
+  "try_adjusting_your_filters_or_search_for_a_different_route": "Try adjusting your filters or search for a different route",
+  "no_events_yet": "No events yet",
+  "create_an_event_to_bring_your_group_together": "Create an event to bring your group together",
+  "no_messages_yet": "No messages yet",
+  "start_a_conversation_by_booking_a_ride_or_joining_an_event": "Start a conversation by booking a ride or joining an event",
+  "all_caught_up": "All caught up!",
+  "no_reviews_yet": "No reviews yet",
+  "reviews_will_appear_after_completed_rides": "Reviews will appear after completed rides",
+  "no_vehicles_added": "No vehicles added",
+  "add_a_vehicle_to_start_offering_rides": "Add a vehicle to start offering rides",
+  "no_bookings_yet": "No bookings yet",
+  "your_ride_bookings_will_appear_here": "Your ride bookings will appear here",
+  "no_results_found": "No results found",
+  "try_different_search_terms_or_filters": "Try different search terms or filters",
+  "please_try_again": "Please try again",
+  "select_your_expertise_level": "Select your expertise level",
+  "male": "Male",
+  "female": "Female",
+  "enter_a_valid_french_phone_number": "Enter a valid French phone number.",
+  "after_33_enter_the_number_without_the_leading_0": "After +33, enter the number without the leading 0.",
+  "used_only_for_ride_coordination_and_safety": "Used only for ride coordination and safety.",
+  "no_map_apps_are_available_on_this_device": "No map apps are available on this device.",
+  "unable_to_open_maps_right_now": "Unable to open maps right now.",
+  "select_location": "Select Location",
+  "france": "France",
+  "departure_reminder": "Departure reminder",
+  "search_rides_people_places": "Search rides, people, places...",
+  "explore_nearby_stops": "Explore nearby stops",
+  "gas_stations": "Gas Stations",
+  "restaurants": "Restaurants",
+  "sports": "Sports",
+  "universities": "Universities",
+  "hospitals": "Hospitals",
+  "transport": "Transport",
+  "cafs": "Cafés",
+  "search": "Search...",
+  "switch_vehicle": "Switch Vehicle",
+  "ladies_only": "Ladies Only",
+  "tap_to_apply": "Tap to apply",
+  "ride_progress": "Ride Progress",
+  "ride_confirmed": "Ride confirmed",
+  "on_the_way_to_pickup": "On the way to pickup",
+  "almost_at_pickup_point": "Almost at pickup point",
+  "en_route_to_destination": "En route to destination",
+  "booked": "Booked",
+  "driver_left": "Driver Left",
+  "arriving": "Arriving",
+  "riding": "Riding",
+  "arrived": "Arrived",
+  "driver_history": "Driver History",
+  "please_reauthenticate_before_deleting_your_account": "Please re-authenticate before deleting your account",
+  "your_account_has_been_suspended_please_contact_support": "Your account has been suspended. Please contact support.",
+  "signin_was_cancelled": "Sign-in was cancelled.",
+  "no_user_found_with_this_email": "No user found with this email",
+  "wrong_password": "Wrong password",
+  "invalid_email_or_password": "Invalid email or password",
+  "email_already_in_use": "Email already in use",
+  "invalid_email_address": "Invalid email address",
+  "password_is_too_weak": "Password is too weak",
+  "too_many_attempts_please_try_again_later": "Too many attempts. Please try again later",
+  "please_reauthenticate_to_continue": "Please re-authenticate to continue",
+  "an_account_already_exists_with_a_different_signin_method": "An account already exists with a different sign-in method. ",
+  "the_selected_google_account_does_not_match_your_account_email": "The selected Google account does not match your account email. ",
+  "requiresrecentlogin": "requires-recent-login",
+  "user": "User",
+  "weakpassword": "weak-password",
+  "you_must_accept_the_terms_to_continue": "You must accept the terms to continue.",
+  "from_your_signin_account": "From your sign-in account",
+  "help_riders_recognize_your_car_at_pickup": "Help riders recognize your car at pickup.",
+  "other_color": "Other color",
+  "i_agree_to_the": "I agree to the ",
+  "terms_conditions": "Terms & Conditions",
+  "recognition_details_appear_here": "Recognition details appear here",
+  "what_car_should_riders_look_for": "What car should riders look for?",
+  "keep_this_simple_make_and_model_are_enough_here": "Keep this simple. Make and model are enough here.",
+  "help_passengers_find_you": "Help passengers find you",
+  "color_and_plate_are_the_details_riders_use_at_pickup": "Color and plate are the details riders use at pickup.",
+  "how_many_passengers_can_you_take": "How many passengers can you take?",
+  "this_is_available_passenger_seats_not_total_car_seats": "This is available passenger seats, not total car seats.",
+  "vehicle_details": "Vehicle details",
+  "kept_quieter_because_they_are_less_important_at_pickup": "Kept quieter because they are less important at pickup.",
+  "black": "Black",
+  "white": "White",
+  "grey": "Grey",
+  "silver": "Silver",
+  "blue": "Blue",
+  "red": "Red",
+  "green": "Green",
+  "beige_brown": "Beige / Brown",
+  "address": "Address",
+  "save_driver_profile_and_continue": "Save driver profile and continue",
+  "champagne_pearl_white_bordeaux": "Champagne, pearl white, bordeaux...",
+  "invalid_value": "Invalid value",
+  "address_is_required": "Address is required",
+  "name": "name",
+  "dob": "dob",
+  "expertise": "expertise",
+  "terms": "terms",
+  "license_plate": "license_plate",
+  "fuel_type": "fuel_type",
+  "sign_up": "Sign up",
+  "sportconnect_logo": "SportConnect logo",
+  "signing_in_please_wait": "Signing in, please wait",
+  "discard_changes": "Discard changes?",
+  "your_profile_info_will_not_be_saved_if_you_go_back": "Your profile info will not be saved if you go back.",
+  "keep_editing": "Keep editing",
+  "complete_your_profile": "Complete your profile",
+  "step_2_of_2": "Step 2 of 2",
+  "rider_onboarding_form": "Rider onboarding form",
+  "complete_rider_onboarding": "Complete rider onboarding",
+  "profile_not_loaded_yet_please_wait_a_moment": "⚠️ Profile not loaded yet. Please wait a moment.",
+  "please_enter_a_valid_phone_number": "Please enter a valid phone number.",
+  "please_enter_your_address": "Please enter your address.",
+  "profile_complete_welcome_aboard": "🎉 Profile complete! Welcome aboard.",
+  "your_saved_info_has_been_prefilled": "Your saved info has been pre-filled.",
+  "failed_to_load_your_profile_some_fields_may_be_empty": "Failed to load your profile. Some fields may be empty.",
+  "verification_requirements": "Verification Requirements",
+  "almost_there": "Almost there! 📍",
+  "skip_for_now": "Skip for now",
+  "confirm_date": "Confirm Date",
+  "account_setup": "Account Setup",
+  "identity": "Identity",
+  "profile": "Profile",
+  "or_continue_with_email": "Or continue with email",
+  "agree_to_terms_of_service_and_privacy_policy": "Agree to Terms of Service and Privacy Policy",
+  "googlesignincanceled": "google-sign-in-canceled",
+  "accountexistswithdifferentcredential": "account-exists-with-different-credential",
+  "wrongpassword": "wrong-password",
+  "every_day": "Every day",
+  "every_week": "Every week",
+  "every_2_weeks": "Every 2 weeks",
+  "every_month": "Every month",
+  "every_year": "Every year",
+  "daily": "DAILY",
+  "weekly": "WEEKLY",
+  "weeklyinterval2": "WEEKLY;INTERVAL=2",
+  "monthly": "Monthly",
+  "yearly": "yearly",
+  "martial_arts": "Martial Arts",
+  "football": "Football",
+  "basketball": "Basketball",
+  "volleyball": "Volleyball",
+  "tennis": "Tennis",
+  "running": "Running",
+  "gym": "Gym",
+  "swimming": "Swimming",
+  "cycling": "Cycling",
+  "hiking": "Hiking",
+  "yoga": "Yoga",
+  "other": "Other",
+  "no_ride_info_yet": "No ride info yet",
+  "need_ride": "need_ride",
+  "self_arranged": "self_arranged",
+  "repeat": "Repeat",
+  "no_recurrence_pattern_fits_this_startend_window": "No recurrence pattern fits this start/end window. ",
+  "failed_to_load_attendees": "Failed to load attendees",
+  "no_attendees_yet": "No attendees yet",
+  "failed_to_open_chat_please_try_again": "Failed to open chat. Please try again.",
+  "view_all_attendees": "View all attendees →",
+  "cancel_event": "Cancel Event",
+  "keep_event": "Keep Event",
+  "delete_event": "Delete Event",
+  "are_you_sure_you_want_to_delete": "Are you sure you want to delete ",
+  "recurring_event": "⚠️ Recurring Event",
+  "this_event_repeats_deleting_it_will_remove_all_occurrences_past_and_future": "This event repeats. Deleting it will remove ALL occurrences (past and future).",
+  "to_delete_only_specific_occurrences_use_google_calendar_tap_the_event": "To delete only specific occurrences, use Google Calendar: tap the event → ",
+  "cancel": "cancel",
+  "delete": "Delete",
+  "premium_event_chat": "Premium event chat",
+  "subscribe_to_premium_to_join_attendee_group_chats_for_events": "Subscribe to Premium to join attendee group chats for events.",
+  "upgrade_to_premium": "Upgrade to Premium",
+  "reason_optional": "Reason (optional)",
+  "event_group_chat_is_available_to_premium_subscribers_only": "Event group chat is available to Premium subscribers only.",
+  "could_not_open_calendar_please_ensure_google_calendar_is_available": "Could not open calendar. Please ensure Google Calendar is available.",
+  "events_near_me": "Events near me",
+  "everywhere": "Everywhere",
+  "retry_loading_events": "Retry loading events",
+  "all_loaded_events_shown": "All loaded events shown",
+  "load_more_events": "Load more events",
+  "create_event": "Create event",
+  "could_not_load_events": "Could not load events",
+  "no_matching_loaded_events": "No matching loaded events",
+  "search_loaded_events_by_title_place_organizer": "Search loaded events by title, place, organizer",
+  "now": "now",
+  "title_is_required": "Title is required",
+  "title_must_be_at_least_3_characters": "Title must be at least 3 characters",
+  "please_pick_a_location": "Please pick a location.",
+  "start_time_must_be_in_the_future": "Start time must be in the future.",
+  "end_time_must_be_after_start_time": "End time must be after start time.",
+  "select_a_recurrence_pattern": "Select a recurrence pattern.",
+  "repeat_end_date_must_be_on_or_after_the_start_date": "Repeat end date must be on or after the start date.",
+  "please_wait_for_the_current_submission_to_finish": "Please wait for the current submission to finish.",
+  "unlimited": "Unlimited",
+  "please_select_a_location": "Please select a location.",
+  "start_time_is_required": "Start time is required",
+  "event_is_still_loading": "Event is still loading.",
+  "event_created_but_the_cover_image_could_not_be_uploaded": "Event created, but the cover image could not be uploaded.",
+  "ride_in_progress": "RIDE IN PROGRESS",
+  "next_ride": "Next ride",
+  "message": "Message",
+  "review_and_respond_before_passengers_choose_another_ride": "Review and respond before passengers choose another ride.",
+  "ready_for_your_next_trip": "Ready for your next trip?",
+  "publish_a_ride_and_start_receiving_passenger_requests": "Publish a ride and start receiving passenger requests.",
+  "standard": "standard",
+  "all": "All",
+  "last_updated_february_23_2026": "Last updated: February 23, 2026",
+  "en": "en",
+  "utf8": "UTF-8",
+  "viewport": "viewport",
+  "widthdevicewidth_initialscale10": "width=device-width, initial-scale=1.0",
+  "subtitle": "subtitle",
+  "highlight": "highlight",
+  "mailtolegalsportconnectapp": "mailto:legal@sportconnect.app",
+  "mailtoprivacysportconnectapp": "mailto:privacy@sportconnect.app",
+  "delete_conversation": "Delete conversation",
+  "this_will_remove_the_conversation_from_your_chat_list": "This will remove the conversation from your chat list. ",
+  "clear_chat_history": "Clear chat history",
+  "this_will_clear_the_messages_from_this_chat_for_you_only": "This will clear the messages from this chat for you only. ",
+  "clear_history": "Clear history",
+  "message_options": "Message options",
+  "attachments": "Attachments",
+  "conversation_deleted": "Conversation deleted",
+  "draft": "Draft",
+  "preview_mode": "Preview mode",
+  "chat_preview": "Chat preview",
+  "person_add": "person_add",
+  "check_circle": "check_circle",
+  "event_busy": "event_busy",
+  "schedule": "schedule",
+  "directions_car": "directions_car",
+  "flag": "flag",
+  "block": "block",
+  "chat_bubble": "chat_bubble",
+  "person": "person",
+  "arrow_upward": "arrow_upward",
+  "emoji_events": "emoji_events",
+  "local_fire_department": "local_fire_department",
+  "star": "star",
+  "warning": "warning",
+  "campaign": "campaign",
+  "error": "error",
+  "gold": "Gold",
+  "primary": "primary",
+  "new_ride_request": "New Ride Request",
+  "booking_accepted": "Booking Accepted!",
+  "booking_declined": "Booking Declined",
+  "ride_cancelled": "Ride Cancelled",
+  "new_message": "New Message",
+  "achievement_unlocked": "Achievement Unlocked! 🏆",
+  "level_up": "Level Up! 🎉",
+  "driver_has_arrived": "Driver has arrived! 🚗",
+  "event_cancelled": "Event Cancelled",
+  "mark_read": "mark_read",
+  "clear": "clear",
+  "find_yournride": "Find Your\\nRide",
+  "match_with_runners": "Match with Runners",
+  "offer_anseat": "Offer a\\nSeat",
+  "drive_split_costs": "Drive & Split Costs",
+  "plan_yournroute": "Plan Your\\nRoute",
+  "smart_route_sync": "Smart Route Sync",
+  "connectn_go": "Connect\\n& Go",
+  "community_you_trust": "Community You Trust",
+  "onboarding_complete": "onboarding_complete",
+  "last_onboarding_version": "last_onboarding_version",
+  "ride_to_paris_10k": "Ride to Paris 10K",
+  "offer_your_ride": "Offer your ride",
+  "paris_10k_2_seats_available": "Paris 10K • 2 seats available",
+  "estimated_earning": "ESTIMATED EARNING",
+  "fill_2_seats": "Fill 2 seats",
+  "set_available_seats": "Set available seats",
+  "flexible": "Flexible",
+  "driver_tools": "Driver tools",
+  "pickup_route": "Pickup route",
+  "coordinate_pickup_before_the_event": "Coordinate pickup before the event",
+  "trip_plan": "Trip plan",
+  "sun_15_jun": "Sun, 15 Jun",
+  "paris_10k_2_passengers": "Paris 10K • 2 passengers",
+  "inapp_chat": "In-app chat",
+  "confirm_bags_pickup_spot_and_arrival_time": "Confirm bags, pickup spot, and arrival time.",
+  "runner_carpool_network": "Runner carpool network",
+  "travel_with_people_going_to_the_same_event": "Travel with people going to the same event.",
+  "sun_15_jun_2025": "Sun, 15 Jun 2025",
+  "pickup_near_paris_france": "Pickup near Paris, France",
+  "passenger_contribution_from_8": "Passenger contribution from €8",
+  "find_a_ride_to_your_race": "Find a ride to your race",
+  "offer_seats_and_earn": "Offer seats and earn",
+  "plan_the_route_together": "Plan the route together",
+  "connect_safely_and_go": "Connect safely and go",
+  "paris": "PARIS",
+  "driver_starts": "Driver starts",
+  "route_opens_for_passengers": "Route opens for passengers",
+  "pickup_confirmed": "Pickup confirmed",
+  "shared_meeting_point": "Shared meeting point",
+  "arrive_at_event": "Arrive at event",
+  "paris_10k_race_village": "Paris 10K race village",
+  "trusted_runners": "Trusted runners",
+  "chat": "Chat",
+  "before_pickup": "Before pickup",
+  "live_route": "Live route",
+  "trip_visibility": "Trip visibility",
+  "safer_rides": "Safer rides",
+  "event_travel": "Event travel",
+  "from_8": "From €8",
+  "rides_available": "RIDES AVAILABLE",
+  "fuel_offset": "Fuel offset",
+  "passengers": "Passengers",
+  "earn": "Earn",
+  "set_time": "Set time",
+  "pickup": "Pickup",
+  "ride": "Ride",
+  "pickup_0640": "Pickup 06:40",
+  "previous_step": "Previous step",
+  "month": "month",
+  "cancel_anytime": "Cancel anytime",
+  "save_about_16_compared_to_monthly": "Save about 16% compared to monthly",
+  "actionrequiredrequestedcapabilities": "actionRequiredRequestedCapabilities",
+  "listed": "listed",
+  "platformpaused": "platformPaused",
+  "rejectedfraud": "rejectedFraud",
+  "rejectedincompleteverification": "rejectedIncompleteVerification",
+  "rejectedlisted": "rejectedListed",
+  "rejectedother": "rejectedOther",
+  "rejectedplatformfraud": "rejectedPlatformFraud",
+  "rejectedplatformother": "rejectedPlatformOther",
+  "rejectedplatformtermsofservice": "rejectedPlatformTermsOfService",
+  "rejectedtermsofservice": "rejectedTermsOfService",
+  "requirementspastdue": "requirementsPastDue",
+  "requirementspendingverification": "requirementsPendingVerification",
+  "underreview": "underReview",
+  "canceled": "canceled",
+  "cancelled": "Cancelled",
+  "bankaccount": "bankAccount",
+  "bank_account": "bank_account",
+  "google_play_billing_is_not_available_on_this_app_instance": "Google Play Billing is not available on this app instance. ",
+  "google_play_billing_is_unavailable_on_this_deviceaccount": "Google Play Billing is unavailable on this device/account.",
+  "this_subscription_product_is_not_available_for_your_accountregion_yet": "This subscription product is not available for your account/region yet.",
+  "purchase_cancelled_by_user": "Purchase cancelled by user.",
+  "channelerror": "channel-error",
+  "withdrawable_now_is_your_instantavailable_balance_you_can_transfer_this_to_your_bank_immediatelynn": "Withdrawable Now is your instant-available balance — you can transfer this to your bank immediately.\\n\\n",
+  "got_it": "Got it",
+  "withdrawable_now_is_your_instantavailable_balance_processing_funds_are_in_stripe": "Withdrawable Now is your instant-available balance. Processing funds are in Stripe",
+  "your_stripe_account_id_is_missing_please_reconnect_your_payout_account": "Your Stripe account ID is missing. Please reconnect your payout account.",
+  "writeln_writelnl10nexportearningssummary_writeln": ")\r\n      ..writeln()\r\n      ..writeln(l10n.exportEarningsSummary)\r\n      ..writeln(\r\n        ",
+  "get_paid_fornevery_ride": "Get paid for\\nevery ride",
+  "set_up_eur_payouts_in_minutes_andnreceive_earnings_automatically": "Set up EUR payouts in minutes and\\nreceive earnings automatically.",
+  "eur_balance": "EUR balance",
+  "ready_for_eur_payout": "Ready for EUR payout",
+  "why_drivers_love_payouts_onnsportconnect": "Why drivers love payouts on\\nSportConnect",
+  "before_you_continue": "Before you continue",
+  "heres_what_youll_need_to_get_set_up": "Here’s what you’ll need to get set up.",
+  "maybe_later": "Maybe later",
+  "payouts_ready": "Payouts ready!",
+  "your_account_is_connected_and_yourenall_set_to_receive_earnings": "Your account is connected and you’re\\nall set to receive earnings.",
+  "powered_by": "Powered by",
+  "stripe": "stripe",
+  "s": "S",
+  "takes_about_3_minutes": "Takes about 3 minutes",
+  "your_security_is_our_priority": "Your security is our priority",
+  "sportconnect_partners_with_stripe_to_securely_collect_and_protect_your_information_your_data_is_encrypted_and_never_shared_with_us": "SportConnect partners with Stripe to securely collect and protect your information. Your data is encrypted and never shared with us.",
+  "payout_account": "Payout account",
+  "bnp_paribas_4521": "BNP Paribas •••• 4521",
+  "next_payout": "Next payout",
+  "wed_28_may": "Wed, 28 May",
+  "payout_schedule": "Payout schedule",
+  "weekly_to_your_french_iban": "Weekly to your French IBAN",
+  "earnings_snapshot": "Earnings snapshot",
+  "this_week": "This week⌄",
+  "youre_doing_great": "You’re doing great!",
+  "keep_driving_more_rides_more_earnings": "Keep driving. More rides, more earnings.",
+  "connect_stripe_account": "Connect Stripe account",
+  "continue_to_stripe": "Continue to Stripe",
+  "back_to_dashboard": "Back to dashboard",
+  "need_help_visit_our": "Need help? Visit our ",
+  "support_center": "Support Center",
+  "secure_by_stripe": "Secure by Stripe",
+  "pci_dss_compliant": "PCI DSS Compliant",
+  "fast_payouts": "Fast payouts",
+  "secure": "Secure",
+  "eugrade_safety": "EU-grade safety",
+  "low_fees": "Low fees",
+  "transparent_pricing": "Transparent pricing",
+  "french_iban": "French IBAN",
+  "to_receive_eur_payouts": "To receive EUR payouts",
+  "identity_verification": "Identity verification",
+  "carte_didentit_or_passport": "Carte d’identité or passport",
+  "french_tax_details": "French tax details",
+  "for_french_tax_records": "For French tax records",
+  "earnings": "Earnings",
+  "trips": "Trips",
+  "payment_method_saved": "Payment method saved",
+  "total_spent": "Total Spent",
+  "instant_payouts_can_be_cancelled_while_still_pending_once_in_transit_your_bank_is_already_processing_the_transfer": "Instant payouts can be cancelled while still pending. Once in transit, your bank is already processing the transfer.",
+  "payout_progress": "Payout Progress",
+  "why_did_this_fail": "Why did this fail?",
+  "payout_requested": "Payout Requested",
+  "processing": "Processing",
+  "in_transit_to_bank": "In Transit to Bank",
+  "funds_arrived": "Funds Arrived",
+  "method": "Method",
+  "destination": "Destination",
+  "this_payout_cannot_be_cancelled_no_stripe_reference_found": "This payout cannot be cancelled — no Stripe reference found.",
+  "choose_your_plan": "Choose your plan",
+  "upgrade_your_sportconnect_account_in_seconds": "Upgrade your SportConnect account in seconds.",
+  "loading_subscription_plans": "Loading subscription plans...",
+  "retry_loading_plans": "Retry loading plans",
+  "your_payment_details_are_encrypted_and_processed_securely": "Your payment details are encrypted and processed securely.",
+  "subscribe_now": "Subscribe Now",
+  "premium_checkout": "Premium Checkout",
+  "premium_activated_successfully": "Premium activated successfully.",
+  "skip": "Skip",
+  "upgrade_to_pro": "Upgrade to Pro",
+  "premium_carpooling_madenfor_runners_like_you": "Premium carpooling made\\nfor runners like you",
+  "everything_you_get": "Everything you get",
+  "trusted_by_12000_runners": "Trusted by 12,000+ runners",
+  "start_free_trial": "Start Free Trial",
+  "smart_ride_matching": "Smart Ride Matching",
+  "unlimited_saved_routes": "Unlimited Saved Routes",
+  "verified_community": "Verified Community",
+  "crew_coordination": "Crew Coordination",
+  "race_day_priority": "Race Day Priority",
+  "priority_support": "Priority Support",
+  "smart_match": "Smart Match",
+  "unlimited_routes": "Unlimited Routes",
+  "verified_riders": "Verified Riders",
+  "crew_rides": "Crew Rides",
+  "race_priority": "Race Priority",
+  "annual": "Annual",
+  "moneybacknguarantee": "Money-back\\nguarantee",
+  "cancelnanytime": "Cancel\\nanytime",
+  "securenpayment": "Secure\\npayment",
+  "completed": "Completed",
+  "thisweek": "thisWeek",
+  "active": "Active",
+  "unable_to_complete_checkout_please_try_again": "Unable to complete checkout. Please try again.",
+  "version_119": "Version 1.1.9",
+  "built_with_flutter": "Built with Flutter",
+  "sportconnect_is_a_carpooling_and_rideshare_platform_designed": "SportConnect is a carpooling and rideshare platform designed ",
+  "join_the_community": "Join the Community",
+  "open_source_licenses": "Open Source Licenses",
+  "total_xp": "Total XP",
+  "streak": "Streak",
+  "diamond": "Diamond",
+  "platinum": "Platinum",
+  "bronze": "Bronze",
+  "background_check_passed": "Background Check Passed",
+  "your_background_check_is_complete_and_you_are_verified_to_drive_with_sportconnect": "Your background check is complete and you are verified to drive with SportConnect.",
+  "attach_image": "Attach image",
+  "action_required": "Action Required",
+  "driver_license": "Driver License",
+  "vehicle_registration": "Vehicle Registration",
+  "vehicle_insurance": "Vehicle Insurance",
+  "upload_feature_coming_soon": "Upload feature coming soon",
+  "phone_number": "Phone Number",
+  "try_different_keywords_or_contact_support": "Try different keywords or contact support",
+  "getting_started": "Getting Started",
+  "rides_booking": "Rides & Booking",
+  "safety_trust": "Safety & Trust",
+  "account_profile": "Account & Profile",
+  "my_vehicles": "My Vehicles",
+  "manage_your_vehicles": "Manage your vehicles",
+  "my_events": "My Events",
+  "created_joined_events": "Created & joined events",
+  "achievements": "Achievements",
+  "view_your_badges_rewards": "View your badges & rewards",
+  "view_your_notifications": "View your notifications",
+  "settings": "Settings",
+  "app_preferences_privacy": "App preferences & privacy",
+  "report": "report",
+  "attach_evidence": "Attach evidence",
+  "manage_booking_pickup_radius_payout_and_map_visibility": "Manage booking, pickup radius, payout, and map visibility",
+  "choose_map_appearance": "Choose map appearance",
+  "by_using_sportconnect_you_consent_to_the_data_processing_described_above_and_in_our_privacy_policy": "By using SportConnect, you consent to the data processing described above and in our Privacy Policy.",
+  "sportconnect_premium": "SportConnect Premium",
+  "unlock_smart_matching_priority_rides_more": "Unlock smart matching, priority rides & more",
+  "notification_permission": "Notification Permission",
+  "reallow_push_notifications_for_this_device": "Re-allow push notifications for this device",
+  "analytics_crash_reports": "Analytics & Crash Reports",
+  "allow_anonymous_usage_data_and_crash_reports": "Allow anonymous usage data and crash reports",
+  "data_processing_notice": "Data Processing Notice",
+  "how_we_collect_use_and_protect_your_data": "How we collect, use, and protect your data",
+  "withdraw_consent": "Withdraw Consent",
+  "manage_or_withdraw_your_data_consent": "Manage or withdraw your data consent",
+  "download_my_data": "Download My Data",
+  "export_a_copy_of_your_personal_data": "Export a copy of your personal data",
+  "view_your_past_rides_and_charges": "View your past rides and charges",
+  "update_your_account_password": "Update your account password",
+  "get_help_from_our_team": "Get help from our team",
+  "manage_subscription": "Manage Subscription",
+  "cancel_or_change_your_plan_in_the_store": "Cancel or change your plan in the store",
+  "restore_purchases": "Restore Purchases",
+  "reapply_your_active_subscription": "Re-apply your active subscription",
+  "booking": "Booking",
+  "radius": "Radius",
+  "could_not_open_subscription_management": "Could not open subscription management.",
+  "available_forms": "Available Forms",
+  "downloading_document": "Downloading document...",
+  "protect_your_account": "Protect your account",
+  "twofactor_authentication_adds_an_extra_layer_of_security_to_your_account_to_log_in_you": "Two-factor authentication adds an extra layer of security to your account. To log in, you",
+  "sms_verification": "SMS Verification",
+  "receive_codes_via_text_message": "Receive codes via text message",
+  "medium": "medium",
+  "please_describe_the_issue": "Please describe the issue",
+  "inapp": "In-App",
+  "driver_review": "Driver Review",
+  "passenger_review": "Passenger Review",
+  "just_now": "Just now",
+  "as_driver": "As Driver",
+  "as_rider": "As Rider",
+  "report_review": "Report Review",
+  "na": "N/A",
+  "departure_time": "departure_time",
+  "scheduled": "scheduled",
+  "refunded": "refunded",
+  "partiallyrefunded": "partiallyRefunded",
+  "instant": "instant",
+  "marked_as_noshow": "Marked as No-Show",
+  "ride_delayed": "Ride Delayed",
+  "view": "View",
+  "no_pending_requests": "No pending requests",
+  "live": "Live",
+  "done": "Done",
+  "destination_is_locked_because_an_event_is_selected": "Destination is locked because an event is selected.",
+  "how_was_your_passenger": "How was your passenger?",
+  "your_honest_feedback_helps_build_a_safer_more_reliable_community": "Your honest feedback helps build a safer, more reliable community.",
+  "no_accepted_passengers_to_rate_for_this_ride": "No accepted passengers to rate for this ride.",
+  "select_passenger_to_rate": "Select passenger to rate",
+  "rating": "Rating",
+  "comment_optional": "Comment (optional)",
+  "passenger": "Passenger",
+  "accept": "Accept",
+  "decline": "Decline",
+  "message_passenger": "Message passenger",
+  "unknown": "Unknown",
+  "in_progress": "In Progress",
+  "loading_route": "Loading route...",
+  "waiting_for_driver": "Waiting for driver",
+  "location_access_denied_tap_to_open_settings_and_reenable": "Location access denied. Tap to open Settings and re-enable.",
+  "driver_location_unavailable_for_5_min": "Driver location unavailable for 5+ min",
+  "poor_connection_updates_may_be_delayed": "Poor connection — updates may be delayed",
+  "your_pickup_code": "Your Pickup Code",
+  "show_this_to_your_driver": "Show this to your driver",
+  "show_my_pickup_code": "Show my pickup code",
+  "your_pickup_confirmation_code": "Your pickup confirmation code",
+  "trip_is_taking_longer_than_expected_is_everything_okay": "Trip is taking longer than expected — is everything okay?",
+  "complete_payment_to_confirm_your_seat": "Complete payment to confirm your seat",
+  "paid": "PAID",
+  "passed": "Passed",
+  "night_ride_stay_alert_and_share_your_trip_with_someone_you_trust": "Night ride — stay alert and share your trip with someone you trust",
+  "route_deviation_detected": "Route Deviation Detected",
+  "trip_progress": "Trip Progress",
+  "driver_at_pickup": "Driver at Pickup",
+  "price_summary": "Price summary",
+  "cancellation_policy": "Cancellation policy",
+  "you_can_cancel_before_the_driver_accepts_your_request": "You can cancel before the driver accepts your request.",
+  "totaln": "Total\\n",
+  "complete_booking": "Complete booking",
+  "review_your_ride_before_sending_the_request": "Review your ride before sending the request",
+  "choose_how_many_seats_you_need": "Choose how many seats you need",
+  "booking_request": "Booking request",
+  "the_driver_will_approve_your_request": "The driver will approve your request",
+  "protected_booking": "Protected booking",
+  "your_request_is_safely_recorded_in_sportconnect": "Your request is safely recorded in SportConnect",
+  "review": "Review",
+  "pickup_point": "Pickup point",
+  "dropoff_point": "Drop-off point",
+  "seat_price": "Seat price",
+  "seats_selected": "Seats selected",
+  "fare": "Fare",
+  "service_fee": "Service fee",
+  "booking_confirmed": "Booking Confirmed",
+  "price": "Price ↓",
+  "duration": "Duration",
+  "departure": "Departure",
+  "recommended": "recommended",
+  "any": "any",
+  "electric": "Electric",
+  "comfort": "comfort",
+  "are_you_sure_you_want_to_cancel_this_ride": "Are you sure you want to cancel this ride?",
+  "frequent_cancellations_may_affect_your_account_rating": "Frequent cancellations may affect your account rating.",
+  "please_let_us_know_why_you": "Please let us know why you",
+  "select_a_reason": "Select a reason",
+  "additional_comments_optional": "Additional comments (optional)",
+  "unable_to_load_ride_completion_details": "Unable to load ride completion details.",
+  "trip_completed": "Trip Completed!",
+  "thanks_for_riding_with_sportconnect": "Thanks for riding with SportConnect",
+  "trip_summary": "Trip Summary",
+  "fare_breakdown": "Fare Breakdown",
+  "submitting_ride_please_wait": "Submitting ride, please wait...",
+  "please_set_origin_and_destination_in_step_1": "Please set origin and destination in Step 1",
+  "origin_and_destination_cannot_be_the_same_location": "Origin and destination cannot be the same location",
+  "please_set_a_departure_date_and_time_in_step_1": "Please set a departure date and time in Step 1",
+  "departure_time_must_be_in_the_future_go_back_to_step_1": "Departure time must be in the future — go back to Step 1",
+  "departure_must_be_at_least_15_minutes_from_now": "Departure must be at least 15 minutes from now",
+  "please_select_a_vehicle_in_step_2": "Please select a vehicle in Step 2",
+  "number_of_seats_must_be_between_1_and_8_go_back_to_step_2": "Number of seats must be between 1 and 8 — go back to Step 2",
+  "please_select_at_least_one_recurring_day": "Please select at least one recurring day",
+  "please_set_a_recurring_end_date": "Please set a recurring end date",
+  "please_enter_both_locations": "Please enter both locations",
+  "pickup_and_destination_cannot_be_the_same_location": "Pickup and destination cannot be the same location",
+  "cannot_search_for_past_dates": "Cannot search for past dates",
+  "seats_must_be_between_1_and_4": "Seats must be between 1 and 4",
+  "cancelled_by_user": "Cancelled by user",
+  "gasoline": "Gasoline",
+  "diesel": "Diesel",
+  "hybrid": "Hybrid",
+  "plugin_hybrid": "Plug-in Hybrid",
+  "hydrogen": "Hydrogen",
+  "car": "Car",
+  "motorcycle": "Motorcycle",
+  "van": "Van",
+  "truck": "Truck",
+  "bicycle": "Bicycle",
+  "your_fleet": "Your Fleet",
+  "register_a_new_car_for_carpool_rides": "Register a new car for carpool rides",
+  "in_use": "In Use",
+  "riders_see_this_photo_before_booking": "Riders see this photo before booking",
+  "inlineEventChooseEvent": "Choose an event",
+  "inlineEventLinkOptional": "Link to a sport event (optional)",
+  "inlineEventClearSelected": "Clear selected event",
+  "inlineEventSearchHint": "Search loaded events by title, place, organizer",
+  "inlineEventClearSearch": "Clear search",
+  "inlineEventAll": "All",
+  "inlineEventCouldNotLoad": "Could not load events",
+  "inlineEventNoMatches": "No matching loaded events",
+  "inlineEventLoadMoreOrSearch": "Load more events or change the search.",
+  "inlineEventTryAnotherFilter": "Try another search or filter.",
+  "inlineEventLoadMore": "Load more",
+  "inlineEventRetryLoading": "Retry loading events",
+  "inlineEventAllLoadedShown": "All loaded events shown",
+  "inlineEventLoadMoreEvents": "Load more events",
+  "inlineEventShownLoaded": "{shown} shown - {loaded} loaded",
+  "@inlineEventShownLoaded": {
+    "placeholders": {
+      "shown": {
+        "type": "int"
+      },
+      "loaded": {
+        "type": "int"
+      }
+    }
+  },
+  "inlineEventNow": "Now",
+  "chatDeleteConversationTitle": "Delete conversation?",
+  "chatClearHistoryTitle": "Clear chat history?",
+  "eventCancelTitle": "Cancel Event",
+  "eventCancelReasonOptional": "Reason (optional)",
+  "eventKeepEvent": "Keep Event",
+  "eventDeleteTitle": "Delete Event",
+  "eventDeleteConfirm": "Are you sure you want to delete \"{eventTitle}\"?",
+  "@eventDeleteConfirm": {
+    "placeholders": {
+      "eventTitle": {
+        "type": "String"
+      }
+    }
+  },
+  "eventAttendees": "Attendees",
+  "eventAttendeesCount": "Attendees ({count})",
+  "@eventAttendeesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "eventNoAttendeesYet": "No attendees yet",
+  "eventAttendeesFailedOpenChat": "Failed to open chat. Please try again.",
+  "eventAttendeesFailedLoad": "Failed to load attendees",
+  "myLocation": "My Location",
+  "changeSignInAccount": "Change sign-in account",
+  "changeGoogleAccount": "Change Google account",
+  "changeAppleAccount": "Change Apple account",
+  "discardChangesTitle": "Discard changes?",
+  "keepEditing": "Keep editing",
+  "clearAddress": "Clear address",
+  "clearPhoneNumber": "Clear phone number",
+  "openInMaps": "Open in maps"
 }

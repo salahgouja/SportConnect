@@ -951,7 +951,7 @@ class _MapLocationPickerState extends ConsumerState<MapLocationPicker>
                     ),
                     SizedBox(width: 8.w),
                     IconButton(
-                      tooltip: 'Open in maps',
+                      tooltip: AppLocalizations.of(context).openInMaps,
                       onPressed: _openSelectedLocationInMaps,
                       icon: Icon(
                         Icons.near_me_rounded,

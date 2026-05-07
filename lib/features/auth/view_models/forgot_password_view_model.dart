@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:sport_connect/core/utils/user_facing_error.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 
 part 'forgot_password_view_model.g.dart';
@@ -64,7 +65,10 @@ class ForgotPasswordViewModel extends _$ForgotPasswordViewModel {
       _startCooldown();
     } on Exception catch (e, st) {
       if (!ref.mounted) return;
-      state = state.copyWith(isLoading: false, errorMessage: e.toString());
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: userFacingError(e),
+      );
     }
   }
 

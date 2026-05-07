@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 // ─── Data Models ──────────────────────────────────────────────────────────────
 
@@ -425,7 +426,9 @@ class IntlPhoneInputState extends State<IntlPhoneInput> {
                     : showClear
                     ? IconButton(
                         key: const ValueKey('phone-clear-button'),
-                        tooltip: 'Clear phone number',
+                        tooltip: AppLocalizations.of(
+                          context,
+                        ).clearPhoneNumber,
                         onPressed: _clear,
                         visualDensity: VisualDensity.compact,
                         padding: EdgeInsets.zero,

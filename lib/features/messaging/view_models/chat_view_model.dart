@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:sport_connect/core/utils/user_facing_error.dart';
 import 'package:sport_connect/features/messaging/models/message_model.dart';
 import 'package:sport_connect/features/messaging/repositories/chat_repository.dart';
 import 'package:sport_connect/features/notifications/repositories/notification_repository.dart';
@@ -324,7 +325,7 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
       return true;
     } on Exception catch (e, st) {
       if (!ref.mounted) return false;
-      state = state.copyWith(isSending: false, error: e.toString());
+      state = state.copyWith(isSending: false, error: userFacingError(e));
       return false;
     }
   }
@@ -392,7 +393,7 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
       );
     } on Exception catch (e, st) {
       if (!ref.mounted) return false;
-      state = state.copyWith(isSending: false, error: e.toString());
+      state = state.copyWith(isSending: false, error: userFacingError(e));
       return false;
     }
   }
@@ -428,7 +429,7 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
       );
     } on Exception catch (e, st) {
       if (!ref.mounted) return false;
-      state = state.copyWith(isSending: false, error: e.toString());
+      state = state.copyWith(isSending: false, error: userFacingError(e));
       return false;
     }
   }
@@ -472,7 +473,10 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
       );
     } on Exception catch (e, st) {
       if (!ref.mounted) return;
-      state = state.copyWith(isLoadingMore: false, error: e.toString());
+      state = state.copyWith(
+        isLoadingMore: false,
+        error: userFacingError(e),
+      );
     }
   }
 

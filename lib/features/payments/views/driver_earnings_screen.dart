@@ -993,7 +993,11 @@ class DriverEarningsScreen extends ConsumerWidget {
                                         TextButton(
                                           onPressed: () =>
                                               Navigator.of(context).pop(),
-                                          child: const Text('Got it'),
+                                          child: Text(
+                                            AppLocalizations.of(
+                                              context,
+                                            ).actionDone,
+                                          ),
                                         ),
                                       ],
                                     ),
