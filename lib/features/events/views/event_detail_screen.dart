@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -11,6 +13,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/config/routes/route_params.dart';
 import 'package:sport_connect/core/models/location/location_point.dart';
+import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
@@ -19,13 +22,22 @@ import 'package:sport_connect/core/widgets/map_location_picker.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/core/widgets/premium_card.dart';
 import 'package:sport_connect/core/widgets/skeleton_loader.dart';
-import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/events/models/event_model.dart';
 import 'package:sport_connect/features/events/view_models/event_view_model.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+String _recurrenceLabel(AppLocalizations l10n, RecurrencePattern pattern) {
+  return switch (pattern) {
+    RecurrencePattern.daily => l10n.every_day,
+    RecurrencePattern.weekly => l10n.every_week,
+    RecurrencePattern.biweekly => l10n.every_2_weeks,
+    RecurrencePattern.monthly => l10n.every_month,
+    RecurrencePattern.yearly => l10n.every_year,
+  };
+}
 
 /// Full-screen event detail with hero banner, info sections and join/leave CTA.
 class EventDetailScreen extends ConsumerStatefulWidget {
@@ -295,7 +307,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                     event: event,
                     userId: userId,
                     onStatusSelected: (status) async {
-                      HapticFeedback.selectionClick();
+                      unawaited(HapticFeedback.selectionClick());
                       await ref
                           .read(
                             eventDetailViewModelProvider(
@@ -368,7 +380,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                     style: PremiumButtonStyle.secondary,
                     fullWidth: true,
                     onPressed: () async {
-                      HapticFeedback.lightImpact();
+                      unawaited(HapticFeedback.lightImpact());
                       await context.push(
                         AppRoutes.searchRides.path,
                         extra: {
@@ -407,7 +419,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                       style: PremiumButtonStyle.ghost,
                       fullWidth: true,
                       onPressed: () async {
-                        HapticFeedback.lightImpact();
+                        unawaited(HapticFeedback.lightImpact());
                         await context.push(
                           AppRoutes.driverOfferRide.path,
                           extra: DriverRidePrefill(
@@ -468,7 +480,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
               ShareParams(
                 text: l10n.eventShareText(
                   event.title,
-                  event.type.label,
+                  AppLocalizations.of(context).running,
                   dateStr,
                   event.location.address,
                   'https://sportconnect.app/events/${event.id}',
@@ -519,7 +531,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
         fullWidth: true,
         isLoading: detailState.isLeaving,
         onPressed: () async {
-          HapticFeedback.mediumImpact();
+          unawaited(HapticFeedback.mediumImpact());
           await ref
               .read(eventDetailViewModelProvider(widget.eventId).notifier)
               .leaveEvent(userId);
@@ -539,7 +551,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
       onPressed: isFull
           ? null
           : () async {
-              HapticFeedback.mediumImpact();
+              unawaited(HapticFeedback.mediumImpact());
               await ref
                   .read(eventDetailViewModelProvider(widget.eventId).notifier)
                   .joinEvent(userId);
@@ -582,7 +594,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
           onPressed: () async {
             final confirm = await _confirmDelete();
             if (!confirm || !mounted) return;
-            HapticFeedback.mediumImpact();
+            unawaited(HapticFeedback.mediumImpact());
             final deleted = await ref
                 .read(eventDetailViewModelProvider(widget.eventId).notifier)
                 .deleteEvent();
@@ -676,7 +688,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
     );
 
     if (confirmed != true || !mounted) return;
-    HapticFeedback.mediumImpact();
+    unawaited(HapticFeedback.mediumImpact());
     final reason = reasonController.text.trim();
     final cancelled = await ref
         .read(eventDetailViewModelProvider(widget.eventId).notifier)
@@ -746,7 +758,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
       return;
     }
 
-    HapticFeedback.lightImpact();
+    unawaited(HapticFeedback.lightImpact());
 
     final chatId = await ref
         .read(eventDetailViewModelProvider(widget.eventId).notifier)
@@ -781,7 +793,8 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
       final title = Uri.encodeComponent(event.title);
       final location = Uri.encodeComponent(event.location.address);
       final details = Uri.encodeComponent(
-        event.description ?? '${event.type.label} on SportConnect',
+        event.description ??
+            '${AppLocalizations.of(context).running} on SportConnect',
       );
 
       // Build base URL parameters
@@ -832,8 +845,15 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
         await launchUrl(url, mode: LaunchMode.externalApplication);
         if (mounted) {
           final message = event.isRecurring
-              ? 'Opening Google Calendar (recurring: ${event.recurringPattern?.label ?? 'custom'})...'
-              : 'Opening Google Calendar...';
+              ? AppLocalizations.of(context).opening_google_calendar_recurring(
+                  event.recurringPattern != null
+                      ? _recurrenceLabel(
+                          AppLocalizations.of(context),
+                          event.recurringPattern!,
+                        )
+                      : AppLocalizations.of(context).custom_label,
+                )
+              : AppLocalizations.of(context).opening_google_calendar;
           AdaptiveSnackBar.show(
             context,
             message: message,
@@ -845,8 +865,9 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
         if (mounted) {
           AdaptiveSnackBar.show(
             context,
-            message:
-                'Could not open calendar. Please ensure Google Calendar is available.',
+            message: AppLocalizations.of(
+              context,
+            ).could_not_open_calendar_please_ensure_google_calendar_is_available,
             type: AdaptiveSnackBarType.error,
             duration: const Duration(seconds: 3),
           );
@@ -856,7 +877,9 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
       if (mounted) {
         AdaptiveSnackBar.show(
           context,
-          message: 'Error opening calendar: $e',
+          message: AppLocalizations.of(
+            context,
+          ).could_not_open_calendar_please_ensure_google_calendar_is_available,
           type: AdaptiveSnackBarType.error,
           duration: const Duration(seconds: 3),
         );
@@ -887,24 +910,29 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      '⚠️ Recurring Event',
-                      style: TextStyle(
+                    Text(
+                      AppLocalizations.of(context).recurring_event,
+                      style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         color: AppColors.error,
                       ),
                     ),
                     SizedBox(height: 8.h),
-                    const Text(
-                      'This event repeats. Deleting it will remove ALL occurrences (past and future).',
-                      style: TextStyle(fontSize: 12),
+                    Text(
+                      AppLocalizations.of(
+                        context,
+                      ).this_event_repeats_deleting_it_will_remove_all_occurrences_past_and_future,
+                      style: const TextStyle(fontSize: 12),
                     ),
                     SizedBox(height: 8.h),
-                    const Text(
-                      'To delete only specific occurrences, use Google Calendar: tap the event → "This event" (not "All events").',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontStyle: FontStyle.italic,
+                    Text.rich(
+                      TextSpan(
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontStyle: FontStyle.italic,
+                        ),
+                        text:
+                            '${AppLocalizations.of(context).to_delete_only_specific_occurrences_use_google_calendar_tap_the_event}"${AppLocalizations.of(context).this_event}" (${AppLocalizations.of(context).not_label} "${AppLocalizations.of(context).all_events}").',
                       ),
                     ),
                   ],
@@ -1053,7 +1081,7 @@ class _SportOverlay extends StatelessWidget {
           Icon(event.type.icon, size: 52.sp, color: Colors.white70),
           SizedBox(height: 8.h),
           Text(
-            event.type.label,
+            AppLocalizations.of(context).running,
             style: TextStyle(
               fontSize: 14.sp,
               fontWeight: FontWeight.w600,
@@ -1089,7 +1117,7 @@ class _TitleSection extends StatelessWidget {
               Icon(event.type.icon, size: 14.sp, color: event.type.color),
               SizedBox(width: 4.w),
               Text(
-                event.type.label,
+                AppLocalizations.of(context).running,
                 style: TextStyle(
                   fontSize: 12.sp,
                   fontWeight: FontWeight.w600,
@@ -1770,7 +1798,9 @@ class _RecurringEventBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final patternText = event.recurringPattern?.label ?? 'Recurring';
+    final patternText = event.recurringPattern != null
+        ? _recurrenceLabel(l10n, event.recurringPattern!)
+        : l10n.recurringSummaryLabel;
 
     final endStr = event.recurringEndDate != null
         ? ' ${l10n.eventUntilDate(DateFormat('MMM d').format(event.recurringEndDate!))}'

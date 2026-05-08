@@ -5,6 +5,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/services/firebase_service.dart';
+import 'package:sport_connect/core/services/talker_service.dart';
 import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
 
 part 'vehicle_repository.g.dart';
@@ -150,14 +151,18 @@ class VehicleRepository {
       if (vehicle.imageUrl != null) {
         try {
           await _storage.refFromURL(vehicle.imageUrl!).delete();
-        } on Exception catch (e, st) {}
+        } on Exception catch (e, st) {
+          TalkerService.error('Vehicle image cleanup failed (best-effort)', e, st);
+        }
       }
 
       // Delete additional images
       for (final url in vehicle.imageUrls) {
         try {
           await _storage.refFromURL(url).delete();
-        } on Exception catch (e, st) {}
+        } on Exception catch (e, st) {
+          TalkerService.error('Vehicle additional image cleanup failed (best-effort)', e, st);
+        }
       }
     }
 

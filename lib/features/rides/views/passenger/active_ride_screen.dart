@@ -1,3 +1,7 @@
+import 'dart:async';
+
+
+
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,6 +13,7 @@ import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/services/location_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
@@ -17,11 +22,11 @@ import 'package:sport_connect/core/widgets/custom_button.dart';
 import 'package:sport_connect/core/widgets/misc_feature_widgets.dart';
 import 'package:sport_connect/core/widgets/ride_feature_widgets.dart';
 import 'package:sport_connect/core/widgets/skeleton_loader.dart';
-import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/messaging/view_models/chat_view_model.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
+import 'package:sport_connect/features/rides/views/passenger/active_ride_widgets.dart';
 import 'package:sport_connect/features/vehicles/repositories/vehicle_repository.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -108,7 +113,7 @@ class _PassengerActiveRideScreenState
 
   /// Shares live trip details with contacts.
   Future<void> _shareTrip(RideModel ride) async {
-    HapticFeedback.mediumImpact();
+    unawaited(HapticFeedback.mediumImpact());
     final currentUser = ref.read(currentUserProvider).value;
     final l10n = AppLocalizations.of(context);
 
@@ -202,7 +207,7 @@ class _PassengerActiveRideScreenState
                       senderId: user.uid,
                       senderName: user.username,
                     );
-                    HapticFeedback.lightImpact();
+                    unawaited(HapticFeedback.lightImpact());
                     AdaptiveSnackBar.show(
                       context,
                       message: AppLocalizations.of(
@@ -293,8 +298,7 @@ class _PassengerActiveRideScreenState
         data: (ride) => ride == null
             ? _buildRideNotFound()
             : _buildActiveRideContent(context, ride),
-        loading: () =>
-            const SkeletonLoader(type: SkeletonType.rideCard, itemCount: 5),
+        loading: () => const SkeletonLoader(itemCount: 5),
         error: (e, _) => Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -629,7 +633,7 @@ class _PassengerActiveRideScreenState
                       point: driverLatLng,
                       width: 44.w,
                       height: 44.w,
-                      child: _PulsingLocationMarker(
+                      child: PulsingLocationMarker(
                         heading: 0,
                         outerSize: 44.w,
                         innerSize: 28.w,
@@ -828,23 +832,29 @@ class _PassengerActiveRideScreenState
                 padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
                 child: Row(
                   children: [
-                    _buildMapCircleButton(
-                      Icons.adaptive.arrow_back,
-                      () => context.pop(),
+                    MapCircleButton(
+                      icon: Icons.adaptive.arrow_back,
+                      onTap: () => context.pop(),
                     ),
                     SizedBox(width: 12.w),
-                    _buildPhaseBadge(rideState.phase, rideStatus: ride.status),
+                    ActivePhaseBadge(
+                      phase: rideState.phase,
+                      rideStatus: ride.status,
+                    ),
                     const Spacer(),
-                    _buildMapCircleButton(
-                      Icons.share_location,
-                      () => _shareTrip(ride),
+                    MapCircleButton(
+                      icon: Icons.share_location,
+                      onTap: () => _shareTrip(ride),
                     ),
                     SizedBox(width: 8.w),
-                    _buildMapCircleButton(Icons.my_location, () {
-                      if (driverLoc != null) {
-                        _liveMapController.move(driverLatLng, 15);
-                      }
-                    }),
+                    MapCircleButton(
+                      icon: Icons.my_location,
+                      onTap: () {
+                        if (driverLoc != null) {
+                          _liveMapController.move(driverLatLng, 15);
+                        }
+                      },
+                    ),
                   ],
                 ),
               ),
@@ -964,9 +974,7 @@ class _PassengerActiveRideScreenState
             top: MediaQuery.paddingOf(context).top + 56.h,
             left: 12.w,
             right: 80.w,
-            child: _buildNightSafetyBanner(
-              context,
-            ).animate().fadeIn(duration: 300.ms),
+            child: const NightSafetyBanner().animate().fadeIn(duration: 300.ms),
           ),
 
         // ── Route deviation alert ──
@@ -977,7 +985,7 @@ class _PassengerActiveRideScreenState
                 (_isNightTime ? 120.h : 56.h),
             left: 20.w,
             right: 20.w,
-            child: _buildRouteDeviationAlert(context, rideState)
+            child: RouteDeviationAlert(rideState: rideState)
                 .animate()
                 .fadeIn(duration: 300.ms)
                 .shake(hz: 2, offset: const Offset(2, 0)),
@@ -1076,85 +1084,6 @@ class _PassengerActiveRideScreenState
           },
         ),
       ],
-    );
-  }
-
-  Widget _buildMapCircleButton(IconData icon, VoidCallback onTap) {
-    return Material(
-      color: Colors.white,
-      shape: const CircleBorder(),
-      elevation: 3,
-      shadowColor: Colors.black.withValues(alpha: 0.2),
-      child: InkWell(
-        onTap: () {
-          HapticFeedback.lightImpact();
-          onTap();
-        },
-        customBorder: const CircleBorder(),
-        child: Padding(
-          padding: EdgeInsets.all(10.w),
-          child: Icon(icon, size: 20.sp, color: AppColors.textPrimary),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPhaseBadge(ActiveRidePhase phase, {RideStatus? rideStatus}) {
-    final l10n = AppLocalizations.of(context);
-    Color color;
-    String label;
-    IconData icon;
-    switch (phase) {
-      case ActiveRidePhase.pickingUp:
-        color = AppColors.warning;
-        if (rideStatus == RideStatus.inProgress) {
-          label = 'Driver at Pickup';
-          icon = Icons.how_to_reg;
-        } else {
-          label = l10n.headingToPickup;
-          icon = Icons.person_pin_circle;
-        }
-      case ActiveRidePhase.enRoute:
-        color = AppColors.primary;
-        label = l10n.tripInProgress;
-        icon = Icons.navigation;
-      case ActiveRidePhase.arriving:
-        color = AppColors.success;
-        label = l10n.headingToDestination;
-        icon = Icons.near_me;
-      case ActiveRidePhase.completed:
-        color = AppColors.success;
-        label = l10n.rideCompleted;
-        icon = Icons.check_circle;
-    }
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(20.r),
-        boxShadow: [
-          BoxShadow(
-            color: color.withValues(alpha: 0.4),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16.sp, color: Colors.white),
-          SizedBox(width: 6.w),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 13.sp,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -1269,7 +1198,7 @@ class _PassengerActiveRideScreenState
             ),
 
           // Progress bar
-          _buildProgressBar(ride, rideState),
+          TripProgressBar(ride: ride, rideState: rideState),
           SizedBox(height: 20.h),
 
           // ETA, distance and speed tiles
@@ -1278,7 +1207,7 @@ class _PassengerActiveRideScreenState
               padding: EdgeInsets.symmetric(horizontal: 20.w),
               child: Row(
                 children: [
-                  _buildInfoTile(
+                  RideInfoTile(
                     icon: Icons.access_time_rounded,
                     label: l10n.eta,
                     value: etaMinutes < 1
@@ -1287,7 +1216,7 @@ class _PassengerActiveRideScreenState
                     color: AppColors.primary,
                   ),
                   SizedBox(width: 12.w),
-                  _buildInfoTile(
+                  RideInfoTile(
                     icon: Icons.straighten_rounded,
                     label: l10n.distance,
                     value: distToDest < 1
@@ -1296,7 +1225,7 @@ class _PassengerActiveRideScreenState
                     color: AppColors.warning,
                   ),
                   SizedBox(width: 12.w),
-                  _buildInfoTile(
+                  RideInfoTile(
                     icon: Icons.speed_rounded,
                     label: l10n.speed,
                     value:
@@ -1681,15 +1610,15 @@ class _PassengerActiveRideScreenState
                     ),
                   ),
                   // Call button
-                  _buildMapCircleButton(
-                    Icons.phone,
-                    () => _callDriver(driver.asDriver?.phoneNumber),
+                  MapCircleButton(
+                    icon: Icons.phone,
+                    onTap: () => _callDriver(driver.asDriver?.phoneNumber),
                   ),
                   SizedBox(width: 10.w),
                   // Message button
-                  _buildMapCircleButton(
-                    Icons.message,
-                    () => _sendMessage(ride.driverId),
+                  MapCircleButton(
+                    icon: Icons.message,
+                    onTap: () => _sendMessage(ride.driverId),
                   ),
                 ],
               ),
@@ -1917,26 +1846,26 @@ class _PassengerActiveRideScreenState
               ),
               child: Column(
                 children: [
-                  _buildMiniRouteRow(
-                    Icons.trip_origin_rounded,
-                    AppColors.success,
-                    ride.origin.address,
+                  MiniRouteRow(
+                    icon: Icons.trip_origin_rounded,
+                    color: AppColors.success,
+                    text: ride.origin.address,
                   ),
                   // Show intermediate waypoints
                   for (final wp in ride.route.waypoints)
                     Padding(
                       padding: EdgeInsets.only(top: 8.h),
-                      child: _buildMiniRouteRow(
-                        Icons.circle,
-                        AppColors.warning,
-                        wp.location.address,
+                      child: MiniRouteRow(
+                        icon: Icons.circle,
+                        color: AppColors.warning,
+                        text: wp.location.address,
                       ),
                     ),
                   SizedBox(height: 8.h),
-                  _buildMiniRouteRow(
-                    Icons.location_on_rounded,
-                    AppColors.error,
-                    ride.destination.address,
+                  MiniRouteRow(
+                    icon: Icons.location_on_rounded,
+                    color: AppColors.error,
+                    text: ride.destination.address,
                   ),
                 ],
               ),
@@ -2221,7 +2150,7 @@ class _PassengerActiveRideScreenState
                     icon: Icon(Icons.adaptive.arrow_back, color: Colors.white),
                   ),
                   const Spacer(),
-                  _buildStatusBadge(ride.status),
+                  RideStatusBadge(status: ride.status),
                 ],
               ),
               SizedBox(height: 16.h),
@@ -2242,69 +2171,6 @@ class _PassengerActiveRideScreenState
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildStatusBadge(RideStatus status) {
-    Color bgColor;
-    Color textColor;
-    String label;
-    IconData icon;
-
-    switch (status) {
-      case RideStatus.draft:
-        bgColor = AppColors.textSecondary.withValues(alpha: 0.2);
-        textColor = AppColors.textSecondary;
-        label = 'Draft';
-        icon = Icons.edit_outlined;
-      case RideStatus.active:
-        bgColor = AppColors.info.withValues(alpha: 0.2);
-        textColor = AppColors.info;
-        label = 'Active';
-        icon = Icons.check_circle_outline;
-      case RideStatus.full:
-        bgColor = AppColors.warning.withValues(alpha: 0.2);
-        textColor = AppColors.warning;
-        label = 'Full';
-        icon = Icons.people;
-      case RideStatus.inProgress:
-        bgColor = AppColors.success.withValues(alpha: 0.2);
-        textColor = AppColors.success;
-        label = 'In Progress';
-        icon = Icons.directions_car;
-      case RideStatus.completed:
-        bgColor = AppColors.success.withValues(alpha: 0.2);
-        textColor = AppColors.success;
-        label = 'Completed';
-        icon = Icons.done_all;
-      case RideStatus.cancelled:
-        bgColor = AppColors.error.withValues(alpha: 0.2);
-        textColor = AppColors.error;
-        label = 'Cancelled';
-        icon = Icons.cancel_outlined;
-    }
-
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(20.r),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16.sp, color: textColor),
-          SizedBox(width: 6.w),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 14.sp,
-              fontWeight: FontWeight.w600,
-              color: textColor,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -2344,80 +2210,28 @@ class _PassengerActiveRideScreenState
       ),
       child: Column(
         children: [
-          _buildStatusStep(
-            l10n.rideConfirmed,
-            ride.status.index >= RideStatus.active.index,
-            Icons.check_circle,
+          RideStatusStep(
+            label: l10n.rideConfirmed,
+            isCompleted: ride.status.index >= RideStatus.active.index,
+            icon: Icons.check_circle,
           ),
-          _buildStatusDivider(isEnRouteOrLater || isCompleted),
-          _buildStatusStep(
-            l10n.driverOnTheWay,
-            isEnRouteOrLater || isCompleted,
-            Icons.directions_car,
+          RideStatusDivider(isActive: isEnRouteOrLater || isCompleted),
+          RideStatusStep(
+            label: l10n.driverOnTheWay,
+            isCompleted: isEnRouteOrLater || isCompleted,
+            icon: Icons.directions_car,
           ),
-          _buildStatusDivider(isArrivingOrLater || isCompleted),
-          _buildStatusStep(
-            'Arriving Soon',
-            isArrivingOrLater || isCompleted,
-            Icons.near_me,
+          RideStatusDivider(isActive: isArrivingOrLater || isCompleted),
+          RideStatusStep(
+            label: 'Arriving Soon',
+            isCompleted: isArrivingOrLater || isCompleted,
+            icon: Icons.near_me,
           ),
-          _buildStatusDivider(isCompleted),
-          _buildStatusStep(
-            l10n.rideCompleted,
-            isCompleted,
-            Icons.flag,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatusStep(String label, bool isCompleted, IconData icon) {
-    return Row(
-      children: [
-        Container(
-          padding: EdgeInsets.all(10.w),
-          decoration: BoxDecoration(
-            color: isCompleted ? AppColors.primary : AppColors.surface,
-            borderRadius: BorderRadius.circular(12.r),
-            border: Border.all(
-              color: isCompleted ? AppColors.primary : AppColors.border,
-              width: 2,
-            ),
-          ),
-          child: Icon(
-            icon,
-            size: 20.sp,
-            color: isCompleted ? Colors.white : AppColors.textTertiary,
-          ),
-        ),
-        SizedBox(width: 16.w),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 15.sp,
-            fontWeight: isCompleted ? FontWeight.w600 : FontWeight.w400,
-            color: isCompleted
-                ? AppColors.textPrimary
-                : AppColors.textSecondary,
-          ),
-        ),
-        const Spacer(),
-        if (isCompleted)
-          Icon(Icons.check, size: 20.sp, color: AppColors.success),
-      ],
-    );
-  }
-
-  Widget _buildStatusDivider(bool isActive) {
-    return Padding(
-      padding: EdgeInsets.only(left: 20.w),
-      child: Row(
-        children: [
-          Container(
-            width: 2,
-            height: 24.h,
-            color: isActive ? AppColors.primary : AppColors.border,
+          RideStatusDivider(isActive: isCompleted),
+          RideStatusStep(
+            label: l10n.rideCompleted,
+            isCompleted: isCompleted,
+            icon: Icons.flag,
           ),
         ],
       ),
@@ -2994,103 +2808,6 @@ class _PassengerActiveRideScreenState
     );
   }
 
-  /// Night safety banner — enhanced visibility when riding after dark.
-  Widget _buildNightSafetyBanner(BuildContext context) {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            const Color(0xFF1A237E).withValues(alpha: 0.15),
-            const Color(0xFF283593).withValues(alpha: 0.08),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(
-          color: const Color(0xFF3F51B5).withValues(alpha: 0.3),
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.nightlight_round,
-            size: 20.sp,
-            color: const Color(0xFF5C6BC0),
-          ),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: Text(
-              'Night ride — stay alert and share your trip with someone you trust',
-              style: TextStyle(
-                fontSize: 12.sp,
-                fontWeight: FontWeight.w500,
-                color: AppColors.textPrimary,
-              ),
-            ),
-          ),
-          SizedBox(width: 8.w),
-          Icon(
-            Icons.shield_rounded,
-            size: 18.sp,
-            color: const Color(0xFF5C6BC0),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Route deviation alert — shown when driver goes >500m off the planned route.
-  Widget _buildRouteDeviationAlert(
-    BuildContext context,
-    ActiveRideState rideState,
-  ) {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-      decoration: BoxDecoration(
-        color: AppColors.error.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: AppColors.error.withValues(alpha: 0.4)),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.warning_amber_rounded,
-            size: 22.sp,
-            color: AppColors.error,
-          ),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Route Deviation Detected',
-                  style: TextStyle(
-                    fontSize: 13.sp,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.error,
-                  ),
-                ),
-                SizedBox(height: 2.h),
-                Text(
-                  rideState.remainingEtaMinutes != null
-                      ? 'Driver is ${(rideState.routeDeviationMeters / 1000).toStringAsFixed(1)} km off route — new ETA ~${rideState.remainingEtaMinutes} min'
-                      : 'Driver is ${(rideState.routeDeviationMeters / 1000).toStringAsFixed(1)} km off the planned route',
-                  style: TextStyle(
-                    fontSize: 11.sp,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildActionButtons(BuildContext context, RideModel ride) {
     final l10n = AppLocalizations.of(context);
     return Padding(
@@ -3316,244 +3033,5 @@ class _PassengerActiveRideScreenState
     final hour = dateTime.hour.toString().padLeft(2, '0');
     final minute = dateTime.minute.toString().padLeft(2, '0');
     return '$hour:$minute';
-  }
-
-  Widget _buildProgressBar(RideModel ride, ActiveRideState rideState) {
-    var progress = 0.0;
-    if (ride.distanceKm != null && ride.distanceKm! > 0) {
-      final remaining = rideState.remainingDistanceKm ?? ride.distanceKm!;
-      progress = ((ride.distanceKm! - remaining) / ride.distanceKm!).clamp(
-        0.0,
-        1.0,
-      );
-    }
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20.w),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Trip Progress',
-                style: TextStyle(
-                  fontSize: 13.sp,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              Text(
-                '${progress * 100}%',
-                style: TextStyle(
-                  fontSize: 13.sp,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.primary,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 8.h),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4.r),
-            child: LinearProgressIndicator(
-              value: progress,
-              backgroundColor: AppColors.border,
-              valueColor: const AlwaysStoppedAnimation<Color>(
-                AppColors.primary,
-              ),
-              minHeight: 6.h,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoTile({
-    required IconData icon,
-    required String label,
-    required String value,
-    required Color color,
-  }) {
-    return Expanded(
-      child: Container(
-        padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 8.w),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(12.r),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, size: 20.sp, color: color),
-            SizedBox(height: 6.h),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 14.sp,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            SizedBox(height: 2.h),
-            Text(
-              label,
-              style: TextStyle(fontSize: 12.sp, color: AppColors.textTertiary),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMiniRouteRow(IconData icon, Color color, String text) {
-    return Row(
-      children: [
-        Icon(icon, size: 16.sp, color: color),
-        SizedBox(width: 10.w),
-        Expanded(
-          child: Text(
-            text,
-            style: TextStyle(
-              fontSize: 13.sp,
-              fontWeight: FontWeight.w500,
-              color: AppColors.textPrimary,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// Self-contained pulsing marker that manages its own [AnimationController].
-///
-/// Extracting the animation into a separate [StatefulWidget] prevents the
-/// 60 fps animation rebuild from being coupled to the parent's state changes
-/// (GPS updates, ETA recalculations, etc.) and avoids animation stutter when
-/// the parent rebuilds.
-class _PulsingLocationMarker extends StatefulWidget {
-  const _PulsingLocationMarker({
-    required this.heading,
-    required this.outerSize,
-    required this.innerSize,
-    required this.iconSize,
-    this.icon = Icons.navigation,
-    this.reverse = false,
-    this.color = AppColors.primaryDark,
-  });
-
-  final double heading;
-  final double outerSize;
-  final double innerSize;
-  final double iconSize;
-  final IconData icon;
-  final Color color;
-  final bool reverse;
-
-  @override
-  State<_PulsingLocationMarker> createState() => _PulsingLocationMarkerState();
-}
-
-class _PulsingLocationMarkerState extends State<_PulsingLocationMarker>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(seconds: 2),
-      vsync: this,
-    )..repeat(reverse: widget.reverse);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Transform.rotate(
-      angle: widget.heading * 3.14159 / 180,
-      child: AnimatedBuilder(
-        animation: _controller,
-        builder: (context, _) {
-          return Stack(
-            alignment: Alignment.center,
-            children: [
-              Container(
-                width: widget.outerSize * (1 + _controller.value * 0.3),
-                height: widget.outerSize * (1 + _controller.value * 0.3),
-                decoration: BoxDecoration(
-                  color: widget.color.withValues(
-                    alpha: 0.3 * (1 - _controller.value),
-                  ),
-                  shape: BoxShape.circle,
-                ),
-              ),
-              Container(
-                width: widget.innerSize,
-                height: widget.innerSize,
-                decoration: BoxDecoration(
-                  color: widget.color,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 3),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Icon(
-                  widget.icon,
-                  color: Colors.white,
-                  size: widget.iconSize,
-                ),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-}
-
-class InfoItem extends StatelessWidget {
-  const InfoItem({
-    required this.icon,
-    required this.value,
-    required this.label,
-    super.key,
-  });
-  final IconData icon;
-  final String value;
-  final String label;
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Icon(icon, size: 22.sp, color: AppColors.primary),
-        SizedBox(height: 6.h),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 16.sp,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        Text(
-          label,
-          style: TextStyle(fontSize: 12.sp, color: AppColors.textTertiary),
-        ),
-      ],
-    );
   }
 }

@@ -8,10 +8,6 @@ import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 
 part 'email_verification_view_model.g.dart';
 
-/// State for the email verification screen.
-///
-/// All timer and polling logic lives here so the widget
-/// never needs `if (mounted)` checks.
 class EmailVerificationState {
   const EmailVerificationState({
     this.isEmailVerified = false,
@@ -20,6 +16,7 @@ class EmailVerificationState {
     this.userEmail = '',
     this.errorMessage,
   });
+
   final bool isEmailVerified;
   final bool isSending;
   final int resendCooldown;
@@ -33,87 +30,109 @@ class EmailVerificationState {
     String? userEmail,
     String? errorMessage,
     bool clearError = false,
-  }) => EmailVerificationState(
-    isEmailVerified: isEmailVerified ?? this.isEmailVerified,
-    isSending: isSending ?? this.isSending,
-    resendCooldown: resendCooldown ?? this.resendCooldown,
-    userEmail: userEmail ?? this.userEmail,
-    errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
-  );
+  }) {
+    return EmailVerificationState(
+      isEmailVerified: isEmailVerified ?? this.isEmailVerified,
+      isSending: isSending ?? this.isSending,
+      resendCooldown: resendCooldown ?? this.resendCooldown,
+      userEmail: userEmail ?? this.userEmail,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+    );
+  }
 }
 
 @riverpod
 class EmailVerificationViewModel extends _$EmailVerificationViewModel {
   Timer? _pollTimer;
   Timer? _cooldownTimer;
+  var _isCheckingVerification = false;
 
   @override
   EmailVerificationState build() {
-    ref.onDispose(() {
-      _pollTimer?.cancel();
-      _cooldownTimer?.cancel();
-    });
-
-    // Start polling immediately.
-    _startPolling();
+    ref.onDispose(_cancelTimers);
 
     final userEmail =
         ref.read(authActionsViewModelProvider.notifier).currentUser?.email ??
         '';
+
+    _startPolling();
+
+    scheduleMicrotask(() {
+      if (ref.mounted) {
+        unawaited(checkEmailVerified());
+      }
+    });
+
     return EmailVerificationState(userEmail: userEmail);
   }
 
-  // ── Polling ──────────────────────────────────────────────────────────
+  void _cancelTimers() {
+    _pollTimer?.cancel();
+    _pollTimer = null;
+
+    _cooldownTimer?.cancel();
+    _cooldownTimer = null;
+  }
 
   void _startPolling() {
     _pollTimer?.cancel();
+
     _pollTimer = Timer.periodic(
       const Duration(seconds: 3),
-      (_) => checkEmailVerified(),
+      (_) => unawaited(checkEmailVerified()),
     );
   }
 
-  Future<void> checkEmailVerified() async {
-    if (!ref.mounted) return;
+  Future<void> checkEmailVerified({bool showErrors = false}) async {
+    if (_isCheckingVerification || !ref.mounted) return;
+
+    _isCheckingVerification = true;
 
     try {
       final authActions = ref.read(authActionsViewModelProvider.notifier);
       final user = authActions.currentUser;
+
       if (user == null) return;
 
       await authActions.reloadUser();
       if (!ref.mounted) return;
 
       final verified = await authActions.isEmailVerified();
-      if (!ref.mounted) return;
+      if (!ref.mounted || !verified) return;
 
-      if (verified) {
-        _pollTimer?.cancel();
+      _pollTimer?.cancel();
+      _pollTimer = null;
 
-        // Refresh router-visible auth state before the screen navigates.
-        ref.invalidate(authStateProvider);
+      ref.invalidate(authStateProvider);
 
-        state = state.copyWith(
-          isEmailVerified: true,
-          clearError: true,
-        );
-      }
+      state = state.copyWith(
+        isEmailVerified: true,
+        clearError: true,
+      );
     } on Exception catch (e, st) {
-      TalkerService.debug('Email verification poll error: $e\n$st');
+      TalkerService.debug('Email verification check error: $e\n$st');
+
+      if (showErrors && ref.mounted) {
+        state = state.copyWith(errorMessage: userFacingError(e));
+      }
+    } finally {
+      _isCheckingVerification = false;
     }
   }
-
-  // ── Resend ──────────────────────────────────────────────────────────
 
   Future<void> resendVerification() async {
     if (state.resendCooldown > 0 || state.isSending) return;
 
-    state = state.copyWith(isSending: true);
+    state = state.copyWith(
+      isSending: true,
+      clearError: true,
+    );
 
     try {
       await ref
           .read(authActionsViewModelProvider.notifier)
           .sendEmailVerification();
+
       if (!ref.mounted) return;
 
       state = state.copyWith(
@@ -121,9 +140,13 @@ class EmailVerificationViewModel extends _$EmailVerificationViewModel {
         resendCooldown: 60,
         clearError: true,
       );
+
       _startCooldown();
     } on Exception catch (e, st) {
+      TalkerService.debug('Email verification resend error: $e\n$st');
+
       if (!ref.mounted) return;
+
       state = state.copyWith(
         isSending: false,
         errorMessage: userFacingError(e),
@@ -131,20 +154,30 @@ class EmailVerificationViewModel extends _$EmailVerificationViewModel {
     }
   }
 
-  Future<void> signOut() async {
-    await ref.read(authActionsViewModelProvider.notifier).signOut();
+  Future<void> signOut() {
+    _cancelTimers();
+    return ref.read(authActionsViewModelProvider.notifier).signOut();
   }
 
   void _startCooldown() {
     _cooldownTimer?.cancel();
+
     _cooldownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!ref.mounted) {
         _cooldownTimer?.cancel();
+        _cooldownTimer = null;
         return;
       }
-      final next = state.resendCooldown - 1;
-      state = state.copyWith(resendCooldown: next);
-      if (next <= 0) _cooldownTimer?.cancel();
+
+      final nextCooldown = state.resendCooldown - 1;
+      final safeCooldown = nextCooldown < 0 ? 0 : nextCooldown;
+
+      state = state.copyWith(resendCooldown: safeCooldown);
+
+      if (safeCooldown == 0) {
+        _cooldownTimer?.cancel();
+        _cooldownTimer = null;
+      }
     });
   }
 }

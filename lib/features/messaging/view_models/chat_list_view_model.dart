@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:sport_connect/features/auth/models/models.dart';
+import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 
 part 'chat_list_view_model.g.dart';

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
@@ -56,12 +57,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
     if (!success || !mounted) return;
 
-    HapticFeedback.mediumImpact();
+    unawaited(HapticFeedback.mediumImpact());
     GoRouter.of(context).go(AppRoutes.login.path);
   }
 
   void _goNext() {
-    HapticFeedback.lightImpact();
+    unawaited(HapticFeedback.lightImpact());
 
     if (_currentPage == _onboardingSteps.length - 1) {
       _completeOnboarding();
@@ -77,7 +78,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   void _goBack() {
     if (_currentPage == 0) return;
 
-    HapticFeedback.lightImpact();
+    unawaited(HapticFeedback.lightImpact());
     _pageController.previousPage(
       duration: const Duration(milliseconds: 420),
       curve: Curves.easeOutCubic,
@@ -152,45 +153,44 @@ enum _OnboardingVisual {
 class _OnboardingStepSpec {
   const _OnboardingStepSpec({
     required this.visual,
-    required this.eyebrow,
-    required this.title,
-    required this.description,
   });
 
   final _OnboardingVisual visual;
-  final String eyebrow;
-  final String title;
-  final String description;
+
+  String eyebrow(AppLocalizations l10n) => switch (visual) {
+    _OnboardingVisual.findRide => l10n.onboardingRunningEvents,
+    _OnboardingVisual.earnSeats => l10n.onboardingDriveEarn,
+    _OnboardingVisual.planPickup => l10n.onboardingPickupPlanning,
+    _OnboardingVisual.connectGo => l10n.onboardingTrustedRides,
+  };
+
+  String title(AppLocalizations l10n) => switch (visual) {
+    _OnboardingVisual.findRide => l10n.onboardingFindRideTitle,
+    _OnboardingVisual.earnSeats => l10n.onboardingOfferSeatsTitle,
+    _OnboardingVisual.planPickup => l10n.onboardingPlanRouteTitle,
+    _OnboardingVisual.connectGo => l10n.onboardingConnectGoTitle,
+  };
+
+  String description(AppLocalizations l10n) => switch (visual) {
+    _OnboardingVisual.findRide => l10n.onboardingFindRideDescription,
+    _OnboardingVisual.earnSeats => l10n.onboardingOfferSeatsDescription,
+    _OnboardingVisual.planPickup => l10n.onboardingPlanRouteDescription,
+    _OnboardingVisual.connectGo => l10n.onboardingConnectGoDescription,
+  };
 }
 
 const _onboardingSteps = [
   _OnboardingStepSpec(
     visual: _OnboardingVisual.findRide,
-    eyebrow: 'Running events',
-    title: 'Find a ride to your race',
-    description:
-        'Join runners heading to the same event and arrive without the stress.',
   ),
   _OnboardingStepSpec(
     visual: _OnboardingVisual.earnSeats,
-    eyebrow: 'Drive & earn',
-    title: 'Offer seats and earn',
-    description:
-        'Driving to a race? Share your empty seats and earn from the trip.',
   ),
   _OnboardingStepSpec(
     visual: _OnboardingVisual.planPickup,
-    eyebrow: 'Pickup planning',
-    title: 'Plan the route together',
-    description:
-        'Set pickup points, confirm timing, and follow a clear route to the event.',
   ),
   _OnboardingStepSpec(
     visual: _OnboardingVisual.connectGo,
-    eyebrow: 'Trusted rides',
-    title: 'Connect safely and go',
-    description:
-        'Chat with verified runners, confirm the ride, and travel with confidence.',
   ),
 ];
 
@@ -391,7 +391,7 @@ class _TextActionButton extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(18.r),
           onTap: () {
-            HapticFeedback.lightImpact();
+            unawaited(HapticFeedback.lightImpact());
             onPressed();
           },
           child: Padding(
@@ -429,6 +429,7 @@ class _OnboardingPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final horizontalPadding = _clamped(24.w, 18, 28);
     final maxContentWidth = _clamped(430.w, 320, 460);
 
@@ -458,13 +459,13 @@ class _OnboardingPage extends StatelessWidget {
                     ).animate().fadeIn(duration: 360.ms).slideY(begin: 0.025),
                     SizedBox(height: _clamped(18.h, 12, 22)),
                     _Eyebrow(
-                      text: step.eyebrow,
+                      text: step.eyebrow(l10n),
                     ).animate().fadeIn(delay: 100.ms, duration: 280.ms),
                     SizedBox(height: _clamped(10.h, 7, 12)),
                     Semantics(
                       header: true,
                       child: Text(
-                        step.title,
+                        step.title(l10n),
                         textAlign: TextAlign.center,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -483,7 +484,7 @@ class _OnboardingPage extends StatelessWidget {
                         maxWidth: _clamped(320.w, 280, 360),
                       ),
                       child: Text(
-                        step.description,
+                        step.description(l10n),
                         textAlign: TextAlign.center,
                         maxLines: 3,
                         overflow: TextOverflow.ellipsis,
@@ -2183,31 +2184,48 @@ class _OnboardingBottomControls extends StatelessWidget {
         _clamped(24.w, 18, 28),
         _clamped(18.h, 14, 22),
       ),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 220),
-            child: currentPage == 0
-                ? SizedBox(
-                    width: _clamped(54.w, 48, 58),
-                    key: const ValueKey('empty-back'),
-                  )
-                : _BackButton(
-                    key: const ValueKey('back'),
-                    onPressed: onBack,
-                  ),
-          ),
-          SizedBox(width: _clamped(12.w, 9, 14)),
-          Expanded(
-            child: _PrimaryCtaButton(
-              label: isCompleting
-                  ? '...'
-                  : isLast
-                  ? loc.getStarted
-                  : loc.kContinue,
-              onPressed: isCompleting ? null : onNext,
-              icon: Icons.arrow_forward_rounded,
+          if (isLast) ...[
+            Text(
+              'Create your free account to find rides to your next sporting event.',
+              style: TextStyle(
+                fontSize: _clamped(12.sp, 11, 13),
+                color: AppColors.textSecondary,
+                height: 1.4,
+              ),
+              textAlign: TextAlign.center,
             ),
+            SizedBox(height: _clamped(10.h, 8, 12)),
+          ],
+          Row(
+            children: [
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 220),
+                child: currentPage == 0
+                    ? SizedBox(
+                        width: _clamped(54.w, 48, 58),
+                        key: const ValueKey('empty-back'),
+                      )
+                    : _BackButton(
+                        key: const ValueKey('back'),
+                        onPressed: onBack,
+                      ),
+              ),
+              SizedBox(width: _clamped(12.w, 9, 14)),
+              Expanded(
+                child: _PrimaryCtaButton(
+                  label: isCompleting
+                      ? '...'
+                      : isLast
+                      ? loc.getStarted
+                      : loc.kContinue,
+                  onPressed: isCompleting ? null : onNext,
+                  icon: Icons.arrow_forward_rounded,
+                ),
+              ),
+            ],
           ),
         ],
       ),

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -6,14 +8,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:sliver_tools/sliver_tools.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
-import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/core/widgets/rating_and_profile_widgets.dart';
+import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/features/reviews/models/review_model.dart';
 import 'package:sport_connect/features/reviews/view_models/review_view_model.dart';
-import 'package:sliver_tools/sliver_tools.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Screen to display a user's reviews and rating stats
@@ -50,7 +52,10 @@ class ReviewsListScreen extends ConsumerWidget {
           ref.read(reviewsListViewModelProvider(userId).notifier).refresh();
         },
         child: asyncState.when(
-          loading: () => const SkeletonLoader(type: SkeletonType.compactTile, itemCount: 5),
+          loading: () => const SkeletonLoader(
+            type: SkeletonType.compactTile,
+            itemCount: 5,
+          ),
           error: (error, _) => _buildErrorState(context, error.toString(), ref),
           data: (state) => state.error != null
               ? _buildErrorState(context, state.error!, ref)
@@ -146,7 +151,7 @@ class ReviewsListScreen extends ConsumerWidget {
                 key: ValueKey('review_${review.id}'),
                 direction: DismissDirection.endToStart,
                 confirmDismiss: (_) async {
-                  HapticFeedback.mediumImpact();
+                  unawaited(HapticFeedback.mediumImpact());
                   context.push(
                     AppRoutes.reportIssue.path,
                     extra: {
@@ -462,7 +467,7 @@ class _ReviewCard extends StatelessWidget {
               AdaptivePopupMenuButton.icon<String>(
                 icon: Icons.adaptive.more,
                 items: [
-                  AdaptivePopupMenuItem<String>(
+                  const AdaptivePopupMenuItem<String>(
                     label: 'Report Review',
                     icon: Icons.flag_outlined,
                     value: 'report',

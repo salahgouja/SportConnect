@@ -13,16 +13,18 @@ class FeedbackAnimations {
 
   static Future<void> showSuccess(
     BuildContext context, {
-    String message = 'Success!',
+    String? message,
     VoidCallback? onDismissed,
   }) {
     unawaited(HapticFeedback.mediumImpact());
+    final l10n = AppLocalizations.of(context);
 
     return _showFeedbackDialog(
       context,
       config: _FeedbackConfig.success(
-        message: message,
-        barrierLabel: AppLocalizations.of(context).dismissSuccess,
+        message: message ?? l10n.success,
+        details: l10n.your_action_was_completed_successfully,
+        barrierLabel: l10n.dismissSuccess,
       ),
       autoDismiss: true,
       onDismissed: onDismissed,
@@ -31,16 +33,18 @@ class FeedbackAnimations {
 
   static Future<void> showError(
     BuildContext context, {
-    String message = 'Something went wrong',
+    String? message,
     VoidCallback? onDismissed,
   }) {
     unawaited(HapticFeedback.heavyImpact());
+    final l10n = AppLocalizations.of(context);
 
     return _showFeedbackDialog(
       context,
       config: _FeedbackConfig.error(
-        message: message,
-        barrierLabel: AppLocalizations.of(context).dismissError,
+        title: l10n.somethingWentWrong,
+        message: message ?? l10n.somethingWentWrong,
+        barrierLabel: l10n.dismissError,
       ),
       autoDismiss: true,
       onDismissed: onDismissed,
@@ -406,11 +410,12 @@ class _FeedbackConfig {
 
   factory _FeedbackConfig.success({
     required String message,
+    required String details,
     required String barrierLabel,
   }) {
     return _FeedbackConfig(
       title: message,
-      message: 'Your action was completed successfully.',
+      message: details,
       icon: Icons.check_rounded,
       color: AppColors.success,
       barrierLabel: barrierLabel,
@@ -419,11 +424,12 @@ class _FeedbackConfig {
   }
 
   factory _FeedbackConfig.error({
+    required String title,
     required String message,
     required String barrierLabel,
   }) {
     return _FeedbackConfig(
-      title: 'Something went wrong',
+      title: title,
       message: message,
       icon: Icons.close_rounded,
       color: AppColors.error,

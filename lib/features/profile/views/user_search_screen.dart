@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -6,9 +8,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
-import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/profile/view_models/user_search_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
@@ -138,7 +140,7 @@ class UserSearchScreen extends ConsumerWidget {
                     tooltip: AppLocalizations.of(context).clearSearchTooltip,
                     onPressed: () {
                       ref.read(userSearchUiViewModelProvider.notifier).clear();
-                      HapticFeedback.lightImpact();
+                      unawaited(HapticFeedback.lightImpact());
                     },
                     icon: Icon(
                       Icons.close_rounded,
@@ -218,7 +220,7 @@ class UserSearchScreen extends ConsumerWidget {
                       ref
                           .read(userSearchUiViewModelProvider.notifier)
                           .applySuggestion(tag);
-                      HapticFeedback.selectionClick();
+                      unawaited(HapticFeedback.selectionClick());
                     },
                     child: Container(
                       padding: EdgeInsets.symmetric(
@@ -367,7 +369,7 @@ class UserSearchScreen extends ConsumerWidget {
           final user = users[index];
 
           void navigateToProfile() {
-            HapticFeedback.lightImpact();
+            unawaited(HapticFeedback.lightImpact());
             if (user.role == UserRole.driver) {
               context.pushNamed(
                 AppRoutes.driverProfile.name,
@@ -385,7 +387,7 @@ class UserSearchScreen extends ConsumerWidget {
             key: ValueKey('user_search_${user.uid}'),
             direction: DismissDirection.endToStart,
             confirmDismiss: (_) async {
-              HapticFeedback.mediumImpact();
+              unawaited(HapticFeedback.mediumImpact());
               navigateToProfile();
               return false;
             },

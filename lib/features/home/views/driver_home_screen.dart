@@ -10,13 +10,13 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/services/location_service.dart';
 import 'package:sport_connect/core/services/push_notification_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
-import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/home/view_models/driver_location_view_model.dart';
 import 'package:sport_connect/features/messaging/view_models/chat_view_model.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
@@ -508,7 +508,7 @@ class _DriverDashboard extends ConsumerWidget {
                 ? '1 passenger request'
                 : '${requests.length} passenger requests',
             subtitle:
-                'Review and respond before passengers choose another ride.',
+                l10n.review_and_respond_before_passengers_choose_another_ride,
             actionLabel: l10n.viewAll,
             color: AppColors.primary,
             onTap: () => context.push(AppRoutes.driverRequests.path),
@@ -532,8 +532,8 @@ class _DriverDashboard extends ConsumerWidget {
 
         return _MainActionCard(
           icon: Icons.add_road_rounded,
-          title: 'Ready for your next trip?',
-          subtitle: 'Publish a ride and start receiving passenger requests.',
+          title: l10n.ready_for_your_next_trip,
+          subtitle: l10n.publish_a_ride_and_start_receiving_passenger_requests,
           actionLabel: l10n.offerRide,
           color: AppColors.primary,
           onTap: () => context.push(AppRoutes.driverOfferRide.path),
@@ -542,8 +542,8 @@ class _DriverDashboard extends ConsumerWidget {
       loading: () => _buildShimmerCard(height: 128),
       error: (_, _) => _MainActionCard(
         icon: Icons.add_road_rounded,
-        title: 'Ready for your next trip?',
-        subtitle: 'Publish a ride and start receiving passenger requests.',
+        title: l10n.ready_for_your_next_trip,
+        subtitle: l10n.publish_a_ride_and_start_receiving_passenger_requests,
         actionLabel: l10n.offerRide,
         color: AppColors.primary,
         onTap: () => context.push(AppRoutes.driverOfferRide.path),
@@ -667,7 +667,7 @@ class _DriverDashboard extends ConsumerWidget {
                       request: request,
                       isProcessing: false,
                       onAccept: () async {
-                        HapticFeedback.heavyImpact();
+                        unawaited(HapticFeedback.heavyImpact());
 
                         final result = await ref
                             .read(rideRequestServiceProvider.notifier)
@@ -681,7 +681,7 @@ class _DriverDashboard extends ConsumerWidget {
                         }
                       },
                       onDecline: () async {
-                        HapticFeedback.lightImpact();
+                        unawaited(HapticFeedback.lightImpact());
 
                         final result = await ref
                             .read(rideRequestServiceProvider.notifier)
@@ -916,7 +916,7 @@ class _MainActionCard extends StatelessWidget {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () {
-                HapticFeedback.mediumImpact();
+                unawaited(HapticFeedback.mediumImpact());
                 onTap();
               },
               style: ElevatedButton.styleFrom(
@@ -1000,7 +1000,7 @@ class _ActiveRideCard extends StatelessWidget {
           SizedBox(width: 10.w),
           FilledButton(
             onPressed: () {
-              HapticFeedback.mediumImpact();
+              unawaited(HapticFeedback.mediumImpact());
               context.push(
                 '${AppRoutes.driverActiveRide.path}?rideId=${ride.id}',
               );
@@ -1051,7 +1051,7 @@ class _NextRideCard extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: () {
-          HapticFeedback.lightImpact();
+          unawaited(HapticFeedback.lightImpact());
           onTap();
         },
         borderRadius: BorderRadius.circular(20.r),
@@ -1416,7 +1416,7 @@ class _RequestCard extends ConsumerWidget {
       return;
     }
 
-    HapticFeedback.lightImpact();
+    unawaited(HapticFeedback.lightImpact());
 
     unawaited(
       showDialog<void>(

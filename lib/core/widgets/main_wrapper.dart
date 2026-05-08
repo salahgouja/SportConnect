@@ -1,11 +1,13 @@
+import 'dart:async';
+
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
-import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Main wrapper widget with bottom navigation
@@ -156,7 +158,7 @@ class _MainWrapperState extends ConsumerState<MainWrapper> {
   }
 
   void _navigateToBranch(int localIndex, bool isDriver) {
-    HapticFeedback.lightImpact();
+    unawaited(HapticFeedback.lightImpact());
     final targetBranch = isDriver ? localIndex + 5 : localIndex;
     widget.navigationShell.goBranch(
       targetBranch,

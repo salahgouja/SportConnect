@@ -1,83 +1,44 @@
-import 'dart:math' as math;
+import 'dart:async';
 
-import 'package:flutter/material.dart';
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/models/user/models.dart';
+import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/features/payments/models/premium_plan.dart';
 import 'package:sport_connect/features/payments/services/premium_iap_service.dart';
+import 'package:sport_connect/features/payments/view_models/premium_checkout_view_model.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// DATA
-// ═══════════════════════════════════════════════════════════════════════════════
+// ─────────────────────────────────────────────────────────────────────────────
+// Feature data
+// ─────────────────────────────────────────────────────────────────────────────
 
-enum _Cycle { monthly, yearly }
-
-class _Benefit {
-  const _Benefit({required this.icon, required this.label});
+class _Feature {
+  const _Feature({required this.icon, required this.label});
   final IconData icon;
   final String label;
 }
 
-class _Feature {
-  const _Feature({required this.icon, required this.title, required this.desc});
-  final IconData icon;
-  final String title;
-  final String desc;
-}
-
-const _kBenefits = <_Benefit>[
-  _Benefit(icon: Icons.directions_car_rounded, label: 'Smart Match'),
-  _Benefit(icon: Icons.route_rounded, label: 'Unlimited Routes'),
-  _Benefit(icon: Icons.shield_rounded, label: 'Verified Riders'),
-  _Benefit(icon: Icons.groups_rounded, label: 'Crew Rides'),
-  _Benefit(icon: Icons.emoji_events_rounded, label: 'Race Priority'),
-  _Benefit(icon: Icons.bolt_rounded, label: 'Priority Support'),
+List<_Feature> _features(AppLocalizations l10n) => [
+  _Feature(icon: Icons.directions_car_rounded, label: l10n.smart_ride_matching),
+  _Feature(icon: Icons.route_rounded, label: l10n.unlimited_saved_routes),
+  _Feature(icon: Icons.shield_rounded, label: l10n.verified_community),
+  _Feature(icon: Icons.groups_rounded, label: l10n.crew_coordination),
+  _Feature(icon: Icons.emoji_events_rounded, label: l10n.race_day_priority),
+  _Feature(icon: Icons.bolt_rounded, label: l10n.priority_support),
 ];
 
-const _kFeatures = <_Feature>[
-  _Feature(
-    icon: Icons.directions_car_rounded,
-    title: 'Smart Ride Matching',
-    desc: 'Auto-paired with runners heading to your race or training spot.',
-  ),
-  _Feature(
-    icon: Icons.route_rounded,
-    title: 'Unlimited Saved Routes',
-    desc: 'Save and share your favorite carpool routes with your crew.',
-  ),
-  _Feature(
-    icon: Icons.shield_rounded,
-    title: 'Verified Community',
-    desc: 'Every rider is ID-verified. Ride safe with trusted runners.',
-  ),
-  _Feature(
-    icon: Icons.groups_rounded,
-    title: 'Crew Coordination',
-    desc: 'Organize group rides for your entire running club in one tap.',
-  ),
-  _Feature(
-    icon: Icons.emoji_events_rounded,
-    title: 'Race Day Priority',
-    desc: 'First pick on rides for marathon day and major events.',
-  ),
-  _Feature(
-    icon: Icons.bolt_rounded,
-    title: 'Priority Support',
-    desc: 'Skip the queue. Get help within minutes, not hours.',
-  ),
-];
-
-const _kMonthlyPrice = 4.99;
-const _kYearlyPrice = 4.17;
-const _kYearlyTotal = 49.99;
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// MAIN SCREEN
-// ═══════════════════════════════════════════════════════════════════════════════
+// ─────────────────────────────────────────────────────────────────────────────
+// Screen
+// ─────────────────────────────────────────────────────────────────────────────
 
 class PremiumSubscribeScreen extends ConsumerStatefulWidget {
   const PremiumSubscribeScreen({super.key});
@@ -87,85 +48,190 @@ class PremiumSubscribeScreen extends ConsumerStatefulWidget {
       _PremiumSubscribeScreenState();
 }
 
-class _PremiumSubscribeScreenState extends ConsumerState<PremiumSubscribeScreen> {
-  _Cycle _cycle = _Cycle.yearly;
+class _PremiumSubscribeScreenState
+    extends ConsumerState<PremiumSubscribeScreen> {
+  Map<PremiumPlan, ProductDetails> _products = const {};
+  bool _loadingProducts = true;
+  bool _loadFailed = false;
 
-  double get _price =>
-      _cycle == _Cycle.monthly ? _kMonthlyPrice : _kYearlyPrice;
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadProducts());
+  }
 
-  void _checkout() {
-    HapticFeedback.mediumImpact();
-    context.pushNamed(
-      AppRoutes.premiumCheckout.name,
-      extra: {'cycle': _cycle.name},
+  Future<void> _loadProducts() async {
+    setState(() {
+      _loadingProducts = true;
+      _loadFailed = false;
+    });
+    try {
+      final p = await ref
+          .read(premiumIapServiceProvider.notifier)
+          .fetchAvailablePlans();
+      if (!mounted) return;
+      setState(() {
+        _products = p;
+        _loadingProducts = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _loadingProducts = false;
+        _loadFailed = true;
+      });
+    }
+  }
+
+  // ── Helpers ──────────────────────────────────────────────────────────────
+
+  PremiumPlan get _selected =>
+      ref.read(premiumCheckoutViewModelProvider).selectedPlan;
+
+  void _select(PremiumPlan plan) {
+    unawaited(HapticFeedback.selectionClick());
+    ref.read(premiumCheckoutViewModelProvider.notifier).selectPlan(plan);
+  }
+
+  /// Price string for the given plan, from StoreKit if available.
+  String _price(PremiumPlan plan) {
+    final product = _products[plan];
+    if (product != null) return product.price;
+    return plan == PremiumPlan.monthly ? '€4.99' : '€49.99';
+  }
+
+  /// Per-month equivalent for the yearly plan.
+  String _yearlyMonthly() {
+    final product = _products[PremiumPlan.yearly];
+    if (product != null) {
+      final sym = product.currencySymbol;
+      final monthly = product.rawPrice / 12;
+      return '≈ $sym${monthly.toStringAsFixed(2)}/mo';
+    }
+    return '≈ €4.17/mo';
+  }
+
+  /// Label shown on the CTA button: price + period.
+  String _ctaLabel(AppLocalizations l10n) {
+    if (_loadingProducts) return l10n.loading_subscription_plans;
+    if (_loadFailed) return l10n.pricingUnavailableCheckYourConnection;
+    final plan = _selected;
+    final price = _price(plan);
+    final period = plan == PremiumPlan.monthly ? '/mo' : '/yr';
+    return '${l10n.subscribe_now} · $price $period';
+  }
+
+  /// Renewal disclosure shown in the legal footer.
+  String _renewalText() {
+    final plan = _selected;
+    if (_loadingProducts || _loadFailed) {
+      return 'Subscription renews automatically until cancelled. Cancel anytime in App Store Settings.';
+    }
+    final period = plan == PremiumPlan.monthly ? 'month' : 'year';
+    return 'Automatically renews each $period at ${_price(plan)} until cancelled. Cancel anytime in App Store Settings.';
+  }
+
+  bool get _canPurchase =>
+      !_loadingProducts && !_loadFailed && _products.isNotEmpty;
+
+  // ── Actions ──────────────────────────────────────────────────────────────
+
+  Future<void> _onSubscribe() async {
+    if (!_canPurchase) return;
+    unawaited(HapticFeedback.mediumImpact());
+
+    final vm = ref.read(premiumCheckoutViewModelProvider.notifier);
+    final success = await vm.completeCheckout();
+    if (!mounted) return;
+    if (!success) return;
+
+    AdaptiveSnackBar.show(
+      context,
+      message: AppLocalizations.of(context).premium_activated_successfully,
+      type: AdaptiveSnackBarType.success,
+    );
+
+    if (!mounted) return;
+    final user = ref.read(currentUserProvider).value;
+    context.go(
+      user is DriverModel ? AppRoutes.driverHome.path : AppRoutes.home.path,
     );
   }
 
-  void _openTerms() {
-    context.push(AppRoutes.terms.path);
-  }
-
-  void _openPrivacy() {
-    context.push(AppRoutes.privacy.path);
-  }
-
-  Future<void> _restorePurchases() async {
+  Future<void> _onRestore() async {
+    unawaited(HapticFeedback.lightImpact());
     final result = await ref
         .read(premiumIapServiceProvider.notifier)
         .restorePurchases();
     if (!mounted) return;
+    final l10n = AppLocalizations.of(context);
     AdaptiveSnackBar.show(
       context,
       message: result.isSuccess
-          ? 'Restore request sent. Any eligible purchases will be restored.'
-          : (result.errorMessage ?? 'Unable to restore purchases.'),
+          ? l10n.purchasesRestoredSuccessfully
+          : (result.errorMessage ?? l10n.couldNotRestorePurchases),
       type: result.isSuccess
           ? AdaptiveSnackBarType.success
           : AdaptiveSnackBarType.error,
     );
   }
 
+  // ── Build ─────────────────────────────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final checkoutState = ref.watch(premiumCheckoutViewModelProvider);
     final bottomPad = MediaQuery.paddingOf(context).bottom;
+    final isProcessing = checkoutState.isProcessing;
+
+    // If the user is already Premium, show a simple confirmation instead of
+    // the subscribe flow so they cannot accidentally initiate a duplicate purchase.
+    final user = ref.watch(currentUserProvider).value;
+    final alreadyPremium = switch (user) {
+      final RiderModel r => r.isPremium,
+      final DriverModel d => d.isPremium,
+      _ => false,
+    };
+    if (alreadyPremium) return _AlreadyPremiumScreen(l10n: l10n);
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
         statusBarIconBrightness: Brightness.dark,
         statusBarBrightness: Brightness.light,
-        systemNavigationBarColor: AppColors.surface,
+        systemNavigationBarColor: Colors.white,
         systemNavigationBarIconBrightness: Brightness.dark,
       ),
-      child: AdaptiveScaffold(
+      child: Scaffold(
+        backgroundColor: Colors.white,
         body: Stack(
           children: [
-            // Scrollable content.
+            // ── Scrollable content ─────────────────────────────────────────
             CustomScrollView(
-              physics: const BouncingScrollPhysics(
-                parent: AlwaysScrollableScrollPhysics(),
-              ),
               slivers: [
-                // Top green banner area.
-                SliverToBoxAdapter(child: _buildTopSection()),
-                // Benefit pills.
-                SliverToBoxAdapter(child: _buildBenefitChips()),
-                // "Everything you get" feature list.
-                SliverToBoxAdapter(child: _buildFeatureSection()),
-                // Pricing cards.
-                SliverToBoxAdapter(child: _buildPricingSection()),
-                // Trust footer.
-                SliverToBoxAdapter(child: _buildTrustFooter()),
-                // Bottom padding for the sticky CTA.
-                SliverToBoxAdapter(child: SizedBox(height: 100.h + bottomPad)),
+                _buildHeader(l10n),
+                _buildHeroSection(l10n),
+                _buildFeatureList(l10n),
+                _buildPlanSelector(l10n),
+                // Spacer so content clears the sticky CTA bar.
+                SliverToBoxAdapter(
+                  child: SizedBox(height: 160.h + bottomPad),
+                ),
               ],
             ),
-            // Sticky CTA.
+
+            // ── Sticky bottom CTA ──────────────────────────────────────────
             Positioned(
               left: 0,
               right: 0,
               bottom: 0,
-              child: _buildStickyCTA(bottomPad),
+              child: _buildStickyBottom(
+                l10n,
+                checkoutState,
+                isProcessing,
+                bottomPad,
+              ),
             ),
           ],
         ),
@@ -173,398 +239,211 @@ class _PremiumSubscribeScreenState extends ConsumerState<PremiumSubscribeScreen>
     );
   }
 
-  // ═════════════════════════════════════════════════════════════════════════
-  // TOP GREEN BANNER
-  // ═════════════════════════════════════════════════════════════════════════
+  // ── Header ────────────────────────────────────────────────────────────────
 
-  Widget _buildTopSection() {
-    return Container(
-      width: double.infinity,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [AppColors.primary, AppColors.primary],
+  Widget _buildHeader(AppLocalizations l10n) {
+    return SliverAppBar(
+      floating: true,
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      leading: IconButton(
+        tooltip: l10n.goBackTooltip,
+        icon: Container(
+          width: 36.w,
+          height: 36.w,
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            shape: BoxShape.circle,
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Icon(
+            Icons.close_rounded,
+            size: 18.sp,
+            color: AppColors.textPrimary,
+          ),
         ),
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
+        onPressed: () => context.pop(),
       ),
-      child: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(20.w, 4.h, 20.w, 32.h),
+      actions: [
+        TextButton(
+          onPressed: _onRestore,
+          child: Text(
+            l10n.restore_purchases,
+            style: TextStyle(
+              fontSize: 13.sp,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ── Hero ──────────────────────────────────────────────────────────────────
+
+  Widget _buildHeroSection(AppLocalizations l10n) {
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 24.w),
+        child: Column(
+          children: [
+            SizedBox(height: 8.h),
+            // Crown icon
+            Container(
+                  width: 64.w,
+                  height: 64.w,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF40916C), Color(0xFF2D6A4F)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(20.r),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primary.withValues(alpha: 0.3),
+                        blurRadius: 16,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    Icons.workspace_premium_rounded,
+                    color: Colors.white,
+                    size: 32.sp,
+                  ),
+                )
+                .animate()
+                .scale(
+                  begin: const Offset(0.6, 0.6),
+                  end: const Offset(1, 1),
+                  duration: 500.ms,
+                  curve: Curves.elasticOut,
+                )
+                .fadeIn(),
+            SizedBox(height: 16.h),
+            Text(
+              'SportConnect Premium',
+              style: TextStyle(
+                fontSize: 26.sp,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary,
+                letterSpacing: -0.5,
+              ),
+              textAlign: TextAlign.center,
+            ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.2),
+            SizedBox(height: 6.h),
+            Text(
+              'Everything you need to ride smarter, together.',
+              style: TextStyle(
+                fontSize: 15.sp,
+                color: AppColors.textSecondary,
+                height: 1.4,
+              ),
+              textAlign: TextAlign.center,
+            ).animate().fadeIn(delay: 150.ms),
+            SizedBox(height: 28.h),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Features ──────────────────────────────────────────────────────────────
+
+  Widget _buildFeatureList(AppLocalizations l10n) {
+    final items = _features(l10n);
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 20.w),
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppColors.primarySurface,
+            borderRadius: BorderRadius.circular(20.r),
+          ),
+          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
           child: Column(
             children: [
-              // Top bar.
-              Row(
-                children: [
-                  _CircleButton(
-                    icon: Icons.adaptive.arrow_back_rounded,
-                    onTap: () => context.pop(),
+              for (int i = 0; i < items.length; i++) ...[
+                _FeatureRow(icon: items[i].icon, label: items[i].label)
+                    .animate(delay: (200 + i * 60).ms)
+                    .fadeIn()
+                    .slideX(begin: -0.08),
+                if (i < items.length - 1)
+                  Divider(
+                    height: 16.h,
+                    thickness: 0.5,
+                    color: AppColors.primary.withValues(alpha: 0.15),
                   ),
-                  const Spacer(),
-                  GestureDetector(
-                    onTap: () => context.pop(),
-                    behavior: HitTestBehavior.opaque,
-                    child: Padding(
-                      padding: EdgeInsets.all(8.w),
-                      child: Text(
-                        'Skip',
-                        style: TextStyle(
-                          fontSize: 14.sp,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.surface.withValues(alpha: 0.85),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              SizedBox(height: 20.h),
-
-              // Runner illustration circle.
-              Container(
-                width: 80.w,
-                height: 80.w,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.surface.withValues(alpha: 0.2),
-                ),
-                child: Center(
-                  child: Container(
-                    width: 60.w,
-                    height: 60.w,
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: AppColors.surface,
-                    ),
-                    child: Icon(
-                      Icons.directions_run_rounded,
-                      size: 30.sp,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                ),
-              ),
-
-              SizedBox(height: 18.h),
-
-              Text(
-                'Upgrade to Pro',
-                style: TextStyle(
-                  fontSize: 26.sp,
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.surface,
-                  letterSpacing: -0.5,
-                ),
-              ),
-              SizedBox(height: 6.h),
-              Text(
-                'Premium carpooling made\nfor runners like you',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 15.sp,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.surface.withValues(alpha: 0.88),
-                  height: 1.4,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ═════════════════════════════════════════════════════════════════════════
-  // BENEFIT CHIPS (horizontal scroll)
-  // ═════════════════════════════════════════════════════════════════════════
-
-  Widget _buildBenefitChips() {
-    return Padding(
-      padding: EdgeInsets.only(top: 20.h),
-      child: SizedBox(
-        height: 42.h,
-        child: ListView.separated(
-          scrollDirection: Axis.horizontal,
-          physics: const BouncingScrollPhysics(),
-          padding: EdgeInsets.symmetric(horizontal: 20.w),
-          itemCount: _kBenefits.length,
-          separatorBuilder: (_, _) => SizedBox(width: 8.w),
-          itemBuilder: (_, i) {
-            final b = _kBenefits[i];
-            return Container(
-              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
-              decoration: BoxDecoration(
-                color: AppColors.primarySurface,
-                borderRadius: BorderRadius.circular(20.r),
-                border: Border.all(color: AppColors.primaryLight),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(b.icon, size: 16.sp, color: AppColors.primary),
-                  SizedBox(width: 6.w),
-                  Text(
-                    b.label,
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.primaryDark,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  // ═════════════════════════════════════════════════════════════════════════
-  // FEATURE LIST
-  // ═════════════════════════════════════════════════════════════════════════
-
-  Widget _buildFeatureSection() {
-    return Padding(
-      padding: EdgeInsets.fromLTRB(20.w, 28.h, 20.w, 0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Everything you get',
-            style: TextStyle(
-              fontSize: 18.sp,
-              fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          SizedBox(height: 14.h),
-          ..._kFeatures.map(
-            (f) => Padding(
-              padding: EdgeInsets.only(bottom: 12.h),
-              child: _FeatureRow(feature: f),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ═════════════════════════════════════════════════════════════════════════
-  // PRICING SECTION
-  // ═════════════════════════════════════════════════════════════════════════
-
-  Widget _buildPricingSection() {
-    return Padding(
-      padding: EdgeInsets.fromLTRB(20.w, 24.h, 20.w, 0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Choose your plan',
-            style: TextStyle(
-              fontSize: 18.sp,
-              fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          SizedBox(height: 14.h),
-
-          // Yearly plan.
-          _PlanCard(
-            label: 'Annual',
-            price: '€${_kYearlyPrice.toStringAsFixed(2)}',
-            period: '/month',
-            detail: 'Billed €${_kYearlyTotal.toStringAsFixed(2)}/year',
-            badge: 'BEST VALUE',
-            isSelected: _cycle == _Cycle.yearly,
-            onTap: () {
-              HapticFeedback.selectionClick();
-              setState(() => _cycle = _Cycle.yearly);
-            },
-          ),
-          SizedBox(height: 10.h),
-
-          // Monthly plan.
-          _PlanCard(
-            label: 'Monthly',
-            price: '€${_kMonthlyPrice.toStringAsFixed(2)}',
-            period: '/month',
-            detail: 'Billed monthly',
-            isSelected: _cycle == _Cycle.monthly,
-            onTap: () {
-              HapticFeedback.selectionClick();
-              setState(() => _cycle = _Cycle.monthly);
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ═════════════════════════════════════════════════════════════════════════
-  // TRUST FOOTER
-  // ═════════════════════════════════════════════════════════════════════════
-
-  Widget _buildTrustFooter() {
-    return Padding(
-      padding: EdgeInsets.fromLTRB(20.w, 24.h, 20.w, 0),
-      child: Column(
-        children: [
-          // Guarantees row.
-          Container(
-            padding: EdgeInsets.symmetric(vertical: 14.h, horizontal: 16.w),
-            decoration: BoxDecoration(
-              color: AppColors.primarySurface,
-              borderRadius: BorderRadius.circular(14.r),
-              border: Border.all(color: AppColors.darkBorder),
-            ),
-            child: Row(
-              children: [
-                const _TrustItem(
-                  icon: Icons.thumb_up_rounded,
-                  label: 'Money-back\nguarantee',
-                ),
-                _trustDivider(),
-                const _TrustItem(
-                  icon: Icons.cancel_outlined,
-                  label: 'Cancel\nanytime',
-                ),
-                _trustDivider(),
-                const _TrustItem(
-                  icon: Icons.lock_outline_rounded,
-                  label: 'Secure\npayment',
-                ),
               ],
-            ),
-          ),
-
-          SizedBox(height: 16.h),
-
-          // Social proof.
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Stacked avatars.
-              SizedBox(
-                width: 60.w,
-                height: 28.h,
-                child: Stack(
-                  children: List.generate(3, (i) {
-                    return Positioned(
-                      left: i * 18.0.w,
-                      child: Container(
-                        width: 28.w,
-                        height: 28.w,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: [
-                            AppColors.accentLight,
-                            AppColors.secondary,
-                            AppColors.primary,
-                          ][i],
-                          border: Border.all(
-                            color: AppColors.surface,
-                            width: 2,
-                          ),
-                        ),
-                        child: Icon(
-                          Icons.person_rounded,
-                          size: 14.sp,
-                          color: AppColors.surface,
-                        ),
-                      ),
-                    );
-                  }),
-                ),
-              ),
-              SizedBox(width: 8.w),
-              Text(
-                'Trusted by 12,000+ runners',
-                style: TextStyle(
-                  fontSize: 13.sp,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
-                ),
-              ),
             ],
-          ),
-
-          SizedBox(height: 16.h),
-
-          // Legal links.
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildLegalLink('Terms', onTap: _openTerms),
-              _legalDot(),
-              _buildLegalLink('Privacy', onTap: _openPrivacy),
-              _legalDot(),
-              _buildLegalLink('Restore', onTap: () => _restorePurchases()),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _trustDivider() {
-    return Expanded(
-      flex: 0,
-      child: Container(
-        width: 1,
-        height: 30.h,
-        color: AppColors.primaryLight,
-        margin: EdgeInsets.symmetric(horizontal: 12.w),
-      ),
-    );
-  }
-
-  Widget _buildLegalLink(String label, {required VoidCallback onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 12.sp,
-            color: AppColors.textTertiary,
-            fontWeight: FontWeight.w500,
           ),
         ),
       ),
     );
   }
 
-  Widget _legalDot() {
-    return Container(
-      width: 3.w,
-      height: 3.w,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: AppColors.textTertiary.withValues(alpha: 0.4),
+  // ── Plan selector ─────────────────────────────────────────────────────────
+
+  Widget _buildPlanSelector(AppLocalizations l10n) {
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 0),
+        child: Row(
+          children: [
+            Expanded(
+              child: _PlanCard(
+                label: 'Monthly',
+                priceLabel: _loadingProducts
+                    ? '…'
+                    : _loadFailed
+                    ? '—'
+                    : _price(PremiumPlan.monthly),
+                sublabel: l10n.cancelAnytime,
+                isSelected: _selected == PremiumPlan.monthly,
+                isBestValue: false,
+                isLoading: _loadingProducts,
+                onTap: () => _select(PremiumPlan.monthly),
+              ),
+            ),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: _PlanCard(
+                label: 'Yearly',
+                priceLabel: _loadingProducts
+                    ? '…'
+                    : _loadFailed
+                    ? '—'
+                    : _price(PremiumPlan.yearly),
+                sublabel: _loadingProducts
+                    ? ''
+                    : _loadFailed
+                    ? '≈ €4.17/mo'
+                    : _yearlyMonthly(),
+                badgeLabel: l10n.bestValue,
+                isSelected: _selected == PremiumPlan.yearly,
+                isBestValue: true,
+                isLoading: _loadingProducts,
+                onTap: () => _select(PremiumPlan.yearly),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  // ═════════════════════════════════════════════════════════════════════════
-  // STICKY CTA
-  // ═════════════════════════════════════════════════════════════════════════
+  // ── Sticky CTA bar ────────────────────────────────────────────────────────
 
-  Widget _buildStickyCTA(double bottomPad) {
+  Widget _buildStickyBottom(
+    AppLocalizations l10n,
+    PremiumCheckoutState checkoutState,
+    bool isProcessing,
+    double bottomPad,
+  ) {
     return Container(
-      padding: EdgeInsets.fromLTRB(
-        20.w,
-        12.h,
-        20.w,
-        math.max(bottomPad + 4.h, 16.h),
-      ),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Colors.white,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.06),
@@ -573,286 +452,265 @@ class _PremiumSubscribeScreenState extends ConsumerState<PremiumSubscribeScreen>
           ),
         ],
       ),
-      child: SafeArea(
-        top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _GreenCTA(onPressed: _checkout),
-            SizedBox(height: 6.h),
-            Text(
-              '€${_price.toStringAsFixed(2)}/mo · Cancel anytime',
-              style: TextStyle(
-                fontSize: 12.sp,
-                color: AppColors.textTertiary,
-                fontWeight: FontWeight.w500,
+      padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 16.h + bottomPad),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Error message
+          if (checkoutState.errorMessage != null) ...[
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+              margin: EdgeInsets.only(bottom: 12.h),
+              decoration: BoxDecoration(
+                color: AppColors.errorSurface,
+                borderRadius: BorderRadius.circular(12.r),
+                border: Border.all(
+                  color: AppColors.error.withValues(alpha: 0.25),
+                ),
+              ),
+              child: Text(
+                checkoutState.errorMessage!,
+                style: TextStyle(
+                  fontSize: 13.sp,
+                  color: AppColors.error,
+                  fontWeight: FontWeight.w500,
+                ),
+                textAlign: TextAlign.center,
               ),
             ),
           ],
-        ),
+
+          // Load-fail retry link
+          if (_loadFailed) ...[
+            GestureDetector(
+              onTap: _loadProducts,
+              child: Text(
+                l10n.retry_loading_plans,
+                style: TextStyle(
+                  fontSize: 13.sp,
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            SizedBox(height: 10.h),
+          ],
+
+          // Subscribe button
+          SizedBox(
+            width: double.infinity,
+            height: 52.h,
+            child: _SubscribeButton(
+              label: _ctaLabel(l10n),
+              isEnabled: _canPurchase && !isProcessing,
+              isLoading: isProcessing,
+              onPressed: _onSubscribe,
+            ),
+          ),
+
+          SizedBox(height: 12.h),
+
+          // Legal disclosure
+          Text(
+            _renewalText(),
+            style: TextStyle(
+              fontSize: 11.sp,
+              color: AppColors.textTertiary,
+              height: 1.5,
+            ),
+            textAlign: TextAlign.center,
+          ),
+
+          SizedBox(height: 8.h),
+
+          // Terms · Privacy
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _LegalLink(
+                label: l10n.termsOfServiceTitle,
+                onTap: () => context.push(AppRoutes.terms.path),
+              ),
+              Text(
+                '  ·  ',
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  color: AppColors.textTertiary,
+                ),
+              ),
+              _LegalLink(
+                label: l10n.privacyPolicyTitle,
+                onTap: () => context.push(AppRoutes.privacy.path),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// CHILD WIDGETS
-// ═══════════════════════════════════════════════════════════════════════════════
-
-// ─── Circle Back Button (on green bg) ─────────────────────────────────────
-
-class _CircleButton extends StatelessWidget {
-  const _CircleButton({required this.icon, required this.onTap});
-  final IconData icon;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        width: 38.w,
-        height: 38.w,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: AppColors.surface.withValues(alpha: 0.2),
-        ),
-        child: Icon(icon, color: AppColors.surface, size: 20.sp),
-      ),
-    );
-  }
-}
-
-// ─── Feature Row ──────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Components
+// ─────────────────────────────────────────────────────────────────────────────
 
 class _FeatureRow extends StatelessWidget {
-  const _FeatureRow({required this.feature});
-  final _Feature feature;
+  const _FeatureRow({required this.icon, required this.label});
+  final IconData icon;
+  final String label;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(14.w),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14.r),
-        border: Border.all(color: AppColors.border),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+    return Row(
+      children: [
+        Container(
+          width: 32.w,
+          height: 32.w,
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(10.r),
           ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // Icon.
-          Container(
-            width: 44.w,
-            height: 44.w,
-            decoration: BoxDecoration(
-              color: AppColors.primarySurface,
-              borderRadius: BorderRadius.circular(12.r),
-            ),
-            child: Icon(feature.icon, color: AppColors.primary, size: 22.sp),
-          ),
-          SizedBox(width: 14.w),
-          // Text.
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  feature.title,
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                SizedBox(height: 2.h),
-                Text(
-                  feature.desc,
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    color: AppColors.textSecondary,
-                    height: 1.35,
-                  ),
-                ),
-              ],
+          child: Icon(icon, size: 16.sp, color: AppColors.primaryDark),
+        ),
+        SizedBox(width: 12.w),
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
             ),
           ),
-          SizedBox(width: 8.w),
-          // Check.
-          Container(
-            width: 22.w,
-            height: 22.w,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppColors.primary,
-            ),
-            child: Icon(
-              Icons.check_rounded,
-              size: 14.sp,
-              color: AppColors.surface,
-            ),
-          ),
-        ],
-      ),
+        ),
+        Icon(
+          Icons.check_circle_rounded,
+          size: 18.sp,
+          color: AppColors.primary,
+        ),
+      ],
     );
   }
 }
-
-// ─── Plan Card ────────────────────────────────────────────────────────────
 
 class _PlanCard extends StatelessWidget {
   const _PlanCard({
     required this.label,
-    required this.price,
-    required this.period,
-    required this.detail,
+    required this.priceLabel,
+    required this.sublabel,
     required this.isSelected,
+    required this.isBestValue,
+    required this.isLoading,
     required this.onTap,
-    this.badge,
+    this.badgeLabel,
   });
+
   final String label;
-  final String price;
-  final String period;
-  final String detail;
-  final String? badge;
+  final String priceLabel;
+  final String sublabel;
+  final String? badgeLabel;
   final bool isSelected;
+  final bool isBestValue;
+  final bool isLoading;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final borderColor = isSelected ? AppColors.primary : AppColors.border;
+
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 220),
-        curve: Curves.easeOutCubic,
-        padding: EdgeInsets.all(16.w),
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 14.h),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primarySurface : AppColors.surface,
+          color: isSelected ? AppColors.primarySurface : Colors.white,
           borderRadius: BorderRadius.circular(16.r),
           border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.border,
-            width: isSelected ? 2 : 1,
+            color: borderColor,
+            width: isSelected ? 2 : 1.5,
           ),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.1),
+                    color: AppColors.primary.withValues(alpha: 0.15),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
                 ]
-              : [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.06),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+              : null,
         ),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Radio.
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              width: 22.w,
-              height: 22.w,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isSelected ? AppColors.primary : Colors.transparent,
-                border: Border.all(
-                  color: isSelected ? AppColors.primary : AppColors.border,
-                  width: isSelected ? 0 : 2,
-                ),
-              ),
-              child: isSelected
-                  ? Icon(
-                      Icons.check_rounded,
-                      size: 14.sp,
-                      color: AppColors.surface,
-                    )
-                  : null,
-            ),
-            SizedBox(width: 14.w),
-            // Info.
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        label,
-                        style: TextStyle(
-                          fontSize: 15.sp,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      if (badge != null) ...[
-                        SizedBox(width: 8.w),
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 8.w,
-                            vertical: 3.h,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary,
-                            borderRadius: BorderRadius.circular(6.r),
-                          ),
-                          child: Text(
-                            badge!,
-                            style: TextStyle(
-                              fontSize: 9.sp,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.surface,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                  SizedBox(height: 2.h),
-                  Text(
-                    detail,
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    label,
                     style: TextStyle(
-                      fontSize: 12.sp,
-                      color: AppColors.textTertiary,
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.w700,
+                      color: isSelected
+                          ? AppColors.primaryDark
+                          : AppColors.textSecondary,
                     ),
                   ),
-                ],
-              ),
-            ),
-            // Price.
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  price,
-                  style: TextStyle(
-                    fontSize: 20.sp,
-                    fontWeight: FontWeight.w900,
-                    color: isSelected
-                        ? AppColors.primaryDark
-                        : AppColors.textPrimary,
-                  ),
                 ),
-                Text(
-                  period,
-                  style: TextStyle(
-                    fontSize: 11.sp,
-                    color: AppColors.textTertiary,
+                if (badgeLabel != null)
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 6.w,
+                      vertical: 2.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF9800),
+                      borderRadius: BorderRadius.circular(6.r),
+                    ),
+                    child: Text(
+                      badgeLabel!,
+                      style: TextStyle(
+                        fontSize: 9.sp,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
                   ),
-                ),
               ],
             ),
+            SizedBox(height: 6.h),
+            if (isLoading)
+              SizedBox(
+                width: 16.sp,
+                height: 16.sp,
+                child: const CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.primary,
+                ),
+              )
+            else
+              Text(
+                priceLabel,
+                style: TextStyle(
+                  fontSize: 17.sp,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            if (sublabel.isNotEmpty) ...[
+              SizedBox(height: 2.h),
+              Text(
+                sublabel,
+                style: TextStyle(
+                  fontSize: 11.sp,
+                  color: AppColors.textTertiary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -860,102 +718,167 @@ class _PlanCard extends StatelessWidget {
   }
 }
 
-// ─── Trust Item ───────────────────────────────────────────────────────────
+class _SubscribeButton extends StatelessWidget {
+  const _SubscribeButton({
+    required this.label,
+    required this.isEnabled,
+    required this.isLoading,
+    required this.onPressed,
+  });
 
-class _TrustItem extends StatelessWidget {
-  const _TrustItem({required this.icon, required this.label});
-  final IconData icon;
   final String label;
+  final bool isEnabled;
+  final bool isLoading;
+  final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Column(
-        children: [
-          Container(
-            width: 36.w,
-            height: 36.w,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppColors.primarySurface,
-            ),
-            child: Icon(icon, size: 18.sp, color: AppColors.primary),
+    return AnimatedOpacity(
+      opacity: isEnabled ? 1.0 : 0.45,
+      duration: const Duration(milliseconds: 200),
+      child: ElevatedButton(
+        onPressed: isEnabled ? onPressed : null,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          disabledBackgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          disabledForegroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16.r),
           ),
-          SizedBox(height: 6.h),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 11.sp,
-              fontWeight: FontWeight.w600,
-              color: AppColors.primaryDark,
-              height: 1.3,
-            ),
-          ),
-        ],
+          elevation: isEnabled ? 2 : 0,
+          shadowColor: AppColors.primary.withValues(alpha: 0.4),
+        ),
+        child: isLoading
+            ? SizedBox(
+                width: 22.sp,
+                height: 22.sp,
+                child: const CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  color: Colors.white,
+                ),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.workspace_premium_rounded, size: 18.sp),
+                  SizedBox(width: 8.w),
+                  Flexible(
+                    child: Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 15.sp,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.2,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
       ),
     );
   }
 }
 
-// ─── Green CTA Button ─────────────────────────────────────────────────────
-
-class _GreenCTA extends StatefulWidget {
-  const _GreenCTA({required this.onPressed});
-  final VoidCallback onPressed;
+class _AlreadyPremiumScreen extends StatelessWidget {
+  const _AlreadyPremiumScreen({required this.l10n});
+  final AppLocalizations l10n;
 
   @override
-  State<_GreenCTA> createState() => _GreenCTAState();
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 32.w),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 72.w,
+                height: 72.w,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF40916C), Color(0xFF2D6A4F)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(22.r),
+                ),
+                child: Icon(
+                  Icons.workspace_premium_rounded,
+                  color: Colors.white,
+                  size: 36.sp,
+                ),
+              ),
+              SizedBox(height: 24.h),
+              Text(
+                "You're already a member",
+                style: TextStyle(
+                  fontSize: 22.sp,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 10.h),
+              Text(
+                'Your SportConnect Premium subscription is active. Enjoy all premium features.',
+                style: TextStyle(
+                  fontSize: 15.sp,
+                  color: AppColors.textSecondary,
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 32.h),
+              SizedBox(
+                width: double.infinity,
+                height: 52.h,
+                child: ElevatedButton(
+                  onPressed: () => context.pop(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16.r),
+                    ),
+                  ),
+                  child: Text(
+                    'Back to App',
+                    style: TextStyle(
+                      fontSize: 15.sp,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
-class _GreenCTAState extends State<_GreenCTA> {
-  bool _pressed = false;
+class _LegalLink extends StatelessWidget {
+  const _LegalLink({required this.label, required this.onTap});
+  final String label;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) {
-        setState(() => _pressed = false);
-        widget.onPressed();
-      },
-      onTapCancel: () => setState(() => _pressed = false),
-      child: AnimatedScale(
-        scale: _pressed ? 0.97 : 1.0,
-        duration: const Duration(milliseconds: 100),
-        child: Container(
-          width: double.infinity,
-          height: 54.h,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14.r),
-            color: AppColors.primary,
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary.withValues(alpha: 0.3),
-                blurRadius: 16,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'Start Free Trial',
-                style: TextStyle(
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.surface,
-                ),
-              ),
-              SizedBox(width: 8.w),
-              Icon(
-                Icons.adaptive.arrow_forward_rounded,
-                size: 20.sp,
-                color: AppColors.surface,
-              ),
-            ],
-          ),
+      onTap: onTap,
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 12.sp,
+          color: AppColors.textSecondary,
+          decoration: TextDecoration.underline,
+          decorationColor: AppColors.textSecondary,
         ),
       ),
     );

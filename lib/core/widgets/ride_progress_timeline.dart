@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Visual step-by-step progress timeline for a ride journey.
 ///
@@ -24,7 +25,8 @@ class RideProgressTimeline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final steps = _buildSteps();
+    final l10n = AppLocalizations.of(context);
+    final steps = _buildSteps(l10n);
     final currentIndex = _currentStepIndex();
 
     if (compact) {
@@ -42,7 +44,7 @@ class RideProgressTimeline extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Ride Progress',
+            l10n.ride_progress,
             style: TextStyle(
               fontSize: 14.sp,
               fontWeight: FontWeight.w700,
@@ -87,32 +89,32 @@ class RideProgressTimeline extends StatelessWidget {
     };
   }
 
-  List<_StepData> _buildSteps() {
+  List<_StepData> _buildSteps(AppLocalizations l10n) {
     return [
-      const _StepData(
+      _StepData(
         icon: Icons.check_circle_outline_rounded,
-        label: 'Booked',
-        subtitle: 'Ride confirmed',
+        label: l10n.booked,
+        subtitle: l10n.ride_confirmed,
       ),
-      const _StepData(
+      _StepData(
         icon: Icons.directions_car_rounded,
-        label: 'Driver Left',
-        subtitle: 'On the way to pickup',
+        label: l10n.driver_left,
+        subtitle: l10n.on_the_way_to_pickup,
       ),
-      const _StepData(
+      _StepData(
         icon: Icons.pin_drop_rounded,
-        label: 'Arriving',
-        subtitle: 'Almost at pickup point',
+        label: l10n.arriving,
+        subtitle: l10n.almost_at_pickup_point,
       ),
-      const _StepData(
+      _StepData(
         icon: Icons.moving_rounded,
-        label: 'Riding',
-        subtitle: 'En route to destination',
+        label: l10n.riding,
+        subtitle: l10n.en_route_to_destination,
       ),
-      const _StepData(
+      _StepData(
         icon: Icons.flag_rounded,
-        label: 'Arrived',
-        subtitle: "You've reached your destination",
+        label: l10n.arrived,
+        subtitle: l10n.reachedYourDestination,
       ),
     ];
   }

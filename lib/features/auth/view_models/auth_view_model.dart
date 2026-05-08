@@ -3,8 +3,10 @@ import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/core/services/firebase_service.dart';
-import 'package:sport_connect/features/auth/models/models.dart';
+import 'package:sport_connect/features/auth/models/auth_exception.dart';
+import 'package:sport_connect/features/auth/models/social_sign_in_result.dart';
 import 'package:sport_connect/features/auth/repositories/auth_repository.dart';
 import 'package:sport_connect/features/profile/repositories/profile_repository.dart';
 

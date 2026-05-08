@@ -73,45 +73,61 @@ class PremiumIapService extends _$PremiumIapService {
 
             final verified = _hasVerificationPayload(purchase);
             if (!verified) {
-              _pendingPurchases.remove(purchase.productID)?.complete(
-                const PremiumIapResult.failure(
-                  'Purchase verification failed. Please contact support.',
-                ),
-              );
+              _pendingPurchases
+                  .remove(purchase.productID)
+                  ?.complete(
+                    const PremiumIapResult.failure(
+                      'Purchase verification failed. Please contact support.',
+                    ),
+                  );
               continue;
             }
 
-            _pendingPurchases.remove(purchase.productID)?.complete(
-              PremiumIapResult.success(purchase: purchase),
-            );
+            _pendingPurchases
+                .remove(purchase.productID)
+                ?.complete(
+                  PremiumIapResult.success(purchase: purchase),
+                );
 
           case PurchaseStatus.error:
-            _pendingPurchases.remove(purchase.productID)?.complete(
-              PremiumIapResult.failure(
-                purchase.error?.message ??
-                    'Your purchase could not be completed. Please try again.',
-              ),
-            );
+            _pendingPurchases
+                .remove(purchase.productID)
+                ?.complete(
+                  PremiumIapResult.failure(
+                    purchase.error?.message ??
+                        'Your purchase could not be completed. Please try again.',
+                  ),
+                );
 
           case PurchaseStatus.canceled:
-            _pendingPurchases.remove(purchase.productID)?.complete(
-              const PremiumIapResult.failure('Purchase cancelled by user.'),
-            );
+            _pendingPurchases
+                .remove(purchase.productID)
+                ?.complete(
+                  const PremiumIapResult.failure('Purchase cancelled by user.'),
+                );
         }
       } on PlatformException catch (e) {
-        _pendingPurchases.remove(purchase.productID)?.complete(
-          PremiumIapResult.failure(_mapPlatformError(e)),
-        );
+        _pendingPurchases
+            .remove(purchase.productID)
+            ?.complete(
+              PremiumIapResult.failure(_mapPlatformError(e)),
+            );
       } on MissingPluginException {
-        _pendingPurchases.remove(purchase.productID)?.complete(
-          const PremiumIapResult.failure(
-            'In-app purchase plugin is not ready. Fully restart the app and try again.',
-          ),
-        );
+        _pendingPurchases
+            .remove(purchase.productID)
+            ?.complete(
+              const PremiumIapResult.failure(
+                'In-app purchase plugin is not ready. Fully restart the app and try again.',
+              ),
+            );
       } on Object catch (e) {
-        _pendingPurchases.remove(purchase.productID)?.complete(
-          PremiumIapResult.failure('Purchase handling failed unexpectedly: $e'),
-        );
+        _pendingPurchases
+            .remove(purchase.productID)
+            ?.complete(
+              PremiumIapResult.failure(
+                'Purchase handling failed unexpectedly: $e',
+              ),
+            );
       }
     }
   }
@@ -294,7 +310,9 @@ class PremiumIapService extends _$PremiumIapService {
         final c = _pendingPurchases.remove(productId);
         if (c != null && !c.isCompleted) {
           c.complete(
-            const PremiumIapResult.failure('Purchase timed out. Please try again.'),
+            const PremiumIapResult.failure(
+              'Purchase timed out. Please try again.',
+            ),
           );
         }
       });
@@ -305,9 +323,13 @@ class PremiumIapService extends _$PremiumIapService {
 
       if (!launched) {
         timeout.cancel();
-        _pendingPurchases.remove(productId)?.complete(
-          const PremiumIapResult.failure('Could not launch store purchase flow.'),
-        );
+        _pendingPurchases
+            .remove(productId)
+            ?.complete(
+              const PremiumIapResult.failure(
+                'Could not launch store purchase flow.',
+              ),
+            );
       }
 
       return completer.future;

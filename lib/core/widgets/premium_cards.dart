@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -121,7 +123,7 @@ class _PremiumCardState extends State<PremiumCard>
     if (!_isPressed) {
       _isPressed = true;
       _pressController.forward();
-      HapticFeedback.lightImpact();
+      unawaited(HapticFeedback.lightImpact());
     }
   }
 
@@ -196,7 +198,7 @@ class PremiumListTile extends StatelessWidget {
       children: [
         InkWell(
           onTap: () {
-            HapticFeedback.lightImpact();
+            unawaited(HapticFeedback.lightImpact());
             onTap?.call();
           },
           borderRadius: BorderRadius.circular(14.r),
@@ -620,7 +622,7 @@ class PremiumEmptyState extends StatelessWidget {
               SizedBox(height: 24.h),
               GestureDetector(
                 onTap: () {
-                  HapticFeedback.mediumImpact();
+                  unawaited(HapticFeedback.mediumImpact());
                   onAction!();
                 },
                 child: Container(

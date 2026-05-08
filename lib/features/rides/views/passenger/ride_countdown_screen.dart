@@ -1,3 +1,7 @@
+import 'dart:async';
+
+
+
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,13 +13,13 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/app_map_tile_layer.dart';
 import 'package:sport_connect/core/widgets/driver_info_widget.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/core/widgets/skeleton_loader.dart';
-import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/messaging/view_models/chat_view_model.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
@@ -75,7 +79,7 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
     if (bookingAsync.isLoading) {
       return _buildAdaptiveScaffold(
         title: AppLocalizations.of(context).yourRide,
-        body: const SkeletonLoader(type: SkeletonType.rideCard, itemCount: 4),
+        body: const SkeletonLoader(),
       );
     }
 
@@ -112,7 +116,7 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
     if (vmState == null) {
       return _buildAdaptiveScaffold(
         title: AppLocalizations.of(context).yourRide,
-        body: const SkeletonLoader(type: SkeletonType.rideCard, itemCount: 4),
+        body: const SkeletonLoader(),
       );
     }
 
@@ -127,7 +131,7 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
           : _buildContent(ride, booking, uiState),
       loading: () => _buildAdaptiveScaffold(
         title: AppLocalizations.of(context).yourRide,
-        body: const SkeletonLoader(type: SkeletonType.rideCard, itemCount: 4),
+        body: const SkeletonLoader(),
       ),
       error: (e, _) => _buildAdaptiveScaffold(
         title: AppLocalizations.of(context).yourRide,
@@ -850,7 +854,7 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
               GestureDetector(
                 onTap: () {
                   Clipboard.setData(ClipboardData(text: booking.id));
-                  HapticFeedback.lightImpact();
+                  unawaited(HapticFeedback.lightImpact());
                   AdaptiveSnackBar.show(
                     context,
                     message: AppLocalizations.of(

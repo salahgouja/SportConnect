@@ -1,3 +1,7 @@
+import 'dart:async';
+
+
+
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,13 +13,14 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/widgets/app_map_tile_layer.dart';
 import 'package:sport_connect/core/widgets/driver_info_widget.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/core/widgets/skeleton_loader.dart';
-import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/messaging/view_models/chat_view_model.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
@@ -23,7 +28,6 @@ import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/view_models/ride_completion_view_model.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
-import 'package:sport_connect/core/widgets/app_map_tile_layer.dart';
 
 /// Ride Completion / Trip Summary screen shown after a ride finishes.
 ///
@@ -85,7 +89,7 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
     return AdaptiveScaffold(
       body: rideAsync.when(
         loading: () =>
-            const SkeletonLoader(type: SkeletonType.rideCard, itemCount: 4),
+            const SkeletonLoader(),
         error: (e, _) => Center(
           child: Padding(
             padding: EdgeInsets.all(24.w),
@@ -240,7 +244,7 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
                                   context,
                                 ).ratePassenger,
                                 onPressed: () {
-                                  HapticFeedback.mediumImpact();
+                                  unawaited(HapticFeedback.mediumImpact());
                                   context.push(
                                     AppRoutes.driverRatePassenger.path
                                         .replaceFirst(':rideId', widget.rideId),
@@ -253,7 +257,7 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
                                   context,
                                 ).rateAndReview,
                                 onPressed: () async {
-                                  HapticFeedback.mediumImpact();
+                                  unawaited(HapticFeedback.mediumImpact());
 
                                   // Fetch driver profile to get name for review screen
                                   final driverProfile = await ref.read(
@@ -297,7 +301,7 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
                             : PremiumButton(
                                 text: AppLocalizations.of(context).shareReceipt,
                                 onPressed: () async {
-                                  HapticFeedback.lightImpact();
+                                  unawaited(HapticFeedback.lightImpact());
                                   final l10n = AppLocalizations.of(context);
                                   await ref
                                       .read(
@@ -347,7 +351,7 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
                     child: PremiumButton(
                       text: AppLocalizations.of(context).bookThisRouteAgain,
                       onPressed: () {
-                        HapticFeedback.lightImpact();
+                        unawaited(HapticFeedback.lightImpact());
                         context.pushNamed(
                           AppRoutes.searchRides.name,
                           extra: <String, dynamic>{
@@ -375,12 +379,11 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
                           child: PremiumButton(
                             text: AppLocalizations.of(context).instantPayout,
                             onPressed: () {
-                              HapticFeedback.lightImpact();
+                              unawaited(HapticFeedback.lightImpact());
                               context.goNamed(
                                 AppRoutes.driverEarnings.name,
                                 extra: {'resetBranch': true},
                               );
-                              ;
                             },
                             icon: Icons.euro_rounded,
                           ),
@@ -1052,7 +1055,7 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
               IconButton(
                 tooltip: AppLocalizations.of(context).messageDriver,
                 onPressed: () async {
-                  HapticFeedback.lightImpact();
+                  unawaited(HapticFeedback.lightImpact());
                   final currentUser = ref.read(currentUserProvider).value;
                   if (currentUser == null) return;
 

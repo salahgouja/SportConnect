@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 // ---------------------------------------------------------------------------
 // Data model
@@ -30,57 +30,67 @@ enum IllustrationVariant { findRide, offerSeat, planRoute, connectGo }
 // Page definitions
 // ---------------------------------------------------------------------------
 
-final List<OnboardingPage> onboardingPages = [
+const onboardingPageCount = 4;
+
+List<OnboardingPage> localizedOnboardingPages(AppLocalizations l10n) => [
   OnboardingPage(
-    title: 'Find Your\nRide',
-    subtitle: 'Match with Runners',
-    description:
-        'Instantly match with runners heading the same direction. '
-        'Share a car, save money, and arrive at the start-line together.',
+    title: l10n.onboardingFindYourRideTitle,
+    subtitle: l10n.onboardingMatchWithRunners,
+    description: l10n.onboardingFindYourRideDescription,
     gradientColors: [
       AppColors.primary,
       AppColors.primary.withValues(alpha: 0.65),
     ],
     illustration: IllustrationVariant.findRide,
-    features: ['Smart Matching', 'Nearby Runners', 'Pace Filters'],
+    features: [
+      l10n.onboardingSmartMatching,
+      l10n.onboardingNearbyRunners,
+      l10n.onboardingPaceFilters,
+    ],
   ),
   OnboardingPage(
-    title: 'Offer a\nSeat',
-    subtitle: 'Drive & Split Costs',
-    description:
-        'Got a car? Offer spare seats to fellow runners. '
-        'Cover fuel costs and build bonds with your local running community.',
+    title: l10n.onboardingOfferASeatTitle,
+    subtitle: l10n.onboardingDriveSplitCosts,
+    description: l10n.onboardingOfferASeatDescription,
     gradientColors: [
       AppColors.secondary,
       AppColors.secondary.withValues(alpha: 0.65),
     ],
     illustration: IllustrationVariant.offerSeat,
-    features: ['Cost Splitting', 'Seat Control', 'Driver Rating'],
+    features: [
+      l10n.onboardingCostSplitting,
+      l10n.onboardingSeatControl,
+      l10n.onboardingDriverRating,
+    ],
   ),
   OnboardingPage(
-    title: 'Plan Your\nRoute',
-    subtitle: 'Smart Route Sync',
-    description:
-        'Set your pickup point, race venue, or training ground. '
-        'SportConnect syncs detours automatically to keep everyone on schedule.',
+    title: l10n.onboardingPlanYourRouteTitle,
+    subtitle: l10n.onboardingSmartRouteSync,
+    description: l10n.onboardingPlanYourRouteDescription,
     gradientColors: [
       AppColors.primary,
       AppColors.primary.withValues(alpha: 0.65),
     ],
     illustration: IllustrationVariant.planRoute,
-    features: ['Live Routing', 'Detour Sync', 'Event Zones'],
+    features: [
+      l10n.onboardingLiveRouting,
+      l10n.onboardingDetourSync,
+      l10n.onboardingEventZones,
+    ],
   ),
   OnboardingPage(
-    title: 'Connect\n& Go',
-    subtitle: 'Community You Trust',
-    description:
-        'Verified runner profiles, in-app chat, and real-time tracking '
-        'keep every carpool safe, social, and on time.',
+    title: l10n.onboardingConnectGoModelTitle,
+    subtitle: l10n.onboardingCommunityYouTrust,
+    description: l10n.onboardingConnectGoModelDescription,
     gradientColors: [
       AppColors.secondary,
       AppColors.secondary.withValues(alpha: 0.65),
     ],
     illustration: IllustrationVariant.connectGo,
-    features: ['Verified Profiles', 'In-App Chat', 'Live Tracking'],
+    features: [
+      l10n.onboardingVerifiedProfiles,
+      l10n.onboardingInAppChat,
+      l10n.onboardingLiveTracking,
+    ],
   ),
 ];

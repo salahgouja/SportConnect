@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/core/services/route_guard_service.dart';
-import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/payments/models/payment_model.dart';
 
 void main() {

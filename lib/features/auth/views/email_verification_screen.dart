@@ -5,10 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
-import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
-import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/auth/view_models/email_verification_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
@@ -18,21 +16,40 @@ class EmailVerificationScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final vmState = ref.watch(emailVerificationViewModelProvider);
 
-    ref.listen(emailVerificationViewModelProvider, (previous, next) {
-      if (next.isEmailVerified && !(previous?.isEmailVerified ?? false)) {
-        context.go(AppRoutes.splash.path);
-      }
-      if (next.errorMessage != null &&
-          next.errorMessage != previous?.errorMessage) {
-        AdaptiveSnackBar.show(
-          context,
-          message: l10n.emailVerificationError,
-          type: AdaptiveSnackBarType.error,
-        );
-      }
-    });
+    final isEmailVerified = ref.watch(
+      emailVerificationViewModelProvider.select((s) => s.isEmailVerified),
+    );
+
+    final userEmail = ref.watch(
+      emailVerificationViewModelProvider.select((s) => s.userEmail),
+    );
+
+    ref.listen(
+      emailVerificationViewModelProvider.select(
+        (s) => (
+          isEmailVerified: s.isEmailVerified,
+          errorMessage: s.errorMessage,
+        ),
+      ),
+      (previous, next) {
+        if (next.isEmailVerified &&
+            !(previous?.isEmailVerified ?? false) &&
+            context.mounted) {
+          context.go(AppRoutes.splash.path);
+        }
+
+        if (next.errorMessage != null &&
+            next.errorMessage != previous?.errorMessage &&
+            context.mounted) {
+          AdaptiveSnackBar.show(
+            context,
+            message: next.errorMessage ?? l10n.emailVerificationError,
+            type: AdaptiveSnackBarType.error,
+          );
+        }
+      },
+    );
 
     return AdaptiveScaffold(
       appBar: AdaptiveAppBar(
@@ -44,54 +61,12 @@ class EmailVerificationScreen extends ConsumerWidget {
           child: Column(
             children: [
               const Spacer(flex: 2),
-              if (vmState.isEmailVerified)
-                _buildVerifiedState(l10n)
+              if (isEmailVerified)
+                const _VerifiedState()
               else
-                _buildPendingState(l10n, vmState.userEmail),
+                _PendingState(email: userEmail),
               const Spacer(flex: 3),
-              if (!vmState.isEmailVerified) ...[
-                SizedBox(
-                  width: double.infinity,
-                  child: PremiumButton(
-                    text: vmState.resendCooldown > 0
-                        ? l10n.emailVerifyResendIn(vmState.resendCooldown)
-                        : l10n.emailVerifyResend,
-                    onPressed: vmState.resendCooldown > 0 || vmState.isSending
-                        ? null
-                        : () => ref
-                              .read(emailVerificationViewModelProvider.notifier)
-                              .resendVerification(),
-                    isLoading: vmState.isSending,
-                    icon: Icons.email_outlined,
-                    style: PremiumButtonStyle.secondary,
-                  ),
-                ).animate().fadeIn(delay: 600.ms),
-                SizedBox(height: 16.h),
-                SizedBox(
-                  width: double.infinity,
-                  child: PremiumButton(
-                    text: l10n.emailVerifyCheckButton,
-                    onPressed: () => ref
-                        .read(emailVerificationViewModelProvider.notifier)
-                        .checkEmailVerified(),
-                    icon: Icons.check_circle_outline_rounded,
-                  ),
-                ).animate().fadeIn(delay: 700.ms),
-                SizedBox(height: 12.h),
-                TextButton(
-                  onPressed: () => ref
-                      .read(emailVerificationViewModelProvider.notifier)
-                      .signOut(),
-                  child: Text(
-                    l10n.useDifferentAccount,
-                    style: TextStyle(
-                      fontSize: 13.sp,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ).animate().fadeIn(delay: 750.ms),
-              ],
+              const _VerificationActions(),
               SizedBox(height: 32.h),
             ],
           ),
@@ -99,8 +74,87 @@ class EmailVerificationScreen extends ConsumerWidget {
       ),
     );
   }
+}
 
-  Widget _buildPendingState(AppLocalizations l10n, String email) {
+class _VerificationActions extends ConsumerWidget {
+  const _VerificationActions();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+
+    final state = ref.watch(
+      emailVerificationViewModelProvider.select(
+        (s) => (
+          isEmailVerified: s.isEmailVerified,
+          resendCooldown: s.resendCooldown,
+          isSending: s.isSending,
+        ),
+      ),
+    );
+
+    if (state.isEmailVerified) {
+      return const SizedBox.shrink();
+    }
+
+    final canResend = state.resendCooldown <= 0 && !state.isSending;
+
+    return Column(
+      children: [
+        SizedBox(
+          width: double.infinity,
+          child: PremiumButton(
+            text: state.resendCooldown > 0
+                ? l10n.emailVerifyResendIn(state.resendCooldown)
+                : l10n.emailVerifyResend,
+            onPressed: canResend
+                ? () => ref
+                      .read(emailVerificationViewModelProvider.notifier)
+                      .resendVerification()
+                : null,
+            isLoading: state.isSending,
+            icon: Icons.email_outlined,
+            style: PremiumButtonStyle.secondary,
+          ),
+        ).animate().fadeIn(delay: 600.ms),
+        SizedBox(height: 16.h),
+        SizedBox(
+          width: double.infinity,
+          child: PremiumButton(
+            text: l10n.emailVerifyCheckButton,
+            onPressed: () => ref
+                .read(emailVerificationViewModelProvider.notifier)
+                .checkEmailVerified(showErrors: true),
+            icon: Icons.check_circle_outline_rounded,
+          ),
+        ).animate().fadeIn(delay: 700.ms),
+        SizedBox(height: 12.h),
+        TextButton(
+          onPressed: () =>
+              ref.read(emailVerificationViewModelProvider.notifier).signOut(),
+          child: Text(
+            l10n.useDifferentAccount,
+            style: TextStyle(
+              fontSize: 13.sp,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ).animate().fadeIn(delay: 750.ms),
+      ],
+    );
+  }
+}
+
+class _PendingState extends StatelessWidget {
+  const _PendingState({required this.email});
+
+  final String email;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return Column(
       children: [
         Container(
@@ -170,15 +224,25 @@ class EmailVerificationScreen extends ConsumerWidget {
             SizedBox(width: 8.w),
             Text(
               l10n.emailVerifyWaiting,
-              style: TextStyle(fontSize: 13.sp, color: AppColors.textTertiary),
+              style: TextStyle(
+                fontSize: 13.sp,
+                color: AppColors.textTertiary,
+              ),
             ),
           ],
         ).animate().fadeIn(delay: 500.ms),
       ],
     );
   }
+}
 
-  Widget _buildVerifiedState(AppLocalizations l10n) {
+class _VerifiedState extends StatelessWidget {
+  const _VerifiedState();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return Column(
       children: [
         Container(
@@ -209,7 +273,10 @@ class EmailVerificationScreen extends ConsumerWidget {
         Text(
           l10n.emailVerifiedRedirecting,
           textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 15.sp, color: AppColors.textSecondary),
+          style: TextStyle(
+            fontSize: 15.sp,
+            color: AppColors.textSecondary,
+          ),
         ).animate().fadeIn(delay: 300.ms),
       ],
     );

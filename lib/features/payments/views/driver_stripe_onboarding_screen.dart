@@ -145,6 +145,7 @@ class _DriverStripeOnboardingScreenState
   }
 
   Widget _buildIntroScreen(DriverStripeOnboardingFlowState state) {
+    final l10n = AppLocalizations.of(context);
     final isBusy = state.isLoading || state.isVerifying;
 
     return _buildShell(
@@ -157,7 +158,7 @@ class _DriverStripeOnboardingScreenState
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildIntroHero(),
+                  _buildIntroHero(l10n),
                   SizedBox(height: 28.h),
                   _buildDriverBenefits(),
                   _buildStatusArea(context, state),
@@ -170,7 +171,7 @@ class _DriverStripeOnboardingScreenState
               mainAxisSize: MainAxisSize.min,
               children: [
                 _GradientButton(
-                  text: 'Connect Stripe account',
+                  text: l10n.connectStripeAccount,
                   trailingIcon: Icons.lock_outline_rounded,
                   isLoading: isBusy,
                   onPressed: isBusy
@@ -178,7 +179,7 @@ class _DriverStripeOnboardingScreenState
                       : () => setState(() => _page = _PayoutSetupPage.prep),
                 ),
                 SizedBox(height: 13.h),
-                const _PoweredByStripe(),
+                _PoweredByStripe(l10n: l10n),
               ],
             ),
           ),
@@ -187,7 +188,7 @@ class _DriverStripeOnboardingScreenState
     );
   }
 
-  Widget _buildIntroHero() {
+  Widget _buildIntroHero(AppLocalizations l10n) {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.fromLTRB(18.w, 17.h, 18.w, 14.h),
@@ -261,7 +262,7 @@ class _DriverStripeOnboardingScreenState
               ),
               SizedBox(height: 34.h),
               Text(
-                'Get paid for\nevery ride',
+                l10n.get_paid_fornevery_ride,
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 31.sp,
@@ -272,7 +273,7 @@ class _DriverStripeOnboardingScreenState
               ).animate().fadeIn(duration: 260.ms).slideY(begin: 0.04, end: 0),
               SizedBox(height: 12.h),
               Text(
-                'Set up EUR payouts in minutes and\nreceive earnings automatically.',
+                l10n.set_up_eur_payouts_in_minutes_andnreceive_earnings_automatically,
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.78),
                   fontSize: 13.4.sp,
@@ -283,31 +284,31 @@ class _DriverStripeOnboardingScreenState
               SizedBox(height: 24.h),
               _buildBalanceCard(),
               SizedBox(height: 13.h),
-              Row(
+                  Row(
                 children: [
-                  const Expanded(
+                  Expanded(
                     child: _MiniFeatureTile(
                       icon: Icons.bolt_rounded,
-                      title: 'Fast payouts',
-                      subtitle: '1–2 business days',
+                      title: l10n.fast_payouts,
+                      subtitle: l10n.business_days_1_to_2,
                       color: Color(0xFF10B981),
                     ),
                   ),
                   SizedBox(width: 8.w),
-                  const Expanded(
+                  Expanded(
                     child: _MiniFeatureTile(
                       icon: Icons.verified_user_rounded,
-                      title: 'Secure',
-                      subtitle: 'EU-grade safety',
+                      title: l10n.secure,
+                      subtitle: l10n.eugrade_safety,
                       color: _mintGreen,
                     ),
                   ),
                   SizedBox(width: 8.w),
-                  const Expanded(
+                  Expanded(
                     child: _MiniFeatureTile(
                       icon: Icons.percent_rounded,
-                      title: 'Low fees',
-                      subtitle: 'Transparent pricing',
+                      title: l10n.lowFees,
+                      subtitle: l10n.transparent_pricing,
                       color: Color(0xFF2FA66A),
                     ),
                   ),
@@ -450,6 +451,7 @@ class _DriverStripeOnboardingScreenState
   }
 
   Widget _buildPrepScreen(DriverStripeOnboardingFlowState state) {
+    final l10n = AppLocalizations.of(context);
     final isBusy = state.isLoading || state.isVerifying;
 
     return _buildShell(
@@ -465,12 +467,12 @@ class _DriverStripeOnboardingScreenState
                   _buildPrepTopBar(),
                   SizedBox(height: 38.h),
                   Text(
-                    'Before you continue',
+                    l10n.before_you_continue,
                     style: _titleStyle(27),
                   ).animate().fadeIn().slideY(begin: 0.04, end: 0),
                   SizedBox(height: 8.h),
                   Text(
-                    'Here’s what you’ll need to get set up.',
+                    l10n.heres_what_youll_need_to_get_set_up,
                     style: TextStyle(
                       color: _muted,
                       fontSize: 13.4.sp,
@@ -478,30 +480,30 @@ class _DriverStripeOnboardingScreenState
                     ),
                   ).animate().fadeIn(delay: 60.ms),
                   SizedBox(height: 18.h),
-                  _TimeChip(),
+                  _TimeChip(l10n: l10n),
                   SizedBox(height: 24.h),
-                  const _ChecklistRow(
+                  _ChecklistRow(
                     icon: Icons.account_balance_rounded,
                     iconColor: _primaryGreen,
                     iconBg: Color(0xFFE9F9EF),
-                    title: 'French IBAN',
-                    subtitle: 'To receive EUR payouts',
+                    title: l10n.french_iban,
+                    subtitle: l10n.to_receive_eur_payouts,
                   ),
                   SizedBox(height: 12.h),
-                  const _ChecklistRow(
+                  _ChecklistRow(
                     icon: Icons.badge_rounded,
                     iconColor: _mintGreen,
                     iconBg: Color(0xFFEAF8ED),
-                    title: 'Identity verification',
-                    subtitle: 'Carte d’identité or passport',
+                    title: l10n.identity_verification,
+                    subtitle: l10n.carte_didentit_or_passport,
                   ),
                   SizedBox(height: 12.h),
-                  const _ChecklistRow(
+                  _ChecklistRow(
                     icon: Icons.description_rounded,
                     iconColor: _successGreen,
                     iconBg: Color(0xFFE8FAF0),
-                    title: 'French tax details',
-                    subtitle: 'For French tax records',
+                    title: l10n.french_tax_details,
+                    subtitle: l10n.for_french_tax_records,
                   ),
                   SizedBox(height: 28.h),
                   const _SecurityCard(),
@@ -516,7 +518,7 @@ class _DriverStripeOnboardingScreenState
               mainAxisSize: MainAxisSize.min,
               children: [
                 _GradientButton(
-                  text: 'Continue to Stripe',
+                  text: l10n.continue_to_stripe,
                   trailingIcon: Icons.open_in_new_rounded,
                   isLoading: isBusy,
                   onPressed: isBusy ? null : _startOnboarding,
@@ -527,7 +529,7 @@ class _DriverStripeOnboardingScreenState
                       ? null
                       : () => setState(() => _page = _PayoutSetupPage.intro),
                   child: Text(
-                    'Maybe later',
+                    l10n.maybe_later,
                     style: TextStyle(
                       color: _primaryGreen,
                       fontSize: 14.sp,
@@ -557,6 +559,7 @@ class _DriverStripeOnboardingScreenState
   }
 
   Widget _buildSuccessScreen(DriverStripeOnboardingFlowState state) {
+    final l10n = AppLocalizations.of(context);
     return _buildShell(
       child: Column(
         children: [
@@ -584,7 +587,7 @@ class _DriverStripeOnboardingScreenState
               mainAxisSize: MainAxisSize.min,
               children: [
                 _GradientButton(
-                  text: 'Back to dashboard',
+                  text: l10n.back_to_dashboard,
                   trailingIcon: Icons.arrow_forward_rounded,
                   onPressed: _goToDashboard,
                 ),
@@ -597,11 +600,11 @@ class _DriverStripeOnboardingScreenState
                       fontSize: 11.5.sp,
                       fontWeight: FontWeight.w600,
                     ),
-                    children: const [
-                      TextSpan(text: 'Need help? Visit our '),
+                    children: [
+                      TextSpan(text: l10n.need_help_visit_our),
                       TextSpan(
-                        text: 'Support Center',
-                        style: TextStyle(
+                        text: l10n.support_center,
+                        style: const TextStyle(
                           color: _primaryGreen,
                           fontWeight: FontWeight.w900,
                         ),
@@ -618,6 +621,7 @@ class _DriverStripeOnboardingScreenState
   }
 
   Widget _buildSuccessHeader() {
+    final l10n = AppLocalizations.of(context);
     return Container(
       width: double.infinity,
       padding: EdgeInsets.fromLTRB(18.w, 8.h, 18.w, 28.h),
@@ -683,10 +687,10 @@ class _DriverStripeOnboardingScreenState
                 end: const Offset(1, 1),
               ),
               SizedBox(height: 24.h),
-              Text('Payouts ready!', style: _titleStyle(27)),
+              Text(l10n.payouts_ready, style: _titleStyle(27)),
               SizedBox(height: 8.h),
               Text(
-                'Your account is connected and you’re\nall set to receive earnings.',
+                l10n.your_account_is_connected_and_yourenall_set_to_receive_earnings,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: _muted,
@@ -1095,14 +1099,16 @@ class _GradientButton extends StatelessWidget {
 }
 
 class _PoweredByStripe extends StatelessWidget {
-  const _PoweredByStripe();
+  const _PoweredByStripe({required this.l10n});
+
+  final AppLocalizations l10n;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text('Powered by', style: _labelStyle(_muted)),
+        Text(l10n.powered_by, style: _labelStyle(_muted)),
         SizedBox(width: 5.w),
         Text(
           'stripe',
@@ -1368,6 +1374,10 @@ class _Coin extends StatelessWidget {
 }
 
 class _TimeChip extends StatelessWidget {
+  const _TimeChip({required this.l10n});
+
+  final AppLocalizations l10n;
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -1382,7 +1392,7 @@ class _TimeChip extends StatelessWidget {
           Icon(Icons.schedule_rounded, size: 15.sp, color: _ink),
           SizedBox(width: 7.w),
           Text(
-            'Takes about 3 minutes',
+            l10n.takes_about_3_minutes,
             style: TextStyle(
               color: _ink,
               fontSize: 12.sp,
@@ -1483,6 +1493,7 @@ class _SecurityCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(16.w),
@@ -1515,12 +1526,12 @@ class _SecurityCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Your security is our priority',
+                      l10n.your_security_is_our_priority,
                       style: _cardTitleStyle(),
                     ),
                     SizedBox(height: 6.h),
                     Text(
-                      'SportConnect partners with Stripe to securely collect and protect your information. Your data is encrypted and never shared with us.',
+                      l10n.sportconnect_partners_with_stripe_to_securely_collect_and_protect_your_information_your_data_is_encrypted_and_never_shared_with_us,
                       style: _captionStyle(),
                     ),
                   ],
@@ -1531,17 +1542,17 @@ class _SecurityCard extends StatelessWidget {
           SizedBox(height: 15.h),
           Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: _SecurityBadge(
                   icon: Icons.shield_outlined,
-                  text: 'Secure by Stripe',
+                  text: l10n.secure_by_stripe,
                 ),
               ),
               SizedBox(width: 8.w),
-              const Expanded(
+              Expanded(
                 child: _SecurityBadge(
                   icon: Icons.verified_outlined,
-                  text: 'PCI DSS Compliant',
+                  text: l10n.pci_dss_compliant,
                 ),
               ),
             ],
@@ -1595,11 +1606,12 @@ class _PayoutAccountCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return _InfoCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Payout account', style: _smallStrongStyle()),
+          Text(l10n.payout_account, style: _smallStrongStyle()),
           SizedBox(height: 13.h),
           Row(
             children: [
@@ -1629,7 +1641,7 @@ class _PayoutAccountCard extends StatelessWidget {
                 child: Row(
                   children: [
                     Text(
-                      'Verified',
+                      l10n.verified,
                       style: TextStyle(
                         color: const Color(0xFF16994E),
                         fontSize: 10.5.sp,
@@ -1657,7 +1669,7 @@ class _PayoutAccountCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Next payout', style: _smallStrongStyle()),
+                    Text(l10n.next_payout, style: _smallStrongStyle()),
                     SizedBox(height: 6.h),
                     Text(
                       'Wed, 28 May',
@@ -1678,7 +1690,7 @@ class _PayoutAccountCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(999.r),
                 ),
                 child: Text(
-                  '2 days left',
+                  l10n.two_days_left,
                   style: TextStyle(
                     color: const Color(0xFF16994E),
                     fontSize: 10.sp,
@@ -1689,14 +1701,14 @@ class _PayoutAccountCard extends StatelessWidget {
             ],
           ),
           SizedBox(height: 13.h),
-          Text('Payout schedule', style: _smallStrongStyle()),
+          Text(l10n.payout_schedule, style: _smallStrongStyle()),
           SizedBox(height: 6.h),
           Row(
             children: [
               Icon(Icons.calendar_today_rounded, color: _muted, size: 14.sp),
               SizedBox(width: 8.w),
               Text(
-                'Weekly to your French IBAN',
+                l10n.weekly_to_your_french_iban,
                 style: TextStyle(
                   color: _muted,
                   fontSize: 12.sp,
@@ -1716,16 +1728,17 @@ class _EarningsSnapshotCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return _InfoCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Text('Earnings snapshot', style: _smallStrongStyle()),
+              Text(l10n.earnings_snapshot, style: _smallStrongStyle()),
               const Spacer(),
               Text(
-                'This week⌄',
+                l10n.this_week,
                 style: TextStyle(
                   color: const Color(0xFF8A94B5),
                   fontSize: 10.5.sp,
@@ -1743,14 +1756,14 @@ class _EarningsSnapshotCard extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const Expanded(
+                Expanded(
                   child: _SnapshotMetric(
-                    label: 'Earnings',
+                    label: l10n.earnings,
                     value: '14 320,50 €',
                   ),
                 ),
                 SizedBox(width: 12.w),
-                const _SnapshotMetric(label: 'Trips', value: '28'),
+                _SnapshotMetric(label: l10n.trips, value: '28'),
               ],
             ),
           ),
@@ -1792,6 +1805,7 @@ class _GreatJobCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(17.w),
@@ -1834,7 +1848,7 @@ class _GreatJobCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'You’re doing great!',
+                      l10n.youre_doing_great,
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 15.sp,
@@ -1843,7 +1857,7 @@ class _GreatJobCard extends StatelessWidget {
                     ),
                     SizedBox(height: 4.h),
                     Text(
-                      'Keep driving. More rides, more earnings.',
+                      l10n.keep_driving_more_rides_more_earnings,
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.82),
                         fontSize: 11.5.sp,

@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart' as flyer;
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
-import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/messaging/models/message_model.dart'
     as sport;
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Read-only Flyer Chat UI bridge.
 ///
@@ -33,7 +34,7 @@ class FlyerChatPreviewSheet extends StatefulWidget {
   }) {
     return AppModalSheet.show<void>(
       context: context,
-      title: 'Chat preview',
+      title: AppLocalizations.of(context).chat_preview,
       forceMaxHeight: true,
       maxHeightFactor: 0.86,
       child: FlyerChatPreviewSheet(
@@ -55,7 +56,15 @@ class _FlyerChatPreviewSheetState extends State<FlyerChatPreviewSheet> {
   void initState() {
     super.initState();
     _controller = flyer.InMemoryChatController(
-      messages: _toFlyerMessages(widget.messages),
+      messages: const [],
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _controller.setMessages(
+      _toFlyerMessages(widget.messages, AppLocalizations.of(context)),
     );
   }
 
@@ -63,7 +72,9 @@ class _FlyerChatPreviewSheetState extends State<FlyerChatPreviewSheet> {
   void didUpdateWidget(covariant FlyerChatPreviewSheet oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.messages != widget.messages) {
-      _controller.setMessages(_toFlyerMessages(widget.messages));
+      _controller.setMessages(
+        _toFlyerMessages(widget.messages, AppLocalizations.of(context)),
+      );
     }
   }
 
@@ -102,7 +113,10 @@ class _FlyerChatPreviewSheetState extends State<FlyerChatPreviewSheet> {
     );
   }
 
-  List<flyer.Message> _toFlyerMessages(List<sport.MessageModel> messages) {
+  List<flyer.Message> _toFlyerMessages(
+    List<sport.MessageModel> messages,
+    AppLocalizations l10n,
+  ) {
     final sorted = [...messages]
       ..sort((a, b) {
         final aDate = a.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
@@ -110,10 +124,17 @@ class _FlyerChatPreviewSheetState extends State<FlyerChatPreviewSheet> {
         return aDate.compareTo(bDate);
       });
 
-    return sorted.map(_toFlyerMessage).toList(growable: false);
+    return sorted
+        .map((message) => _toFlyerMessage(message, l10n))
+        .toList(
+          growable: false,
+        );
   }
 
-  flyer.Message _toFlyerMessage(sport.MessageModel message) {
+  flyer.Message _toFlyerMessage(
+    sport.MessageModel message,
+    AppLocalizations l10n,
+  ) {
     final status = switch (message.status) {
       sport.MessageStatus.sending => flyer.MessageStatus.sending,
       sport.MessageStatus.failed => flyer.MessageStatus.error,
@@ -155,19 +176,19 @@ class _FlyerChatPreviewSheetState extends State<FlyerChatPreviewSheet> {
             ? message.createdAt
             : null,
         status: status,
-        text: _displayTextFor(message),
+        text: _displayTextFor(message, l10n),
       ),
     };
   }
 
-  String _displayTextFor(sport.MessageModel message) {
+  String _displayTextFor(sport.MessageModel message, AppLocalizations l10n) {
     if (message.content.isNotEmpty) return message.content;
     return switch (message.type) {
-      sport.MessageType.location => message.locationName ?? 'Shared location',
-      sport.MessageType.audio => 'Voice message',
-      sport.MessageType.ride => 'Ride attachment',
-      sport.MessageType.system => 'System message',
-      sport.MessageType.image => 'Image',
+      sport.MessageType.location => message.locationName ?? l10n.sharedLocation,
+      sport.MessageType.audio => l10n.voiceMessage,
+      sport.MessageType.ride => l10n.rideAttachment,
+      sport.MessageType.system => l10n.systemMessage,
+      sport.MessageType.image => l10n.imageMessage,
       sport.MessageType.text => '',
     };
   }
@@ -186,7 +207,7 @@ class _ReadOnlyComposer extends StatelessWidget {
         border: Border(top: BorderSide(color: AppColors.border)),
       ),
       child: Text(
-        'Preview mode',
+        AppLocalizations.of(context).preview_mode,
         textAlign: TextAlign.center,
         style: TextStyle(
           fontSize: 12.sp,

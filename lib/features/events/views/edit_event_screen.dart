@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
@@ -210,7 +211,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
             final isSelected = state.type == type;
             return GestureDetector(
               onTap: () {
-                HapticFeedback.selectionClick();
+                unawaited(HapticFeedback.selectionClick());
                 _editForm.setType(type);
               },
               child: AnimatedContainer(
@@ -232,7 +233,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
                     Icon(type.icon, size: 14.sp, color: type.color),
                     SizedBox(width: 6.w),
                     Text(
-                      type.label,
+                      AppLocalizations.of(context).running,
                       style: TextStyle(
                         fontSize: 12.sp,
                         fontWeight: isSelected
@@ -576,7 +577,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
         SwitchListTile.adaptive(
           value: state.isRecurring,
           onChanged: (value) {
-            HapticFeedback.selectionClick();
+            unawaited(HapticFeedback.selectionClick());
             _editForm.setRecurring(value);
           },
           title: Text(
@@ -631,7 +632,14 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
                 ),
                 SizedBox(width: 10.w),
                 Text(
-                  state.recurringPattern?.label ?? 'Select pattern',
+                  state.recurringPattern != null
+                      ? _recurrenceLabel(
+                          AppLocalizations.of(context),
+                          state.recurringPattern!,
+                        )
+                      : AppLocalizations.of(
+                          context,
+                        ).select_a_recurrence_pattern,
                   style: TextStyle(
                     fontSize: 13.sp,
                     color: state.recurringPattern != null
@@ -695,7 +703,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
 
     await AppModalSheet.show<void>(
       context: context,
-      title: 'Repeat',
+      title: AppLocalizations.of(context).repeat,
       maxHeightFactor: 0.7,
       child: Padding(
         padding: EdgeInsets.symmetric(vertical: 16.h),
@@ -705,7 +713,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
             Padding(
               padding: EdgeInsets.only(bottom: 12.h),
               child: Text(
-                'Repeat',
+                AppLocalizations.of(context).repeat,
                 style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600),
               ),
             ),
@@ -713,8 +721,8 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
                 child: Text(
-                  'No recurrence pattern fits this start/end window. '
-                  'Extend end time or set a later repeat end date.',
+                  '${AppLocalizations.of(context).no_recurrence_pattern_fits_this_startend_window}'
+                  '${AppLocalizations.of(context).extend_end_time_or_set_a_later_repeat_end_date}',
                   style: TextStyle(
                     fontSize: 12.sp,
                     color: AppColors.textSecondary,
@@ -762,7 +770,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
               ),
               SizedBox(width: 12.w),
               Text(
-                pattern.label,
+                _recurrenceLabel(AppLocalizations.of(context), pattern),
                 style: TextStyle(
                   fontSize: 13.sp,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
@@ -967,6 +975,16 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
       default:
         return error;
     }
+  }
+
+  String _recurrenceLabel(AppLocalizations l10n, RecurrencePattern pattern) {
+    return switch (pattern) {
+      RecurrencePattern.daily => l10n.every_day,
+      RecurrencePattern.weekly => l10n.every_week,
+      RecurrencePattern.biweekly => l10n.every_2_weeks,
+      RecurrencePattern.monthly => l10n.every_month,
+      RecurrencePattern.yearly => l10n.every_year,
+    };
   }
 }
 

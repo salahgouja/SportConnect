@@ -215,12 +215,12 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
           return vehiclesAsync.when(
             data: (vehicles) => _buildMainContent(context, vehicles),
             loading: () =>
-                const SkeletonLoader(type: SkeletonType.rideCard, itemCount: 4),
+                const SkeletonLoader(),
             error: (err, stack) => _buildErrorState(context, err.toString()),
           );
         },
         loading: () =>
-            const SkeletonLoader(type: SkeletonType.rideCard, itemCount: 4),
+            const SkeletonLoader(),
         error: (err, stack) => _buildErrorState(context, err.toString()),
       ),
     );
@@ -1595,7 +1595,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                       tooltip: l10n.decreasePriceTooltip,
                       onPressed: _pricePerSeatInCents > 100
                           ? () {
-                              HapticFeedback.lightImpact();
+                              unawaited(HapticFeedback.lightImpact());
                               ref
                                   .read(
                                     driverOfferRideViewModelProvider.notifier,
@@ -1623,7 +1623,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                       tooltip: l10n.increasePriceTooltip,
                       onPressed: _pricePerSeatInCents < 99900
                           ? () {
-                              HapticFeedback.lightImpact();
+                              unawaited(HapticFeedback.lightImpact());
                               ref
                                   .read(
                                     driverOfferRideViewModelProvider.notifier,
@@ -1671,7 +1671,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
               for (int i = 1; i <= maxSeats; i++)
                 GestureDetector(
                   onTap: () {
-                    HapticFeedback.selectionClick();
+                    unawaited(HapticFeedback.selectionClick());
                     ref
                         .read(driverOfferRideViewModelProvider.notifier)
                         .setSeats(i);
@@ -1976,7 +1976,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                 : l10n.noneLabel,
             activeColor: AppColors.primary,
             onChanged: (val) {
-              HapticFeedback.selectionClick();
+              unawaited(HapticFeedback.selectionClick());
               ref
                   .read(driverOfferRideViewModelProvider.notifier)
                   .setMaxDetourMinutes(val.toInt() == 0 ? null : val.toInt());
@@ -2267,7 +2267,6 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
       AdaptiveSnackBar.show(
         context,
         message: 'Destination is locked because an event is selected.',
-        type: AdaptiveSnackBarType.info,
       );
       return;
     }

@@ -2,11 +2,12 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
-import 'package:sport_connect/core/widgets/address_autocomplete_field.dart';
 import 'package:sport_connect/core/utils/user_facing_error.dart';
-import 'package:sport_connect/features/auth/models/models.dart';
+import 'package:sport_connect/core/widgets/address_autocomplete_field.dart';
 import 'package:sport_connect/features/auth/repositories/auth_repository.dart';
+import 'package:sport_connect/features/profile/models/leaderboard_entry.dart';
 import 'package:sport_connect/features/profile/repositories/profile_repository.dart';
 import 'package:sport_connect/features/profile/repositories/support_repository.dart';
 import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
@@ -1035,4 +1036,3 @@ Future<int> userRank(Ref ref, String uid) async {
   final repository = ref.read(profileRepositoryProvider);
   return repository.getUserRank(uid);
 }
-

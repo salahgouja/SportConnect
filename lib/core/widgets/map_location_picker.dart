@@ -14,10 +14,10 @@ import 'package:map_launcher/map_launcher.dart';
 import 'package:sport_connect/core/services/location_service.dart';
 import 'package:sport_connect/core/services/map_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/widgets/app_map_tile_layer.dart';
 import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
-import 'package:sport_connect/core/widgets/app_map_tile_layer.dart';
 
 /// Full-screen Location Picker with Search and Map
 ///
@@ -221,7 +221,7 @@ class _MapLocationPickerState extends ConsumerState<MapLocationPicker>
         .read(mapServiceProvider)
         .searchPlaces(
           query,
-          countryCode: widget.countryCode ?? "FR",
+          countryCode: widget.countryCode ?? 'FR',
           nearLocation: _selectedLocation,
           limit: 8,
         );
@@ -235,7 +235,7 @@ class _MapLocationPickerState extends ConsumerState<MapLocationPicker>
   }
 
   void _selectSearchResult(SearchResult result) {
-    HapticFeedback.selectionClick();
+    unawaited(HapticFeedback.selectionClick());
     final location = result.location;
 
     setState(() {
@@ -251,7 +251,7 @@ class _MapLocationPickerState extends ConsumerState<MapLocationPicker>
   }
 
   void _selectCity(PopularLocation city) {
-    HapticFeedback.selectionClick();
+    unawaited(HapticFeedback.selectionClick());
 
     setState(() {
       _selectedLocation = city.location;
@@ -266,7 +266,7 @@ class _MapLocationPickerState extends ConsumerState<MapLocationPicker>
   }
 
   void _onMapTap(LatLng position) {
-    HapticFeedback.lightImpact();
+    unawaited(HapticFeedback.lightImpact());
 
     setState(() {
       _selectedLocation = position;
@@ -439,7 +439,7 @@ class _MapLocationPickerState extends ConsumerState<MapLocationPicker>
             else if (_searchController.text.isNotEmpty)
               GestureDetector(
                 onTap: () {
-                  HapticFeedback.lightImpact();
+                  unawaited(HapticFeedback.lightImpact());
                   _searchController.clear();
                   setState(() => _searchResults = []);
                 },
@@ -682,7 +682,8 @@ class _MapLocationPickerState extends ConsumerState<MapLocationPicker>
             ),
             children: [
               AppMapTileLayer(
-                subdomains: MapService.standardTileProvider.subdomains ?? const [],
+                subdomains:
+                    MapService.standardTileProvider.subdomains ?? const [],
               ),
               CurrentLocationLayer(
                 style: LocationMarkerStyle(
@@ -967,7 +968,7 @@ class _MapLocationPickerState extends ConsumerState<MapLocationPicker>
             GestureDetector(
               onTapDown: (_) {
                 if (_selectedLocation != null) {
-                  HapticFeedback.lightImpact();
+                  unawaited(HapticFeedback.lightImpact());
                   _confirmButtonController.forward();
                 }
               },

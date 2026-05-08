@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'dart:io';
 
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
@@ -127,7 +129,7 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
 
     ref.listen(contactSupportViewModelProvider, (previous, next) {
       if (next.isSubmitted && previous?.isSubmitted != true) {
-        HapticFeedback.mediumImpact();
+        unawaited(HapticFeedback.mediumImpact());
       }
 
       if (next.errorMessage != null &&

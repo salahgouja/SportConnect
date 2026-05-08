@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -15,6 +14,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/services/location_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
@@ -23,13 +23,12 @@ import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/core/widgets/skeleton_loader.dart';
-import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/messaging/models/message_model.dart';
 import 'package:sport_connect/features/messaging/view_models/chat_view_model.dart';
+import 'package:sport_connect/features/messaging/widgets/message_content_widgets.dart';
+import 'package:sport_connect/features/messaging/widgets/typing_dot.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:v_chat_voice_player/v_chat_voice_player.dart';
-import 'package:v_platform/v_platform.dart';
 
 /// Chat Detail Screen with real-time Firestore messaging.
 class ChatDetailScreen extends ConsumerStatefulWidget {
@@ -90,7 +89,6 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   void _showSendingSnackBar(String message) {
     _showStatusSnackBar(
       message,
-      type: AdaptiveSnackBarType.info,
       duration: const Duration(seconds: 30),
     );
   }
@@ -142,7 +140,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
         )
         .handleComposerTextChanged(
           _messageController.text,
-          currentUser?.username ?? 'User',
+          currentUser?.username ?? AppLocalizations.of(context).user,
         );
   }
 
@@ -230,7 +228,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     if (!await _ensurePersistedChat()) return;
     if (!mounted) return;
 
-    HapticFeedback.lightImpact();
+    unawaited(HapticFeedback.lightImpact());
     _messageController.clear();
 
     final notifier = ref.read(
@@ -244,7 +242,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
 
     final success = await notifier.sendMessage(
       content: text,
-      senderName: currentUser?.username ?? 'User',
+      senderName: currentUser?.username ?? AppLocalizations.of(context).user,
       senderPhotoUrl: currentUser?.photoUrl,
       replyToMessageId: chatState.replyToMessage?.id,
       replyToContent: chatState.replyToMessage?.content,
@@ -260,7 +258,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       _messageController.text = text;
 
       _showStatusSnackBar(
-        error ?? 'Failed to send message',
+        error ?? AppLocalizations.of(context).failedToSendMessage,
         type: AdaptiveSnackBarType.error,
       );
 
@@ -275,9 +273,10 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   Future<void> _sendImageFromSource(ImageSource source) async {
     final l10n = AppLocalizations.of(context);
     final customMessage = source == ImageSource.gallery
-        ? 'Access to your photo library is needed to send images in this chat. '
-              'Your photos are only shared when you choose to send them.'
-        : 'Camera access is needed to take and send photos in this chat.';
+        ? AppLocalizations.of(context).permissionPhotoLibraryMessage
+        : AppLocalizations.of(
+            context,
+          ).cameraAccessIsNeededToTakeAndSendPhotosInThisChat;
 
     final accepted = await PermissionDialogHelper.showCameraRationale(
       context,
@@ -289,7 +288,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     if (pickedFile == null) return;
     if (!await _ensurePersistedChat()) return;
 
-    HapticFeedback.lightImpact();
+    unawaited(HapticFeedback.lightImpact());
     if (!context.mounted) return;
     _showSendingSnackBar(l10n.sendingImage);
 
@@ -300,7 +299,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       final success = await notifier.sendImageMessage(
         imageFile: File(pickedFile.path),
         fileName: '${DateTime.now().millisecondsSinceEpoch}_${pickedFile.name}',
-        senderName: currentUser?.username ?? 'User',
+        senderName: currentUser?.username ?? AppLocalizations.of(context).user,
         senderPhotoUrl: currentUser?.photoUrl,
       );
 
@@ -314,7 +313,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                   chatDetailViewModelProvider(_chatId, currentUser?.uid ?? ''),
                 )
                 .error ??
-            'Failed to send image';
+            AppLocalizations.of(context).failedToSendImage;
         _showStatusSnackBar(
           l10n.failedToSendImageValue(error),
           type: AdaptiveSnackBarType.error,
@@ -376,7 +375,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
             .updateRecordingDuration(Duration(milliseconds: timer.tick * 100));
       });
 
-      HapticFeedback.mediumImpact();
+      unawaited(HapticFeedback.mediumImpact());
     } on Exception {
       if (!mounted) return;
       AdaptiveSnackBar.show(
@@ -398,7 +397,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
         await _sendAudioMessage(path);
       }
       notifier.clearRecording();
-      HapticFeedback.mediumImpact();
+      unawaited(HapticFeedback.mediumImpact());
     } on Exception {
       notifier.clearRecording();
       if (!mounted) return;
@@ -428,7 +427,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
             ).notifier,
           )
           .clearRecording();
-      HapticFeedback.lightImpact();
+      unawaited(HapticFeedback.lightImpact());
     } on Exception {
       // Silently discard — user-initiated cancel, nothing to recover.
     }
@@ -436,7 +435,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
 
   Future<void> _sendAudioMessage(String audioPath) async {
     if (!await _ensurePersistedChat()) return;
-    HapticFeedback.lightImpact();
+    unawaited(HapticFeedback.lightImpact());
     if (!mounted) return;
     _showSendingSnackBar(AppLocalizations.of(context).sendingVoiceMessage);
 
@@ -455,7 +454,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
         audioFile: file,
         fileName: 'audio_${DateTime.now().millisecondsSinceEpoch}.m4a',
         durationText: durationText,
-        senderName: currentUser?.username ?? 'User',
+        senderName: currentUser?.username ?? AppLocalizations.of(context).user,
         senderPhotoUrl: currentUser?.photoUrl,
       );
 
@@ -472,7 +471,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                     ),
                   )
                   .error ??
-              'Failed to send voice message',
+              AppLocalizations.of(context).failedToSendVoiceMessage,
         );
       }
       // Delete temp file only after confirmed success so RETRY can re-send it.
@@ -484,15 +483,19 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
 
       final errorText =
           e.toString().contains('permission') || e.toString().contains('403')
-          ? 'Permission denied. Please check your connection and try again.'
+          ? AppLocalizations.of(
+              context,
+            ).permissionDeniedPleaseCheckYourConnectionAndTryAgain
           : e.toString().contains('network')
-          ? 'Network error. Please check your internet connection.'
-          : 'Failed to send voice message';
+          ? AppLocalizations.of(
+              context,
+            ).networkErrorPleaseCheckYourInternetConnection
+          : AppLocalizations.of(context).failedToSendVoiceMessage;
 
       _showStatusSnackBar(
         errorText,
         type: AdaptiveSnackBarType.error,
-        action: 'RETRY',
+        action: AppLocalizations.of(context).retry,
         onActionPressed: () => _sendAudioMessage(audioPath),
       );
     }
@@ -575,13 +578,13 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
         ),
         AppModalAction(
           icon: Icons.cleaning_services_outlined,
-          title: 'Clear chat history',
+          title: l10n.clear_chat_history,
           isDestructive: true,
           onTap: _confirmClearChatHistory,
         ),
         AppModalAction(
           icon: Icons.delete_outline_rounded,
-          title: 'Delete conversation',
+          title: l10n.delete_conversation,
           isDestructive: true,
           onTap: _confirmDeleteConversation,
         ),
@@ -594,16 +597,13 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     if (uid == null) return;
     showDialog<void>(
       context: context,
-      barrierLabel: 'Delete conversation',
+      barrierLabel: AppLocalizations.of(context).delete_conversation,
       builder: (dialogContext) => AlertDialog.adaptive(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
         ),
         title: Text(AppLocalizations.of(context).deleteConversationTitle),
-        content: const Text(
-          'This will remove the conversation from your chat list. '
-          'It will appear again if a new message is sent.',
-        ),
+        content: Text(AppLocalizations.of(context).deleteConversationMessage),
         actions: [
           TextButton(
             onPressed: () => dialogContext.pop(),
@@ -627,7 +627,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
 
                 AdaptiveSnackBar.show(
                   context,
-                  message: 'Conversation deleted',
+                  message: AppLocalizations.of(context).conversation_deleted,
                   type: AdaptiveSnackBarType.success,
                 );
               } on Exception {
@@ -643,9 +643,9 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-            child: const Text(
-              'Delete',
-              style: TextStyle(color: Colors.white),
+            child: Text(
+              AppLocalizations.of(context).delete,
+              style: const TextStyle(color: Colors.white),
             ),
           ),
         ],
@@ -847,7 +847,6 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     AdaptiveSnackBar.show(
       context,
       message: AppLocalizations.of(context).notificationsMutedForThisChat,
-      type: AdaptiveSnackBarType.info,
     );
   }
 
@@ -856,16 +855,13 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     if (uid == null) return;
     showDialog<void>(
       context: context,
-      barrierLabel: AppLocalizations.of(context).clearChat,
+      barrierLabel: AppLocalizations.of(context).clear_chat_history,
       builder: (dialogContext) => AlertDialog.adaptive(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(PlatformAdaptive.dialogRadius),
         ),
-        title: Text(AppLocalizations.of(context).clearChat),
-        content: const Text(
-          'This will clear the messages from this chat for you only. '
-          'The conversation will stay in your chat list.',
-        ),
+        title: Text(AppLocalizations.of(context).clear_chat_history),
+        content: Text(AppLocalizations.of(context).clearChatHistoryMessage),
         actions: [
           TextButton(
             onPressed: () => dialogContext.pop(),
@@ -903,9 +899,9 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-            child: const Text(
-              'Clear history',
-              style: TextStyle(color: Colors.white),
+            child: Text(
+              AppLocalizations.of(context).clear_history,
+              style: const TextStyle(color: Colors.white),
             ),
           ),
         ],
@@ -1268,7 +1264,6 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     );
   }
 
-  // FIX: Uses _TypingDot widget — properly loops via AnimationController.
   Widget _buildTypingIndicator() {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
@@ -1284,11 +1279,11 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
             ),
             child: Row(
               children: [
-                const _TypingDot(index: 0),
+                const TypingDot(index: 0),
                 SizedBox(width: 4.w),
-                const _TypingDot(index: 1),
+                const TypingDot(index: 1),
                 SizedBox(width: 4.w),
-                const _TypingDot(index: 2),
+                const TypingDot(index: 2),
               ],
             ),
           ),
@@ -1390,7 +1385,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                           : CrossAxisAlignment.start,
                       children: [
                         if (message.replyToContent != null)
-                          _ReplyIndicator(content: message.replyToContent!),
+                          ReplyIndicator(content: message.replyToContent!),
                         Container(
                           constraints: BoxConstraints(maxWidth: 300.w),
                           padding: EdgeInsets.symmetric(
@@ -1439,16 +1434,15 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              _MessageContent(
+                              MessageContent(
                                 message: message,
                                 isMe: isMe,
                                 onLocationTap: _openLocationInMaps,
                               ),
                               SizedBox(height: 4.h),
-                              _MessageMetaRow(
+                              MessageMetaRow(
                                 message: message,
                                 isMe: isMe,
-                                // FIX: Convert to local time before formatting.
                                 formattedTime: _formatTime(message.createdAt),
                               ),
                             ],
@@ -1488,7 +1482,6 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       AdaptiveSnackBar.show(
         context,
         message: l10n.messageCopied,
-        type: AdaptiveSnackBarType.info,
       );
     }
 
@@ -1513,7 +1506,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
 
     AppModalSheet.showActions<void>(
       context: context,
-      title: 'Message options',
+      title: l10n.message_options,
       maxHeightFactor: 0.6,
       actions: [
         AppModalAction(
@@ -1628,7 +1621,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
               IconButton(
                 tooltip: AppLocalizations.of(context).attachFile,
                 onPressed: () {
-                  HapticFeedback.lightImpact();
+                  unawaited(HapticFeedback.lightImpact());
                   _showAttachmentOptions();
                 },
                 icon: Icon(
@@ -1819,9 +1812,9 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     final l10n = AppLocalizations.of(context);
     await AppModalSheet.showActions<void>(
       context: context,
-      title: 'Attachments',
+      title: l10n.attachments,
       maxHeightFactor: 0.56,
-      description: 'Choose what you want to share in this chat.',
+      description: l10n.choose_what_you_want_to_share_in_this_chat,
       actions: [
         AppModalAction(
           icon: Icons.camera_alt_rounded,
@@ -1860,14 +1853,14 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     final svc = ref.read(locationServiceProvider);
     if (!await svc.isServiceEnabled()) {
       if (!mounted) return;
-      _showLocationError('Please enable location services');
+      _showLocationError(l10n.pleaseEnableLocationServices);
       return;
     }
     if (!await svc.checkPermission()) {
       final granted = await svc.requestPermission();
       if (!granted) {
         if (!mounted) return;
-        _showLocationError('Location permission required');
+        _showLocationError(l10n.locationPermissionRequired);
         return;
       }
     }
@@ -1916,7 +1909,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       if (!mounted) return;
       if (position == null) {
         Navigator.of(context).pop();
-        _showLocationError('Could not get your location');
+        _showLocationError(l10n.couldNotGetYourLocation);
         return;
       }
 
@@ -1943,12 +1936,13 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
             content: locationName,
             latitude: position.latitude,
             longitude: position.longitude,
-            senderName: currentUser?.username ?? 'User',
+            senderName:
+                currentUser?.username ?? AppLocalizations.of(context).user,
             senderPhotoUrl: currentUser?.photoUrl,
           );
 
       if (success && mounted) {
-        HapticFeedback.lightImpact();
+        unawaited(HapticFeedback.lightImpact());
         _showStatusSnackBar(
           l10n.locationShared,
           type: AdaptiveSnackBarType.success,
@@ -1958,7 +1952,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     } on Exception catch (e, st) {
       if (!mounted) return;
       Navigator.of(context).pop();
-      _showLocationError('Failed to get location: $e');
+      _showLocationError(l10n.failedToGetLocationValue(e.toString()));
     }
   }
 
@@ -1968,14 +1962,14 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       message: message,
       type: AdaptiveSnackBarType.error,
       duration: const Duration(seconds: 3),
-      action: 'Settings',
+      action: AppLocalizations.of(context).settings,
       onActionPressed: () =>
           ref.read(locationServiceProvider).openLocationSettings(),
     );
   }
 
   Future<void> _openLocationInMaps(double lat, double lng, String label) async {
-    HapticFeedback.lightImpact();
+    unawaited(HapticFeedback.lightImpact());
     final encodedLabel = Uri.encodeComponent(label.replaceFirst('📍 ', ''));
     final googleMapsUrl = Uri.parse(
       'https://www.google.com/maps/search/?api=1&query=$lat,$lng',
@@ -2107,548 +2101,6 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
           ],
         ),
       ).animate().slideY(begin: -1).fadeIn(),
-    );
-  }
-}
-
-// ── Extracted message content widgets ────────────────────────────────────────
-
-/// Routes to the correct content widget based on [MessageModel.type].
-class _MessageContent extends StatelessWidget {
-  const _MessageContent({
-    required this.message,
-    required this.isMe,
-    required this.onLocationTap,
-  });
-
-  final MessageModel message;
-  final bool isMe;
-  final void Function(double lat, double lng, String label) onLocationTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return switch (message.type) {
-      MessageType.image when message.mediaUrl != null => RepaintBoundary(
-        child: _ImageMessageContent(mediaUrl: message.mediaUrl!),
-      ),
-      MessageType.location
-          when message.latitude != null && message.longitude != null =>
-        RepaintBoundary(
-          child: _LocationMessageContent(
-            message: message,
-            isMe: isMe,
-            onTap: () => onLocationTap(
-              message.latitude!,
-              message.longitude!,
-              message.content,
-            ),
-          ),
-        ),
-      MessageType.audio when message.mediaUrl != null => _AudioMessagePlayer(
-        message: message,
-        audioUrl: message.mediaUrl!,
-        isMe: isMe,
-      ),
-      _ => _TextMessageContent(message: message, isMe: isMe),
-    };
-  }
-}
-
-/// Network image with loading shimmer.
-class _ImageMessageContent extends StatelessWidget {
-  const _ImageMessageContent({required this.mediaUrl});
-
-  final String mediaUrl;
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12.r),
-      child: CachedNetworkImage(
-        imageUrl: mediaUrl,
-        width: 200.w,
-        fit: BoxFit.cover,
-        placeholder: (ctx, url) => Container(
-          width: 200.w,
-          height: 150.h,
-          color: AppColors.surfaceVariant,
-          child: const Center(child: CircularProgressIndicator.adaptive()),
-        ),
-        errorWidget: (ctx, url, err) => Container(
-          width: 200.w,
-          height: 150.h,
-          color: AppColors.surfaceVariant,
-          child: const Icon(Icons.broken_image_outlined),
-        ),
-      ),
-    );
-  }
-}
-
-/// Static map preview + address label. Tappable to open in maps app.
-class _LocationMessageContent extends StatelessWidget {
-  const _LocationMessageContent({
-    required this.message,
-    required this.isMe,
-    required this.onTap,
-  });
-
-  final MessageModel message;
-  final bool isMe;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final mapUrl =
-        'https://staticmap.openstreetmap.de/staticmap.php'
-        '?center=${message.latitude},${message.longitude}'
-        '&zoom=15&size=200x120&maptype=osmarenderer'
-        '&markers=${message.latitude},${message.longitude},red-pushpin';
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12.r),
-            child: Stack(
-              children: [
-                CachedNetworkImage(
-                  imageUrl: mapUrl,
-                  width: 200.w,
-                  height: 120.h,
-                  fit: BoxFit.cover,
-                  placeholder: (_, _) => Container(
-                    width: 200.w,
-                    height: 120.h,
-                    color: AppColors.surfaceVariant,
-                  ),
-                  errorWidget: (_, _, _) => Container(
-                    width: 200.w,
-                    height: 120.h,
-                    color: AppColors.surfaceVariant,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.map_rounded,
-                          size: 32.sp,
-                          color: isMe
-                              ? Colors.white70
-                              : AppColors.textSecondary,
-                        ),
-                        SizedBox(height: 4.h),
-                        Text(
-                          AppLocalizations.of(context).tapToOpenMap,
-                          style: TextStyle(
-                            fontSize: 11.sp,
-                            color: isMe
-                                ? Colors.white70
-                                : AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  progressIndicatorBuilder: (_, _, progress) => Container(
-                    width: 200.w,
-                    height: 120.h,
-                    color: AppColors.surfaceVariant,
-                    child: const Center(
-                      child: CircularProgressIndicator.adaptive(
-                        strokeWidth: 2,
-                      ),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  right: 8.w,
-                  top: 8.h,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 8.w,
-                      vertical: 4.h,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.black54,
-                      borderRadius: BorderRadius.circular(12.r),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.open_in_new,
-                          size: 12.sp,
-                          color: Colors.white,
-                        ),
-                        SizedBox(width: 4.w),
-                        Text(
-                          AppLocalizations.of(context).open,
-                          style: TextStyle(
-                            fontSize: 12.sp,
-                            color: Colors.white,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          SizedBox(height: 8.h),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.location_on_rounded,
-                size: 16.sp,
-                color: isMe ? Colors.white70 : const Color(0xFF4CAF50),
-              ),
-              SizedBox(width: 4.w),
-              Flexible(
-                child: Text(
-                  message.content.replaceFirst('📍 ', ''),
-                  style: TextStyle(
-                    fontSize: 13.sp,
-                    color: isMe ? Colors.white : AppColors.textPrimary,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Plain text or deleted-message placeholder.
-class _TextMessageContent extends StatelessWidget {
-  const _TextMessageContent({required this.message, required this.isMe});
-
-  final MessageModel message;
-  final bool isMe;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      message.isDeleted
-          ? AppLocalizations.of(context).thisMessageWasDeleted
-          : message.content,
-      style: TextStyle(
-        fontSize: 15.sp,
-        color: isMe ? Colors.white : AppColors.textPrimary,
-        fontStyle: message.isDeleted ? FontStyle.italic : FontStyle.normal,
-        height: 1.4,
-      ),
-    );
-  }
-}
-
-/// Timestamp + edited flag + read-receipt icon row.
-class _MessageMetaRow extends StatelessWidget {
-  const _MessageMetaRow({
-    required this.message,
-    required this.isMe,
-    required this.formattedTime,
-  });
-
-  final MessageModel message;
-  final bool isMe;
-  final String formattedTime;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (message.isEdited)
-          Padding(
-            padding: EdgeInsets.only(right: 4.w),
-            child: Text(
-              AppLocalizations.of(context).edited,
-              style: TextStyle(
-                fontSize: 12.sp,
-                color: isMe
-                    ? Colors.white.withValues(alpha: 0.6)
-                    : AppColors.textTertiary,
-              ),
-            ),
-          ),
-        Text(
-          formattedTime,
-          style: TextStyle(
-            fontSize: 11.sp,
-            color: isMe
-                ? Colors.white.withValues(alpha: 0.7)
-                : AppColors.textTertiary,
-          ),
-        ),
-        if (isMe) ...[
-          SizedBox(width: 4.w),
-          Icon(
-            // delivered and read both show double-tick; color distinguishes them.
-            message.status == MessageStatus.read ||
-                    message.status == MessageStatus.delivered
-                ? Icons.done_all_rounded
-                : Icons.done_rounded,
-            size: 14.sp,
-            color: message.status == MessageStatus.read
-                ? Colors.lightBlueAccent
-                : Colors.white.withValues(alpha: 0.7),
-          ),
-        ],
-      ],
-    );
-  }
-}
-
-/// Quoted-message strip shown above a bubble when replying.
-class _ReplyIndicator extends StatelessWidget {
-  const _ReplyIndicator({required this.content});
-
-  final String content;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: EdgeInsets.only(bottom: 4.h),
-      padding: EdgeInsets.all(8.w),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceVariant.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(8.r),
-        border: const Border(
-          left: BorderSide(color: AppColors.primary, width: 2),
-        ),
-      ),
-      child: Text(
-        content,
-        style: TextStyle(fontSize: 12.sp, color: AppColors.textSecondary),
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-      ),
-    );
-  }
-}
-
-// ── Audio player ──────────────────────────────────────────────────────────────
-
-// ── Audio player ──────────────────────────────────────────────────────────────
-
-class _AudioMessagePlayer extends StatefulWidget {
-  const _AudioMessagePlayer({
-    required this.audioUrl,
-    required this.isMe,
-    required this.message,
-  });
-
-  final String audioUrl;
-  final bool isMe;
-  final MessageModel message;
-
-  @override
-  State<_AudioMessagePlayer> createState() => _AudioMessagePlayerState();
-}
-
-class _AudioMessagePlayerState extends State<_AudioMessagePlayer> {
-  late VVoiceMessageController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = VVoiceMessageController(
-      id: widget.message.id,
-      audioSrc: VPlatformFile.fromUrl(networkUrl: widget.audioUrl),
-      maxDuration: const Duration(minutes: 10),
-      onComplete: (_) => HapticFeedback.lightImpact(),
-      onPlaying: (_) => HapticFeedback.selectionClick(),
-      onPause: (_) {},
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final senderName = widget.message.senderName;
-    final initials = senderName
-        .trim()
-        .split(' ')
-        .take(2)
-        .map((e) => e.isNotEmpty ? e[0].toUpperCase() : '')
-        .join();
-
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 2.h),
-      child: VVoiceMessageView(
-        controller: _controller,
-
-        // ── Colors ────────────────────────────────────────────────────────
-        colorConfig: VoiceColorConfig(
-          activeSliderColor: widget.isMe ? Colors.white : AppColors.primary,
-          notActiveSliderColor: widget.isMe
-              ? Colors.white.withValues(alpha: 0.35)
-              : AppColors.divider,
-        ),
-
-        // ── Container ─────────────────────────────────────────────────────
-        containerConfig: VoiceContainerConfig(
-          backgroundColor: Colors.transparent,
-          borderRadius: 0,
-          containerPadding: EdgeInsets.symmetric(
-            horizontal: 6.w,
-            vertical: 6.h,
-          ),
-        ),
-
-        // ── Play / Pause button ───────────────────────────────────────────
-        buttonConfig: VoiceButtonConfig(
-          buttonColor: widget.isMe
-              ? Colors.white.withValues(alpha: 0.18)
-              : AppColors.primary.withValues(alpha: 0.08),
-          buttonIconColor: widget.isMe ? Colors.white : AppColors.primary,
-          buttonSize: 40.w,
-          useSimplePlayIcon: true,
-          simpleIconSize: 20.sp,
-        ),
-
-        // ── Waveform visualizer ───────────────────────────────────────────
-        visualizerConfig: VoiceVisualizerConfig(
-          showVisualizer: true,
-          height: 32.h,
-          barCount: 45,
-          barSpacing: 2,
-          minBarHeight: 4,
-          useRandomHeights: true, // unique pattern per message
-          enableBarAnimations: true, // animates bars while playing
-        ),
-
-        // ── Speed control ─────────────────────────────────────────────────
-        speedConfig: VoiceSpeedConfig(
-          showSpeedControl: true,
-          speedButtonColor: widget.isMe
-              ? Colors.white.withValues(alpha: 0.18)
-              : AppColors.primary.withValues(alpha: 0.08),
-          speedButtonTextColor: widget.isMe ? Colors.white : AppColors.primary,
-          speedButtonBorderRadius: 8,
-          speedButtonPadding: EdgeInsets.symmetric(
-            horizontal: 7.w,
-            vertical: 3.h,
-          ),
-        ),
-
-        // ── Avatar ────────────────────────────────────────────────────────
-        // shows sender avatar with mic icon + played/unplayed status badge
-        avatarConfig: VoiceAvatarConfig(
-          avatarSize: 36.w,
-          micIconSize: 13.sp,
-          userAvatar: widget.isMe
-              ? const SizedBox.shrink() // no avatar on sent side
-              : (widget.message.senderPhotoUrl != null &&
-                        widget.message.senderPhotoUrl!.isNotEmpty
-                    ? CircleAvatar(
-                        radius: 18.r,
-                        backgroundImage: NetworkImage(
-                          widget.message.senderPhotoUrl!,
-                        ),
-                      )
-                    : CircleAvatar(
-                        radius: 18.r,
-                        backgroundColor: AppColors.primary.withValues(
-                          alpha: 0.12,
-                        ),
-                        child: Text(
-                          initials,
-                          style: TextStyle(
-                            fontSize: 12.sp,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.primary,
-                          ),
-                        ),
-                      )),
-        ),
-
-        // ── Text / counter ────────────────────────────────────────────────
-        textConfig: VoiceTextConfig(
-          counterTextStyle: TextStyle(
-            fontSize: 11.sp,
-            fontWeight: FontWeight.w500,
-            fontFeatures: const [FontFeature.tabularFigures()],
-            color: widget.isMe
-                ? Colors.white.withValues(alpha: 0.7)
-                : AppColors.textSecondary,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ── Typing dot ────────────────────────────────────────────────────────────────
-
-/// A single animated dot for the typing indicator.
-/// Uses [AnimationController] with repeat() so it loops indefinitely.
-class _TypingDot extends StatefulWidget {
-  const _TypingDot({required this.index});
-
-  final int index;
-
-  @override
-  State<_TypingDot> createState() => _TypingDotState();
-}
-
-class _TypingDotState extends State<_TypingDot>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<double> _opacity;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    )..repeat(reverse: true);
-
-    _opacity = CurvedAnimation(
-      parent: _controller,
-      curve: Interval(
-        (widget.index * 0.2).clamp(0.0, 1.0),
-        (widget.index * 0.2 + 0.6).clamp(0.0, 1.0),
-        curve: Curves.easeInOut,
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: _opacity.drive(Tween(begin: 0.3, end: 1)),
-      child: Container(
-        width: 8.w,
-        height: 8.w,
-        decoration: const BoxDecoration(
-          color: AppColors.textTertiary,
-          shape: BoxShape.circle,
-        ),
-      ),
     );
   }
 }

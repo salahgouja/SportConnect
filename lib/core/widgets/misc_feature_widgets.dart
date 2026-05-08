@@ -1,5 +1,7 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
+
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
@@ -81,7 +83,7 @@ class PostRideReviewPrompt extends StatelessWidget {
               children: List.generate(5, (i) {
                 return GestureDetector(
                   onTap: () {
-                    HapticFeedback.lightImpact();
+                    unawaited(HapticFeedback.lightImpact());
                     onRate(i + 1);
                     Navigator.pop(context);
                   },
@@ -135,7 +137,7 @@ class AddToCalendarButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return OutlinedButton.icon(
       onPressed: () {
-        HapticFeedback.lightImpact();
+        unawaited(HapticFeedback.lightImpact());
         onAdd();
       },
       icon: Icon(Icons.calendar_today_rounded, size: 16.sp),

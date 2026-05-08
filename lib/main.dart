@@ -273,7 +273,7 @@ class _SportConnectAppState extends ConsumerState<SportConnectApp> {
       splitScreenMode: true,
       builder: (context, child) {
         return AdaptiveApp.router(
-          title: 'SportConnect',
+          onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
           locale: locale,
           localizationsDelegates: const [
             AppLocalizations.delegate,

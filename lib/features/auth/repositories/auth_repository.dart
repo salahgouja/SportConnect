@@ -10,10 +10,12 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
+import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/core/services/firebase_service.dart';
 import 'package:sport_connect/core/services/push_notification_service.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
-import 'package:sport_connect/features/auth/models/models.dart';
+import 'package:sport_connect/features/auth/models/auth_exception.dart';
+import 'package:sport_connect/features/auth/models/social_sign_in_result.dart';
 
 part 'auth_repository.g.dart';
 
@@ -522,8 +524,16 @@ class AuthRepository {
         nonce: nonce,
       );
 
+      final idToken = appleCredential.identityToken;
+      if (idToken == null) {
+        throw const AuthException(
+          code: 'apple-sign-in-failed',
+          message: 'Apple did not return an identity token. Please try again.',
+        );
+      }
+
       final oauthCredential = OAuthProvider('apple.com').credential(
-        idToken: appleCredential.identityToken,
+        idToken: idToken,
         rawNonce: rawNonce,
       );
 

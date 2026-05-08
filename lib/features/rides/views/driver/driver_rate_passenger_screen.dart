@@ -1,3 +1,7 @@
+import 'dart:async';
+
+
+
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -215,7 +219,7 @@ class _DriverRatePassengerScreenState
                     final starValue = (index + 1).toDouble();
                     return GestureDetector(
                       onTap: () {
-                        HapticFeedback.selectionClick();
+                        unawaited(HapticFeedback.selectionClick());
                         ref
                             .read(
                               driverPassengerRatingViewModelProvider(
@@ -359,7 +363,7 @@ class _DriverRatePassengerScreenState
 
     return GestureDetector(
       onTap: () {
-        HapticFeedback.selectionClick();
+        unawaited(HapticFeedback.selectionClick());
         ref
             .read(
               driverPassengerRatingViewModelProvider(widget.rideId).notifier,
@@ -489,7 +493,7 @@ class _DriverRatePassengerScreenState
       driverPassengerRatingViewModelProvider(widget.rideId),
     );
     if (formState.selectedPassengerId == null || formState.rating <= 0) return;
-    HapticFeedback.mediumImpact();
+    unawaited(HapticFeedback.mediumImpact());
 
     try {
       final passengerProfile = ref

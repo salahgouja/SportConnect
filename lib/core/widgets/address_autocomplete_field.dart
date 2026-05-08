@@ -1,5 +1,7 @@
 import 'dart:async';
 
+
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -16,14 +18,14 @@ import 'package:sport_connect/l10n/generated/app_localizations.dart';
 const LatLng _defaultMapCenter = LatLng(48.8566, 2.3522);
 
 final LatLngBounds _franceMapBounds = LatLngBounds(
-  const LatLng(41.0, -5.5),
-  const LatLng(51.5, 10.0),
+  const LatLng(41, -5.5),
+  const LatLng(51.5, 10),
 );
 
 const double _minInlineMapZoom = 10.5;
-const double _initialInlineMapZoom = 13.0;
-const double _selectedInlineMapZoom = 15.0;
-const double _maxInlineMapZoom = 18.0;
+const double _initialInlineMapZoom = 13;
+const double _selectedInlineMapZoom = 15;
+const double _maxInlineMapZoom = 18;
 
 /// France-only address autocomplete input with inline expandable suggestions,
 /// inline expandable map selection, current-location support, final draft
@@ -252,7 +254,7 @@ class AddressAutocompleteFieldState
   }
 
   void _togglePanel() {
-    HapticFeedback.selectionClick();
+    unawaited(HapticFeedback.selectionClick());
 
     if (_expanded) {
       _closePanel();
@@ -321,7 +323,6 @@ class AddressAutocompleteFieldState
           .searchPlaces(
             query,
             limit: 8,
-            countryCode: 'fr',
           );
 
       if (!mounted) return;
@@ -397,7 +398,7 @@ class AddressAutocompleteFieldState
   Future<void> _useCurrentLocation() async {
     if (!widget.enabled || _isGettingCurrentLocation) return;
 
-    HapticFeedback.selectionClick();
+    unawaited(HapticFeedback.selectionClick());
     _searchFocusNode.unfocus();
 
     setState(() {
@@ -484,7 +485,7 @@ class AddressAutocompleteFieldState
     final fullAddress = result.displayName;
     final shortAddress = _shortAddress(fullAddress);
 
-    HapticFeedback.selectionClick();
+    unawaited(HapticFeedback.selectionClick());
     _searchFocusNode.unfocus();
 
     setState(() {
@@ -506,7 +507,7 @@ class AddressAutocompleteFieldState
   }
 
   void _clearAddress() {
-    HapticFeedback.selectionClick();
+    unawaited(HapticFeedback.selectionClick());
 
     _debounce?.cancel();
 
@@ -533,7 +534,7 @@ class AddressAutocompleteFieldState
   void _toggleMapExpansion() {
     if (!widget.enabled) return;
 
-    HapticFeedback.selectionClick();
+    unawaited(HapticFeedback.selectionClick());
     _searchFocusNode.unfocus();
 
     final nextValue = !_mapExpanded;
@@ -542,9 +543,7 @@ class AddressAutocompleteFieldState
     setState(() {
       _mapExpanded = nextValue;
 
-      if (_draftMapLocation == null) {
-        _draftMapLocation = center;
-      }
+      _draftMapLocation ??= center;
     });
 
     if (nextValue) {
@@ -566,7 +565,7 @@ class AddressAutocompleteFieldState
   }
 
   Future<void> _selectMapPoint(LatLng location) async {
-    HapticFeedback.lightImpact();
+    unawaited(HapticFeedback.lightImpact());
 
     if (!_isFiniteLatLng(location)) {
       setState(() {
@@ -630,7 +629,7 @@ class AddressAutocompleteFieldState
       return;
     }
 
-    HapticFeedback.mediumImpact();
+    unawaited(HapticFeedback.mediumImpact());
 
     setState(() {
       _controller.text = draft.fullAddress;
@@ -1593,6 +1592,7 @@ class _SuggestionArea extends StatelessWidget {
   }
 
   Widget _buildContent(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     if (query.length < 2) {
       return const SizedBox.shrink(
         key: ValueKey('idle'),
@@ -1603,7 +1603,7 @@ class _SuggestionArea extends StatelessWidget {
       return _PanelHint(
         key: const ValueKey('search-error'),
         icon: Icons.wifi_off_rounded,
-        title: 'Search unavailable',
+        title: l10n.search_unavailable,
         message: searchError!,
         accent: accent,
       );
@@ -1634,8 +1634,8 @@ class _SuggestionArea extends StatelessWidget {
       return _PanelHint(
         key: const ValueKey('empty'),
         icon: Icons.search_off_rounded,
-        title: 'No address found',
-        message: 'Try another street or choose the exact point on map.',
+        title: l10n.no_address_found,
+        message: l10n.try_another_street_or_choose_the_exact_point_on_map,
         accent: accent,
       );
     }
@@ -1653,7 +1653,7 @@ class _SuggestionArea extends StatelessWidget {
             Padding(
               padding: EdgeInsets.only(left: 2.w, bottom: 8.h),
               child: Text(
-                'SUGGESTIONS',
+                l10n.suggestions.toUpperCase(),
                 style: TextStyle(
                   fontSize: 10.sp,
                   fontWeight: FontWeight.w800,
@@ -1894,11 +1894,11 @@ class _SelectedAddressPreview extends StatelessWidget {
 
 class _PanelHint extends StatelessWidget {
   const _PanelHint({
-    super.key,
     required this.icon,
     required this.title,
     required this.message,
     required this.accent,
+    super.key,
   });
 
   final IconData icon;
@@ -2012,9 +2012,9 @@ class _SuggestionSkeleton extends StatelessWidget {
 
 class _SmallStatusPill extends StatelessWidget {
   const _SmallStatusPill({
-    super.key,
     required this.accent,
     required this.text,
+    super.key,
   });
 
   final Color accent;

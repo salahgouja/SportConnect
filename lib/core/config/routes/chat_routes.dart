@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/config/routes/route_params.dart';
-import 'package:sport_connect/features/auth/models/models.dart';
+import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/features/messaging/views/chat_detail_screen.dart';
 
 /// Chat module routes

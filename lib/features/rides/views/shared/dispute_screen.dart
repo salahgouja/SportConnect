@@ -1,3 +1,6 @@
+import 'dart:async';
+
+
 import 'dart:io';
 
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
@@ -80,20 +83,20 @@ class _DisputeScreenState extends ConsumerState<DisputeScreen> {
       title: 'Attach evidence',
       maxHeightFactor: 0.45,
       child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AdaptiveListTile(
-              leading: const Icon(Icons.photo_library_rounded),
-              title: Text(l10n.chooseFromGallery),
-              onTap: () => Navigator.pop(context, ImageSource.gallery),
-            ),
-            AdaptiveListTile(
-              leading: const Icon(Icons.camera_alt_rounded),
-              title: Text(l10n.takeAPhoto),
-              onTap: () => Navigator.pop(context, ImageSource.camera),
-            ),
-          ],
-        ),
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AdaptiveListTile(
+            leading: const Icon(Icons.photo_library_rounded),
+            title: Text(l10n.chooseFromGallery),
+            onTap: () => Navigator.pop(context, ImageSource.gallery),
+          ),
+          AdaptiveListTile(
+            leading: const Icon(Icons.camera_alt_rounded),
+            title: Text(l10n.takeAPhoto),
+            onTap: () => Navigator.pop(context, ImageSource.camera),
+          ),
+        ],
+      ),
     );
 
     if (source == null) return;
@@ -327,7 +330,7 @@ class _DisputeScreenState extends ConsumerState<DisputeScreen> {
             child:
                 GestureDetector(
                       onTap: () {
-                        HapticFeedback.selectionClick();
+                        unawaited(HapticFeedback.selectionClick());
                         ref
                             .read(
                               disputeFormViewModelProvider(

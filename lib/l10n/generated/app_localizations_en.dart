@@ -1624,6 +1624,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get myVehicles => 'My Vehicles';
 
   @override
+  String get manageYourVehicles => 'Manage your vehicles';
+
+  @override
+  String get createdAndJoinedEvents => 'Created & joined events';
+
+  @override
+  String get viewYourBadgesAndRewards => 'View your badges & rewards';
+
+  @override
+  String get appPreferencesAndPrivacy => 'App preferences & privacy';
+
+  @override
+  String get permissionPhotoLibraryMessage =>
+      'Access to your photo library is needed to send images in this chat. Your photos are only shared when you choose to send them.';
+
+  @override
+  String get yourFleet => 'Your Fleet';
+
+  @override
+  String get noActiveVehicle => 'No active vehicle';
+
+  @override
   String get noVehiclesAdded => 'No Vehicles Added';
 
   @override
@@ -1779,6 +1801,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notVerified => 'Not verified';
+
+  @override
+  String get inactive => 'Inactive';
 
   @override
   String get rideStatistics => 'Ride Statistics';
@@ -4200,6 +4225,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reportIssueTitle => 'Report an Issue';
+
+  @override
+  String get attachEvidence => 'Attach evidence';
 
   @override
   String get whatHappenedQuestion => 'What happened?';
@@ -7082,6 +7110,85 @@ class AppLocalizationsEn extends AppLocalizations {
   String get address_is_required => 'Address is required';
 
   @override
+  String get personalInfo => 'Personal Info';
+
+  @override
+  String get contactAndAddress => 'Contact & Address';
+
+  @override
+  String get drivingDetails => 'Driving Details';
+
+  @override
+  String get carIdentity => 'Car identity';
+
+  @override
+  String get recognition => 'Recognition';
+
+  @override
+  String get passengerSeats => 'Passenger seats';
+
+  @override
+  String get moreDetails => 'More details';
+
+  @override
+  String get whyConnectPayouts => 'Why connect payouts?';
+
+  @override
+  String get yourName => 'Your Name';
+
+  @override
+  String get registrationYear => 'Registration year';
+
+  @override
+  String get onlyUsedWhenNeededForPickupVerification =>
+      'Only used when needed for pickup verification.';
+
+  @override
+  String get addColorAndPlateSoRidersCanFindYou =>
+      'Add color and plate so riders can find you';
+
+  @override
+  String get chooseACommonColorOrUseOtherColor =>
+      'Choose a common color or use Other color.';
+
+  @override
+  String selectedColor(String color) {
+    return 'Selected color: $color';
+  }
+
+  @override
+  String get customColorWillBeShownToRidersAsWritten =>
+      'Custom color will be shown to riders as written.';
+
+  @override
+  String get chooseSeatsAvailableForPassengers =>
+      'Choose seats available for passengers.';
+
+  @override
+  String get optionalDetailUsedForRideContext =>
+      'Optional detail used for ride context.';
+
+  @override
+  String stepOf(int current, int total) {
+    return 'Step $current of $total';
+  }
+
+  @override
+  String get maximumSeats => 'Maximum seats';
+
+  @override
+  String get colorDescriptionIsTooLong => 'Color description is too long';
+
+  @override
+  String get useAClearColorNameLikeGreyBlueOrPearlWhite =>
+      'Use a clear color name, like grey, blue, or pearl white.';
+
+  @override
+  String suggestedPriceValue(String price) {
+    return 'Suggested: €$price';
+  }
+
+  @override
   String get name => 'name';
 
   @override
@@ -7219,7 +7326,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get monthly => 'Monthly';
 
   @override
-  String get yearly => 'yearly';
+  String get yearly => 'Yearly';
 
   @override
   String get martial_arts => 'Martial Arts';
@@ -7274,6 +7381,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'No recurrence pattern fits this start/end window. ';
 
   @override
+  String get extend_end_time_or_set_a_later_repeat_end_date =>
+      'Extend end time or set a later repeat end date.';
+
+  @override
   String get failed_to_load_attendees => 'Failed to load attendees';
 
   @override
@@ -7301,6 +7412,26 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get recurring_event => '⚠️ Recurring Event';
+
+  @override
+  String get this_event => 'This event';
+
+  @override
+  String get all_events => 'All events';
+
+  @override
+  String get not_label => 'not';
+
+  @override
+  String get custom_label => 'custom';
+
+  @override
+  String get opening_google_calendar => 'Opening Google Calendar...';
+
+  @override
+  String opening_google_calendar_recurring(Object patternLabel) {
+    return 'Opening Google Calendar (recurring: $patternLabel)...';
+  }
 
   @override
   String
@@ -7486,6 +7617,49 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get conversation_deleted => 'Conversation deleted';
+
+  @override
+  String get choose_what_you_want_to_share_in_this_chat =>
+      'Choose what you want to share in this chat.';
+
+  @override
+  String get failedToSendMessage => 'Failed to send message';
+
+  @override
+  String get cameraAccessIsNeededToTakeAndSendPhotosInThisChat =>
+      'Camera access is needed to take and send photos in this chat.';
+
+  @override
+  String get failedToSendImage => 'Failed to send image';
+
+  @override
+  String get failedToSendVoiceMessage => 'Failed to send voice message';
+
+  @override
+  String get permissionDeniedPleaseCheckYourConnectionAndTryAgain =>
+      'Permission denied. Please check your connection and try again.';
+
+  @override
+  String get networkErrorPleaseCheckYourInternetConnection =>
+      'Network error. Please check your internet connection.';
+
+  @override
+  String get clearChatHistoryMessage =>
+      'This will clear the messages from this chat for you only. The conversation will stay in your chat list.';
+
+  @override
+  String get pleaseEnableLocationServices => 'Please enable location services';
+
+  @override
+  String get locationPermissionRequired => 'Location permission required';
+
+  @override
+  String get couldNotGetYourLocation => 'Could not get your location';
+
+  @override
+  String failedToGetLocationValue(Object value) {
+    return 'Failed to get location: $value';
+  }
 
   @override
   String get draft => 'Draft';
@@ -8062,6 +8236,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get everything_you_get => 'Everything you get';
 
   @override
+  String get pricingUnavailableCheckYourConnection =>
+      'Pricing unavailable — check your connection';
+
+  @override
+  String get pricingUnavailableTapToRetry =>
+      'Pricing unavailable — tap to retry';
+
+  @override
+  String get cancelAnytime => 'Cancel anytime';
+
+  @override
+  String get bestValue => 'BEST VALUE';
+
+  @override
+  String get billedMonthly => 'Billed monthly';
+
+  @override
   String get trusted_by_12000_runners => 'Trusted by 12,000+ runners';
 
   @override
@@ -8102,6 +8293,39 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get annual => 'Annual';
+
+  @override
+  String get appStoreBilling => 'App Store billing';
+
+  @override
+  String get securePayment => 'Secure payment';
+
+  @override
+  String get joinRunnersWorldwide => 'Join runners worldwide';
+
+  @override
+  String get smartRideMatchingDescription =>
+      'Auto-paired with runners heading to your race or training spot.';
+
+  @override
+  String get unlimitedSavedRoutesDescription =>
+      'Save and share your favorite carpool routes with your crew.';
+
+  @override
+  String get verifiedCommunityDescription =>
+      'Every rider is ID-verified. Ride safe with trusted runners.';
+
+  @override
+  String get crewCoordinationDescription =>
+      'Organize group rides for your entire running club in one tap.';
+
+  @override
+  String get raceDayPriorityDescription =>
+      'First pick on rides for marathon day and major events.';
+
+  @override
+  String get prioritySupportDescription =>
+      'Skip the queue. Get help within minutes, not hours.';
 
   @override
   String get moneybacknguarantee => 'Money-back\\nguarantee';
@@ -8197,6 +8421,127 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get account_profile => 'Account & Profile';
+
+  @override
+  String get help_center_getting_started_create_account_question =>
+      'How do I create an account?';
+
+  @override
+  String get help_center_getting_started_create_account_answer =>
+      'Download the app, tap \"Sign Up\", and follow the wizard. You can sign up with email, Google, or Apple ID.';
+
+  @override
+  String get help_center_getting_started_switch_role_question =>
+      'How do I switch between rider and driver?';
+
+  @override
+  String get help_center_getting_started_switch_role_answer =>
+      'Go to Profile > Settings > Switch Role. If you haven\'t registered as a driver yet, you\'ll need to complete the driver onboarding process.';
+
+  @override
+  String get help_center_getting_started_free_question =>
+      'Is SportConnect free to use?';
+
+  @override
+  String get help_center_getting_started_free_answer =>
+      'Creating an account is free. Riders pay per ride booked. Drivers earn money by offering rides minus a small service fee.';
+
+  @override
+  String get help_center_rides_booking_question => 'How do I book a ride?';
+
+  @override
+  String get help_center_rides_booking_answer =>
+      'Search for rides from the Explore tab, select a ride that matches your route, review the details, and tap \"Book Ride\".';
+
+  @override
+  String get help_center_rides_cancel_question => 'Can I cancel a booked ride?';
+
+  @override
+  String get help_center_rides_cancel_answer =>
+      'Yes, go to Activity > select the ride > Cancel. Please note that frequent cancellations may affect your rating.';
+
+  @override
+  String get help_center_rides_matching_question =>
+      'How does ride matching work?';
+
+  @override
+  String get help_center_rides_matching_answer =>
+      'Our algorithm matches riders with drivers based on route overlap, departure time, and user preferences. You can also request a ride and let drivers find you.';
+
+  @override
+  String get help_center_rides_late_question => 'What if my ride is late?';
+
+  @override
+  String get help_center_rides_late_answer =>
+      'You\'ll receive real-time updates on your ride status. If the driver is significantly late, you can contact them directly through the in-app chat.';
+
+  @override
+  String get help_center_payments_question => 'How do payments work?';
+
+  @override
+  String get help_center_payments_answer =>
+      'Payments are processed securely through Stripe. Riders pay when booking, and drivers receive earnings after ride completion.';
+
+  @override
+  String get help_center_payouts_question => 'When do drivers get paid?';
+
+  @override
+  String get help_center_payouts_answer =>
+      'Drivers receive payouts weekly to their linked Stripe account. You can track your earnings in the Earnings tab.';
+
+  @override
+  String get help_center_fees_question => 'What are the service fees?';
+
+  @override
+  String get help_center_fees_answer =>
+      'SportConnect charges a small service fee (typically 10%) to cover platform costs, payment processing, and insurance.';
+
+  @override
+  String get help_center_safety_question => 'How is my safety ensured?';
+
+  @override
+  String get help_center_safety_answer =>
+      'All drivers undergo verification. Rides include live GPS tracking, in-app chat, and all trips are logged for safety.';
+
+  @override
+  String get help_center_safety_report_question =>
+      'How do I report a safety issue?';
+
+  @override
+  String get help_center_safety_report_answer =>
+      'Go to Settings > Report a Problem during or after a ride. Safety reports are prioritized and reviewed within 24 hours.';
+
+  @override
+  String get help_center_safety_share_question =>
+      'Can I share my ride with someone?';
+
+  @override
+  String get help_center_safety_share_answer =>
+      'Yes, during an active ride you can share your live trip details with trusted contacts.';
+
+  @override
+  String get help_center_account_verify_question =>
+      'How do I verify my account?';
+
+  @override
+  String get help_center_account_verify_answer =>
+      'Go to Settings > Verify Account. You can verify your email, phone number, and provide government ID for full verification.';
+
+  @override
+  String get help_center_account_delete_question =>
+      'How do I delete my account?';
+
+  @override
+  String get help_center_account_delete_answer =>
+      'Go to Settings > Account Actions > Delete Account. This action is permanent and cannot be undone.';
+
+  @override
+  String get help_center_account_email_question =>
+      'Can I change my email address?';
+
+  @override
+  String get help_center_account_email_answer =>
+      'Currently, you can update your display name and profile info. For email changes, please contact support.';
 
   @override
   String get my_vehicles => 'My Vehicles';
@@ -8324,6 +8669,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get downloading_document => 'Downloading document...';
+
+  @override
+  String get available => 'Available';
+
+  @override
+  String get notAvailableYet => 'Not available yet';
+
+  @override
+  String get thisPlanIsNotAvailableFromTheStoreYet =>
+      'This plan is not available from the store yet.';
 
   @override
   String get protect_your_account => 'Protect your account';
@@ -8799,4 +9154,474 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get openInMaps => 'Open in maps';
+
+  @override
+  String get appTitle => 'SportConnect';
+
+  @override
+  String get onboardingRunningEvents => 'Running events';
+
+  @override
+  String get onboardingDriveEarn => 'Drive & earn';
+
+  @override
+  String get onboardingPickupPlanning => 'Pickup planning';
+
+  @override
+  String get onboardingTrustedRides => 'Trusted rides';
+
+  @override
+  String get onboardingFindRideTitle => 'Find a ride to your race';
+
+  @override
+  String get onboardingOfferSeatsTitle => 'Offer seats and earn';
+
+  @override
+  String get onboardingPlanRouteTitle => 'Plan the route together';
+
+  @override
+  String get onboardingConnectGoTitle => 'Connect safely and go';
+
+  @override
+  String get onboardingFindRideDescription =>
+      'Join runners heading to the same event and arrive without the stress.';
+
+  @override
+  String get onboardingOfferSeatsDescription =>
+      'Driving to a race? Share your empty seats and earn from the trip.';
+
+  @override
+  String get onboardingPlanRouteDescription =>
+      'Set pickup points, confirm timing, and follow a clear route to the event.';
+
+  @override
+  String get onboardingConnectGoDescription =>
+      'Chat with verified runners, confirm the ride, and travel with confidence.';
+
+  @override
+  String get onboardingFindYourRideTitle => 'Find Your\\nRide';
+
+  @override
+  String get onboardingMatchWithRunners => 'Match with Runners';
+
+  @override
+  String get onboardingFindYourRideDescription =>
+      'Instantly match with runners heading the same direction. Share a car, save money, and arrive at the start-line together.';
+
+  @override
+  String get onboardingSmartMatching => 'Smart Matching';
+
+  @override
+  String get onboardingNearbyRunners => 'Nearby Runners';
+
+  @override
+  String get onboardingPaceFilters => 'Pace Filters';
+
+  @override
+  String get onboardingOfferASeatTitle => 'Offer a\\nSeat';
+
+  @override
+  String get onboardingDriveSplitCosts => 'Drive & Split Costs';
+
+  @override
+  String get onboardingOfferASeatDescription =>
+      'Got a car? Offer spare seats to fellow runners. Cover fuel costs and build bonds with your local running community.';
+
+  @override
+  String get onboardingCostSplitting => 'Cost Splitting';
+
+  @override
+  String get onboardingSeatControl => 'Seat Control';
+
+  @override
+  String get onboardingDriverRating => 'Driver Rating';
+
+  @override
+  String get onboardingPlanYourRouteTitle => 'Plan Your\\nRoute';
+
+  @override
+  String get onboardingSmartRouteSync => 'Smart Route Sync';
+
+  @override
+  String get onboardingPlanYourRouteDescription =>
+      'Set your pickup point, race venue, or training ground. SportConnect syncs detours automatically to keep everyone on schedule.';
+
+  @override
+  String get onboardingLiveRouting => 'Live Routing';
+
+  @override
+  String get onboardingDetourSync => 'Detour Sync';
+
+  @override
+  String get onboardingEventZones => 'Event Zones';
+
+  @override
+  String get onboardingConnectGoModelTitle => 'Connect\\n& Go';
+
+  @override
+  String get onboardingCommunityYouTrust => 'Community You Trust';
+
+  @override
+  String get onboardingConnectGoModelDescription =>
+      'Verified runner profiles, in-app chat, and real-time tracking keep every carpool safe, social, and on time.';
+
+  @override
+  String get onboardingVerifiedProfiles => 'Verified Profiles';
+
+  @override
+  String get onboardingInAppChat => 'In-App Chat';
+
+  @override
+  String get onboardingLiveTracking => 'Live Tracking';
+
+  @override
+  String failedToSaveProgress(Object error) {
+    return 'Failed to save progress: $error';
+  }
+
+  @override
+  String get searchRides => 'Search Rides';
+
+  @override
+  String get emptyNoRidesSubtitle =>
+      'Try adjusting your filters or search for a different route';
+
+  @override
+  String get emptyNoEventsSubtitle =>
+      'Create an event to bring your group together';
+
+  @override
+  String get emptyNoMessagesSubtitle =>
+      'Start a conversation by booking a ride or joining an event';
+
+  @override
+  String get emptyNoNotificationsSubtitle =>
+      'You\'ll see new notifications here';
+
+  @override
+  String get emptyNoReviewsSubtitle =>
+      'Reviews will appear after completed rides';
+
+  @override
+  String get emptyNoVehiclesSubtitle => 'Add a vehicle to start offering rides';
+
+  @override
+  String get emptyNoBookingsSubtitle => 'Your ride bookings will appear here';
+
+  @override
+  String get emptyNoResultsSubtitle => 'Try different search terms or filters';
+
+  @override
+  String get reachedYourDestination => 'You\'ve reached your destination';
+
+  @override
+  String notificationRideBookingRequestBody(
+    String fromUserName,
+    String rideName,
+  ) {
+    return '$fromUserName wants to join your ride \"$rideName\"';
+  }
+
+  @override
+  String notificationRideBookingAcceptedBody(
+    String driverName,
+    String rideName,
+  ) {
+    return '$driverName accepted your request for \"$rideName\"';
+  }
+
+  @override
+  String notificationRideBookingDeclinedWithReasonBody(
+    String driverName,
+    String rideName,
+    String reason,
+  ) {
+    return '$driverName declined your request for \"$rideName\": $reason';
+  }
+
+  @override
+  String notificationRideBookingDeclinedBody(
+    String driverName,
+    String rideName,
+  ) {
+    return '$driverName declined your request for \"$rideName\"';
+  }
+
+  @override
+  String notificationRideCancelledWithReasonBody(
+    String driverName,
+    String rideName,
+    String reason,
+  ) {
+    return '$driverName cancelled the ride \"$rideName\": $reason';
+  }
+
+  @override
+  String notificationRideCancelledBody(String driverName, String rideName) {
+    return '$driverName cancelled the ride \"$rideName\"';
+  }
+
+  @override
+  String notificationNewMessageBody(
+    String fromUserName,
+    String messagePreview,
+  ) {
+    return '$fromUserName: $messagePreview';
+  }
+
+  @override
+  String notificationAchievementBody(
+    String achievementName,
+    String achievementDescription,
+  ) {
+    return 'You earned \"$achievementName\" - $achievementDescription';
+  }
+
+  @override
+  String notificationLevelUpBody(int newLevel) {
+    return 'Congratulations! You reached Level $newLevel. Keep riding!';
+  }
+
+  @override
+  String notificationDriverArrivedBody(String driverName, String rideName) {
+    return '$driverName has arrived at your pickup for $rideName. Head out now!';
+  }
+
+  @override
+  String notificationDriverArrivingDestinationBody(
+    String driverName,
+    String rideName,
+  ) {
+    return '$driverName is arriving at the destination for $rideName.';
+  }
+
+  @override
+  String notificationEventCancelledWithReasonBody(
+    String organizerName,
+    String eventTitle,
+    String reason,
+  ) {
+    return '$organizerName cancelled \"$eventTitle\": $reason';
+  }
+
+  @override
+  String notificationEventCancelledBody(
+    String organizerName,
+    String eventTitle,
+  ) {
+    return '$organizerName cancelled \"$eventTitle\"';
+  }
+
+  @override
+  String get notificationRideReferenceType => 'ride';
+
+  @override
+  String get notificationChatReferenceType => 'chat';
+
+  @override
+  String get notificationEventReferenceType => 'event';
+
+  @override
+  String get sharedLocation => 'Shared location';
+
+  @override
+  String get voiceMessage => 'Voice message';
+
+  @override
+  String get rideAttachment => 'Ride attachment';
+
+  @override
+  String get systemMessage => 'System message';
+
+  @override
+  String get imageMessage => 'Image';
+
+  @override
+  String get manual => 'Manual';
+
+  @override
+  String get googleMaps => 'Google Maps';
+
+  @override
+  String get waze => 'Waze';
+
+  @override
+  String get appleMaps => 'Apple Maps';
+
+  @override
+  String get locationData => 'Location Data';
+
+  @override
+  String get paymentData => 'Payment Data';
+
+  @override
+  String get usageData => 'Usage Data';
+
+  @override
+  String get yourRights => 'Your Rights';
+
+  @override
+  String get sportconnectDescription =>
+      'SportConnect is a carpooling and rideshare platform designed for sports enthusiasts. Share rides to games, tournaments, and training sessions while saving money, reducing emissions, and connecting with fellow athletes.';
+
+  @override
+  String get nearMe => 'Near me';
+
+  @override
+  String withinValueKm(Object value) {
+    return 'Within $value km';
+  }
+
+  @override
+  String get purchasesRestoredSuccessfully =>
+      'Purchases restored successfully.';
+
+  @override
+  String get couldNotRestorePurchases => 'Could not restore purchases.';
+
+  @override
+  String get personalInformationDescription =>
+      'We collect your name, email, phone number, and profile photo to create and manage your account.';
+
+  @override
+  String get locationDataDescription =>
+      'We process your location to match rides, calculate routes, and show nearby destinations.';
+
+  @override
+  String get paymentDataDescription =>
+      'Payment information is processed securely by Stripe. We do not store your full card details.';
+
+  @override
+  String get usageDataDescription =>
+      'We collect crash reports and usage analytics. This data is anonymized.';
+
+  @override
+  String get yourRightsDescription =>
+      'You can access, export, correct, or delete your data at any time.';
+
+  @override
+  String get business_days_1_to_2 => 'Business Days 1 To 2';
+
+  @override
+  String get two_days_left => 'Two Days Left';
+
+  @override
+  String get helpCenterGettingStartedCreateAccountQuestion =>
+      'Help Center Getting Started Create Account Question';
+
+  @override
+  String get helpCenterGettingStartedCreateAccountAnswer =>
+      'Help Center Getting Started Create Account Answer';
+
+  @override
+  String get helpCenterGettingStartedSwitchRoleQuestion =>
+      'Help Center Getting Started Switch Role Question';
+
+  @override
+  String get helpCenterGettingStartedSwitchRoleAnswer =>
+      'Help Center Getting Started Switch Role Answer';
+
+  @override
+  String get helpCenterGettingStartedFreeQuestion =>
+      'Help Center Getting Started Free Question';
+
+  @override
+  String get helpCenterGettingStartedFreeAnswer =>
+      'Help Center Getting Started Free Answer';
+
+  @override
+  String get helpCenterRidesBookingQuestion =>
+      'Help Center Rides Booking Question';
+
+  @override
+  String get helpCenterRidesBookingAnswer => 'Help Center Rides Booking Answer';
+
+  @override
+  String get helpCenterRidesCancelAnswer => 'Help Center Rides Cancel Answer';
+
+  @override
+  String get helpCenterRidesMatchingQuestion =>
+      'Help Center Rides Matching Question';
+
+  @override
+  String get helpCenterRidesMatchingAnswer =>
+      'Help Center Rides Matching Answer';
+
+  @override
+  String get helpCenterRidesLateQuestion => 'Help Center Rides Late Question';
+
+  @override
+  String get helpCenterRidesLateAnswer => 'Help Center Rides Late Answer';
+
+  @override
+  String get helpCenterPaymentsQuestion => 'Help Center Payments Question';
+
+  @override
+  String get helpCenterPaymentsAnswer => 'Help Center Payments Answer';
+
+  @override
+  String get helpCenterPayoutsQuestion => 'Help Center Payouts Question';
+
+  @override
+  String get helpCenterPayoutsAnswer => 'Help Center Payouts Answer';
+
+  @override
+  String get helpCenterFeesQuestion => 'Help Center Fees Question';
+
+  @override
+  String get helpCenterFeesAnswer => 'Help Center Fees Answer';
+
+  @override
+  String get helpCenterSafetyQuestion => 'Help Center Safety Question';
+
+  @override
+  String get helpCenterSafetyAnswer => 'Help Center Safety Answer';
+
+  @override
+  String get helpCenterSafetyReportQuestion =>
+      'Help Center Safety Report Question';
+
+  @override
+  String get helpCenterSafetyReportAnswer => 'Help Center Safety Report Answer';
+
+  @override
+  String get helpCenterSafetyShareQuestion =>
+      'Help Center Safety Share Question';
+
+  @override
+  String get helpCenterSafetyShareAnswer => 'Help Center Safety Share Answer';
+
+  @override
+  String get helpCenterAccountVerifyQuestion =>
+      'Help Center Account Verify Question';
+
+  @override
+  String get helpCenterAccountVerifyAnswer =>
+      'Help Center Account Verify Answer';
+
+  @override
+  String get helpCenterAccountDeleteQuestion =>
+      'Help Center Account Delete Question';
+
+  @override
+  String get helpCenterAccountDeleteAnswer =>
+      'Help Center Account Delete Answer';
+
+  @override
+  String get helpCenterAccountEmailQuestion =>
+      'Help Center Account Email Question';
+
+  @override
+  String get helpCenterAccountEmailAnswer => 'Help Center Account Email Answer';
+
+  @override
+  String get articles => 'Articles';
+
+  @override
+  String get tryDifferentKeywordsOrContactSupport =>
+      'Try Different Keywords Or Contact Support';
+
+  @override
+  String get helpCenterRidesCancelQuestion =>
+      'Help Center Rides Cancel Question';
 }

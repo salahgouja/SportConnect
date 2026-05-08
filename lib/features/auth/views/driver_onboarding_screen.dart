@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
@@ -11,6 +12,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:reactive_forms/reactive_forms.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/utils/user_facing_error.dart';
@@ -22,9 +24,10 @@ import 'package:sport_connect/core/widgets/glass_panel.dart';
 import 'package:sport_connect/core/widgets/intl_phone_input.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/core/widgets/reactive_adaptive_text_field.dart';
-import 'package:sport_connect/features/auth/models/models.dart';
+import 'package:sport_connect/features/auth/models/auth_exception.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 import 'package:sport_connect/features/auth/view_models/onboarding_view_model.dart';
+import 'package:sport_connect/features/auth/views/driver_onboarding_vehicle_widgets.dart';
 import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
@@ -34,16 +37,6 @@ abstract final class _PF {
   static const dob = 'dob';
   static const expertise = 'expertise';
   static const terms = 'terms';
-}
-
-abstract final class _VF {
-  static const make = 'make';
-  static const model = 'model';
-  static const year = 'year';
-  static const color = 'color';
-  static const licensePlate = 'license_plate';
-  static const seats = 'seats';
-  static const fuelType = 'fuel_type';
 }
 
 DateTime _dateOnly(DateTime value) =>
@@ -71,125 +64,6 @@ String? _normalizeGenderValue(String? value) {
   }
 }
 
-String _fuelTypeLabel(FuelType fuel) {
-  return switch (fuel) {
-    FuelType.gasoline => 'Gasoline',
-    FuelType.diesel => 'Diesel',
-    FuelType.electric => 'Electric',
-    FuelType.hybrid => 'Hybrid',
-    FuelType.pluginHybrid => 'Plug-in hybrid',
-    FuelType.hydrogen => 'Hydrogen',
-    FuelType.other => 'Other',
-  };
-}
-
-IconData _fuelTypeIcon(FuelType fuel) {
-  return switch (fuel) {
-    FuelType.gasoline => Icons.local_gas_station_rounded,
-    FuelType.diesel => Icons.local_gas_station_outlined,
-    FuelType.electric => Icons.electric_car_rounded,
-    FuelType.hybrid => Icons.energy_savings_leaf_rounded,
-    FuelType.pluginHybrid => Icons.electrical_services_rounded,
-    FuelType.hydrogen => Icons.water_drop_rounded,
-    FuelType.other => Icons.more_horiz_rounded,
-  };
-}
-
-String? _reactiveErrorText(
-  AbstractControl<dynamic> control,
-  Map<String, String Function(Object)>? validationMessages,
-) {
-  if (!(control.touched && control.invalid)) return null;
-  if (control.errors.isEmpty) return null;
-
-  final key = control.errors.keys.first;
-  final error = control.errors[key];
-  final builder = validationMessages?[key];
-
-  if (builder != null) return builder((error ?? key) as Object);
-  if (error is String) return error;
-  return 'Invalid value';
-}
-
-class _VehicleColorOption {
-  const _VehicleColorOption({
-    required this.label,
-    required this.color,
-    this.aliases = const [],
-  });
-
-  final String label;
-  final Color color;
-  final List<String> aliases;
-}
-
-const List<_VehicleColorOption> _vehicleColorOptions = [
-  _VehicleColorOption(
-    label: 'Black',
-    color: Color(0xFF111827),
-    aliases: ['black', 'noir'],
-  ),
-  _VehicleColorOption(
-    label: 'White',
-    color: Color(0xFFF8FAFC),
-    aliases: ['white', 'blanc', 'pearl'],
-  ),
-  _VehicleColorOption(
-    label: 'Grey',
-    color: Color(0xFF6B7280),
-    aliases: ['grey', 'gray', 'gris', 'anthracite'],
-  ),
-  _VehicleColorOption(
-    label: 'Silver',
-    color: Color(0xFFCBD5E1),
-    aliases: ['silver', 'argent'],
-  ),
-  _VehicleColorOption(
-    label: 'Blue',
-    color: Color(0xFF2563EB),
-    aliases: ['blue', 'bleu', 'navy', 'midnight'],
-  ),
-  _VehicleColorOption(
-    label: 'Red',
-    color: Color(0xFFDC2626),
-    aliases: ['red', 'rouge', 'bordeaux', 'burgundy'],
-  ),
-  _VehicleColorOption(
-    label: 'Green',
-    color: Color(0xFF16A34A),
-    aliases: ['green', 'vert'],
-  ),
-  _VehicleColorOption(
-    label: 'Beige / Brown',
-    color: Color(0xFF92400E),
-    aliases: ['brown', 'marron', 'bronze', 'champagne', 'beige'],
-  ),
-];
-
-String _normalizeVehicleColorText(String? raw) {
-  return (raw ?? '')
-      .trim()
-      .toLowerCase()
-      .replaceAll(RegExp(r'[^a-zàâäéèêëîïôöùûüç\s-]'), ' ')
-      .replaceAll(RegExp(r'\s+'), ' ');
-}
-
-_VehicleColorOption? _matchedVehicleColor(String? raw) {
-  final normalized = _normalizeVehicleColorText(raw);
-  if (normalized.isEmpty) return null;
-
-  for (final option in _vehicleColorOptions) {
-    if (option.label.toLowerCase() == normalized) return option;
-    for (final alias in option.aliases) {
-      if (normalized.contains(alias)) return option;
-    }
-  }
-
-  return null;
-}
-
-bool _isLightVehicleColor(Color color) => color.computeLuminance() > 0.68;
-
 class DriverOnboardingScreen extends ConsumerStatefulWidget {
   const DriverOnboardingScreen({super.key});
 
@@ -200,48 +74,13 @@ class DriverOnboardingScreen extends ConsumerStatefulWidget {
 
 class _DriverOnboardingScreenState
     extends ConsumerState<DriverOnboardingScreen> {
-  // ── Profile form (Step 0) ────────────────────────────────────────────
-  final _profileForm = FormGroup({
-    _PF.name: FormControl<String>(
-      validators: [
-        Validators.required,
-        Validators.minLength(2),
-        Validators.maxLength(60),
-        Validators.delegate((control) {
-          final value = control.value as String?;
-          if (value == null || value.trim().isEmpty) return null;
-          final trimmed = value.trim();
-          if (RegExp('[0-9]').hasMatch(trimmed)) {
-            return {'name': 'Name cannot contain numbers'};
-          }
-          if (!RegExp(r"^[\p{L}\s\-'.]+$", unicode: true).hasMatch(trimmed)) {
-            return {'name': 'Name contains invalid characters'};
-          }
-          return null;
-        }),
-      ],
-    ),
-    _PF.gender: FormControl<String>(validators: [Validators.required]),
-    _PF.dob: FormControl<DateTime>(
-      validators: [
-        Validators.required,
-        Validators.delegate((control) {
-          final value = control.value as DateTime?;
-          if (value == null) return null;
-          if (!_isAtLeastAge(value)) return {'minAge': true};
-          return null;
-        }),
-      ],
-    ),
-    _PF.expertise: FormControl<Expertise>(
-      value: Expertise.rookie,
-      validators: [Validators.required],
-    ),
-    _PF.terms: FormControl<bool>(
-      value: false,
-      validators: [Validators.requiredTrue],
-    ),
-  });
+  // ── Localization ─────────────────────────────────────────────────────
+  AppLocalizations get l10n => AppLocalizations.of(context);
+
+  // ── Forms ────────────────────────────────────────────────────────────
+  late final FormGroup _profileForm;
+  late final FormGroup _vehicleForm;
+
   Future<void> _showAccountSwitcherMenu() async {
     final l10n = AppLocalizations.of(context);
 
@@ -283,87 +122,158 @@ class _DriverOnboardingScreenState
   final _phoneKey = GlobalKey<IntlPhoneInputState>();
   final _addressKey = GlobalKey<AddressAutocompleteFieldState>();
 
-  // ── Vehicle form (Step 1) ───────────────────────────────────────────
-  final _vehicleForm = FormGroup({
-    _VF.make: FormControl<String>(validators: [Validators.required]),
-    _VF.model: FormControl<String>(validators: [Validators.required]),
-    _VF.year: FormControl<String>(
-      validators: [
-        Validators.required,
-        Validators.delegate((control) {
-          final value = control.value as String?;
-          if (value == null || value.trim().isEmpty) return null;
-          final year = int.tryParse(value.trim());
-          if (year == null) return {'vehicleYear': 'Please enter a valid year'};
-          if (year < 1980) return {'vehicleYear': 'Vehicle is too old'};
-          if (year > DateTime.now().year) {
-            return {'vehicleYear': 'Invalid year'};
-          }
-          return null;
-        }),
-      ],
-    ),
-    _VF.color: FormControl<String>(
-      validators: [
-        Validators.required,
-        Validators.delegate((control) {
-          final value = (control.value as String? ?? '').trim();
-          if (value.isEmpty) return null;
+  FormGroup _buildProfileForm() {
+    return FormGroup({
+      _PF.name: FormControl<String>(
+        validators: [
+          Validators.required,
+          Validators.minLength(2),
+          Validators.maxLength(60),
+          Validators.delegate((control) {
+            final value = control.value as String?;
+            if (value == null || value.trim().isEmpty) return null;
 
-          if (value.length > 32) {
-            return {'vehicleColor': 'Color description is too long'};
-          }
+            final trimmed = value.trim();
 
-          if (!RegExp(r"^[\p{L}\s\-']+$", unicode: true).hasMatch(value)) {
-            return {
-              'vehicleColor':
-                  'Use a clear color name, like grey, blue, or pearl white',
-            };
-          }
+            if (RegExp('[0-9]').hasMatch(trimmed)) {
+              return {'nameHasNumbers': true};
+            }
 
-          return null;
-        }),
-      ],
-    ),
-    _VF.licensePlate: FormControl<String>(
-      validators: [
-        Validators.required,
-        Validators.delegate((control) {
-          final value = control.value as String?;
-          if (value == null || value.trim().isEmpty) return null;
-          final trimmed = value.trim().toUpperCase();
-          if (trimmed.length < 2) {
-            return {'licensePlate': 'License plate is too short'};
-          }
-          if (trimmed.length > 12) {
-            return {'licensePlate': 'License plate is too long'};
-          }
-          if (!RegExp(r'^[A-Z0-9\-\s]+$').hasMatch(trimmed)) {
-            return {'licensePlate': 'Invalid license plate format'};
-          }
-          return null;
-        }),
-      ],
-    ),
-    _VF.seats: FormControl<String>(
-      value: '3',
-      validators: [
-        Validators.required,
-        Validators.delegate((control) {
-          final raw = control.value as String?;
-          if (raw == null || raw.isEmpty) return null;
-          final parsed = int.tryParse(raw);
-          if (parsed == null) {
-            return {'seats': 'Please select number of seats'};
-          }
-          if (parsed < 1) return {'seats': 'Minimum 1 seat'};
-          if (parsed > 4) return {'seats': 'Maximum 4 passenger seats'};
-          return null;
-        }),
-      ],
-    ),
-    _VF.fuelType: FormControl<FuelType>(value: FuelType.gasoline),
-  });
+            if (!RegExp(r"^[\p{L}\s\-'.]+$", unicode: true).hasMatch(trimmed)) {
+              return {'nameInvalidCharacters': true};
+            }
+
+            return null;
+          }),
+        ],
+      ),
+      _PF.gender: FormControl<String>(validators: [Validators.required]),
+      _PF.dob: FormControl<DateTime>(
+        validators: [
+          Validators.required,
+          Validators.delegate((control) {
+            final value = control.value as DateTime?;
+            if (value == null) return null;
+            if (!_isAtLeastAge(value)) return {'minAge': true};
+            return null;
+          }),
+        ],
+      ),
+      _PF.expertise: FormControl<Expertise>(
+        value: Expertise.rookie,
+        validators: [Validators.required],
+      ),
+      _PF.terms: FormControl<bool>(
+        value: false,
+        validators: [Validators.requiredTrue],
+      ),
+    });
+  }
+
+  FormGroup _buildVehicleForm() {
+    return FormGroup({
+      VehicleFormFields.make: FormControl<String>(
+        validators: [Validators.required],
+      ),
+      VehicleFormFields.model: FormControl<String>(
+        validators: [Validators.required],
+      ),
+      VehicleFormFields.year: FormControl<String>(
+        validators: [
+          Validators.required,
+          Validators.delegate((control) {
+            final value = control.value as String?;
+            if (value == null || value.trim().isEmpty) return null;
+
+            final year = int.tryParse(value.trim());
+
+            if (year == null) {
+              return {'vehicleYearInvalid': true};
+            }
+
+            if (year < 1980) {
+              return {'vehicleYearTooOld': true};
+            }
+
+            if (year > DateTime.now().year) {
+              return {'vehicleYearFuture': true};
+            }
+
+            return null;
+          }),
+        ],
+      ),
+      VehicleFormFields.color: FormControl<String>(
+        validators: [
+          Validators.required,
+          Validators.delegate((control) {
+            final value = (control.value as String? ?? '').trim();
+            if (value.isEmpty) return null;
+
+            if (value.length > 32) {
+              return {'vehicleColorTooLong': true};
+            }
+
+            if (!RegExp(r"^[\p{L}\s\-']+$", unicode: true).hasMatch(value)) {
+              return {'vehicleColorInvalidCharacters': true};
+            }
+
+            return null;
+          }),
+        ],
+      ),
+      VehicleFormFields.licensePlate: FormControl<String>(
+        validators: [
+          Validators.required,
+          Validators.delegate((control) {
+            final value = control.value as String?;
+            if (value == null || value.trim().isEmpty) return null;
+
+            final trimmed = value.trim().toUpperCase();
+
+            if (trimmed.length < 2) {
+              return {'licensePlateTooShort': true};
+            }
+
+            if (trimmed.length > 12) {
+              return {'licensePlateTooLong': true};
+            }
+
+            if (!RegExp(r'^[A-Z0-9\-\s]+$').hasMatch(trimmed)) {
+              return {'licensePlateInvalidFormat': true};
+            }
+
+            return null;
+          }),
+        ],
+      ),
+      VehicleFormFields.seats: FormControl<String>(
+        value: '3',
+        validators: [
+          Validators.required,
+          Validators.delegate((control) {
+            final raw = control.value as String?;
+            if (raw == null || raw.isEmpty) return null;
+
+            final parsed = int.tryParse(raw);
+
+            if (parsed == null) {
+              return {'seatsInvalid': true};
+            }
+
+            if (parsed < 1 || parsed > 4) {
+              return {'seatsOutOfRange': true};
+            }
+
+            return null;
+          }),
+        ],
+      ),
+      VehicleFormFields.fuelType: FormControl<FuelType>(
+        value: FuelType.gasoline,
+      ),
+    });
+  }
 
   static const List<FuelType> _fuelTypes = [
     FuelType.gasoline,
@@ -376,6 +286,9 @@ class _DriverOnboardingScreenState
   @override
   void initState() {
     super.initState();
+
+    _profileForm = _buildProfileForm();
+    _vehicleForm = _buildVehicleForm();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -548,13 +461,13 @@ class _DriverOnboardingScreenState
       ownerId: currentUser.uid,
       ownerName: currentUser.username,
       ownerPhotoUrl: currentUser.photoUrl,
-      make: (values[_VF.make] as String?)!,
-      model: (values[_VF.model] as String?)!,
-      year: int.parse((values[_VF.year] as String?)!),
-      color: (values[_VF.color] as String?)!,
-      licensePlate: (values[_VF.licensePlate] as String?)!,
-      capacity: int.parse((values[_VF.seats] as String?)!),
-      fuelType: (values[_VF.fuelType] as FuelType?)!,
+      make: (values[VehicleFormFields.make] as String?)!,
+      model: (values[VehicleFormFields.model] as String?)!,
+      year: int.parse((values[VehicleFormFields.year] as String?)!),
+      color: (values[VehicleFormFields.color] as String?)!,
+      licensePlate: (values[VehicleFormFields.licensePlate] as String?)!,
+      capacity: int.parse((values[VehicleFormFields.seats] as String?)!),
+      fuelType: (values[VehicleFormFields.fuelType] as FuelType?)!,
       isActive: true,
     );
 
@@ -693,7 +606,7 @@ class _DriverOnboardingScreenState
         appBar: AdaptiveAppBar(
           leading: effectiveStep > 0
               ? IconButton(
-                  tooltip: AppLocalizations.of(context).previousStepTooltip,
+                  tooltip: l10n.previousStepTooltip,
                   onPressed: () =>
                       _previousStep(vmState, skipProfileStep: skipProfileStep),
                   icon: Icon(
@@ -703,7 +616,7 @@ class _DriverOnboardingScreenState
                   ),
                 )
               : IconButton(
-                  tooltip: AppLocalizations.of(context).goBackTooltip,
+                  tooltip: l10n.goBackTooltip,
                   onPressed: () => context.go(AppRoutes.roleSelection.path),
                   icon: Icon(
                     Icons.adaptive.arrow_back_rounded,
@@ -711,7 +624,7 @@ class _DriverOnboardingScreenState
                     size: 20.sp,
                   ),
                 ),
-          title: AppLocalizations.of(context).driverSetup,
+          title: l10n.driverSetup,
           actions: [
             AdaptiveAppBarAction(
               iosSymbol: 'person.crop.circle.badge.arrow.forward',
@@ -775,29 +688,29 @@ class _DriverOnboardingScreenState
     final steps = skipProfileStep
         ? [
             (
-              AppLocalizations.of(context).vehicle,
+              l10n.vehicle,
               Icons.directions_car_outlined,
               1,
             ),
             (
-              AppLocalizations.of(context).payouts,
+              l10n.payouts,
               Icons.account_balance_outlined,
               2,
             ),
           ]
         : [
             (
-              AppLocalizations.of(context).navProfile,
+              l10n.navProfile,
               Icons.person_outline_rounded,
               0,
             ),
             (
-              AppLocalizations.of(context).vehicle,
+              l10n.vehicle,
               Icons.directions_car_outlined,
               1,
             ),
             (
-              AppLocalizations.of(context).payouts,
+              l10n.payouts,
               Icons.account_balance_outlined,
               2,
             ),
@@ -846,16 +759,17 @@ class _DriverOnboardingScreenState
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                _stepSubtitle(effectiveStep),
+                _stepSubtitle(context, effectiveStep),
                 style: TextStyle(
                   fontSize: 11.sp,
                   color: AppColors.textSecondary,
                 ),
               ),
               Text(
-                skipProfileStep
-                    ? 'Step ${effectiveStep - 1 + 1} of 2'
-                    : 'Step ${effectiveStep + 1} of 3',
+                l10n.stepOf(
+                  skipProfileStep ? effectiveStep : effectiveStep + 1,
+                  skipProfileStep ? 2 : 3,
+                ),
                 style: TextStyle(
                   fontSize: 11.sp,
                   color: AppColors.primary,
@@ -869,10 +783,10 @@ class _DriverOnboardingScreenState
     );
   }
 
-  String _stepSubtitle(int step) => switch (step) {
-    0 => 'Tell us about yourself',
-    1 => 'Add your vehicle details',
-    _ => 'Connect your payout account',
+  String _stepSubtitle(BuildContext context, int step) => switch (step) {
+    0 => l10n.driverProfileSubtitle,
+    1 => l10n.addYourVehicle,
+    _ => l10n.setupPayouts,
   };
 
   Widget _buildStepIndicator(
@@ -1016,7 +930,7 @@ class _DriverOnboardingScreenState
             SizedBox(height: 24.h),
 
             // ── Section: Personal Info ───────────────────────────────────
-            _sectionLabel('Personal Info'),
+            _sectionLabel(l10n.personalInfo),
 
             if (!needsManualName) ...[
               _buildNameDisplay(displayName, hasPhoto, photoUrl),
@@ -1031,8 +945,10 @@ class _DriverOnboardingScreenState
                       ValidationMessage.required: (_) => l10n.nameRequiredError,
                       ValidationMessage.minLength: (_) =>
                           l10n.nameMinLengthError,
-                      ValidationMessage.maxLength: (_) => 'Name is too long',
-                      'name': (error) => error as String,
+                      ValidationMessage.maxLength: (_) => l10n.name_is_too_long,
+                      'nameHasNumbers': (_) => l10n.name_cannot_contain_numbers,
+                      'nameInvalidCharacters': (_) =>
+                          l10n.name_contains_invalid_characters,
                     },
                   )
                   .animate()
@@ -1076,7 +992,7 @@ class _DriverOnboardingScreenState
             SizedBox(height: 24.h),
 
             // ── Section: Contact & Address ──────────────────────────────
-            _sectionLabel('Contact & Address'),
+            _sectionLabel(l10n.contactAndAddress),
 
             IntlPhoneInput(
                   key: _phoneKey,
@@ -1106,8 +1022,8 @@ class _DriverOnboardingScreenState
 
             AddressAutocompleteField(
                   key: _addressKey,
-                  label: 'Address',
-                  hint: 'Search your address.',
+                  label: l10n.address,
+                  hint: l10n.searchAddressCityOrPlace,
                   initialValue: switch (currentUser) {
                     final DriverModel driver => driver.address,
                     final RiderModel rider => rider.address,
@@ -1118,7 +1034,7 @@ class _DriverOnboardingScreenState
                   onSelected: (_) {},
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
-                      return 'Address is required';
+                      return l10n.address_is_required;
                     }
                     return null;
                   },
@@ -1133,7 +1049,7 @@ class _DriverOnboardingScreenState
             SizedBox(height: 20.h),
 
             // ── Section: Driving Details ─────────────────────────────────
-            _sectionLabel('Driving Details'),
+            _sectionLabel(l10n.drivingDetails),
 
             ReactiveExpertisePicker(
                   formControlName: _PF.expertise,
@@ -1170,14 +1086,14 @@ class _DriverOnboardingScreenState
                 activeColor: AppColors.primary,
                 title: Text.rich(
                   TextSpan(
-                    text: 'I agree to the ',
+                    text: l10n.i_agree_to_the,
                     style: TextStyle(
                       fontSize: 13.sp,
                       color: AppColors.textSecondary,
                     ),
                     children: [
                       TextSpan(
-                        text: 'Terms & Conditions',
+                        text: l10n.terms_conditions,
                         recognizer: TapGestureRecognizer()
                           ..onTap = () => context.push(AppRoutes.terms.path),
                         style: const TextStyle(
@@ -1213,7 +1129,7 @@ class _DriverOnboardingScreenState
                               SizedBox(width: 6.w),
                               Expanded(
                                 child: Text(
-                                  'You must accept the terms to continue.',
+                                  l10n.you_must_accept_the_terms_to_continue,
                                   style: TextStyle(
                                     fontSize: 12.sp,
                                     color: AppColors.error,
@@ -1239,14 +1155,14 @@ class _DriverOnboardingScreenState
 
                 return Semantics(
                   button: true,
-                  label: 'Save driver profile and continue',
+                  label: l10n.save_driver_profile_and_continue,
                   child: AnimatedOpacity(
                     duration: const Duration(milliseconds: 250),
                     opacity: isFormReady ? 1.0 : 0.55,
                     child: PremiumButton(
                       text: isLoading
-                          ? 'Saving...'
-                          : l10n.driverSaveAndContinue,
+                          ? l10n.loading
+                          : l10n.save_driver_profile_and_continue,
                       onPressed: isLoading ? null : _saveProfileAndContinue,
                       isLoading: isLoading,
                       style: isFormReady
@@ -1298,7 +1214,7 @@ class _DriverOnboardingScreenState
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      name.isNotEmpty ? name : 'Your Name',
+                      name.isNotEmpty ? name : l10n.yourName,
                       style: TextStyle(
                         fontSize: 16.sp,
                         fontWeight: FontWeight.w800,
@@ -1316,7 +1232,7 @@ class _DriverOnboardingScreenState
                         SizedBox(width: 4.w),
                         Expanded(
                           child: Text(
-                            'From your sign-in account',
+                            l10n.from_your_signin_account,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
@@ -1427,7 +1343,7 @@ class _DriverOnboardingScreenState
                         ),
                         SizedBox(height: 4.h),
                         Text(
-                          'Help riders recognize your car at pickup.',
+                          l10n.help_riders_recognize_your_car_at_pickup,
                           style: TextStyle(
                             fontSize: 12.sp,
                             height: 1.4,
@@ -1445,7 +1361,7 @@ class _DriverOnboardingScreenState
 
             ReactiveFormConsumer(
                   builder: (context, form, _) {
-                    return _VehicleLiveSummary(
+                    return VehicleLiveSummary(
                       form: form,
                       accent: AppColors.primary,
                     );
@@ -1457,16 +1373,17 @@ class _DriverOnboardingScreenState
 
             SizedBox(height: 24.h),
 
-            _sectionLabel('Car identity'),
+            _sectionLabel(l10n.carIdentity),
 
-            _VehicleSectionCard(
+            VehicleSectionCard(
                   icon: Icons.directions_car_rounded,
-                  title: 'What car should riders look for?',
-                  subtitle: 'Keep this simple. Make and model are enough here.',
+                  title: l10n.what_car_should_riders_look_for,
+                  subtitle:
+                      l10n.keep_this_simple_make_and_model_are_enough_here,
                   accent: AppColors.primary,
                   children: [
-                    _VehicleTextField(
-                      formControlName: _VF.make,
+                    VehicleTextField(
+                      formControlName: VehicleFormFields.make,
                       label: l10n.make,
                       hintText: l10n.vehicleMakeHint,
                       icon: Icons.business_rounded,
@@ -1476,8 +1393,8 @@ class _DriverOnboardingScreenState
                             l10n.pleaseEnterVehicleMake,
                       },
                     ),
-                    _VehicleTextField(
-                      formControlName: _VF.model,
+                    VehicleTextField(
+                      formControlName: VehicleFormFields.model,
                       label: l10n.model,
                       hintText: l10n.vehicleModelHint,
                       icon: Icons.drive_eta_rounded,
@@ -1495,33 +1412,40 @@ class _DriverOnboardingScreenState
 
             SizedBox(height: 22.h),
 
-            _sectionLabel('Recognition'),
+            _sectionLabel(l10n.recognition),
 
-            _VehicleSectionCard(
+            VehicleSectionCard(
                   icon: Icons.visibility_rounded,
-                  title: 'Help passengers find you',
+                  title: l10n.help_passengers_find_you,
                   subtitle:
-                      'Color and plate are the details riders use at pickup.',
+                      l10n.color_and_plate_are_the_details_riders_use_at_pickup,
                   accent: AppColors.primary,
                   children: [
-                    _VehicleColorSelector(
-                      formControlName: _VF.color,
+                    VehicleColorSelector(
+                      formControlName: VehicleFormFields.color,
                       label: l10n.color,
                       validationMessages: {
                         ValidationMessage.required: (_) => l10n.requiredField,
-                        'vehicleColor': (error) => error as String,
+                        'vehicleColorTooLong': (_) =>
+                            l10n.colorDescriptionIsTooLong,
+                        'vehicleColorInvalidCharacters': (_) =>
+                            l10n.useAClearColorNameLikeGreyBlueOrPearlWhite,
                       },
                     ),
-                    _LicensePlateInput(
-                      formControlName: _VF.licensePlate,
+                    LicensePlateInput(
+                      formControlName: VehicleFormFields.licensePlate,
                       label: l10n.licensePlate,
                       hintText: l10n.licensePlateHint,
-                      helperText:
-                          'Only used when needed for pickup verification.',
+                      helperText: l10n.onlyUsedWhenNeededForPickupVerification,
                       validationMessages: {
                         ValidationMessage.required: (_) =>
                             l10n.pleaseEnterLicensePlate,
-                        'licensePlate': (error) => error as String,
+                        'licensePlateTooShort': (_) =>
+                            l10n.license_plate_is_too_short,
+                        'licensePlateTooLong': (_) =>
+                            l10n.license_plate_is_too_long,
+                        'licensePlateInvalidFormat': (_) =>
+                            l10n.invalid_license_plate_format,
                       },
                     ),
                   ],
@@ -1532,22 +1456,25 @@ class _DriverOnboardingScreenState
 
             SizedBox(height: 22.h),
 
-            _sectionLabel('Passenger seats'),
+            _sectionLabel(l10n.passengerSeats),
 
-            _VehicleSectionCard(
+            VehicleSectionCard(
                   icon: Icons.event_seat_rounded,
-                  title: 'How many passengers can you take?',
-                  subtitle:
-                      'This is available passenger seats, not total car seats.',
+                  title: l10n.how_many_passengers_can_you_take,
+                  subtitle: l10n
+                      .this_is_available_passenger_seats_not_total_car_seats,
                   accent: AppColors.primary,
                   children: [
-                    _SeatChipSelector(
-                      formControlName: _VF.seats,
-                      label: l10n.availableSeats,
+                    SeatChipSelector(
+                      formControlName: VehicleFormFields.seats,
+                      label: l10n.seatsLabel,
                       validationMessages: {
                         ValidationMessage.required: (_) =>
                             l10n.pleaseEnterNumberOfSeats,
-                        'seats': (error) => error as String,
+                        'seatsInvalid': (_) =>
+                            l10n.please_select_number_of_seats,
+                        'seatsOutOfRange': (_) =>
+                            l10n.seats_must_be_between_1_and_4,
                       },
                     ),
                   ],
@@ -1558,20 +1485,20 @@ class _DriverOnboardingScreenState
 
             SizedBox(height: 22.h),
 
-            _sectionLabel('More details'),
+            _sectionLabel(l10n.moreDetails),
 
-            _VehicleSectionCard(
+            VehicleSectionCard(
                   icon: Icons.tune_rounded,
-                  title: 'Vehicle details',
-                  subtitle:
-                      'Kept quieter because they are less important at pickup.',
+                  title: l10n.vehicle_details,
+                  subtitle: l10n
+                      .kept_quieter_because_they_are_less_important_at_pickup,
                   accent: AppColors.primary,
                   children: [
-                    _VehicleTextField(
-                      formControlName: _VF.year,
+                    VehicleTextField(
+                      formControlName: VehicleFormFields.year,
                       label: l10n.year,
                       hintText: DateTime.now().year.toString(),
-                      helperText: 'Registration year',
+                      helperText: l10n.registrationYear,
                       icon: Icons.calendar_today_outlined,
                       keyboardType: TextInputType.number,
                       textInputAction: TextInputAction.next,
@@ -1581,11 +1508,14 @@ class _DriverOnboardingScreenState
                       ],
                       validationMessages: {
                         ValidationMessage.required: (_) => l10n.requiredField,
-                        'vehicleYear': (error) => error as String,
+                        'vehicleYearInvalid': (_) =>
+                            l10n.please_enter_a_valid_year,
+                        'vehicleYearTooOld': (_) => l10n.vehicle_is_too_old,
+                        'vehicleYearFuture': (_) => l10n.invalid_year,
                       },
                     ),
-                    _FuelTypeChipSelector(
-                      formControlName: _VF.fuelType,
+                    FuelTypeChipSelector(
+                      formControlName: VehicleFormFields.fuelType,
                       label: l10n.fuelType,
                       fuelTypes: _fuelTypes,
                     ),
@@ -1611,8 +1541,8 @@ class _DriverOnboardingScreenState
                     width: double.infinity,
                     child: PremiumButton(
                       text: isLoading
-                          ? 'Saving...'
-                          : l10n.driverSaveAndContinue,
+                          ? l10n.loading
+                          : l10n.save_driver_profile_and_continue,
                       onPressed: isLoading ? null : _saveVehicleAndContinue,
                       isLoading: isLoading,
                       size: PremiumButtonSize.large,
@@ -1693,7 +1623,7 @@ class _DriverOnboardingScreenState
 
           SizedBox(height: 24.h),
 
-          _sectionLabel('Why connect payouts?'),
+          _sectionLabel(l10n.whyConnectPayouts),
 
           Container(
             decoration: BoxDecoration(
@@ -1801,1135 +1731,6 @@ class _DriverOnboardingScreenState
           ),
         ],
       ),
-    );
-  }
-}
-
-// ─── Vehicle UI Components ────────────────────────────────────────────────────
-
-class _VehicleLiveSummary extends StatelessWidget {
-  const _VehicleLiveSummary({
-    required this.form,
-    required this.accent,
-  });
-
-  final FormGroup form;
-  final Color accent;
-
-  String _stringValue(String controlName) {
-    return (form.control(controlName).value as String? ?? '').trim();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final make = _stringValue(_VF.make);
-    final model = _stringValue(_VF.model);
-    final year = _stringValue(_VF.year);
-    final color = _stringValue(_VF.color);
-    final plate = _stringValue(_VF.licensePlate);
-    final seats = _stringValue(_VF.seats);
-    final fuel = form.control(_VF.fuelType).value as FuelType?;
-    final colorOption = _matchedVehicleColor(color);
-    final previewColor = colorOption?.color ?? AppColors.primary;
-    final isLightColor = _isLightVehicleColor(previewColor);
-
-    final hasIdentity = make.isNotEmpty || model.isNotEmpty;
-    final title = hasIdentity
-        ? [make, model].where((value) => value.isNotEmpty).join(' ')
-        : 'Your vehicle';
-
-    final subtitle = color.isNotEmpty
-        ? [color, if (year.isNotEmpty) year].join(' • ')
-        : 'Add color and plate so riders can find you';
-
-    final detailsParts = [
-      if (plate.isNotEmpty) plate.toUpperCase(),
-      if (seats.isNotEmpty) '$seats passenger seat${seats == '1' ? '' : 's'}',
-      if (fuel != null) _fuelTypeLabel(fuel),
-    ];
-
-    return Container(
-      padding: EdgeInsets.all(15.w),
-      decoration: BoxDecoration(
-        color: AppColors.surface.withValues(alpha: 0.72),
-        borderRadius: BorderRadius.circular(20.r),
-        border: Border.all(
-          color: AppColors.border.withValues(alpha: 0.45),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.025),
-            blurRadius: 18,
-            offset: Offset(0, 8.h),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 58.w,
-            height: 58.w,
-            decoration: BoxDecoration(
-              color: previewColor,
-              borderRadius: BorderRadius.circular(18.r),
-              border: Border.all(
-                color: isLightColor
-                    ? AppColors.border
-                    : Colors.white.withValues(alpha: 0.65),
-                width: 2,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: previewColor.withValues(alpha: 0.22),
-                  blurRadius: 16,
-                  offset: Offset(0, 7.h),
-                ),
-              ],
-            ),
-            child: Icon(
-              Icons.directions_car_filled_rounded,
-              color: isLightColor ? AppColors.textPrimary : Colors.white,
-              size: 29.sp,
-            ),
-          ),
-          SizedBox(width: 14.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w900,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                SizedBox(height: 4.h),
-                Text(
-                  subtitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                SizedBox(height: 8.h),
-                Wrap(
-                  spacing: 6.w,
-                  runSpacing: 6.h,
-                  children: [
-                    if (detailsParts.isEmpty)
-                      _VehicleMiniTag(
-                        text: 'Recognition details appear here',
-                        accent: accent,
-                        muted: true,
-                      )
-                    else
-                      ...detailsParts.map(
-                        (detail) => _VehicleMiniTag(
-                          text: detail,
-                          accent: accent,
-                        ),
-                      ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _VehicleMiniTag extends StatelessWidget {
-  const _VehicleMiniTag({
-    required this.text,
-    required this.accent,
-    this.muted = false,
-  });
-
-  final String text;
-  final Color accent;
-  final bool muted;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-      decoration: BoxDecoration(
-        color: muted
-            ? AppColors.textSecondary.withValues(alpha: 0.06)
-            : accent.withValues(alpha: 0.085),
-        borderRadius: BorderRadius.circular(999.r),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 10.5.sp,
-          fontWeight: FontWeight.w700,
-          color: muted ? AppColors.textSecondary : accent,
-        ),
-      ),
-    );
-  }
-}
-
-class _VehicleSectionCard extends StatelessWidget {
-  const _VehicleSectionCard({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.accent,
-    required this.children,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final Color accent;
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(15.w),
-      decoration: BoxDecoration(
-        color: AppColors.surface.withValues(alpha: 0.72),
-        borderRadius: BorderRadius.circular(18.r),
-        border: Border.all(
-          color: AppColors.border.withValues(alpha: 0.46),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.022),
-            blurRadius: 14,
-            offset: Offset(0, 6.h),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 38.w,
-                height: 38.w,
-                decoration: BoxDecoration(
-                  color: accent.withValues(alpha: 0.09),
-                  borderRadius: BorderRadius.circular(12.r),
-                ),
-                child: Icon(icon, color: accent, size: 19.sp),
-              ),
-              SizedBox(width: 11.w),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 14.5.sp,
-                        fontWeight: FontWeight.w900,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    SizedBox(height: 2.h),
-                    Text(
-                      subtitle,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 11.5.sp,
-                        height: 1.28,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 15.h),
-          for (var i = 0; i < children.length; i++) ...[
-            if (i > 0) SizedBox(height: 13.h),
-            children[i],
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _VehicleTextField extends StatelessWidget {
-  const _VehicleTextField({
-    required this.formControlName,
-    required this.label,
-    required this.hintText,
-    required this.icon,
-    this.helperText,
-    this.keyboardType,
-    this.textInputAction,
-    this.inputFormatters,
-    this.validationMessages,
-  });
-
-  final String formControlName;
-  final String label;
-  final String hintText;
-  final String? helperText;
-  final IconData icon;
-  final TextInputType? keyboardType;
-  final TextInputAction? textInputAction;
-  final List<TextInputFormatter>? inputFormatters;
-  final Map<String, String Function(Object)>? validationMessages;
-
-  @override
-  Widget build(BuildContext context) {
-    return ReactiveValueListenableBuilder<String>(
-      formControlName: formControlName,
-      builder: (context, control, _) {
-        final errorText = _reactiveErrorText(control, validationMessages);
-        final hasError = errorText != null;
-        final hasValue = (control.value ?? '').trim().isNotEmpty;
-
-        final borderColor = hasError
-            ? AppColors.error.withValues(alpha: 0.72)
-            : hasValue
-            ? AppColors.primary.withValues(alpha: 0.22)
-            : AppColors.border.withValues(alpha: 0.38);
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12.sp,
-                fontWeight: FontWeight.w800,
-                color: hasError ? AppColors.error : AppColors.textPrimary,
-              ),
-            ),
-            SizedBox(height: 7.h),
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              curve: Curves.easeOutCubic,
-              decoration: BoxDecoration(
-                color: AppColors.background,
-                borderRadius: BorderRadius.circular(15.r),
-                border: Border.all(color: borderColor),
-              ),
-              child: Row(
-                children: [
-                  SizedBox(width: 12.w),
-                  Container(
-                    width: 34.w,
-                    height: 34.w,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.085),
-                      borderRadius: BorderRadius.circular(10.r),
-                    ),
-                    child: Icon(
-                      icon,
-                      color: hasError ? AppColors.error : AppColors.primary,
-                      size: 17.sp,
-                    ),
-                  ),
-                  SizedBox(width: 10.w),
-                  Expanded(
-                    child: AdaptiveReactiveTextField(
-                      formControlName: formControlName,
-                      keyboardType: keyboardType,
-                      textInputAction: textInputAction,
-                      textCapitalization: TextCapitalization.sentences,
-                      hintText: hintText,
-                    ),
-                  ),
-                  SizedBox(width: 10.w),
-                ],
-              ),
-            ),
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 160),
-              child: hasError
-                  ? _VehicleFieldMessage(
-                      key: ValueKey(errorText),
-                      text: errorText,
-                      color: AppColors.error,
-                      icon: Icons.error_outline_rounded,
-                    )
-                  : helperText == null
-                  ? const SizedBox.shrink(key: ValueKey('no-helper'))
-                  : _VehicleFieldMessage(
-                      key: ValueKey(helperText),
-                      text: helperText!,
-                      color: AppColors.textSecondary,
-                      icon: Icons.info_outline_rounded,
-                    ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _VehicleColorSelector extends StatefulWidget {
-  const _VehicleColorSelector({
-    required this.formControlName,
-    required this.label,
-    required this.validationMessages,
-  });
-
-  final String formControlName;
-  final String label;
-  final Map<String, String Function(Object)> validationMessages;
-
-  @override
-  State<_VehicleColorSelector> createState() => _VehicleColorSelectorState();
-}
-
-class _VehicleColorSelectorState extends State<_VehicleColorSelector> {
-  bool _showCustomInput = false;
-
-  bool _isCommonValue(String value) {
-    return _vehicleColorOptions.any(
-      (option) => option.label.toLowerCase() == value.trim().toLowerCase(),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return ReactiveValueListenableBuilder<String>(
-      formControlName: widget.formControlName,
-      builder: (context, control, _) {
-        final value = (control.value ?? '').trim();
-        final matched = _matchedVehicleColor(value);
-        final isCustomValue = value.isNotEmpty && !_isCommonValue(value);
-        final errorText = _reactiveErrorText(
-          control,
-          widget.validationMessages,
-        );
-        final hasError = errorText != null;
-        final shouldShowCustom = _showCustomInput || isCustomValue;
-
-        void selectColor(_VehicleColorOption option) {
-          HapticFeedback.selectionClick();
-          setState(() => _showCustomInput = false);
-          control.updateValue(option.label);
-          control.markAsTouched();
-        }
-
-        void useCustom() {
-          HapticFeedback.selectionClick();
-          setState(() => _showCustomInput = true);
-          if (_isCommonValue(value)) {
-            control.updateValue('');
-          }
-          control.markAsTouched();
-        }
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              widget.label,
-              style: TextStyle(
-                fontSize: 12.sp,
-                fontWeight: FontWeight.w800,
-                color: hasError ? AppColors.error : AppColors.textPrimary,
-              ),
-            ),
-            SizedBox(height: 9.h),
-            Wrap(
-              spacing: 8.w,
-              runSpacing: 8.h,
-              children: [
-                for (final option in _vehicleColorOptions)
-                  _ColorChoiceChip(
-                    option: option,
-                    selected:
-                        _isCommonValue(value) &&
-                        value.toLowerCase() == option.label.toLowerCase(),
-                    onTap: () => selectColor(option),
-                  ),
-                _OtherColorChip(
-                  selected: shouldShowCustom,
-                  onTap: useCustom,
-                ),
-              ],
-            ),
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 180),
-              switchInCurve: Curves.easeOutCubic,
-              switchOutCurve: Curves.easeInCubic,
-              child: shouldShowCustom
-                  ? Padding(
-                      key: const ValueKey('custom-color-input'),
-                      padding: EdgeInsets.only(top: 11.h),
-                      child: _CustomVehicleColorInput(
-                        formControlName: widget.formControlName,
-                        hintText: 'Champagne, pearl white, bordeaux...',
-                        color: matched?.color ?? AppColors.primary,
-                        hasError: hasError,
-                      ),
-                    )
-                  : const SizedBox.shrink(key: ValueKey('no-custom-color')),
-            ),
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 160),
-              child: hasError
-                  ? _VehicleFieldMessage(
-                      key: ValueKey(errorText),
-                      text: errorText,
-                      color: AppColors.error,
-                      icon: Icons.error_outline_rounded,
-                    )
-                  : _VehicleFieldMessage(
-                      key: ValueKey('color-$value-${matched?.label}'),
-                      text: value.isEmpty
-                          ? 'Choose a common color or use Other color.'
-                          : matched != null
-                          ? 'Selected color: ${matched.label}'
-                          : 'Custom color will be shown to riders as written.',
-                      color: AppColors.textSecondary,
-                      icon: value.isEmpty
-                          ? Icons.info_outline_rounded
-                          : Icons.palette_rounded,
-                    ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _ColorChoiceChip extends StatelessWidget {
-  const _ColorChoiceChip({
-    required this.option,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final _VehicleColorOption option;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final isLight = _isLightVehicleColor(option.color);
-
-    return Material(
-      color: selected
-          ? AppColors.primary.withValues(alpha: 0.1)
-          : AppColors.background.withValues(alpha: 0.92),
-      borderRadius: BorderRadius.circular(999.r),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(999.r),
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(999.r),
-            border: Border.all(
-              color: selected
-                  ? AppColors.primary.withValues(alpha: 0.55)
-                  : AppColors.border.withValues(alpha: 0.45),
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 13.w,
-                height: 13.w,
-                decoration: BoxDecoration(
-                  color: option.color,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: isLight
-                        ? AppColors.border
-                        : Colors.white.withValues(alpha: 0.35),
-                  ),
-                ),
-              ),
-              SizedBox(width: 7.w),
-              Text(
-                option.label,
-                style: TextStyle(
-                  fontSize: 11.5.sp,
-                  fontWeight: FontWeight.w800,
-                  color: selected ? AppColors.primary : AppColors.textPrimary,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _OtherColorChip extends StatelessWidget {
-  const _OtherColorChip({
-    required this.selected,
-    required this.onTap,
-  });
-
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: selected
-          ? AppColors.primary.withValues(alpha: 0.1)
-          : AppColors.background.withValues(alpha: 0.92),
-      borderRadius: BorderRadius.circular(999.r),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(999.r),
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(999.r),
-            border: Border.all(
-              color: selected
-                  ? AppColors.primary.withValues(alpha: 0.55)
-                  : AppColors.border.withValues(alpha: 0.45),
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.edit_rounded,
-                size: 14.sp,
-                color: selected ? AppColors.primary : AppColors.textSecondary,
-              ),
-              SizedBox(width: 6.w),
-              Text(
-                'Other color',
-                style: TextStyle(
-                  fontSize: 11.5.sp,
-                  fontWeight: FontWeight.w800,
-                  color: selected ? AppColors.primary : AppColors.textPrimary,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _CustomVehicleColorInput extends StatelessWidget {
-  const _CustomVehicleColorInput({
-    required this.formControlName,
-    required this.hintText,
-    required this.color,
-    required this.hasError,
-  });
-
-  final String formControlName;
-  final String hintText;
-  final Color color;
-  final bool hasError;
-
-  @override
-  Widget build(BuildContext context) {
-    final borderColor = hasError
-        ? AppColors.error.withValues(alpha: 0.72)
-        : AppColors.border.withValues(alpha: 0.42);
-
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 180),
-      decoration: BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.circular(15.r),
-        border: Border.all(color: borderColor),
-      ),
-      child: Row(
-        children: [
-          SizedBox(width: 12.w),
-          Container(
-            width: 34.w,
-            height: 34.w,
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(10.r),
-              border: Border.all(
-                color: _isLightVehicleColor(color)
-                    ? AppColors.border
-                    : Colors.white.withValues(alpha: 0.5),
-              ),
-            ),
-          ),
-          SizedBox(width: 10.w),
-          Expanded(
-            child: AdaptiveReactiveTextField(
-              formControlName: formControlName,
-              textCapitalization: TextCapitalization.words,
-              textInputAction: TextInputAction.next,
-              hintText: hintText,
-            ),
-          ),
-          SizedBox(width: 10.w),
-        ],
-      ),
-    );
-  }
-}
-
-class _VehicleFieldMessage extends StatelessWidget {
-  const _VehicleFieldMessage({
-    required this.text,
-    required this.color,
-    required this.icon,
-    super.key,
-  });
-
-  final String text;
-  final Color color;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(top: 6.h, left: 2.w),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 12.5.sp, color: color),
-          SizedBox(width: 5.w),
-          Expanded(
-            child: Text(
-              text,
-              style: TextStyle(
-                fontSize: 11.sp,
-                height: 1.25,
-                fontWeight: FontWeight.w500,
-                color: color,
-              ),
-            ),
-          ),
-        ],
-      ),
-    ).animate().fadeIn(duration: 140.ms);
-  }
-}
-
-class _LicensePlateInput extends StatelessWidget {
-  const _LicensePlateInput({
-    required this.formControlName,
-    required this.label,
-    required this.hintText,
-    required this.helperText,
-    required this.validationMessages,
-  });
-
-  final String formControlName;
-  final String label;
-  final String hintText;
-  final String helperText;
-  final Map<String, String Function(Object)> validationMessages;
-
-  @override
-  Widget build(BuildContext context) {
-    return ReactiveValueListenableBuilder<String>(
-      formControlName: formControlName,
-      builder: (context, control, _) {
-        final errorText = _reactiveErrorText(control, validationMessages);
-        final hasError = errorText != null;
-        final hasValue = (control.value ?? '').trim().isNotEmpty;
-
-        final borderColor = hasError
-            ? AppColors.error.withValues(alpha: 0.72)
-            : hasValue
-            ? AppColors.primary.withValues(alpha: 0.24)
-            : AppColors.border.withValues(alpha: 0.42);
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12.sp,
-                fontWeight: FontWeight.w800,
-                color: hasError ? AppColors.error : AppColors.textPrimary,
-              ),
-            ),
-            SizedBox(height: 7.h),
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              padding: EdgeInsets.symmetric(horizontal: 10.w),
-              decoration: BoxDecoration(
-                color: AppColors.background,
-                borderRadius: BorderRadius.circular(15.r),
-                border: Border.all(color: borderColor),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 42.w,
-                    height: 38.h,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(11.r),
-                    ),
-                    child: Center(
-                      child: Text(
-                        'FR',
-                        style: TextStyle(
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 0.4,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 10.w),
-                  Expanded(
-                    child: AdaptiveReactiveTextField(
-                      formControlName: formControlName,
-                      textCapitalization: TextCapitalization.characters,
-                      keyboardType: TextInputType.text,
-                      textInputAction: TextInputAction.next,
-                      hintText: hintText,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 160),
-              child: hasError
-                  ? _VehicleFieldMessage(
-                      key: ValueKey(errorText),
-                      text: errorText,
-                      color: AppColors.error,
-                      icon: Icons.error_outline_rounded,
-                    )
-                  : _VehicleFieldMessage(
-                      key: ValueKey(helperText),
-                      text: helperText,
-                      color: AppColors.textSecondary,
-                      icon: Icons.privacy_tip_outlined,
-                    ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _SeatChipSelector extends StatelessWidget {
-  const _SeatChipSelector({
-    required this.formControlName,
-    required this.label,
-    required this.validationMessages,
-  });
-
-  final String formControlName;
-  final String label;
-  final Map<String, String Function(Object)> validationMessages;
-
-  @override
-  Widget build(BuildContext context) {
-    return ReactiveValueListenableBuilder<String>(
-      formControlName: formControlName,
-      builder: (context, control, _) {
-        final selected = int.tryParse(control.value ?? '') ?? 3;
-        final errorText = _reactiveErrorText(control, validationMessages);
-        final hasError = errorText != null;
-
-        void updateSeats(int value) {
-          HapticFeedback.selectionClick();
-          control.updateValue(value.toString());
-          control.markAsTouched();
-        }
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _ChoiceHeader(
-              label: label,
-              helper: 'Choose seats available for passengers.',
-              icon: Icons.event_seat_rounded,
-              hasError: hasError,
-            ),
-            SizedBox(height: 10.h),
-            Row(
-              children: [
-                for (var seats = 1; seats <= 4; seats++) ...[
-                  Expanded(
-                    child: _NumberChoiceChip(
-                      value: seats,
-                      selected: selected == seats,
-                      onTap: () => updateSeats(seats),
-                    ),
-                  ),
-                  if (seats < 4) SizedBox(width: 8.w),
-                ],
-              ],
-            ),
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 160),
-              child: hasError
-                  ? _VehicleFieldMessage(
-                      key: ValueKey(errorText),
-                      text: errorText,
-                      color: AppColors.error,
-                      icon: Icons.error_outline_rounded,
-                    )
-                  : _VehicleFieldMessage(
-                      key: ValueKey('$selected-seat-helper'),
-                      text:
-                          '$selected passenger seat${selected == 1 ? '' : 's'} available',
-                      color: AppColors.textSecondary,
-                      icon: Icons.info_outline_rounded,
-                    ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _NumberChoiceChip extends StatelessWidget {
-  const _NumberChoiceChip({
-    required this.value,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final int value;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: selected
-          ? AppColors.primary
-          : AppColors.background.withValues(alpha: 0.92),
-      borderRadius: BorderRadius.circular(13.r),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(13.r),
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          height: 46.h,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(13.r),
-            border: Border.all(
-              color: selected
-                  ? AppColors.primary
-                  : AppColors.border.withValues(alpha: 0.45),
-            ),
-            boxShadow: selected
-                ? [
-                    BoxShadow(
-                      color: AppColors.primary.withValues(alpha: 0.18),
-                      blurRadius: 12,
-                      offset: Offset(0, 5.h),
-                    ),
-                  ]
-                : null,
-          ),
-          child: Center(
-            child: Text(
-              '$value',
-              style: TextStyle(
-                fontSize: 15.sp,
-                fontWeight: FontWeight.w900,
-                color: selected ? Colors.white : AppColors.textPrimary,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _FuelTypeChipSelector extends StatelessWidget {
-  const _FuelTypeChipSelector({
-    required this.formControlName,
-    required this.label,
-    required this.fuelTypes,
-  });
-
-  final String formControlName;
-  final String label;
-  final List<FuelType> fuelTypes;
-
-  @override
-  Widget build(BuildContext context) {
-    return ReactiveValueListenableBuilder<FuelType>(
-      formControlName: formControlName,
-      builder: (context, control, _) {
-        final selected = control.value ?? FuelType.gasoline;
-
-        void updateFuel(FuelType fuel) {
-          HapticFeedback.selectionClick();
-          control.updateValue(fuel);
-          control.markAsTouched();
-        }
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _ChoiceHeader(
-              label: label,
-              helper: 'Optional detail used for ride context.',
-              icon: Icons.local_gas_station_rounded,
-              hasError: false,
-            ),
-            SizedBox(height: 10.h),
-            Wrap(
-              spacing: 8.w,
-              runSpacing: 8.h,
-              children: fuelTypes
-                  .map(
-                    (fuel) => _FuelChoiceChip(
-                      fuel: fuel,
-                      selected: selected == fuel,
-                      onTap: () => updateFuel(fuel),
-                    ),
-                  )
-                  .toList(),
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _FuelChoiceChip extends StatelessWidget {
-  const _FuelChoiceChip({
-    required this.fuel,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final FuelType fuel;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final label = _fuelTypeLabel(fuel);
-
-    return Material(
-      color: selected
-          ? AppColors.primary.withValues(alpha: 0.1)
-          : AppColors.background.withValues(alpha: 0.92),
-      borderRadius: BorderRadius.circular(13.r),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(13.r),
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          padding: EdgeInsets.symmetric(horizontal: 11.w, vertical: 10.h),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(13.r),
-            border: Border.all(
-              color: selected
-                  ? AppColors.primary.withValues(alpha: 0.55)
-                  : AppColors.border.withValues(alpha: 0.45),
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                _fuelTypeIcon(fuel),
-                color: selected ? AppColors.primary : AppColors.textSecondary,
-                size: 16.sp,
-              ),
-              SizedBox(width: 6.w),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12.sp,
-                  fontWeight: FontWeight.w800,
-                  color: selected ? AppColors.primary : AppColors.textPrimary,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ChoiceHeader extends StatelessWidget {
-  const _ChoiceHeader({
-    required this.label,
-    required this.helper,
-    required this.icon,
-    required this.hasError,
-  });
-
-  final String label;
-  final String helper;
-  final IconData icon;
-  final bool hasError;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(
-          icon,
-          size: 16.sp,
-          color: hasError ? AppColors.error : AppColors.primary,
-        ),
-        SizedBox(width: 7.w),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12.sp,
-                  fontWeight: FontWeight.w800,
-                  color: hasError ? AppColors.error : AppColors.textPrimary,
-                ),
-              ),
-              SizedBox(height: 2.h),
-              Text(
-                helper,
-                style: TextStyle(
-                  fontSize: 11.sp,
-                  height: 1.25,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 }

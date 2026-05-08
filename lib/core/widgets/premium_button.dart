@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -179,7 +181,7 @@ class _PremiumButtonState extends State<PremiumButton>
     if (!_isPressed) {
       _isPressed = true;
       _pressController.forward();
-      HapticFeedback.lightImpact();
+      unawaited(HapticFeedback.lightImpact());
     }
   }
 
@@ -189,7 +191,7 @@ class _PremiumButtonState extends State<PremiumButton>
       _isPressed = false;
       _pressController.reverse();
       widget.onPressed?.call();
-      HapticFeedback.mediumImpact();
+      unawaited(HapticFeedback.mediumImpact());
     }
   }
 
@@ -242,9 +244,7 @@ class _PremiumButtonState extends State<PremiumButton>
       ),
     );
 
-    if (widget.showShimmer &&
-        !widget.isDisabled &&
-        !widget.isLoading) {
+    if (widget.showShimmer && !widget.isDisabled && !widget.isLoading) {
       button = button
           .animate(onPlay: (controller) => controller.repeat(reverse: true))
           .shimmer(
@@ -415,7 +415,7 @@ class _PremiumIconButtonState extends State<PremiumIconButton>
     if (!_isPressed) {
       _isPressed = true;
       _pressController.forward();
-      HapticFeedback.lightImpact();
+      unawaited(HapticFeedback.lightImpact());
     }
   }
 
@@ -425,7 +425,7 @@ class _PremiumIconButtonState extends State<PremiumIconButton>
       _isPressed = false;
       _pressController.reverse();
       widget.onPressed?.call();
-      HapticFeedback.mediumImpact();
+      unawaited(HapticFeedback.mediumImpact());
     }
   }
 
@@ -567,7 +567,7 @@ class _PremiumFABState extends State<PremiumFAB>
       },
       child: GestureDetector(
         onTap: () {
-          HapticFeedback.mediumImpact();
+          unawaited(HapticFeedback.mediumImpact());
           widget.onPressed?.call();
         },
         child: Container(

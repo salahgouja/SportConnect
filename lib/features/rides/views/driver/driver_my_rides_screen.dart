@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -8,9 +10,9 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:sliver_tools/sliver_tools.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/skeleton_loader.dart';
-import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
@@ -30,7 +32,9 @@ class DriverMyRidesScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final activeRide = ref.watch(activeDriverRideProvider.select((a) => a.value));
+    final activeRide = ref.watch(
+      activeDriverRideProvider.select((a) => a.value),
+    );
     final pendingRequests = ref.watch(pendingRideRequestsProvider);
     final upcomingRides = ref.watch(upcomingDriverRidesProvider);
 
@@ -362,8 +366,12 @@ class _PendingRequestCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final profile = ref.watch(userProfileProvider(request.passengerId).select((a) => a.value));
-    final ride = ref.watch(requestCardRideProvider(request.rideId).select((a) => a.value));
+    final profile = ref.watch(
+      userProfileProvider(request.passengerId).select((a) => a.value),
+    );
+    final ride = ref.watch(
+      requestCardRideProvider(request.rideId).select((a) => a.value),
+    );
 
     final passengerName = profile?.username ?? '…';
     final passengerPhoto = profile?.photoUrl;
@@ -568,7 +576,7 @@ class _PendingRequestCard extends ConsumerWidget {
           ),
           ElevatedButton(
             onPressed: () async {
-              HapticFeedback.mediumImpact();
+              unawaited(HapticFeedback.mediumImpact());
               Navigator.pop(ctx);
               final result = await ref
                   .read(rideRequestServiceProvider.notifier)
@@ -611,7 +619,7 @@ class _PendingRequestCard extends ConsumerWidget {
           ),
           ElevatedButton(
             onPressed: () async {
-              HapticFeedback.mediumImpact();
+              unawaited(HapticFeedback.mediumImpact());
               Navigator.pop(ctx);
               final result = await ref
                   .read(rideRequestServiceProvider.notifier)
@@ -814,8 +822,7 @@ class _HistoryRideCard extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final isCancelled = ride.status == RideStatus.cancelled;
     final date = DateFormat('d MMM · HH:mm').format(ride.departureTime);
-    final earnings =
-        ride.pricing.pricePerSeatInCents * ride.capacity.booked;
+    final earnings = ride.pricing.pricePerSeatInCents * ride.capacity.booked;
 
     return GestureDetector(
       onTap: () => context.pushNamed(

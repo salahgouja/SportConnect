@@ -1,11 +1,13 @@
+import 'dart:async';
+
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 
 /// Walking distance and directions to pickup point (#19, #45)
 class WalkingDistanceCard extends StatelessWidget {
@@ -91,7 +93,7 @@ class WalkingDistanceCard extends StatelessWidget {
           if (onGetDirections != null)
             TextButton.icon(
               onPressed: () {
-                HapticFeedback.lightImpact();
+                unawaited(HapticFeedback.lightImpact());
                 onGetDirections!();
               },
               icon: Icon(Icons.navigation_rounded, size: 16.sp),
@@ -234,7 +236,7 @@ class PickupPinDropCard extends StatelessWidget {
           if (!hasPin)
             TextButton(
               onPressed: () {
-                HapticFeedback.lightImpact();
+                unawaited(HapticFeedback.lightImpact());
                 onDropPin();
               },
               child: Text(AppLocalizations.of(context).setPin),
@@ -266,7 +268,7 @@ class NoShowDialog {
           ),
           ElevatedButton(
             onPressed: () {
-              HapticFeedback.mediumImpact();
+              unawaited(HapticFeedback.mediumImpact());
               Navigator.pop(context, true);
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.warning),
@@ -345,7 +347,7 @@ class VehicleQuickSwitchSheet extends StatelessWidget {
     final theme = Theme.of(context);
     return AdaptiveListTile(
       onTap: () {
-        HapticFeedback.selectionClick();
+        unawaited(HapticFeedback.selectionClick());
         Navigator.pop(context);
         onSelect(vehicle.id);
       },
@@ -403,7 +405,7 @@ class LadiesOnlyFilter extends StatelessWidget {
     return FilterChip(
       selected: isEnabled,
       onSelected: (value) {
-        HapticFeedback.selectionClick();
+        unawaited(HapticFeedback.selectionClick());
         onChanged(value);
       },
       avatar: Icon(
@@ -452,7 +454,7 @@ class RideSharingLink extends StatelessWidget {
         Expanded(
           child: OutlinedButton.icon(
             onPressed: () {
-              HapticFeedback.lightImpact();
+              unawaited(HapticFeedback.lightImpact());
               onShare();
             },
             icon: Icon(Icons.adaptive.share_rounded, size: 18.sp),
@@ -463,7 +465,7 @@ class RideSharingLink extends StatelessWidget {
           SizedBox(width: 8.w),
           IconButton(
             onPressed: () {
-              HapticFeedback.lightImpact();
+              unawaited(HapticFeedback.lightImpact());
               onCopyLink!();
             },
             icon: Icon(Icons.copy_rounded, size: 20.sp),

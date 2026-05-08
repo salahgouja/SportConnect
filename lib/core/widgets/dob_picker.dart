@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -10,6 +12,7 @@ class DateOfBirthField extends StatelessWidget {
     required this.formControlName,
     required this.label,
     required this.validationMessages,
+    super.key,
   });
 
   final String formControlName;
@@ -20,7 +23,7 @@ class DateOfBirthField extends StatelessWidget {
     BuildContext context,
     ReactiveFormFieldState<DateTime, DateTime> field,
   ) async {
-    HapticFeedback.selectionClick();
+    unawaited(HapticFeedback.selectionClick());
 
     final selectedDate = await AdaptiveDatePicker.show(
       context: context,

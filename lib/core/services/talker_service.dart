@@ -93,12 +93,9 @@ class TalkerService {
     instance.handle(exception, stackTrace, message);
   }
 
-  /// Navigate to the TalkerScreen to view all logs.
+  /// Navigate to the TalkerScreen to view all logs. Debug builds only.
   static void showLogScreen(BuildContext context) {
-    if (kIsWeb) {
-      debugPrint('[TalkerService] TalkerScreen is not supported on web.');
-      return;
-    }
+    if (!kDebugMode || kIsWeb) return;
 
     unawaited(
       Navigator.of(context).push(

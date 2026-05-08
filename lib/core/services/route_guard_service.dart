@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
-import 'package:sport_connect/features/auth/models/models.dart';
-import 'package:sport_connect/features/payments/payments.dart';
+import 'package:sport_connect/core/models/user/models.dart';
+import 'package:sport_connect/features/payments/models/payment_model.dart';
 
 class RouteGuardService {
   const RouteGuardService({

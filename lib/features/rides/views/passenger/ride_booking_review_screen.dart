@@ -1,3 +1,7 @@
+import 'dart:async';
+
+
+
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -76,7 +80,7 @@ class _RideBookingReviewScreenState
       return;
     }
 
-    HapticFeedback.heavyImpact();
+    unawaited(HapticFeedback.heavyImpact());
     _uiNotifier.setBooking(true);
 
     try {
@@ -277,13 +281,13 @@ class _RideBookingReviewScreenState
                       onDecrease: selectedSeats <= 1
                           ? null
                           : () {
-                              HapticFeedback.selectionClick();
+                              unawaited(HapticFeedback.selectionClick());
                               _uiNotifier.setSelectedSeats(selectedSeats - 1);
                             },
                       onIncrease: selectedSeats >= ride.remainingSeats
                           ? null
                           : () {
-                              HapticFeedback.selectionClick();
+                              unawaited(HapticFeedback.selectionClick());
                               _uiNotifier.setSelectedSeats(selectedSeats + 1);
                             },
                     ),

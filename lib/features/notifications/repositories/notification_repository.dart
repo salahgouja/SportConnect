@@ -4,6 +4,7 @@ import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/services/firebase_service.dart';
 
 import 'package:sport_connect/features/notifications/models/notification_model.dart';
+import 'package:sport_connect/l10n/generated/app_localizations_en.dart';
 
 part 'notification_repository.g.dart';
 
@@ -16,6 +17,7 @@ NotificationRepository notificationRepository(Ref ref) {
 class NotificationRepository {
   NotificationRepository(this._firestore);
   final FirebaseFirestore _firestore;
+  final AppLocalizationsEn _l10n = AppLocalizationsEn();
 
   CollectionReference<NotificationModel> get _notificationsCollection =>
       _firestore
@@ -172,8 +174,11 @@ class NotificationRepository {
         id: '',
         userId: toUserId,
         type: NotificationType.rideBookingRequest,
-        title: 'New Ride Request',
-        body: '$fromUserName wants to join your ride "$rideName"',
+        title: _l10n.new_ride_request,
+        body: _l10n.notificationRideBookingRequestBody(
+          fromUserName,
+          rideName,
+        ),
         senderId: fromUserId,
         senderName: fromUserName,
         senderPhotoUrl: fromUserPhoto,
@@ -198,8 +203,8 @@ class NotificationRepository {
         id: '',
         userId: toUserId,
         type: NotificationType.rideBookingAccepted,
-        title: 'Booking Accepted!',
-        body: '$driverName accepted your request for "$rideName"',
+        title: _l10n.booking_accepted,
+        body: _l10n.notificationRideBookingAcceptedBody(driverName, rideName),
         senderName: driverName,
         senderPhotoUrl: driverPhoto,
         referenceId: rideId,
@@ -220,15 +225,19 @@ class NotificationRepository {
     String? reason,
   }) async {
     final body = reason != null && reason.isNotEmpty
-        ? '$driverName declined your request for "$rideName": $reason'
-        : '$driverName declined your request for "$rideName"';
+        ? _l10n.notificationRideBookingDeclinedWithReasonBody(
+            driverName,
+            rideName,
+            reason,
+          )
+        : _l10n.notificationRideBookingDeclinedBody(driverName, rideName);
 
     await createNotification(
       NotificationModel(
         id: '',
         userId: toUserId,
         type: NotificationType.rideBookingRejected,
-        title: 'Booking Declined',
+        title: _l10n.booking_declined,
         body: body,
         senderName: driverName,
         senderPhotoUrl: driverPhoto,
@@ -250,15 +259,19 @@ class NotificationRepository {
     String? reason,
   }) async {
     final body = reason != null && reason.isNotEmpty
-        ? '$driverName cancelled the ride "$rideName": $reason'
-        : '$driverName cancelled the ride "$rideName"';
+        ? _l10n.notificationRideCancelledWithReasonBody(
+            driverName,
+            rideName,
+            reason,
+          )
+        : _l10n.notificationRideCancelledBody(driverName, rideName);
 
     await createNotification(
       NotificationModel(
         id: '',
         userId: toUserId,
         type: NotificationType.rideCancelled,
-        title: 'Ride Cancelled',
+        title: _l10n.ride_cancelled,
         body: body,
         senderName: driverName,
         senderPhotoUrl: driverPhoto,
@@ -284,8 +297,8 @@ class NotificationRepository {
         id: '',
         userId: toUserId,
         type: NotificationType.newMessage,
-        title: 'New Message',
-        body: '$fromUserName: $messagePreview',
+        title: _l10n.new_message,
+        body: _l10n.notificationNewMessageBody(fromUserName, messagePreview),
         senderId: fromUserId,
         senderName: fromUserName,
         senderPhotoUrl: fromUserPhoto,
@@ -307,8 +320,11 @@ class NotificationRepository {
         id: '',
         userId: userId,
         type: NotificationType.achievementUnlocked,
-        title: 'Achievement Unlocked! 🏆',
-        body: 'You earned "$achievementName" - $achievementDescription',
+        title: _l10n.achievement_unlocked,
+        body: _l10n.notificationAchievementBody(
+          achievementName,
+          achievementDescription,
+        ),
       ),
     );
   }
@@ -324,8 +340,8 @@ class NotificationRepository {
         id: '',
         userId: userId,
         type: NotificationType.levelUp,
-        title: 'Level Up! 🎉',
-        body: 'Congratulations! You reached Level $newLevel. Keep riding!',
+        title: _l10n.level_up,
+        body: _l10n.notificationLevelUpBody(newLevel),
       ),
     );
   }
@@ -342,9 +358,8 @@ class NotificationRepository {
         id: '',
         userId: toUserId,
         type: NotificationType.rideUpdated,
-        title: 'Driver has arrived! 🚗',
-        body:
-            '$driverName has arrived at your pickup for $rideName. Head out now!',
+        title: _l10n.driver_has_arrived,
+        body: _l10n.notificationDriverArrivedBody(driverName, rideName),
         priority: NotificationPriority.high,
         data: {'rideId': rideId, 'driverPhoto': driverPhoto},
       ),
@@ -362,8 +377,11 @@ class NotificationRepository {
         id: '',
         userId: toUserId,
         type: NotificationType.rideUpdated,
-        title: 'Almost there! 📍',
-        body: '$driverName is arriving at the destination for $rideName.',
+        title: _l10n.almost_there,
+        body: _l10n.notificationDriverArrivingDestinationBody(
+          driverName,
+          rideName,
+        ),
         priority: NotificationPriority.high,
         data: {'rideId': rideId},
       ),
@@ -381,14 +399,18 @@ class NotificationRepository {
     String? reason,
   }) async {
     final body = reason != null && reason.isNotEmpty
-        ? '$organizerName cancelled "$eventTitle": $reason'
-        : '$organizerName cancelled "$eventTitle"';
+        ? _l10n.notificationEventCancelledWithReasonBody(
+            organizerName,
+            eventTitle,
+            reason,
+          )
+        : _l10n.notificationEventCancelledBody(organizerName, eventTitle);
     await createNotification(
       NotificationModel(
         id: '',
         userId: toUserId,
         type: NotificationType.eventCancelled,
-        title: 'Event Cancelled',
+        title: _l10n.event_cancelled,
         body: body,
         senderId: organizerName,
         senderName: organizerName,

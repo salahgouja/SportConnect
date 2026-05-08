@@ -5,11 +5,11 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
-
+import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/services/firebase_service.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
-import 'package:sport_connect/features/auth/models/models.dart';
+import 'package:sport_connect/features/profile/models/leaderboard_entry.dart';
 import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
 
 part 'profile_repository.g.dart';
@@ -527,7 +527,6 @@ class ProfileRepository {
   // ==================== LEADERBOARD ====================
 
   /// Get leaderboard
-
   Future<List<LeaderboardEntry>> getLeaderboard({int limit = 50}) async {
     final query = await _usersCollection
         .orderBy('gamification.totalXP', descending: true)

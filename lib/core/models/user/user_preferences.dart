@@ -1,5 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:sport_connect/features/auth/models/models.dart';
+import 'package:sport_connect/core/models/user/models.dart';
 
 part 'user_preferences.freezed.dart';
 part 'user_preferences.g.dart';

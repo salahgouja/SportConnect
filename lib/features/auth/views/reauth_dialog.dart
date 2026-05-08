@@ -144,7 +144,9 @@ class _ReauthBottomSheetState extends ConsumerState<_ReauthBottomSheet> {
                   hintText: l10n.reauthPasswordHint,
                   prefixIcon: const Icon(Icons.lock_outline_rounded),
                   suffixIcon: IconButton(
-                    tooltip: _obscure ? 'Show password' : 'Hide password',
+                    tooltip: _obscure
+                        ? l10n.showPasswordTooltip
+                        : l10n.hidePasswordTooltip,
                     icon: Icon(
                       _obscure
                           ? Icons.visibility_outlined

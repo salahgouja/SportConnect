@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
@@ -8,12 +9,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/utils/user_facing_error.dart';
 import 'package:sport_connect/core/widgets/custom_button.dart';
 import 'package:sport_connect/core/widgets/glass_panel.dart';
 import 'package:sport_connect/features/auth/models/auth_exception.dart';
-import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 import 'package:sport_connect/features/auth/view_models/role_selection_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
@@ -190,41 +191,25 @@ class RoleSelectionScreen extends ConsumerWidget {
                 child: Wrap(
                   spacing: 8.w,
                   children: [
-                    TextButton.icon(
+                    PremiumButton(
                       onPressed: vmState.isLoading ? null : changeGoogleAccount,
-                      icon: Icon(
-                        Icons.switch_account_rounded,
-                        size: 16.sp,
-                        color: AppColors.textSecondary,
-                      ),
-                      label: Text(
-                        'Change Google',
-                        style: TextStyle(
-                          fontSize: 12.sp,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
+                      icon: Icons.switch_account_rounded,
+                      text: l10n.changeGoogleAccount,
+                      style: PremiumButtonStyle.outline,
                     ),
                     if (Platform.isIOS || Platform.isMacOS)
-                      TextButton.icon(
-                        onPressed: vmState.isLoading ? null : changeAppleAccount,
-                        icon: Icon(
-                          Icons.switch_account_rounded,
-                          size: 16.sp,
-                          color: AppColors.textSecondary,
-                        ),
-                        label: Text(
-                          'Change Apple',
-                          style: TextStyle(
-                            fontSize: 12.sp,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
+                      PremiumButton(
+                        onPressed: vmState.isLoading
+                            ? null
+                            : changeAppleAccount,
+                        icon: Icons.switch_account_rounded,
+                        text: l10n.changeAppleAccount,
+                        style: PremiumButtonStyle.outline,
                       ),
                   ],
                 ),
               ),
-
+              const SizedBox(height: 10),
               // Continue button
               SizedBox(
                     width: double.infinity,
@@ -307,7 +292,7 @@ Widget _buildRoleCard({
 
   return GestureDetector(
     onTap: () {
-      HapticFeedback.selectionClick();
+      unawaited(HapticFeedback.selectionClick());
       onRoleSelected(role);
     },
     child: AnimatedScale(

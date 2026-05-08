@@ -178,7 +178,7 @@
   "@colorPalette": {
     "description": "Text from _buildSection.title in debug_overlay.dart"
   },
-  "primary": "Primary",
+  "primary": "primary",
   "@primary": {
     "description": "Text from _buildColorChip in debug_overlay.dart"
   },
@@ -194,7 +194,7 @@
   "@background": {
     "description": "Text from _buildColorChip in debug_overlay.dart"
   },
-  "error": "Error",
+  "error": "error",
   "@error": {
     "description": "Text from _buildColorChip in debug_overlay.dart"
   },
@@ -382,7 +382,7 @@
   "@vehicle": {
     "description": "Text from _buildStepIndicator in driver_onboarding_screen.dart"
   },
-  "payouts": "Payouts",
+  "payouts": "payouts",
   "@payouts": {
     "description": "Text from _buildStepIndicator in driver_onboarding_screen.dart"
   },
@@ -698,7 +698,7 @@
   "@valueKm": {
     "description": "Text from Text in home_screen.dart"
   },
-  "rides": "rides",
+  "rides": "Rides",
   "@rides": {
     "description": "Text from _buildStatItem in home_screen.dart"
   },
@@ -786,7 +786,7 @@
   "@bookThisRide": {
     "description": "Text from Text in home_screen.dart"
   },
-  "ride": "ride",
+  "ride": "Ride",
   "@ride": {
     "description": "Text from _buildStatItem in quick_stats_card.dart"
   },
@@ -834,7 +834,7 @@
   "@chatCleared": {
     "description": "Text from Text in chat_detail_screen.dart"
   },
-  "clear": "Clear",
+  "clear": "clear",
   "@clear": {
     "description": "Text from Text in chat_detail_screen.dart"
   },
@@ -846,7 +846,7 @@
   "@sendAMessageToStart": {
     "description": "Text from Text in chat_detail_screen.dart"
   },
-  "typing": "typing...",
+  "typing": "typing",
   "@typing": {
     "description": "Text from Text in chat_detail_screen.dart"
   },
@@ -1134,7 +1134,7 @@
   "@receivePaymentsFromRiders": {
     "description": "Text from Text in driver_earnings_screen.dart"
   },
-  "completeVerification": "Complete verification",
+  "completeVerification": "Complete Verification",
   "@completeVerification": {
     "description": "Text from Text in driver_earnings_screen.dart"
   },
@@ -1246,7 +1246,7 @@
   "@ridePayment": {
     "description": "Text from Text in payment_history_screen.dart"
   },
-  "unknownDate": "Unknown date",
+  "unknownDate": "Unknown Date",
   "@unknownDate": {
     "description": "Text from Text in payment_history_screen.dart"
   },
@@ -1722,6 +1722,13 @@
   "@myVehicles": {
     "description": "Text from Text in driver_vehicle_screen.dart"
   },
+  "manageYourVehicles": "Manage your vehicles",
+  "createdAndJoinedEvents": "Created & joined events",
+  "viewYourBadgesAndRewards": "View your badges & rewards",
+  "appPreferencesAndPrivacy": "App preferences & privacy",
+  "permissionPhotoLibraryMessage": "Access to your photo library is needed to send images in this chat. Your photos are only shared when you choose to send them.",
+  "yourFleet": "Your Fleet",
+  "noActiveVehicle": "No active vehicle",
   "noVehiclesAdded": "No Vehicles Added",
   "@noVehiclesAdded": {
     "description": "Text from Text in driver_vehicle_screen.dart"
@@ -1918,6 +1925,7 @@
   "@notVerified": {
     "description": "Text from Text in profile_screen.dart"
   },
+  "inactive": "Inactive",
   "rideStatistics": "Ride Statistics",
   "@rideStatistics": {
     "description": "Text from Text in profile_screen.dart"
@@ -1986,7 +1994,7 @@
   "@somethingWentWrong": {
     "description": "Text from Text in profile_search_screen.dart"
   },
-  "vehicles": "Vehicles",
+  "vehicles": "vehicles",
   "@vehicles": {
     "description": "Text from _buildNavigationTile.title in settings_screen.dart"
   },
@@ -2854,7 +2862,7 @@
   "@seatsLeft": {
     "description": "Text from _buildInfoItem in active_ride_screen.dart"
   },
-  "departure": "departure",
+  "departure": "Departure",
   "@departure": {
     "description": "Text from _buildInfoItem in active_ride_screen.dart"
   },
@@ -2886,7 +2894,7 @@
   "@failedToCancelRideValue": {
     "description": "Text from Text in active_ride_screen.dart"
   },
-  "rateYourRide": "Rate Your Ride",
+  "rateYourRide": "Rate your ride",
   "@rateYourRide": {
     "description": "Text from Text in active_ride_screen.dart"
   },
@@ -3026,7 +3034,7 @@
   "@sortBy": {
     "description": "Text from Text in rider_request_ride_screen.dart"
   },
-  "recommended": "Recommended",
+  "recommended": "recommended",
   "@recommended": {
     "description": "Text from _buildSortOption in rider_request_ride_screen.dart"
   },
@@ -3074,7 +3082,7 @@
   "@onlinePay": {
     "description": "Text from _buildDetailChip in rider_view_ride_screen.dart"
   },
-  "reviews": "Reviews",
+  "reviews": "reviews",
   "@reviews": {
     "description": "Text from Text in rider_view_ride_screen.dart"
   },
@@ -3306,7 +3314,7 @@
   "@minimumRating": {
     "description": "Text from _buildFilterSectionTitle in ride_search_screen.dart"
   },
-  "any": "Any",
+  "any": "any",
   "@any": {
     "description": "Text from Text in ride_search_screen.dart"
   },
@@ -3334,7 +3342,7 @@
   "@electric": {
     "description": "Text from _buildVehicleOption in ride_search_screen.dart"
   },
-  "comfort": "Comfort",
+  "comfort": "comfort",
   "@comfort": {
     "description": "Text from _buildVehicleOption in ride_search_screen.dart"
   },
@@ -3625,7 +3633,7 @@
   "forgotPasswordEmailRequired": "Please enter your email",
   "forgotPasswordInvalidEmail": "Please enter a valid email",
   "forgotPasswordSendError": "Could not send reset email right now. Please try again.",
-  "roleSelectionError": "We could not continue right now. Please try again.",
+  "roleSelectionError": "Something went wrong. Please try again.",
   "accountExistsError": "An account already exists with a different sign-in method. Try signing in with email/password or the original provider.",
   "loginErrorUserNotFound": "No account found with this email.",
   "loginErrorWrongPassword": "Incorrect email or password. Please try again.",
@@ -3642,13 +3650,11 @@
   "statOnlineHours": "Online Hours",
   "statAvgRating": "Avg Rating",
   "connectStripeAccount": "Connect Stripe Account",
-  "completeVerification": "Complete Verification",
   "benefitInstantPayoutsDesc": "Get your money in minutes, not days",
   "benefitSecureDesc": "Bank-level security with Stripe",
   "benefitTrackingDesc": "See every ride payment in detail",
   "benefitLowFeesDesc": "Keep 85% of every ride payment",
   "pleaseSignInToContinue": "Please sign in to continue",
-  "connectStripe": "Connect Stripe",
   "poweredByStripe": "Powered by Stripe • Secure and encrypted",
   "cancelSetupTitle": "Cancel Setup?",
   "cancelSetupMessage": "Are you sure you want to cancel? You won't be able to receive payouts until you complete this setup.",
@@ -3677,9 +3683,7 @@
   "grossEarnings": "Gross Earnings",
   "netPayout": "Net Payout",
   "payoutCreated": "Payout Created",
-  "retry": "Retry",
   "fees": "Fees",
-  "date": "Date",
   "payoutAmount": "Payout Amount",
   "instantPayout": "Instant Payout",
   "payoutDetailsSection": "Details",
@@ -3706,10 +3710,6 @@
   "stripeLoadingConnect": "Loading Stripe Connect...",
   "stripeAdditionalInfoNeeded": "Additional information needed. Please complete all fields.",
   "stripeVerifyFailed": "Could not verify account right now. Please try again.",
-  "periodToday": "Today",
-  "periodThisWeek": "This Week",
-  "periodThisMonth": "This Month",
-  "periodAllTime": "All Time",
   "unableToLoadData": "Unable to load data. Pull to refresh.",
   "exportEarningsReport": "Earnings Report",
   "exportGenerated": "Generated",
@@ -3763,7 +3763,7 @@
   "locationServicesOff": "Location Services Off",
   "locationServicesOffDescription": "Your device's location services are turned off. Please enable them in settings.",
   "openLocationSettings": "Open Location Settings",
-  "events": "Events",
+  "events": "events",
   "satellite": "Satellite",
   "maxSeatsReached": "Maximum 4 seats per booking",
   "tryADifferentDate": "Try a different date",
@@ -3950,7 +3950,6 @@
   "eventPastStatus": "Past",
   "eventFullStatus": "Full",
   "searchEventsHint": "Search events…",
-  "filterAll": "All",
   "noEventsFound": "No events found",
   "noEventsInCategory": "No upcoming {category} events.",
   "@noEventsInCategory": {
@@ -3982,6 +3981,7 @@
   "loadingPrivacyPolicy": "Loading Privacy Policy…",
   "@_REPORT_ISSUE_SCREEN": {},
   "reportIssueTitle": "Report an Issue",
+  "attachEvidence": "Attach evidence",
   "whatHappenedQuestion": "What happened?",
   "howSevereQuestion": "How severe is this issue?",
   "describeIssueLabel": "Describe the issue",
@@ -4004,7 +4004,6 @@
   "reportSubmittedTitle": "Report Submitted",
   "reportSubmittedMessage": "Thank you for reporting this issue. Our safety team will review it and take appropriate action within 24-48 hours. You will receive an email when your issue is resolved.",
   "doneButton": "Done",
-  "chooseFromGallery": "Choose from Gallery",
   "takeAPhoto": "Take a Photo",
   "rideInfoLabel": "Ride: {id}",
   "@rideInfoLabel": {
@@ -4078,7 +4077,6 @@
   "completeDriverProfileMessage": "Complete your driver profile to offer rides.",
   "becomeDriverButton": "Become a Driver",
   "errorLoadingData": "Error loading data",
-  "whereAreYouGoing": "Where are you going?",
   "fromLabel": "From",
   "toLabel": "To",
   "selectPickupLocation": "Select pickup location",
@@ -4308,7 +4306,6 @@
   "completeRiderProfile": "Complete your rider profile",
   "riderProfileDescription": "Add your details so we can personalize rides and matching for you.",
   "completeSetupButton": "Complete setup",
-  "roleSelectionError": "Something went wrong. Please try again.",
   "riderRoleDescription": "Find and book rides to sporting events. Save money and reduce your carbon footprint.",
   "riderFeatureSearch": "Search available rides",
   "riderFeatureBook": "Book seats instantly",
@@ -4346,7 +4343,6 @@
   "@_PAYMENT_SCREENS": {},
   "paymentDetailsLabel": "Details",
   "ridePaymentLabel": "Ride Payment",
-  "unknownDate": "Unknown Date",
   "@_PROFILE_SCREENS": {},
   "appVersion": "Version {version}",
   "@appVersion": {
@@ -4387,8 +4383,6 @@
   "@_REVIEW_SCREENS": {},
   "asDriverFilter": "As Driver",
   "asRiderFilter": "As Rider",
-  "howWasYourExperience": "How was your experience?",
-  "whatStoodOut": "What stood out?",
   "additionalCommentsLabel": "Additional comments (optional)",
   "specificFeedbackHelps": "Specific feedback helps the community",
   "thankYouForReview": "Thank you for your review!",
@@ -4396,7 +4390,6 @@
   "skipForNowButton": "Skip for now",
   "@_RIDES_SCREENS": {},
   "navigateButton": "Navigate",
-  "gettingYourLocation": "Getting your location...",
   "noActiveRideMessage": "No active ride",
   "ratePassengerTitle": "Rate Passenger",
   "howWasYourPassenger": "How was your passenger?",
@@ -4406,7 +4399,7 @@
   "activeLabel": "Active",
   "pendingLabel": "Pending",
   "cancellationReasonTitle": "Why are you cancelling?",
-  "cancellationReasonHint": "Tell us why you're cancelling this ride...",
+  "cancellationReasonHint": "Tell us more about why you're cancelling...",
   "confirmCancellationButton": "Confirm Cancellation",
   "rideCompletedTitle": "Ride Completed!",
   "rideCompletedSubtitle": "How was your experience?",
@@ -4651,7 +4644,6 @@
   "switchVehicle": "Switch vehicle",
   "copyLink": "Copy link",
   "cloneThisRide": "Clone This Ride",
-  "rateYourRide": "Rate your ride",
   "howWasYourRide": "How was your ride?",
   "rateYourExperienceWith": "Rate your experience with {name}",
   "@rateYourExperienceWith": {
@@ -4666,7 +4658,6 @@
   "incidentType": "Type of incident",
   "describeWhatHappened": "Describe what happened...",
   "submitReport": "Submit Report",
-  "requestRefund": "Request Refund",
   "amountPaid": "Amount paid: {amount}",
   "@amountPaid": {
     "placeholders": {
@@ -4749,10 +4740,8 @@
       }
     }
   },
-  "decline": "Decline",
   "acceptStop": "Accept Stop",
   "dismiss": "Dismiss",
-  "cancellationReasonHint": "Tell us more about why you're cancelling...",
   "failedToLoadBookingValue": "Failed to load booking: {value}",
   "@failedToLoadBookingValue": {
     "placeholders": {
@@ -4763,7 +4752,6 @@
   },
   "bookingNotFoundMayBeCancelled": "Booking not found. It may have been cancelled.",
   "rideHasBeenCancelled": "This ride has been cancelled.",
-  "yourRide": "Your Ride",
   "bookingRefCopied": "Booking ref {code} copied!",
   "@bookingRefCopied": {
     "placeholders": {
@@ -4773,7 +4761,6 @@
     }
   },
   "bookingFailedTryAgain": "Booking failed. Please try again.",
-  "editRide": "Edit Ride",
   "addedToCalendar": "Added to calendar",
   "dismissSuccess": "Dismiss success",
   "dismissError": "Dismiss error",
@@ -4929,7 +4916,6 @@
   "success": "success",
   "localhost": "localhost",
   "production_mode": "PRODUCTION MODE",
-  "sportconnect": "SportConnect",
   "none": "none",
   "signedout": "signed-out",
   "pk_test_51t0hg4ryc7z72fdkkzbcqr4p1v0mi8nzgsxotoy7stj8a3qfqkdlbofdng5fggsinfcvilbokjbtupskomgywirk00mnaqcfsq": "pk_test_51T0hg4RYC7Z72fDKkzbCQr4P1v0Mi8nzgSXoToY7Stj8A3QfqKdLBOFDNG5fggSinfCVILBOkjBTupskomgywiRk00MnaqCFSq",
@@ -4940,21 +4926,14 @@
   "fr": "FR",
   "tnfr": "tn,fr",
   "users": "users",
-  "rides": "Rides",
-  "events": "events",
-  "messages": "Messages",
   "chats": "Chats",
   "notifications": "Notifications",
-  "vehicles": "vehicles",
   "payments": "Payments",
-  "payouts": "payouts",
-  "reviews": "reviews",
   "reports": "reports",
   "bookings": "bookings",
   "support_tickets": "support_tickets",
   "driver_connected_accounts": "driver_connected_accounts",
   "driver_stats": "driver_stats",
-  "typing": "typing",
   "blockedusers": "blockedUsers",
   "disputes": "disputes",
   "archived_transactions": "archived_transactions",
@@ -4983,7 +4962,6 @@
   "driver_navigation_app": "driver_navigation_app",
   "sc": "SC",
   "https": "https",
-  "open": "Open",
   "nominatimopenstreetmaporg": "nominatim.openstreetmap.org",
   "node": "node[",
   "sports_centre": "sports_centre",
@@ -5207,6 +5185,52 @@
   "champagne_pearl_white_bordeaux": "Champagne, pearl white, bordeaux...",
   "invalid_value": "Invalid value",
   "address_is_required": "Address is required",
+  "personalInfo": "Personal Info",
+  "contactAndAddress": "Contact & Address",
+  "drivingDetails": "Driving Details",
+  "carIdentity": "Car identity",
+  "recognition": "Recognition",
+  "passengerSeats": "Passenger seats",
+  "moreDetails": "More details",
+  "whyConnectPayouts": "Why connect payouts?",
+  "yourName": "Your Name",
+  "registrationYear": "Registration year",
+  "onlyUsedWhenNeededForPickupVerification": "Only used when needed for pickup verification.",
+  "addColorAndPlateSoRidersCanFindYou": "Add color and plate so riders can find you",
+  "chooseACommonColorOrUseOtherColor": "Choose a common color or use Other color.",
+  "selectedColor": "Selected color: {color}",
+  "@selectedColor": {
+    "placeholders": {
+      "color": {
+        "type": "String"
+      }
+    }
+  },
+  "customColorWillBeShownToRidersAsWritten": "Custom color will be shown to riders as written.",
+  "chooseSeatsAvailableForPassengers": "Choose seats available for passengers.",
+  "optionalDetailUsedForRideContext": "Optional detail used for ride context.",
+  "stepOf": "Step {current} of {total}",
+  "@stepOf": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "maximumSeats": "Maximum seats",
+  "colorDescriptionIsTooLong": "Color description is too long",
+  "useAClearColorNameLikeGreyBlueOrPearlWhite": "Use a clear color name, like grey, blue, or pearl white.",
+  "suggestedPriceValue": "Suggested: €{price}",
+  "@suggestedPriceValue": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
   "name": "name",
   "dob": "dob",
   "expertise": "expertise",
@@ -5250,7 +5274,7 @@
   "weekly": "WEEKLY",
   "weeklyinterval2": "WEEKLY;INTERVAL=2",
   "monthly": "Monthly",
-  "yearly": "yearly",
+  "yearly": "Yearly",
   "martial_arts": "Martial Arts",
   "football": "Football",
   "basketball": "Basketball",
@@ -5268,6 +5292,7 @@
   "self_arranged": "self_arranged",
   "repeat": "Repeat",
   "no_recurrence_pattern_fits_this_startend_window": "No recurrence pattern fits this start/end window. ",
+  "extend_end_time_or_set_a_later_repeat_end_date": "Extend end time or set a later repeat end date.",
   "failed_to_load_attendees": "Failed to load attendees",
   "no_attendees_yet": "No attendees yet",
   "failed_to_open_chat_please_try_again": "Failed to open chat. Please try again.",
@@ -5277,6 +5302,12 @@
   "delete_event": "Delete Event",
   "are_you_sure_you_want_to_delete": "Are you sure you want to delete ",
   "recurring_event": "⚠️ Recurring Event",
+  "this_event": "This event",
+  "all_events": "All events",
+  "not_label": "not",
+  "custom_label": "custom",
+  "opening_google_calendar": "Opening Google Calendar...",
+  "opening_google_calendar_recurring": "Opening Google Calendar (recurring: {patternLabel})...",
   "this_event_repeats_deleting_it_will_remove_all_occurrences_past_and_future": "This event repeats. Deleting it will remove ALL occurrences (past and future).",
   "to_delete_only_specific_occurrences_use_google_calendar_tap_the_event": "To delete only specific occurrences, use Google Calendar: tap the event → ",
   "cancel": "cancel",
@@ -5312,12 +5343,9 @@
   "event_created_but_the_cover_image_could_not_be_uploaded": "Event created, but the cover image could not be uploaded.",
   "ride_in_progress": "RIDE IN PROGRESS",
   "next_ride": "Next ride",
-  "message": "Message",
   "review_and_respond_before_passengers_choose_another_ride": "Review and respond before passengers choose another ride.",
   "ready_for_your_next_trip": "Ready for your next trip?",
   "publish_a_ride_and_start_receiving_passenger_requests": "Publish a ride and start receiving passenger requests.",
-  "standard": "standard",
-  "all": "All",
   "last_updated_february_23_2026": "Last updated: February 23, 2026",
   "en": "en",
   "utf8": "UTF-8",
@@ -5335,6 +5363,18 @@
   "message_options": "Message options",
   "attachments": "Attachments",
   "conversation_deleted": "Conversation deleted",
+  "choose_what_you_want_to_share_in_this_chat": "Choose what you want to share in this chat.",
+  "failedToSendMessage": "Failed to send message",
+  "cameraAccessIsNeededToTakeAndSendPhotosInThisChat": "Camera access is needed to take and send photos in this chat.",
+  "failedToSendImage": "Failed to send image",
+  "failedToSendVoiceMessage": "Failed to send voice message",
+  "permissionDeniedPleaseCheckYourConnectionAndTryAgain": "Permission denied. Please check your connection and try again.",
+  "networkErrorPleaseCheckYourInternetConnection": "Network error. Please check your internet connection.",
+  "clearChatHistoryMessage": "This will clear the messages from this chat for you only. The conversation will stay in your chat list.",
+  "pleaseEnableLocationServices": "Please enable location services",
+  "locationPermissionRequired": "Location permission required",
+  "couldNotGetYourLocation": "Could not get your location",
+  "failedToGetLocationValue": "Failed to get location: {value}",
   "draft": "Draft",
   "preview_mode": "Preview mode",
   "chat_preview": "Chat preview",
@@ -5353,9 +5393,7 @@
   "star": "star",
   "warning": "warning",
   "campaign": "campaign",
-  "error": "error",
   "gold": "Gold",
-  "primary": "primary",
   "new_ride_request": "New Ride Request",
   "booking_accepted": "Booking Accepted!",
   "booking_declined": "Booking Declined",
@@ -5366,7 +5404,6 @@
   "driver_has_arrived": "Driver has arrived! 🚗",
   "event_cancelled": "Event Cancelled",
   "mark_read": "mark_read",
-  "clear": "clear",
   "find_yournride": "Find Your\\nRide",
   "match_with_runners": "Match with Runners",
   "offer_anseat": "Offer a\\nSeat",
@@ -5418,11 +5455,8 @@
   "from_8": "From €8",
   "rides_available": "RIDES AVAILABLE",
   "fuel_offset": "Fuel offset",
-  "passengers": "Passengers",
   "earn": "Earn",
   "set_time": "Set time",
-  "pickup": "Pickup",
-  "ride": "Ride",
   "pickup_0640": "Pickup 06:40",
   "previous_step": "Previous step",
   "month": "month",
@@ -5500,8 +5534,6 @@
   "carte_didentit_or_passport": "Carte d’identité or passport",
   "french_tax_details": "French tax details",
   "for_french_tax_records": "For French tax records",
-  "earnings": "Earnings",
-  "trips": "Trips",
   "payment_method_saved": "Payment method saved",
   "total_spent": "Total Spent",
   "instant_payouts_can_be_cancelled_while_still_pending_once_in_transit_your_bank_is_already_processing_the_transfer": "Instant payouts can be cancelled while still pending. Once in transit, your bank is already processing the transfer.",
@@ -5512,7 +5544,6 @@
   "in_transit_to_bank": "In Transit to Bank",
   "funds_arrived": "Funds Arrived",
   "method": "Method",
-  "destination": "Destination",
   "this_payout_cannot_be_cancelled_no_stripe_reference_found": "This payout cannot be cancelled — no Stripe reference found.",
   "choose_your_plan": "Choose your plan",
   "upgrade_your_sportconnect_account_in_seconds": "Upgrade your SportConnect account in seconds.",
@@ -5522,10 +5553,14 @@
   "subscribe_now": "Subscribe Now",
   "premium_checkout": "Premium Checkout",
   "premium_activated_successfully": "Premium activated successfully.",
-  "skip": "Skip",
   "upgrade_to_pro": "Upgrade to Pro",
   "premium_carpooling_madenfor_runners_like_you": "Premium carpooling made\\nfor runners like you",
   "everything_you_get": "Everything you get",
+  "pricingUnavailableCheckYourConnection": "Pricing unavailable — check your connection",
+  "pricingUnavailableTapToRetry": "Pricing unavailable — tap to retry",
+  "cancelAnytime": "Cancel anytime",
+  "bestValue": "BEST VALUE",
+  "billedMonthly": "Billed monthly",
   "trusted_by_12000_runners": "Trusted by 12,000+ runners",
   "start_free_trial": "Start Free Trial",
   "smart_ride_matching": "Smart Ride Matching",
@@ -5540,12 +5575,20 @@
   "crew_rides": "Crew Rides",
   "race_priority": "Race Priority",
   "annual": "Annual",
+  "appStoreBilling": "App Store billing",
+  "securePayment": "Secure payment",
+  "joinRunnersWorldwide": "Join runners worldwide",
+  "smartRideMatchingDescription": "Auto-paired with runners heading to your race or training spot.",
+  "unlimitedSavedRoutesDescription": "Save and share your favorite carpool routes with your crew.",
+  "verifiedCommunityDescription": "Every rider is ID-verified. Ride safe with trusted runners.",
+  "crewCoordinationDescription": "Organize group rides for your entire running club in one tap.",
+  "raceDayPriorityDescription": "First pick on rides for marathon day and major events.",
+  "prioritySupportDescription": "Skip the queue. Get help within minutes, not hours.",
   "moneybacknguarantee": "Money-back\\nguarantee",
   "cancelnanytime": "Cancel\\nanytime",
   "securenpayment": "Secure\\npayment",
   "completed": "Completed",
   "thisweek": "thisWeek",
-  "active": "Active",
   "unable_to_complete_checkout_please_try_again": "Unable to complete checkout. Please try again.",
   "version_119": "Version 1.1.9",
   "built_with_flutter": "Built with Flutter",
@@ -5571,6 +5614,38 @@
   "rides_booking": "Rides & Booking",
   "safety_trust": "Safety & Trust",
   "account_profile": "Account & Profile",
+  "help_center_getting_started_create_account_question": "How do I create an account?",
+  "help_center_getting_started_create_account_answer": "Download the app, tap \"Sign Up\", and follow the wizard. You can sign up with email, Google, or Apple ID.",
+  "help_center_getting_started_switch_role_question": "How do I switch between rider and driver?",
+  "help_center_getting_started_switch_role_answer": "Go to Profile > Settings > Switch Role. If you haven't registered as a driver yet, you'll need to complete the driver onboarding process.",
+  "help_center_getting_started_free_question": "Is SportConnect free to use?",
+  "help_center_getting_started_free_answer": "Creating an account is free. Riders pay per ride booked. Drivers earn money by offering rides minus a small service fee.",
+  "help_center_rides_booking_question": "How do I book a ride?",
+  "help_center_rides_booking_answer": "Search for rides from the Explore tab, select a ride that matches your route, review the details, and tap \"Book Ride\".",
+  "help_center_rides_cancel_question": "Can I cancel a booked ride?",
+  "help_center_rides_cancel_answer": "Yes, go to Activity > select the ride > Cancel. Please note that frequent cancellations may affect your rating.",
+  "help_center_rides_matching_question": "How does ride matching work?",
+  "help_center_rides_matching_answer": "Our algorithm matches riders with drivers based on route overlap, departure time, and user preferences. You can also request a ride and let drivers find you.",
+  "help_center_rides_late_question": "What if my ride is late?",
+  "help_center_rides_late_answer": "You'll receive real-time updates on your ride status. If the driver is significantly late, you can contact them directly through the in-app chat.",
+  "help_center_payments_question": "How do payments work?",
+  "help_center_payments_answer": "Payments are processed securely through Stripe. Riders pay when booking, and drivers receive earnings after ride completion.",
+  "help_center_payouts_question": "When do drivers get paid?",
+  "help_center_payouts_answer": "Drivers receive payouts weekly to their linked Stripe account. You can track your earnings in the Earnings tab.",
+  "help_center_fees_question": "What are the service fees?",
+  "help_center_fees_answer": "SportConnect charges a small service fee (typically 10%) to cover platform costs, payment processing, and insurance.",
+  "help_center_safety_question": "How is my safety ensured?",
+  "help_center_safety_answer": "All drivers undergo verification. Rides include live GPS tracking, in-app chat, and all trips are logged for safety.",
+  "help_center_safety_report_question": "How do I report a safety issue?",
+  "help_center_safety_report_answer": "Go to Settings > Report a Problem during or after a ride. Safety reports are prioritized and reviewed within 24 hours.",
+  "help_center_safety_share_question": "Can I share my ride with someone?",
+  "help_center_safety_share_answer": "Yes, during an active ride you can share your live trip details with trusted contacts.",
+  "help_center_account_verify_question": "How do I verify my account?",
+  "help_center_account_verify_answer": "Go to Settings > Verify Account. You can verify your email, phone number, and provide government ID for full verification.",
+  "help_center_account_delete_question": "How do I delete my account?",
+  "help_center_account_delete_answer": "Go to Settings > Account Actions > Delete Account. This action is permanent and cannot be undone.",
+  "help_center_account_email_question": "Can I change my email address?",
+  "help_center_account_email_answer": "Currently, you can update your display name and profile info. For email changes, please contact support.",
   "my_vehicles": "My Vehicles",
   "manage_your_vehicles": "Manage your vehicles",
   "my_events": "My Events",
@@ -5609,6 +5684,9 @@
   "could_not_open_subscription_management": "Could not open subscription management.",
   "available_forms": "Available Forms",
   "downloading_document": "Downloading document...",
+  "available": "Available",
+  "notAvailableYet": "Not available yet",
+  "thisPlanIsNotAvailableFromTheStoreYet": "This plan is not available from the store yet.",
   "protect_your_account": "Protect your account",
   "twofactor_authentication_adds_an_extra_layer_of_security_to_your_account_to_log_in_you": "Two-factor authentication adds an extra layer of security to your account. To log in, you",
   "sms_verification": "SMS Verification",
@@ -5632,20 +5710,15 @@
   "ride_delayed": "Ride Delayed",
   "view": "View",
   "no_pending_requests": "No pending requests",
-  "live": "Live",
   "done": "Done",
   "destination_is_locked_because_an_event_is_selected": "Destination is locked because an event is selected.",
   "how_was_your_passenger": "How was your passenger?",
   "your_honest_feedback_helps_build_a_safer_more_reliable_community": "Your honest feedback helps build a safer, more reliable community.",
   "no_accepted_passengers_to_rate_for_this_ride": "No accepted passengers to rate for this ride.",
   "select_passenger_to_rate": "Select passenger to rate",
-  "rating": "Rating",
   "comment_optional": "Comment (optional)",
   "passenger": "Passenger",
-  "accept": "Accept",
-  "decline": "Decline",
   "message_passenger": "Message passenger",
-  "unknown": "Unknown",
   "in_progress": "In Progress",
   "loading_route": "Loading route...",
   "waiting_for_driver": "Waiting for driver",
@@ -5680,16 +5753,9 @@
   "dropoff_point": "Drop-off point",
   "seat_price": "Seat price",
   "seats_selected": "Seats selected",
-  "fare": "Fare",
   "service_fee": "Service fee",
   "booking_confirmed": "Booking Confirmed",
   "price": "Price ↓",
-  "duration": "Duration",
-  "departure": "Departure",
-  "recommended": "recommended",
-  "any": "any",
-  "electric": "Electric",
-  "comfort": "comfort",
   "are_you_sure_you_want_to_cancel_this_ride": "Are you sure you want to cancel this ride?",
   "frequent_cancellations_may_affect_your_account_rating": "Frequent cancellations may affect your account rating.",
   "please_let_us_know_why_you": "Please let us know why you",
@@ -5789,5 +5855,271 @@
   "keepEditing": "Keep editing",
   "clearAddress": "Clear address",
   "clearPhoneNumber": "Clear phone number",
-  "openInMaps": "Open in maps"
+  "openInMaps": "Open in maps",
+  "appTitle": "SportConnect",
+  "onboardingRunningEvents": "Running events",
+  "onboardingDriveEarn": "Drive & earn",
+  "onboardingPickupPlanning": "Pickup planning",
+  "onboardingTrustedRides": "Trusted rides",
+  "onboardingFindRideTitle": "Find a ride to your race",
+  "onboardingOfferSeatsTitle": "Offer seats and earn",
+  "onboardingPlanRouteTitle": "Plan the route together",
+  "onboardingConnectGoTitle": "Connect safely and go",
+  "onboardingFindRideDescription": "Join runners heading to the same event and arrive without the stress.",
+  "onboardingOfferSeatsDescription": "Driving to a race? Share your empty seats and earn from the trip.",
+  "onboardingPlanRouteDescription": "Set pickup points, confirm timing, and follow a clear route to the event.",
+  "onboardingConnectGoDescription": "Chat with verified runners, confirm the ride, and travel with confidence.",
+  "onboardingFindYourRideTitle": "Find Your\\nRide",
+  "onboardingMatchWithRunners": "Match with Runners",
+  "onboardingFindYourRideDescription": "Instantly match with runners heading the same direction. Share a car, save money, and arrive at the start-line together.",
+  "onboardingSmartMatching": "Smart Matching",
+  "onboardingNearbyRunners": "Nearby Runners",
+  "onboardingPaceFilters": "Pace Filters",
+  "onboardingOfferASeatTitle": "Offer a\\nSeat",
+  "onboardingDriveSplitCosts": "Drive & Split Costs",
+  "onboardingOfferASeatDescription": "Got a car? Offer spare seats to fellow runners. Cover fuel costs and build bonds with your local running community.",
+  "onboardingCostSplitting": "Cost Splitting",
+  "onboardingSeatControl": "Seat Control",
+  "onboardingDriverRating": "Driver Rating",
+  "onboardingPlanYourRouteTitle": "Plan Your\\nRoute",
+  "onboardingSmartRouteSync": "Smart Route Sync",
+  "onboardingPlanYourRouteDescription": "Set your pickup point, race venue, or training ground. SportConnect syncs detours automatically to keep everyone on schedule.",
+  "onboardingLiveRouting": "Live Routing",
+  "onboardingDetourSync": "Detour Sync",
+  "onboardingEventZones": "Event Zones",
+  "onboardingConnectGoModelTitle": "Connect\\n& Go",
+  "onboardingCommunityYouTrust": "Community You Trust",
+  "onboardingConnectGoModelDescription": "Verified runner profiles, in-app chat, and real-time tracking keep every carpool safe, social, and on time.",
+  "onboardingVerifiedProfiles": "Verified Profiles",
+  "onboardingInAppChat": "In-App Chat",
+  "onboardingLiveTracking": "Live Tracking",
+  "failedToSaveProgress": "Failed to save progress: {error}",
+  "@failedToSaveProgress": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "searchRides": "Search Rides",
+  "emptyNoRidesSubtitle": "Try adjusting your filters or search for a different route",
+  "emptyNoEventsSubtitle": "Create an event to bring your group together",
+  "emptyNoMessagesSubtitle": "Start a conversation by booking a ride or joining an event",
+  "emptyNoNotificationsSubtitle": "You'll see new notifications here",
+  "emptyNoReviewsSubtitle": "Reviews will appear after completed rides",
+  "emptyNoVehiclesSubtitle": "Add a vehicle to start offering rides",
+  "emptyNoBookingsSubtitle": "Your ride bookings will appear here",
+  "emptyNoResultsSubtitle": "Try different search terms or filters",
+  "reachedYourDestination": "You've reached your destination",
+  "notificationRideBookingRequestBody": "{fromUserName} wants to join your ride \"{rideName}\"",
+  "@notificationRideBookingRequestBody": {
+    "placeholders": {
+      "fromUserName": {
+        "type": "String"
+      },
+      "rideName": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationRideBookingAcceptedBody": "{driverName} accepted your request for \"{rideName}\"",
+  "@notificationRideBookingAcceptedBody": {
+    "placeholders": {
+      "driverName": {
+        "type": "String"
+      },
+      "rideName": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationRideBookingDeclinedWithReasonBody": "{driverName} declined your request for \"{rideName}\": {reason}",
+  "@notificationRideBookingDeclinedWithReasonBody": {
+    "placeholders": {
+      "driverName": {
+        "type": "String"
+      },
+      "rideName": {
+        "type": "String"
+      },
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationRideBookingDeclinedBody": "{driverName} declined your request for \"{rideName}\"",
+  "@notificationRideBookingDeclinedBody": {
+    "placeholders": {
+      "driverName": {
+        "type": "String"
+      },
+      "rideName": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationRideCancelledWithReasonBody": "{driverName} cancelled the ride \"{rideName}\": {reason}",
+  "@notificationRideCancelledWithReasonBody": {
+    "placeholders": {
+      "driverName": {
+        "type": "String"
+      },
+      "rideName": {
+        "type": "String"
+      },
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationRideCancelledBody": "{driverName} cancelled the ride \"{rideName}\"",
+  "@notificationRideCancelledBody": {
+    "placeholders": {
+      "driverName": {
+        "type": "String"
+      },
+      "rideName": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationNewMessageBody": "{fromUserName}: {messagePreview}",
+  "@notificationNewMessageBody": {
+    "placeholders": {
+      "fromUserName": {
+        "type": "String"
+      },
+      "messagePreview": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationAchievementBody": "You earned \"{achievementName}\" - {achievementDescription}",
+  "@notificationAchievementBody": {
+    "placeholders": {
+      "achievementName": {
+        "type": "String"
+      },
+      "achievementDescription": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationLevelUpBody": "Congratulations! You reached Level {newLevel}. Keep riding!",
+  "@notificationLevelUpBody": {
+    "placeholders": {
+      "newLevel": {
+        "type": "int"
+      }
+    }
+  },
+  "notificationDriverArrivedBody": "{driverName} has arrived at your pickup for {rideName}. Head out now!",
+  "@notificationDriverArrivedBody": {
+    "placeholders": {
+      "driverName": {
+        "type": "String"
+      },
+      "rideName": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationDriverArrivingDestinationBody": "{driverName} is arriving at the destination for {rideName}.",
+  "@notificationDriverArrivingDestinationBody": {
+    "placeholders": {
+      "driverName": {
+        "type": "String"
+      },
+      "rideName": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationEventCancelledWithReasonBody": "{organizerName} cancelled \"{eventTitle}\": {reason}",
+  "@notificationEventCancelledWithReasonBody": {
+    "placeholders": {
+      "organizerName": {
+        "type": "String"
+      },
+      "eventTitle": {
+        "type": "String"
+      },
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationEventCancelledBody": "{organizerName} cancelled \"{eventTitle}\"",
+  "@notificationEventCancelledBody": {
+    "placeholders": {
+      "organizerName": {
+        "type": "String"
+      },
+      "eventTitle": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationRideReferenceType": "ride",
+  "notificationChatReferenceType": "chat",
+  "notificationEventReferenceType": "event",
+  "sharedLocation": "Shared location",
+  "voiceMessage": "Voice message",
+  "rideAttachment": "Ride attachment",
+  "systemMessage": "System message",
+  "imageMessage": "Image",
+  "manual": "Manual",
+  "googleMaps": "Google Maps",
+  "waze": "Waze",
+  "appleMaps": "Apple Maps",
+  "locationData": "Location Data",
+  "paymentData": "Payment Data",
+  "usageData": "Usage Data",
+  "yourRights": "Your Rights",
+  "sportconnectDescription": "SportConnect is a carpooling and rideshare platform designed for sports enthusiasts. Share rides to games, tournaments, and training sessions while saving money, reducing emissions, and connecting with fellow athletes.",
+  "nearMe": "Near me",
+  "withinValueKm": "Within {value} km",
+  "purchasesRestoredSuccessfully": "Purchases restored successfully.",
+  "couldNotRestorePurchases": "Could not restore purchases.",
+  "personalInformationDescription": "We collect your name, email, phone number, and profile photo to create and manage your account.",
+  "locationDataDescription": "We process your location to match rides, calculate routes, and show nearby destinations.",
+  "paymentDataDescription": "Payment information is processed securely by Stripe. We do not store your full card details.",
+  "usageDataDescription": "We collect crash reports and usage analytics. This data is anonymized.",
+  "yourRightsDescription": "You can access, export, correct, or delete your data at any time.",
+  "business_days_1_to_2": "Business Days 1 To 2",
+  "two_days_left": "Two Days Left",
+  "helpCenterGettingStartedCreateAccountQuestion": "Help Center Getting Started Create Account Question",
+  "helpCenterGettingStartedCreateAccountAnswer": "Help Center Getting Started Create Account Answer",
+  "helpCenterGettingStartedSwitchRoleQuestion": "Help Center Getting Started Switch Role Question",
+  "helpCenterGettingStartedSwitchRoleAnswer": "Help Center Getting Started Switch Role Answer",
+  "helpCenterGettingStartedFreeQuestion": "Help Center Getting Started Free Question",
+  "helpCenterGettingStartedFreeAnswer": "Help Center Getting Started Free Answer",
+  "helpCenterRidesBookingQuestion": "Help Center Rides Booking Question",
+  "helpCenterRidesBookingAnswer": "Help Center Rides Booking Answer",
+  "helpCenterRidesCancelAnswer": "Help Center Rides Cancel Answer",
+  "helpCenterRidesMatchingQuestion": "Help Center Rides Matching Question",
+  "helpCenterRidesMatchingAnswer": "Help Center Rides Matching Answer",
+  "helpCenterRidesLateQuestion": "Help Center Rides Late Question",
+  "helpCenterRidesLateAnswer": "Help Center Rides Late Answer",
+  "helpCenterPaymentsQuestion": "Help Center Payments Question",
+  "helpCenterPaymentsAnswer": "Help Center Payments Answer",
+  "helpCenterPayoutsQuestion": "Help Center Payouts Question",
+  "helpCenterPayoutsAnswer": "Help Center Payouts Answer",
+  "helpCenterFeesQuestion": "Help Center Fees Question",
+  "helpCenterFeesAnswer": "Help Center Fees Answer",
+  "helpCenterSafetyQuestion": "Help Center Safety Question",
+  "helpCenterSafetyAnswer": "Help Center Safety Answer",
+  "helpCenterSafetyReportQuestion": "Help Center Safety Report Question",
+  "helpCenterSafetyReportAnswer": "Help Center Safety Report Answer",
+  "helpCenterSafetyShareQuestion": "Help Center Safety Share Question",
+  "helpCenterSafetyShareAnswer": "Help Center Safety Share Answer",
+  "helpCenterAccountVerifyQuestion": "Help Center Account Verify Question",
+  "helpCenterAccountVerifyAnswer": "Help Center Account Verify Answer",
+  "helpCenterAccountDeleteQuestion": "Help Center Account Delete Question",
+  "helpCenterAccountDeleteAnswer": "Help Center Account Delete Answer",
+  "helpCenterAccountEmailQuestion": "Help Center Account Email Question",
+  "helpCenterAccountEmailAnswer": "Help Center Account Email Answer",
+  "articles": "Articles",
+  "tryDifferentKeywordsOrContactSupport": "Try Different Keywords Or Contact Support",
+  "helpCenterRidesCancelQuestion": "Help Center Rides Cancel Question"
 }

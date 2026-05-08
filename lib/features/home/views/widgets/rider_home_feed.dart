@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -50,10 +52,10 @@ class RiderHomeFeed extends ConsumerWidget {
 
         // ── Contextual feed ──────────────────────────────────
         MultiSliver(
-          children: [
-            const SliverToBoxAdapter(child: _NextRideSection()),
-            const SliverToBoxAdapter(child: _EventsNearYouSection()),
-            const SliverToBoxAdapter(child: _NearbyRidesSection()),
+          children: const [
+            SliverToBoxAdapter(child: _NextRideSection()),
+            SliverToBoxAdapter(child: _EventsNearYouSection()),
+            SliverToBoxAdapter(child: _NearbyRidesSection()),
           ],
         ),
 
@@ -324,7 +326,7 @@ class _NextRideCard extends ConsumerWidget {
           padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
           child: GestureDetector(
             onTap: () {
-              HapticFeedback.selectionClick();
+              unawaited(HapticFeedback.selectionClick());
               if (ride.status == RideStatus.inProgress) {
                 context.push(
                   '${AppRoutes.riderActiveRide.path}?rideId=${ride.id}',
@@ -657,7 +659,7 @@ class _EventCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: () {
-        HapticFeedback.selectionClick();
+        unawaited(HapticFeedback.selectionClick());
         context.pushNamed(
           AppRoutes.eventDetail.name,
           pathParameters: {'id': event.id},
@@ -788,7 +790,7 @@ class _NearbyRidesSection extends ConsumerWidget {
               title: l10n.availableRides,
             ),
             SizedBox(height: 12.h),
-            const SkeletonLoader(type: SkeletonType.rideCard, itemCount: 3),
+            const SkeletonLoader(itemCount: 3),
           ],
         ),
       ),
@@ -902,7 +904,7 @@ class _NearbyRideCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: () {
-        HapticFeedback.selectionClick();
+        unawaited(HapticFeedback.selectionClick());
         context.pushNamed(
           AppRoutes.rideDetail.name,
           pathParameters: {'id': ride.id},
@@ -1094,7 +1096,7 @@ class _MapToggleCard extends StatelessWidget {
       padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
       child: GestureDetector(
         onTap: () {
-          HapticFeedback.mediumImpact();
+          unawaited(HapticFeedback.mediumImpact());
           onTap();
         },
         child: Container(

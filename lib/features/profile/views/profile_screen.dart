@@ -9,7 +9,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/custom_button.dart';
@@ -19,7 +21,6 @@ import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/core/widgets/rating_and_profile_widgets.dart';
 import 'package:sport_connect/core/widgets/safety_widgets.dart';
 import 'package:sport_connect/core/widgets/skeleton_loader.dart';
-import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/features/rides/repositories/driver_stats_repository.dart';
@@ -321,8 +322,7 @@ class ProfileScreen extends ConsumerWidget {
   ) async {
     final accepted = await PermissionDialogHelper.showCameraRationale(
       context,
-      customMessage:
-          'Access to your photo library is needed to update your profile picture.',
+      customMessage: AppLocalizations.of(context).permissionCameraPhotosMessage,
     );
 
     if (!accepted) return;
@@ -483,7 +483,7 @@ class ProfileScreen extends ConsumerWidget {
                 memberSince != null
                     ? AppLocalizations.of(
                         context,
-                      ).memberSinceValue(_formatDate(memberSince))
+                      ).memberSinceValue(_formatDate(context, memberSince))
                     : AppLocalizations.of(context).newMember,
                 style: TextStyle(
                   fontSize: 13.sp,
@@ -539,7 +539,7 @@ class ProfileScreen extends ConsumerWidget {
                   SizedBox(
                     width: double.infinity,
                     child: PremiumButton(
-                      text: 'Upgrade to Premium',
+                      text: AppLocalizations.of(context).upgrade_to_premium,
                       icon: Icons.workspace_premium_rounded,
                       onPressed: () =>
                           context.push(AppRoutes.premiumSubscribe.path),
@@ -555,23 +555,8 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  String _formatDate(DateTime date) {
-    final months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-
-    return '${months[date.month - 1]} ${date.year}';
+  String _formatDate(BuildContext context, DateTime date) {
+    return '${DateFormat.MMM(Localizations.localeOf(context).toLanguageTag()).format(date)} ${date.year}';
   }
 
   Widget _buildRideStats(
@@ -603,7 +588,7 @@ class ProfileScreen extends ConsumerWidget {
     final moneyStatValue =
         '€${(totalEarningsInCents / 100).toStringAsFixed(0)}';
     final moneyStatLabel = AppLocalizations.of(context).earned2;
-    final moneyStatIcon = Icons.euro_rounded;
+    const moneyStatIcon = Icons.euro_rounded;
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 20.w),
@@ -841,42 +826,43 @@ class ProfileScreen extends ConsumerWidget {
   }
 
   Widget _buildQuickActions(BuildContext context, UserModel user) {
+    final l10n = AppLocalizations.of(context);
     final isDriver = user.role == UserRole.driver;
 
     final menuItems = [
       if (isDriver)
         _MenuItem(
           icon: Icons.directions_car_outlined,
-          title: 'My Vehicles',
-          subtitle: 'Manage your vehicles',
+          title: l10n.myVehicles,
+          subtitle: l10n.manage_your_vehicles,
           color: AppColors.primary,
           onTap: () => context.push(AppRoutes.driverVehicles.path),
         ),
       _MenuItem(
         icon: Icons.event_rounded,
-        title: 'My Events',
-        subtitle: 'Created & joined events',
+        title: l10n.myEventsTitle,
+        subtitle: l10n.created_joined_events,
         color: AppColors.primaryLight,
         onTap: () => context.push(AppRoutes.myEvents.path),
       ),
       _MenuItem(
         icon: Icons.emoji_events_outlined,
-        title: 'Achievements',
-        subtitle: 'View your badges & rewards',
+        title: l10n.achievements,
+        subtitle: l10n.view_your_badges_rewards,
         color: AppColors.xpGold,
         onTap: () => context.push(AppRoutes.achievements.path),
       ),
       _MenuItem(
         icon: Icons.notifications_outlined,
-        title: 'Notifications',
-        subtitle: 'View your notifications',
+        title: l10n.notifications,
+        subtitle: l10n.view_your_notifications,
         color: AppColors.warning,
         onTap: () => context.push(AppRoutes.notifications.path),
       ),
       _MenuItem(
         icon: Icons.settings_outlined,
-        title: 'Settings',
-        subtitle: 'App preferences & privacy',
+        title: l10n.settings,
+        subtitle: l10n.app_preferences_privacy,
         color: AppColors.textSecondary,
         onTap: () => context.push(AppRoutes.settings.path),
       ),
@@ -1095,7 +1081,9 @@ class ProfileScreen extends ConsumerWidget {
                       UserModel.rider(
                         uid: currentUser.uid,
                         email: currentUser.email ?? '',
-                        username: currentUser.displayName ?? 'User',
+                        username:
+                            currentUser.displayName ??
+                            AppLocalizations.of(context).user,
                         photoUrl: currentUser.photoURL,
                         createdAt: DateTime.now(),
                       ),

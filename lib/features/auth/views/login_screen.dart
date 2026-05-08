@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -368,26 +370,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   }
 
   Widget _buildSocialButtons(SocialAuthState socialState) {
-    final isIos = defaultTargetPlatform == TargetPlatform.iOS;
-    final canUseApple = _isAppleSignInAvailable;
-    final appleButtonHeight = 44.h.clamp(44.0, 56.0);
+    final isApplePlatform =
+        defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.macOS;
+    final l10n = AppLocalizations.of(context);
 
     return Stack(
       children: [
         Column(
           children: [
-            if (isIos && canUseApple)
+            if (!isApplePlatform)
+              _GoogleButton(
+                onPressed: socialState.isLoading ? null : _handleGoogleSignIn,
+                l10n: l10n,
+              ),
+            SizedBox(height: 10.h),
+            if (isApplePlatform) ...[
               SignInWithAppleButton(
                 onPressed: socialState.isLoading ? null : _handleAppleSignIn,
-                text: AppLocalizations.of(context).continueWithApple,
-                height: appleButtonHeight,
+                text: l10n.continueWithApple,
+                height: 48.h,
                 borderRadius: BorderRadius.circular(14.r),
-              ).animate().fadeIn(duration: 300.ms, delay: 300.ms)
-            else if (!isIos) ...[
-              _buildGoogleButton(
-                socialState,
-              ).animate().fadeIn(duration: 300.ms, delay: 250.ms),
-              SizedBox(height: 12.h),
+              ),
+              SizedBox(height: 24.h),
             ],
           ],
         ),
@@ -413,59 +418,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             ),
           ),
       ],
-    );
-  }
-
-  Widget _buildGoogleButton(SocialAuthState socialState) {
-    final buttonHeight = 40.h;
-    final iconGap = 10.w;
-    final label = AppLocalizations.of(context).continueWithGoogle;
-
-    return SizedBox(
-      height: buttonHeight,
-      width: double.infinity,
-      child: OutlinedButton(
-        onPressed: socialState.isLoading
-            ? null
-            : () {
-                HapticFeedback.lightImpact();
-                _handleGoogleSignIn();
-              },
-        style: OutlinedButton.styleFrom(
-          backgroundColor: Colors.white,
-          padding: EdgeInsets.zero,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14.r),
-          ),
-          side: const BorderSide(color: Color(0xFF747775)),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            ExcludeSemantics(
-              // Decorative SVG logo — excluded so SR reads only the button
-              // label text and not a raw asset path or "image".
-              child: SvgPicture.asset(
-                'assets/icons/google_g_logo.svg',
-                height: 20.sp,
-                width: 20.sp,
-              ),
-            ),
-            SizedBox(width: iconGap),
-            Text(
-              label,
-              style: TextStyle(
-                fontFamily: 'Roboto',
-                fontSize: 14.sp,
-                fontWeight: FontWeight.w500,
-                color: const Color(0xFF1F1F1F),
-                height: 20 / 14,
-                letterSpacing: 0.2,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -628,4 +580,45 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       type: isError ? AdaptiveSnackBarType.error : AdaptiveSnackBarType.success,
     );
   }
+}
+
+class _GoogleButton extends StatelessWidget {
+  const _GoogleButton({required this.onPressed, required this.l10n});
+  final VoidCallback? onPressed;
+  final AppLocalizations l10n;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    height: 48.h,
+    child: OutlinedButton(
+      onPressed: onPressed,
+      style: OutlinedButton.styleFrom(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14.r),
+        ),
+        side: const BorderSide(color: Color(0xFF747775)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          SvgPicture.asset(
+            'assets/icons/google_g_logo.svg',
+            height: 20.sp,
+            width: 20.sp,
+          ),
+          SizedBox(width: 10.w),
+          Text(
+            l10n.continueWithGoogle,
+            style: TextStyle(
+              fontFamily: 'Roboto',
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w500,
+              color: const Color(0xFF1F1F1F),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }

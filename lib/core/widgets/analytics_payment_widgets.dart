@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -369,7 +371,7 @@ class _RefundRequestSheetState extends State<RefundRequestSheet> {
   Future<void> _submitRefundRequest() async {
     final selectedReason = _reason;
     if (selectedReason == null || _isSubmitting) return;
-    HapticFeedback.mediumImpact();
+    unawaited(HapticFeedback.mediumImpact());
     setState(() {
       _isSubmitting = true;
       _errorMessage = null;
@@ -519,9 +521,7 @@ class _RefundRequestSheetState extends State<RefundRequestSheet> {
                         : theme.colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(12.r),
                     border: Border.all(
-                      color: selected
-                          ? AppColors.primary
-                          : Colors.transparent,
+                      color: selected ? AppColors.primary : Colors.transparent,
                       width: 1.5,
                     ),
                   ),
@@ -571,8 +571,7 @@ class _RefundRequestSheetState extends State<RefundRequestSheet> {
             maxLines: 3,
             textCapitalization: TextCapitalization.sentences,
             decoration: InputDecoration(
-              hintText:
-                  AppLocalizations.of(context).additionalDetailsOptional,
+              hintText: AppLocalizations.of(context).additionalDetailsOptional,
               alignLabelWithHint: true,
             ),
           ),
@@ -625,8 +624,9 @@ class _RefundRequestSheetState extends State<RefundRequestSheet> {
                   : _submitRefundRequest,
               style: FilledButton.styleFrom(
                 backgroundColor: AppColors.error,
-                disabledBackgroundColor:
-                    AppColors.error.withValues(alpha: 0.38),
+                disabledBackgroundColor: AppColors.error.withValues(
+                  alpha: 0.38,
+                ),
                 padding: EdgeInsets.symmetric(vertical: 16.h),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14.r),

@@ -1,5 +1,7 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
+
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -245,7 +247,7 @@ class _SubmitReviewScreenState extends ConsumerState<SubmitReviewScreen> {
         final isSelected = starNumber <= state.rating;
         return GestureDetector(
           onTap: () {
-            HapticFeedback.lightImpact();
+            unawaited(HapticFeedback.lightImpact());
             viewModel.setRating(starNumber);
           },
           child: AnimatedContainer(
@@ -275,7 +277,7 @@ class _SubmitReviewScreenState extends ConsumerState<SubmitReviewScreen> {
         final isSelected = state.selectedTags.contains(tag);
         return GestureDetector(
           onTap: () {
-            HapticFeedback.selectionClick();
+            unawaited(HapticFeedback.selectionClick());
             viewModel.toggleTag(tag);
           },
           child: AnimatedContainer(

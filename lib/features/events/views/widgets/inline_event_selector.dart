@@ -344,9 +344,7 @@ class _InlineEventSelectorState extends ConsumerState<InlineEventSelector> {
       return _MessageState(
         icon: Icons.search_off_rounded,
         title: l10n.noResultsFound,
-        message: _hasMore
-            ? l10n.searchFailedPleaseTryAgain
-            : l10n.tryAgain,
+        message: _hasMore ? l10n.searchFailedPleaseTryAgain : l10n.tryAgain,
         actionLabel: _hasMore ? l10n.actionContinue : null,
         onAction: _hasMore ? () => unawaited(_loadNextPage()) : null,
       );

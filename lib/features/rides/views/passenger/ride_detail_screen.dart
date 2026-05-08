@@ -1,3 +1,7 @@
+import 'dart:async';
+
+
+
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -90,7 +94,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
   }
 
   void _openBookingReview(RideModel ride) {
-    HapticFeedback.lightImpact();
+    unawaited(HapticFeedback.lightImpact());
 
     context.pushNamed(
       AppRoutes.rideBookingReview.name,
@@ -137,7 +141,6 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
             background: Container(
               decoration: const BoxDecoration(gradient: AppColors.heroGradient),
               child: const SkeletonLoader(
-                type: SkeletonType.rideCard,
                 itemCount: 1,
               ),
             ),
@@ -823,7 +826,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
       margin: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
       child: GestureDetector(
         onTap: () {
-          HapticFeedback.lightImpact();
+          unawaited(HapticFeedback.lightImpact());
           context.pushNamed(
             AppRoutes.driverProfile.name,
             pathParameters: {'id': ride.driverId},
@@ -1569,7 +1572,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
   }
 
   Future<void> _handleAcceptRequest(String rideId, String bookingId) async {
-    HapticFeedback.mediumImpact();
+    unawaited(HapticFeedback.mediumImpact());
     try {
       await ref
           .read(rideDetailViewModelProvider(rideId).notifier)
@@ -1590,7 +1593,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
   }
 
   Future<void> _handleDeclineRequest(String rideId, String bookingId) async {
-    HapticFeedback.mediumImpact();
+    unawaited(HapticFeedback.mediumImpact());
     try {
       await ref
           .read(rideDetailViewModelProvider(rideId).notifier)
@@ -2145,7 +2148,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                       icon: Icons.remove_rounded,
                       onPressed: uiState.selectedSeats > 1
                           ? () {
-                              HapticFeedback.selectionClick();
+                              unawaited(HapticFeedback.selectionClick());
                               _uiNotifier.setSelectedSeats(
                                 uiState.selectedSeats - 1,
                               );
@@ -2171,7 +2174,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                       icon: Icons.add_rounded,
                       onPressed: uiState.selectedSeats < ride.remainingSeats
                           ? () {
-                              HapticFeedback.selectionClick();
+                              unawaited(HapticFeedback.selectionClick());
                               _uiNotifier.setSelectedSeats(
                                 uiState.selectedSeats + 1,
                               );
@@ -2410,7 +2413,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
   }
 
   Future<void> _openDriverChat(String driverId) async {
-    HapticFeedback.lightImpact();
+    unawaited(HapticFeedback.lightImpact());
 
     final currentUser = ref.read(currentUserProvider).value;
     if (currentUser == null) return;
@@ -2449,7 +2452,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
           'receiverId': driverProfile.uid,
           'receiverName': driverProfile.username,
           if (driverProfile.photoUrl != null)
-            'receiverPhotoUrl': driverProfile.photoUrl!,
+            'receiverPhotoUrl': driverProfile.photoUrl,
         },
         extra: driverProfile,
       );
@@ -2460,7 +2463,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
   }
 
   Future<void> _openPassengerChat(String passengerId) async {
-    HapticFeedback.lightImpact();
+    unawaited(HapticFeedback.lightImpact());
 
     final currentUser = ref.read(currentUserProvider).value;
     if (currentUser == null) return;
@@ -2499,7 +2502,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
           'receiverId': passengerProfile.uid,
           'receiverName': passengerProfile.username,
           if (passengerProfile.photoUrl != null)
-            'receiverPhotoUrl': passengerProfile.photoUrl!,
+            'receiverPhotoUrl': passengerProfile.photoUrl,
         },
         extra: passengerProfile,
       );
@@ -2519,7 +2522,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
       return;
     }
 
-    HapticFeedback.heavyImpact();
+    unawaited(HapticFeedback.heavyImpact());
     _uiNotifier.setBooking(true);
 
     try {

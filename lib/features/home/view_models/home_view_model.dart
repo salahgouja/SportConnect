@@ -4,11 +4,11 @@ import 'package:geolocator/geolocator.dart' show Position;
 import 'package:latlong2/latlong.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
+import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/services/location_service.dart';
 import 'package:sport_connect/core/services/routing_service.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
-import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/home/repositories/home_repository.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 

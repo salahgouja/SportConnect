@@ -2,8 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
+import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/core/services/firebase_service.dart';
-import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/auth/repositories/auth_repository.dart';
 
 part 'user_providers.g.dart';
@@ -79,7 +79,11 @@ Stream<PremiumMetadata> premiumMetadata(Ref ref) async* {
         DateTime? updatedAt;
         if (rawDate is Timestamp) updatedAt = rawDate.toDate();
 
-        return PremiumMetadata(isPremium: isPremium, plan: plan, updatedAt: updatedAt);
+        return PremiumMetadata(
+          isPremium: isPremium,
+          plan: plan,
+          updatedAt: updatedAt,
+        );
       });
 }
 

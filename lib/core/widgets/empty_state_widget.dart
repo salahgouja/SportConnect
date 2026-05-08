@@ -3,6 +3,7 @@ import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Custom empty state widget with icon, title, subtitle, and optional action.
 ///
@@ -21,71 +22,104 @@ class EmptyStateWidget extends StatelessWidget {
 
   // ── Preset factories ──
 
-  factory EmptyStateWidget.noRides({VoidCallback? onSearch}) =>
-      EmptyStateWidget(
+  factory EmptyStateWidget.noRides(
+    BuildContext context, {
+    VoidCallback? onSearch,
+  }) {
+    final l10n = AppLocalizations.of(context);
+    return EmptyStateWidget(
         icon: Icons.directions_car_outlined,
-        title: 'No rides found',
-        subtitle: 'Try adjusting your filters or search for a different route',
-        actionLabel: onSearch != null ? 'Search Rides' : null,
+        title: l10n.no_rides_found,
+        subtitle: l10n.emptyNoRidesSubtitle,
+        actionLabel: onSearch != null ? l10n.searchRides : null,
         onAction: onSearch,
       );
+  }
 
-  factory EmptyStateWidget.noEvents({VoidCallback? onCreate}) =>
-      EmptyStateWidget(
+  factory EmptyStateWidget.noEvents(
+    BuildContext context, {
+    VoidCallback? onCreate,
+  }) {
+    final l10n = AppLocalizations.of(context);
+    return EmptyStateWidget(
         icon: Icons.event_outlined,
-        title: 'No events yet',
-        subtitle: 'Create an event to bring your group together',
-        actionLabel: onCreate != null ? 'Create Event' : null,
+        title: l10n.no_events_yet,
+        subtitle: l10n.emptyNoEventsSubtitle,
+        actionLabel: onCreate != null ? l10n.eventCreateButton : null,
         onAction: onCreate,
       );
+  }
 
-  factory EmptyStateWidget.noMessages() => const EmptyStateWidget(
+  factory EmptyStateWidget.noMessages(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return EmptyStateWidget(
     icon: Icons.chat_bubble_outline_rounded,
-    title: 'No messages yet',
-    subtitle: 'Start a conversation by booking a ride or joining an event',
+    title: l10n.noMessagesYet,
+    subtitle: l10n.emptyNoMessagesSubtitle,
   );
+  }
 
-  factory EmptyStateWidget.noNotifications() => const EmptyStateWidget(
+  factory EmptyStateWidget.noNotifications(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return EmptyStateWidget(
     icon: Icons.notifications_none_rounded,
-    title: 'All caught up!',
-    subtitle: "You'll see new notifications here",
+    title: l10n.all_caught_up,
+    subtitle: l10n.emptyNoNotificationsSubtitle,
   );
+  }
 
-  factory EmptyStateWidget.noReviews() => const EmptyStateWidget(
+  factory EmptyStateWidget.noReviews(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return EmptyStateWidget(
     icon: Icons.star_outline_rounded,
-    title: 'No reviews yet',
-    subtitle: 'Reviews will appear after completed rides',
+    title: l10n.no_reviews_yet,
+    subtitle: l10n.emptyNoReviewsSubtitle,
   );
+  }
 
-  factory EmptyStateWidget.noVehicles({VoidCallback? onAdd}) =>
-      EmptyStateWidget(
+  factory EmptyStateWidget.noVehicles(
+    BuildContext context, {
+    VoidCallback? onAdd,
+  }) {
+    final l10n = AppLocalizations.of(context);
+    return EmptyStateWidget(
         icon: Icons.garage_outlined,
-        title: 'No vehicles added',
-        subtitle: 'Add a vehicle to start offering rides',
-        actionLabel: onAdd != null ? 'Add Vehicle' : null,
+        title: l10n.noVehiclesAdded,
+        subtitle: l10n.emptyNoVehiclesSubtitle,
+        actionLabel: onAdd != null ? l10n.addVehicleButton : null,
         onAction: onAdd,
       );
+  }
 
-  factory EmptyStateWidget.noBookings() => const EmptyStateWidget(
+  factory EmptyStateWidget.noBookings(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return EmptyStateWidget(
     icon: Icons.bookmark_outline_rounded,
-    title: 'No bookings yet',
-    subtitle: 'Your ride bookings will appear here',
+    title: l10n.no_bookings_yet,
+    subtitle: l10n.emptyNoBookingsSubtitle,
   );
+  }
 
-  factory EmptyStateWidget.noResults() => const EmptyStateWidget(
+  factory EmptyStateWidget.noResults(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return EmptyStateWidget(
     icon: Icons.search_off_rounded,
-    title: 'No results found',
-    subtitle: 'Try different search terms or filters',
+    title: l10n.noResultsFound,
+    subtitle: l10n.emptyNoResultsSubtitle,
   );
+  }
 
-  factory EmptyStateWidget.error({VoidCallback? onRetry}) => EmptyStateWidget(
+  factory EmptyStateWidget.error(BuildContext context, {VoidCallback? onRetry}) {
+    final l10n = AppLocalizations.of(context);
+    return EmptyStateWidget(
     icon: Icons.error_outline_rounded,
-    title: 'Something went wrong',
-    subtitle: 'Please try again',
-    actionLabel: onRetry != null ? 'Retry' : null,
+    title: l10n.somethingWentWrong,
+    subtitle: l10n.please_try_again,
+    actionLabel: onRetry != null ? l10n.retry : null,
     onAction: onRetry,
     iconColor: AppColors.error,
   );
+  }
 
   final IconData icon;
   final String title;

@@ -1,3 +1,7 @@
+import 'dart:async';
+
+
+
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -223,7 +227,7 @@ class CancellationReasonScreen extends ConsumerWidget {
         }
 
         if (next.isSubmitted && previous?.isSubmitted != true) {
-          HapticFeedback.mediumImpact();
+          unawaited(HapticFeedback.mediumImpact());
           AdaptiveSnackBar.show(
             context,
             message: l10n.rideCancelledSuccessfully,
@@ -407,7 +411,7 @@ class CancellationReasonScreen extends ConsumerWidget {
   ) {
     return GestureDetector(
       onTap: () {
-        HapticFeedback.selectionClick();
+        unawaited(HapticFeedback.selectionClick());
         onTap();
       },
       child: AnimatedContainer(

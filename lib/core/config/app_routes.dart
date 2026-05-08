@@ -38,18 +38,6 @@ class AppRoutes {
   // Driver chat shell branch
   static const driverChat = AppRoute('/driver/chat', 'driver-chat');
   static const driverVehicles = AppRoute('/driver/vehicles', 'driver-vehicles');
-  static const driverDocuments = AppRoute(
-    '/driver/documents',
-    'driver-documents',
-  );
-  static const taxDocuments = AppRoute(
-    '/driver/tax-documents',
-    'tax-documents',
-  );
-  static const backgroundCheck = AppRoute(
-    '/driver/background-check',
-    'background-check',
-  );
   static const driverStripeOnboarding = AppRoute(
     '/driver/stripe-onboarding',
     'driver-stripe-onboarding',
@@ -87,7 +75,6 @@ class AppRoutes {
   static const userProfile = AppRoute('/user/profile/:id', 'user-profile');
   static const editProfile = AppRoute('/edit-profile', 'edit-profile');
   static const settings = AppRoute('/settings', 'settings');
-  static const twoFactorAuth = AppRoute('/settings/2fa', 'settings-2fa');
   static const achievements = AppRoute('/achievements', 'achievements');
   static const notifications = AppRoute('/notifications', 'notifications');
 

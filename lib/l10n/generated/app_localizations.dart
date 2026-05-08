@@ -3050,6 +3050,48 @@ abstract class AppLocalizations {
   /// **'My Vehicles'**
   String get myVehicles;
 
+  /// No description provided for @manageYourVehicles.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage your vehicles'**
+  String get manageYourVehicles;
+
+  /// No description provided for @createdAndJoinedEvents.
+  ///
+  /// In en, this message translates to:
+  /// **'Created & joined events'**
+  String get createdAndJoinedEvents;
+
+  /// No description provided for @viewYourBadgesAndRewards.
+  ///
+  /// In en, this message translates to:
+  /// **'View your badges & rewards'**
+  String get viewYourBadgesAndRewards;
+
+  /// No description provided for @appPreferencesAndPrivacy.
+  ///
+  /// In en, this message translates to:
+  /// **'App preferences & privacy'**
+  String get appPreferencesAndPrivacy;
+
+  /// No description provided for @permissionPhotoLibraryMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Access to your photo library is needed to send images in this chat. Your photos are only shared when you choose to send them.'**
+  String get permissionPhotoLibraryMessage;
+
+  /// No description provided for @yourFleet.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Fleet'**
+  String get yourFleet;
+
+  /// No description provided for @noActiveVehicle.
+  ///
+  /// In en, this message translates to:
+  /// **'No active vehicle'**
+  String get noActiveVehicle;
+
   /// Text from Text in driver_vehicle_screen.dart
   ///
   /// In en, this message translates to:
@@ -3343,6 +3385,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Not verified'**
   String get notVerified;
+
+  /// No description provided for @inactive.
+  ///
+  /// In en, this message translates to:
+  /// **'Inactive'**
+  String get inactive;
 
   /// Text from Text in profile_screen.dart
   ///
@@ -7747,6 +7795,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Report an Issue'**
   String get reportIssueTitle;
+
+  /// No description provided for @attachEvidence.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach evidence'**
+  String get attachEvidence;
 
   /// No description provided for @whatHappenedQuestion.
   ///
@@ -13028,6 +13082,138 @@ abstract class AppLocalizations {
   /// **'Address is required'**
   String get address_is_required;
 
+  /// No description provided for @personalInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal Info'**
+  String get personalInfo;
+
+  /// No description provided for @contactAndAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact & Address'**
+  String get contactAndAddress;
+
+  /// No description provided for @drivingDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Driving Details'**
+  String get drivingDetails;
+
+  /// No description provided for @carIdentity.
+  ///
+  /// In en, this message translates to:
+  /// **'Car identity'**
+  String get carIdentity;
+
+  /// No description provided for @recognition.
+  ///
+  /// In en, this message translates to:
+  /// **'Recognition'**
+  String get recognition;
+
+  /// No description provided for @passengerSeats.
+  ///
+  /// In en, this message translates to:
+  /// **'Passenger seats'**
+  String get passengerSeats;
+
+  /// No description provided for @moreDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'More details'**
+  String get moreDetails;
+
+  /// No description provided for @whyConnectPayouts.
+  ///
+  /// In en, this message translates to:
+  /// **'Why connect payouts?'**
+  String get whyConnectPayouts;
+
+  /// No description provided for @yourName.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Name'**
+  String get yourName;
+
+  /// No description provided for @registrationYear.
+  ///
+  /// In en, this message translates to:
+  /// **'Registration year'**
+  String get registrationYear;
+
+  /// No description provided for @onlyUsedWhenNeededForPickupVerification.
+  ///
+  /// In en, this message translates to:
+  /// **'Only used when needed for pickup verification.'**
+  String get onlyUsedWhenNeededForPickupVerification;
+
+  /// No description provided for @addColorAndPlateSoRidersCanFindYou.
+  ///
+  /// In en, this message translates to:
+  /// **'Add color and plate so riders can find you'**
+  String get addColorAndPlateSoRidersCanFindYou;
+
+  /// No description provided for @chooseACommonColorOrUseOtherColor.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a common color or use Other color.'**
+  String get chooseACommonColorOrUseOtherColor;
+
+  /// No description provided for @selectedColor.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected color: {color}'**
+  String selectedColor(String color);
+
+  /// No description provided for @customColorWillBeShownToRidersAsWritten.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom color will be shown to riders as written.'**
+  String get customColorWillBeShownToRidersAsWritten;
+
+  /// No description provided for @chooseSeatsAvailableForPassengers.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose seats available for passengers.'**
+  String get chooseSeatsAvailableForPassengers;
+
+  /// No description provided for @optionalDetailUsedForRideContext.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional detail used for ride context.'**
+  String get optionalDetailUsedForRideContext;
+
+  /// No description provided for @stepOf.
+  ///
+  /// In en, this message translates to:
+  /// **'Step {current} of {total}'**
+  String stepOf(int current, int total);
+
+  /// No description provided for @maximumSeats.
+  ///
+  /// In en, this message translates to:
+  /// **'Maximum seats'**
+  String get maximumSeats;
+
+  /// No description provided for @colorDescriptionIsTooLong.
+  ///
+  /// In en, this message translates to:
+  /// **'Color description is too long'**
+  String get colorDescriptionIsTooLong;
+
+  /// No description provided for @useAClearColorNameLikeGreyBlueOrPearlWhite.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a clear color name, like grey, blue, or pearl white.'**
+  String get useAClearColorNameLikeGreyBlueOrPearlWhite;
+
+  /// No description provided for @suggestedPriceValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested: €{price}'**
+  String suggestedPriceValue(String price);
+
   /// No description provided for @name.
   ///
   /// In en, this message translates to:
@@ -13289,7 +13475,7 @@ abstract class AppLocalizations {
   /// No description provided for @yearly.
   ///
   /// In en, this message translates to:
-  /// **'yearly'**
+  /// **'Yearly'**
   String get yearly;
 
   /// No description provided for @martial_arts.
@@ -13394,6 +13580,12 @@ abstract class AppLocalizations {
   /// **'No recurrence pattern fits this start/end window. '**
   String get no_recurrence_pattern_fits_this_startend_window;
 
+  /// No description provided for @extend_end_time_or_set_a_later_repeat_end_date.
+  ///
+  /// In en, this message translates to:
+  /// **'Extend end time or set a later repeat end date.'**
+  String get extend_end_time_or_set_a_later_repeat_end_date;
+
   /// No description provided for @failed_to_load_attendees.
   ///
   /// In en, this message translates to:
@@ -13447,6 +13639,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'⚠️ Recurring Event'**
   String get recurring_event;
+
+  /// No description provided for @this_event.
+  ///
+  /// In en, this message translates to:
+  /// **'This event'**
+  String get this_event;
+
+  /// No description provided for @all_events.
+  ///
+  /// In en, this message translates to:
+  /// **'All events'**
+  String get all_events;
+
+  /// No description provided for @not_label.
+  ///
+  /// In en, this message translates to:
+  /// **'not'**
+  String get not_label;
+
+  /// No description provided for @custom_label.
+  ///
+  /// In en, this message translates to:
+  /// **'custom'**
+  String get custom_label;
+
+  /// No description provided for @opening_google_calendar.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening Google Calendar...'**
+  String get opening_google_calendar;
+
+  /// No description provided for @opening_google_calendar_recurring.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening Google Calendar (recurring: {patternLabel})...'**
+  String opening_google_calendar_recurring(Object patternLabel);
 
   /// No description provided for @this_event_repeats_deleting_it_will_remove_all_occurrences_past_and_future.
   ///
@@ -13779,6 +14007,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Conversation deleted'**
   String get conversation_deleted;
+
+  /// No description provided for @choose_what_you_want_to_share_in_this_chat.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose what you want to share in this chat.'**
+  String get choose_what_you_want_to_share_in_this_chat;
+
+  /// No description provided for @failedToSendMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to send message'**
+  String get failedToSendMessage;
+
+  /// No description provided for @cameraAccessIsNeededToTakeAndSendPhotosInThisChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera access is needed to take and send photos in this chat.'**
+  String get cameraAccessIsNeededToTakeAndSendPhotosInThisChat;
+
+  /// No description provided for @failedToSendImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to send image'**
+  String get failedToSendImage;
+
+  /// No description provided for @failedToSendVoiceMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to send voice message'**
+  String get failedToSendVoiceMessage;
+
+  /// No description provided for @permissionDeniedPleaseCheckYourConnectionAndTryAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Permission denied. Please check your connection and try again.'**
+  String get permissionDeniedPleaseCheckYourConnectionAndTryAgain;
+
+  /// No description provided for @networkErrorPleaseCheckYourInternetConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Network error. Please check your internet connection.'**
+  String get networkErrorPleaseCheckYourInternetConnection;
+
+  /// No description provided for @clearChatHistoryMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This will clear the messages from this chat for you only. The conversation will stay in your chat list.'**
+  String get clearChatHistoryMessage;
+
+  /// No description provided for @pleaseEnableLocationServices.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enable location services'**
+  String get pleaseEnableLocationServices;
+
+  /// No description provided for @locationPermissionRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Location permission required'**
+  String get locationPermissionRequired;
+
+  /// No description provided for @couldNotGetYourLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not get your location'**
+  String get couldNotGetYourLocation;
+
+  /// No description provided for @failedToGetLocationValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to get location: {value}'**
+  String failedToGetLocationValue(Object value);
 
   /// No description provided for @draft.
   ///
@@ -14872,6 +15172,36 @@ abstract class AppLocalizations {
   /// **'Everything you get'**
   String get everything_you_get;
 
+  /// No description provided for @pricingUnavailableCheckYourConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Pricing unavailable — check your connection'**
+  String get pricingUnavailableCheckYourConnection;
+
+  /// No description provided for @pricingUnavailableTapToRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Pricing unavailable — tap to retry'**
+  String get pricingUnavailableTapToRetry;
+
+  /// No description provided for @cancelAnytime.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel anytime'**
+  String get cancelAnytime;
+
+  /// No description provided for @bestValue.
+  ///
+  /// In en, this message translates to:
+  /// **'BEST VALUE'**
+  String get bestValue;
+
+  /// No description provided for @billedMonthly.
+  ///
+  /// In en, this message translates to:
+  /// **'Billed monthly'**
+  String get billedMonthly;
+
   /// No description provided for @trusted_by_12000_runners.
   ///
   /// In en, this message translates to:
@@ -14955,6 +15285,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Annual'**
   String get annual;
+
+  /// No description provided for @appStoreBilling.
+  ///
+  /// In en, this message translates to:
+  /// **'App Store billing'**
+  String get appStoreBilling;
+
+  /// No description provided for @securePayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Secure payment'**
+  String get securePayment;
+
+  /// No description provided for @joinRunnersWorldwide.
+  ///
+  /// In en, this message translates to:
+  /// **'Join runners worldwide'**
+  String get joinRunnersWorldwide;
+
+  /// No description provided for @smartRideMatchingDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-paired with runners heading to your race or training spot.'**
+  String get smartRideMatchingDescription;
+
+  /// No description provided for @unlimitedSavedRoutesDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Save and share your favorite carpool routes with your crew.'**
+  String get unlimitedSavedRoutesDescription;
+
+  /// No description provided for @verifiedCommunityDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Every rider is ID-verified. Ride safe with trusted runners.'**
+  String get verifiedCommunityDescription;
+
+  /// No description provided for @crewCoordinationDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Organize group rides for your entire running club in one tap.'**
+  String get crewCoordinationDescription;
+
+  /// No description provided for @raceDayPriorityDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'First pick on rides for marathon day and major events.'**
+  String get raceDayPriorityDescription;
+
+  /// No description provided for @prioritySupportDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip the queue. Get help within minutes, not hours.'**
+  String get prioritySupportDescription;
 
   /// No description provided for @moneybacknguarantee.
   ///
@@ -15136,6 +15520,198 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Account & Profile'**
   String get account_profile;
+
+  /// No description provided for @help_center_getting_started_create_account_question.
+  ///
+  /// In en, this message translates to:
+  /// **'How do I create an account?'**
+  String get help_center_getting_started_create_account_question;
+
+  /// No description provided for @help_center_getting_started_create_account_answer.
+  ///
+  /// In en, this message translates to:
+  /// **'Download the app, tap \"Sign Up\", and follow the wizard. You can sign up with email, Google, or Apple ID.'**
+  String get help_center_getting_started_create_account_answer;
+
+  /// No description provided for @help_center_getting_started_switch_role_question.
+  ///
+  /// In en, this message translates to:
+  /// **'How do I switch between rider and driver?'**
+  String get help_center_getting_started_switch_role_question;
+
+  /// No description provided for @help_center_getting_started_switch_role_answer.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to Profile > Settings > Switch Role. If you haven\'t registered as a driver yet, you\'ll need to complete the driver onboarding process.'**
+  String get help_center_getting_started_switch_role_answer;
+
+  /// No description provided for @help_center_getting_started_free_question.
+  ///
+  /// In en, this message translates to:
+  /// **'Is SportConnect free to use?'**
+  String get help_center_getting_started_free_question;
+
+  /// No description provided for @help_center_getting_started_free_answer.
+  ///
+  /// In en, this message translates to:
+  /// **'Creating an account is free. Riders pay per ride booked. Drivers earn money by offering rides minus a small service fee.'**
+  String get help_center_getting_started_free_answer;
+
+  /// No description provided for @help_center_rides_booking_question.
+  ///
+  /// In en, this message translates to:
+  /// **'How do I book a ride?'**
+  String get help_center_rides_booking_question;
+
+  /// No description provided for @help_center_rides_booking_answer.
+  ///
+  /// In en, this message translates to:
+  /// **'Search for rides from the Explore tab, select a ride that matches your route, review the details, and tap \"Book Ride\".'**
+  String get help_center_rides_booking_answer;
+
+  /// No description provided for @help_center_rides_cancel_question.
+  ///
+  /// In en, this message translates to:
+  /// **'Can I cancel a booked ride?'**
+  String get help_center_rides_cancel_question;
+
+  /// No description provided for @help_center_rides_cancel_answer.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes, go to Activity > select the ride > Cancel. Please note that frequent cancellations may affect your rating.'**
+  String get help_center_rides_cancel_answer;
+
+  /// No description provided for @help_center_rides_matching_question.
+  ///
+  /// In en, this message translates to:
+  /// **'How does ride matching work?'**
+  String get help_center_rides_matching_question;
+
+  /// No description provided for @help_center_rides_matching_answer.
+  ///
+  /// In en, this message translates to:
+  /// **'Our algorithm matches riders with drivers based on route overlap, departure time, and user preferences. You can also request a ride and let drivers find you.'**
+  String get help_center_rides_matching_answer;
+
+  /// No description provided for @help_center_rides_late_question.
+  ///
+  /// In en, this message translates to:
+  /// **'What if my ride is late?'**
+  String get help_center_rides_late_question;
+
+  /// No description provided for @help_center_rides_late_answer.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ll receive real-time updates on your ride status. If the driver is significantly late, you can contact them directly through the in-app chat.'**
+  String get help_center_rides_late_answer;
+
+  /// No description provided for @help_center_payments_question.
+  ///
+  /// In en, this message translates to:
+  /// **'How do payments work?'**
+  String get help_center_payments_question;
+
+  /// No description provided for @help_center_payments_answer.
+  ///
+  /// In en, this message translates to:
+  /// **'Payments are processed securely through Stripe. Riders pay when booking, and drivers receive earnings after ride completion.'**
+  String get help_center_payments_answer;
+
+  /// No description provided for @help_center_payouts_question.
+  ///
+  /// In en, this message translates to:
+  /// **'When do drivers get paid?'**
+  String get help_center_payouts_question;
+
+  /// No description provided for @help_center_payouts_answer.
+  ///
+  /// In en, this message translates to:
+  /// **'Drivers receive payouts weekly to their linked Stripe account. You can track your earnings in the Earnings tab.'**
+  String get help_center_payouts_answer;
+
+  /// No description provided for @help_center_fees_question.
+  ///
+  /// In en, this message translates to:
+  /// **'What are the service fees?'**
+  String get help_center_fees_question;
+
+  /// No description provided for @help_center_fees_answer.
+  ///
+  /// In en, this message translates to:
+  /// **'SportConnect charges a small service fee (typically 10%) to cover platform costs, payment processing, and insurance.'**
+  String get help_center_fees_answer;
+
+  /// No description provided for @help_center_safety_question.
+  ///
+  /// In en, this message translates to:
+  /// **'How is my safety ensured?'**
+  String get help_center_safety_question;
+
+  /// No description provided for @help_center_safety_answer.
+  ///
+  /// In en, this message translates to:
+  /// **'All drivers undergo verification. Rides include live GPS tracking, in-app chat, and all trips are logged for safety.'**
+  String get help_center_safety_answer;
+
+  /// No description provided for @help_center_safety_report_question.
+  ///
+  /// In en, this message translates to:
+  /// **'How do I report a safety issue?'**
+  String get help_center_safety_report_question;
+
+  /// No description provided for @help_center_safety_report_answer.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to Settings > Report a Problem during or after a ride. Safety reports are prioritized and reviewed within 24 hours.'**
+  String get help_center_safety_report_answer;
+
+  /// No description provided for @help_center_safety_share_question.
+  ///
+  /// In en, this message translates to:
+  /// **'Can I share my ride with someone?'**
+  String get help_center_safety_share_question;
+
+  /// No description provided for @help_center_safety_share_answer.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes, during an active ride you can share your live trip details with trusted contacts.'**
+  String get help_center_safety_share_answer;
+
+  /// No description provided for @help_center_account_verify_question.
+  ///
+  /// In en, this message translates to:
+  /// **'How do I verify my account?'**
+  String get help_center_account_verify_question;
+
+  /// No description provided for @help_center_account_verify_answer.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to Settings > Verify Account. You can verify your email, phone number, and provide government ID for full verification.'**
+  String get help_center_account_verify_answer;
+
+  /// No description provided for @help_center_account_delete_question.
+  ///
+  /// In en, this message translates to:
+  /// **'How do I delete my account?'**
+  String get help_center_account_delete_question;
+
+  /// No description provided for @help_center_account_delete_answer.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to Settings > Account Actions > Delete Account. This action is permanent and cannot be undone.'**
+  String get help_center_account_delete_answer;
+
+  /// No description provided for @help_center_account_email_question.
+  ///
+  /// In en, this message translates to:
+  /// **'Can I change my email address?'**
+  String get help_center_account_email_question;
+
+  /// No description provided for @help_center_account_email_answer.
+  ///
+  /// In en, this message translates to:
+  /// **'Currently, you can update your display name and profile info. For email changes, please contact support.'**
+  String get help_center_account_email_answer;
 
   /// No description provided for @my_vehicles.
   ///
@@ -15365,6 +15941,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Downloading document...'**
   String get downloading_document;
+
+  /// No description provided for @available.
+  ///
+  /// In en, this message translates to:
+  /// **'Available'**
+  String get available;
+
+  /// No description provided for @notAvailableYet.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available yet'**
+  String get notAvailableYet;
+
+  /// No description provided for @thisPlanIsNotAvailableFromTheStoreYet.
+  ///
+  /// In en, this message translates to:
+  /// **'This plan is not available from the store yet.'**
+  String get thisPlanIsNotAvailableFromTheStoreYet;
 
   /// No description provided for @protect_your_account.
   ///
@@ -16236,6 +16830,774 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Open in maps'**
   String get openInMaps;
+
+  /// No description provided for @appTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'SportConnect'**
+  String get appTitle;
+
+  /// No description provided for @onboardingRunningEvents.
+  ///
+  /// In en, this message translates to:
+  /// **'Running events'**
+  String get onboardingRunningEvents;
+
+  /// No description provided for @onboardingDriveEarn.
+  ///
+  /// In en, this message translates to:
+  /// **'Drive & earn'**
+  String get onboardingDriveEarn;
+
+  /// No description provided for @onboardingPickupPlanning.
+  ///
+  /// In en, this message translates to:
+  /// **'Pickup planning'**
+  String get onboardingPickupPlanning;
+
+  /// No description provided for @onboardingTrustedRides.
+  ///
+  /// In en, this message translates to:
+  /// **'Trusted rides'**
+  String get onboardingTrustedRides;
+
+  /// No description provided for @onboardingFindRideTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Find a ride to your race'**
+  String get onboardingFindRideTitle;
+
+  /// No description provided for @onboardingOfferSeatsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Offer seats and earn'**
+  String get onboardingOfferSeatsTitle;
+
+  /// No description provided for @onboardingPlanRouteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan the route together'**
+  String get onboardingPlanRouteTitle;
+
+  /// No description provided for @onboardingConnectGoTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect safely and go'**
+  String get onboardingConnectGoTitle;
+
+  /// No description provided for @onboardingFindRideDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Join runners heading to the same event and arrive without the stress.'**
+  String get onboardingFindRideDescription;
+
+  /// No description provided for @onboardingOfferSeatsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Driving to a race? Share your empty seats and earn from the trip.'**
+  String get onboardingOfferSeatsDescription;
+
+  /// No description provided for @onboardingPlanRouteDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Set pickup points, confirm timing, and follow a clear route to the event.'**
+  String get onboardingPlanRouteDescription;
+
+  /// No description provided for @onboardingConnectGoDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat with verified runners, confirm the ride, and travel with confidence.'**
+  String get onboardingConnectGoDescription;
+
+  /// No description provided for @onboardingFindYourRideTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Find Your\\nRide'**
+  String get onboardingFindYourRideTitle;
+
+  /// No description provided for @onboardingMatchWithRunners.
+  ///
+  /// In en, this message translates to:
+  /// **'Match with Runners'**
+  String get onboardingMatchWithRunners;
+
+  /// No description provided for @onboardingFindYourRideDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Instantly match with runners heading the same direction. Share a car, save money, and arrive at the start-line together.'**
+  String get onboardingFindYourRideDescription;
+
+  /// No description provided for @onboardingSmartMatching.
+  ///
+  /// In en, this message translates to:
+  /// **'Smart Matching'**
+  String get onboardingSmartMatching;
+
+  /// No description provided for @onboardingNearbyRunners.
+  ///
+  /// In en, this message translates to:
+  /// **'Nearby Runners'**
+  String get onboardingNearbyRunners;
+
+  /// No description provided for @onboardingPaceFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Pace Filters'**
+  String get onboardingPaceFilters;
+
+  /// No description provided for @onboardingOfferASeatTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Offer a\\nSeat'**
+  String get onboardingOfferASeatTitle;
+
+  /// No description provided for @onboardingDriveSplitCosts.
+  ///
+  /// In en, this message translates to:
+  /// **'Drive & Split Costs'**
+  String get onboardingDriveSplitCosts;
+
+  /// No description provided for @onboardingOfferASeatDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Got a car? Offer spare seats to fellow runners. Cover fuel costs and build bonds with your local running community.'**
+  String get onboardingOfferASeatDescription;
+
+  /// No description provided for @onboardingCostSplitting.
+  ///
+  /// In en, this message translates to:
+  /// **'Cost Splitting'**
+  String get onboardingCostSplitting;
+
+  /// No description provided for @onboardingSeatControl.
+  ///
+  /// In en, this message translates to:
+  /// **'Seat Control'**
+  String get onboardingSeatControl;
+
+  /// No description provided for @onboardingDriverRating.
+  ///
+  /// In en, this message translates to:
+  /// **'Driver Rating'**
+  String get onboardingDriverRating;
+
+  /// No description provided for @onboardingPlanYourRouteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan Your\\nRoute'**
+  String get onboardingPlanYourRouteTitle;
+
+  /// No description provided for @onboardingSmartRouteSync.
+  ///
+  /// In en, this message translates to:
+  /// **'Smart Route Sync'**
+  String get onboardingSmartRouteSync;
+
+  /// No description provided for @onboardingPlanYourRouteDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Set your pickup point, race venue, or training ground. SportConnect syncs detours automatically to keep everyone on schedule.'**
+  String get onboardingPlanYourRouteDescription;
+
+  /// No description provided for @onboardingLiveRouting.
+  ///
+  /// In en, this message translates to:
+  /// **'Live Routing'**
+  String get onboardingLiveRouting;
+
+  /// No description provided for @onboardingDetourSync.
+  ///
+  /// In en, this message translates to:
+  /// **'Detour Sync'**
+  String get onboardingDetourSync;
+
+  /// No description provided for @onboardingEventZones.
+  ///
+  /// In en, this message translates to:
+  /// **'Event Zones'**
+  String get onboardingEventZones;
+
+  /// No description provided for @onboardingConnectGoModelTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect\\n& Go'**
+  String get onboardingConnectGoModelTitle;
+
+  /// No description provided for @onboardingCommunityYouTrust.
+  ///
+  /// In en, this message translates to:
+  /// **'Community You Trust'**
+  String get onboardingCommunityYouTrust;
+
+  /// No description provided for @onboardingConnectGoModelDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified runner profiles, in-app chat, and real-time tracking keep every carpool safe, social, and on time.'**
+  String get onboardingConnectGoModelDescription;
+
+  /// No description provided for @onboardingVerifiedProfiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified Profiles'**
+  String get onboardingVerifiedProfiles;
+
+  /// No description provided for @onboardingInAppChat.
+  ///
+  /// In en, this message translates to:
+  /// **'In-App Chat'**
+  String get onboardingInAppChat;
+
+  /// No description provided for @onboardingLiveTracking.
+  ///
+  /// In en, this message translates to:
+  /// **'Live Tracking'**
+  String get onboardingLiveTracking;
+
+  /// No description provided for @failedToSaveProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to save progress: {error}'**
+  String failedToSaveProgress(Object error);
+
+  /// No description provided for @searchRides.
+  ///
+  /// In en, this message translates to:
+  /// **'Search Rides'**
+  String get searchRides;
+
+  /// No description provided for @emptyNoRidesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Try adjusting your filters or search for a different route'**
+  String get emptyNoRidesSubtitle;
+
+  /// No description provided for @emptyNoEventsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create an event to bring your group together'**
+  String get emptyNoEventsSubtitle;
+
+  /// No description provided for @emptyNoMessagesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Start a conversation by booking a ride or joining an event'**
+  String get emptyNoMessagesSubtitle;
+
+  /// No description provided for @emptyNoNotificationsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ll see new notifications here'**
+  String get emptyNoNotificationsSubtitle;
+
+  /// No description provided for @emptyNoReviewsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reviews will appear after completed rides'**
+  String get emptyNoReviewsSubtitle;
+
+  /// No description provided for @emptyNoVehiclesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a vehicle to start offering rides'**
+  String get emptyNoVehiclesSubtitle;
+
+  /// No description provided for @emptyNoBookingsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your ride bookings will appear here'**
+  String get emptyNoBookingsSubtitle;
+
+  /// No description provided for @emptyNoResultsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Try different search terms or filters'**
+  String get emptyNoResultsSubtitle;
+
+  /// No description provided for @reachedYourDestination.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve reached your destination'**
+  String get reachedYourDestination;
+
+  /// No description provided for @notificationRideBookingRequestBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{fromUserName} wants to join your ride \"{rideName}\"'**
+  String notificationRideBookingRequestBody(
+    String fromUserName,
+    String rideName,
+  );
+
+  /// No description provided for @notificationRideBookingAcceptedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{driverName} accepted your request for \"{rideName}\"'**
+  String notificationRideBookingAcceptedBody(
+    String driverName,
+    String rideName,
+  );
+
+  /// No description provided for @notificationRideBookingDeclinedWithReasonBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{driverName} declined your request for \"{rideName}\": {reason}'**
+  String notificationRideBookingDeclinedWithReasonBody(
+    String driverName,
+    String rideName,
+    String reason,
+  );
+
+  /// No description provided for @notificationRideBookingDeclinedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{driverName} declined your request for \"{rideName}\"'**
+  String notificationRideBookingDeclinedBody(
+    String driverName,
+    String rideName,
+  );
+
+  /// No description provided for @notificationRideCancelledWithReasonBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{driverName} cancelled the ride \"{rideName}\": {reason}'**
+  String notificationRideCancelledWithReasonBody(
+    String driverName,
+    String rideName,
+    String reason,
+  );
+
+  /// No description provided for @notificationRideCancelledBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{driverName} cancelled the ride \"{rideName}\"'**
+  String notificationRideCancelledBody(String driverName, String rideName);
+
+  /// No description provided for @notificationNewMessageBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{fromUserName}: {messagePreview}'**
+  String notificationNewMessageBody(String fromUserName, String messagePreview);
+
+  /// No description provided for @notificationAchievementBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You earned \"{achievementName}\" - {achievementDescription}'**
+  String notificationAchievementBody(
+    String achievementName,
+    String achievementDescription,
+  );
+
+  /// No description provided for @notificationLevelUpBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Congratulations! You reached Level {newLevel}. Keep riding!'**
+  String notificationLevelUpBody(int newLevel);
+
+  /// No description provided for @notificationDriverArrivedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{driverName} has arrived at your pickup for {rideName}. Head out now!'**
+  String notificationDriverArrivedBody(String driverName, String rideName);
+
+  /// No description provided for @notificationDriverArrivingDestinationBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{driverName} is arriving at the destination for {rideName}.'**
+  String notificationDriverArrivingDestinationBody(
+    String driverName,
+    String rideName,
+  );
+
+  /// No description provided for @notificationEventCancelledWithReasonBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{organizerName} cancelled \"{eventTitle}\": {reason}'**
+  String notificationEventCancelledWithReasonBody(
+    String organizerName,
+    String eventTitle,
+    String reason,
+  );
+
+  /// No description provided for @notificationEventCancelledBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{organizerName} cancelled \"{eventTitle}\"'**
+  String notificationEventCancelledBody(
+    String organizerName,
+    String eventTitle,
+  );
+
+  /// No description provided for @notificationRideReferenceType.
+  ///
+  /// In en, this message translates to:
+  /// **'ride'**
+  String get notificationRideReferenceType;
+
+  /// No description provided for @notificationChatReferenceType.
+  ///
+  /// In en, this message translates to:
+  /// **'chat'**
+  String get notificationChatReferenceType;
+
+  /// No description provided for @notificationEventReferenceType.
+  ///
+  /// In en, this message translates to:
+  /// **'event'**
+  String get notificationEventReferenceType;
+
+  /// No description provided for @sharedLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared location'**
+  String get sharedLocation;
+
+  /// No description provided for @voiceMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice message'**
+  String get voiceMessage;
+
+  /// No description provided for @rideAttachment.
+  ///
+  /// In en, this message translates to:
+  /// **'Ride attachment'**
+  String get rideAttachment;
+
+  /// No description provided for @systemMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'System message'**
+  String get systemMessage;
+
+  /// No description provided for @imageMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Image'**
+  String get imageMessage;
+
+  /// No description provided for @manual.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual'**
+  String get manual;
+
+  /// No description provided for @googleMaps.
+  ///
+  /// In en, this message translates to:
+  /// **'Google Maps'**
+  String get googleMaps;
+
+  /// No description provided for @waze.
+  ///
+  /// In en, this message translates to:
+  /// **'Waze'**
+  String get waze;
+
+  /// No description provided for @appleMaps.
+  ///
+  /// In en, this message translates to:
+  /// **'Apple Maps'**
+  String get appleMaps;
+
+  /// No description provided for @locationData.
+  ///
+  /// In en, this message translates to:
+  /// **'Location Data'**
+  String get locationData;
+
+  /// No description provided for @paymentData.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment Data'**
+  String get paymentData;
+
+  /// No description provided for @usageData.
+  ///
+  /// In en, this message translates to:
+  /// **'Usage Data'**
+  String get usageData;
+
+  /// No description provided for @yourRights.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Rights'**
+  String get yourRights;
+
+  /// No description provided for @sportconnectDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'SportConnect is a carpooling and rideshare platform designed for sports enthusiasts. Share rides to games, tournaments, and training sessions while saving money, reducing emissions, and connecting with fellow athletes.'**
+  String get sportconnectDescription;
+
+  /// No description provided for @nearMe.
+  ///
+  /// In en, this message translates to:
+  /// **'Near me'**
+  String get nearMe;
+
+  /// No description provided for @withinValueKm.
+  ///
+  /// In en, this message translates to:
+  /// **'Within {value} km'**
+  String withinValueKm(Object value);
+
+  /// No description provided for @purchasesRestoredSuccessfully.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchases restored successfully.'**
+  String get purchasesRestoredSuccessfully;
+
+  /// No description provided for @couldNotRestorePurchases.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not restore purchases.'**
+  String get couldNotRestorePurchases;
+
+  /// No description provided for @personalInformationDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'We collect your name, email, phone number, and profile photo to create and manage your account.'**
+  String get personalInformationDescription;
+
+  /// No description provided for @locationDataDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'We process your location to match rides, calculate routes, and show nearby destinations.'**
+  String get locationDataDescription;
+
+  /// No description provided for @paymentDataDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment information is processed securely by Stripe. We do not store your full card details.'**
+  String get paymentDataDescription;
+
+  /// No description provided for @usageDataDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'We collect crash reports and usage analytics. This data is anonymized.'**
+  String get usageDataDescription;
+
+  /// No description provided for @yourRightsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'You can access, export, correct, or delete your data at any time.'**
+  String get yourRightsDescription;
+
+  /// No description provided for @business_days_1_to_2.
+  ///
+  /// In en, this message translates to:
+  /// **'Business Days 1 To 2'**
+  String get business_days_1_to_2;
+
+  /// No description provided for @two_days_left.
+  ///
+  /// In en, this message translates to:
+  /// **'Two Days Left'**
+  String get two_days_left;
+
+  /// No description provided for @helpCenterGettingStartedCreateAccountQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Help Center Getting Started Create Account Question'**
+  String get helpCenterGettingStartedCreateAccountQuestion;
+
+  /// No description provided for @helpCenterGettingStartedCreateAccountAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Help Center Getting Started Create Account Answer'**
+  String get helpCenterGettingStartedCreateAccountAnswer;
+
+  /// No description provided for @helpCenterGettingStartedSwitchRoleQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Help Center Getting Started Switch Role Question'**
+  String get helpCenterGettingStartedSwitchRoleQuestion;
+
+  /// No description provided for @helpCenterGettingStartedSwitchRoleAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Help Center Getting Started Switch Role Answer'**
+  String get helpCenterGettingStartedSwitchRoleAnswer;
+
+  /// No description provided for @helpCenterGettingStartedFreeQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Help Center Getting Started Free Question'**
+  String get helpCenterGettingStartedFreeQuestion;
+
+  /// No description provided for @helpCenterGettingStartedFreeAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Help Center Getting Started Free Answer'**
+  String get helpCenterGettingStartedFreeAnswer;
+
+  /// No description provided for @helpCenterRidesBookingQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Help Center Rides Booking Question'**
+  String get helpCenterRidesBookingQuestion;
+
+  /// No description provided for @helpCenterRidesBookingAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Help Center Rides Booking Answer'**
+  String get helpCenterRidesBookingAnswer;
+
+  /// No description provided for @helpCenterRidesCancelAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Help Center Rides Cancel Answer'**
+  String get helpCenterRidesCancelAnswer;
+
+  /// No description provided for @helpCenterRidesMatchingQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Help Center Rides Matching Question'**
+  String get helpCenterRidesMatchingQuestion;
+
+  /// No description provided for @helpCenterRidesMatchingAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Help Center Rides Matching Answer'**
+  String get helpCenterRidesMatchingAnswer;
+
+  /// No description provided for @helpCenterRidesLateQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Help Center Rides Late Question'**
+  String get helpCenterRidesLateQuestion;
+
+  /// No description provided for @helpCenterRidesLateAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Help Center Rides Late Answer'**
+  String get helpCenterRidesLateAnswer;
+
+  /// No description provided for @helpCenterPaymentsQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Help Center Payments Question'**
+  String get helpCenterPaymentsQuestion;
+
+  /// No description provided for @helpCenterPaymentsAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Help Center Payments Answer'**
+  String get helpCenterPaymentsAnswer;
+
+  /// No description provided for @helpCenterPayoutsQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Help Center Payouts Question'**
+  String get helpCenterPayoutsQuestion;
+
+  /// No description provided for @helpCenterPayoutsAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Help Center Payouts Answer'**
+  String get helpCenterPayoutsAnswer;
+
+  /// No description provided for @helpCenterFeesQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Help Center Fees Question'**
+  String get helpCenterFeesQuestion;
+
+  /// No description provided for @helpCenterFeesAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Help Center Fees Answer'**
+  String get helpCenterFeesAnswer;
+
+  /// No description provided for @helpCenterSafetyQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Help Center Safety Question'**
+  String get helpCenterSafetyQuestion;
+
+  /// No description provided for @helpCenterSafetyAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Help Center Safety Answer'**
+  String get helpCenterSafetyAnswer;
+
+  /// No description provided for @helpCenterSafetyReportQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Help Center Safety Report Question'**
+  String get helpCenterSafetyReportQuestion;
+
+  /// No description provided for @helpCenterSafetyReportAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Help Center Safety Report Answer'**
+  String get helpCenterSafetyReportAnswer;
+
+  /// No description provided for @helpCenterSafetyShareQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Help Center Safety Share Question'**
+  String get helpCenterSafetyShareQuestion;
+
+  /// No description provided for @helpCenterSafetyShareAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Help Center Safety Share Answer'**
+  String get helpCenterSafetyShareAnswer;
+
+  /// No description provided for @helpCenterAccountVerifyQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Help Center Account Verify Question'**
+  String get helpCenterAccountVerifyQuestion;
+
+  /// No description provided for @helpCenterAccountVerifyAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Help Center Account Verify Answer'**
+  String get helpCenterAccountVerifyAnswer;
+
+  /// No description provided for @helpCenterAccountDeleteQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Help Center Account Delete Question'**
+  String get helpCenterAccountDeleteQuestion;
+
+  /// No description provided for @helpCenterAccountDeleteAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Help Center Account Delete Answer'**
+  String get helpCenterAccountDeleteAnswer;
+
+  /// No description provided for @helpCenterAccountEmailQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Help Center Account Email Question'**
+  String get helpCenterAccountEmailQuestion;
+
+  /// No description provided for @helpCenterAccountEmailAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Help Center Account Email Answer'**
+  String get helpCenterAccountEmailAnswer;
+
+  /// No description provided for @articles.
+  ///
+  /// In en, this message translates to:
+  /// **'Articles'**
+  String get articles;
+
+  /// No description provided for @tryDifferentKeywordsOrContactSupport.
+  ///
+  /// In en, this message translates to:
+  /// **'Try Different Keywords Or Contact Support'**
+  String get tryDifferentKeywordsOrContactSupport;
+
+  /// No description provided for @helpCenterRidesCancelQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Help Center Rides Cancel Question'**
+  String get helpCenterRidesCancelQuestion;
 }
 
 class _AppLocalizationsDelegate

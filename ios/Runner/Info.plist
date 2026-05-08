@@ -27,13 +27,15 @@
 
 		<!-- Camera and Microphone permissions -->
 		<key>NSCameraUsageDescription</key>
-		<string>SportConnect needs camera access to take photos for your profile and attachments</string>
+		<string>SportConnect uses your camera to take profile photos and attach images in chat. Photos are only uploaded when you explicitly choose to share them.</string>
 		<key>NSMicrophoneUsageDescription</key>
-		<string>SportConnect needs microphone access for voice messages</string>
+		<string>SportConnect uses your microphone to record voice messages in chat. Audio is only recorded when you press and hold the record button.</string>
 
 		<!-- Photo Library permission -->
 		<key>NSPhotoLibraryUsageDescription</key>
-		<string>SportConnect needs photo library access to share photos in chats and update your profile picture</string>
+		<string>SportConnect accesses your photo library to attach images in chat and update your profile picture. Photos are only uploaded when you explicitly choose to share them.</string>
+		<key>NSPhotoLibraryAddUsageDescription</key>
+		<string>SportConnect saves photos you receive in chat to your photo library when you tap the save button.</string>
 
 		<!-- Push Notifications -->
 		<key>UIBackgroundModes</key>
@@ -50,7 +52,6 @@
 				<key>CFBundleURLSchemes</key>
 				<array>
 					<string>sportconnect</string>
-					<string>sc</string>
 				</array>
 				<key>CFBundleURLName</key>
 				<string>com.sportconnect.app</string>
@@ -83,9 +84,6 @@
 		<!-- Location permissions -->
 		<key>NSLocationWhenInUseUsageDescription</key>
 		<string>SportConnect needs your location to find nearby rides, show live trip progress, and detect pickup and dropoff arrival.</string>
-
-		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-		<string>SportConnect needs your location in the background to track active rides, trigger geofence alerts at pickup and dropoff points, and notify you when your driver is nearby.</string>
 
 		<key>UILaunchStoryboardName</key>
 		<string>LaunchScreen</string>

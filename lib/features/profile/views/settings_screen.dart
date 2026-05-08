@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -7,23 +9,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/services/push_notification_service.dart';
-import 'package:sport_connect/features/payments/services/premium_iap_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/platform_adaptive.dart';
 import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
-import 'package:sport_connect/core/widgets/custom_button.dart';
 import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/core/widgets/skeleton_loader.dart';
-import 'package:sport_connect/features/auth/models/models.dart';
+import 'package:sport_connect/features/auth/models/auth_exception.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 import 'package:sport_connect/features/auth/views/reauth_dialog.dart';
+import 'package:sport_connect/features/payments/services/premium_iap_service.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/features/profile/view_models/settings_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -82,22 +84,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           SizedBox(height: 32.h),
           _buildSectionHeader(
-            'Premium',
+            l10n.premium,
             Icons.workspace_premium_rounded,
             color: AppColors.warning,
           ),
           SizedBox(height: 12.h),
           premiumMeta.when(
             loading: () => const SizedBox.shrink(),
-            error: (_, __) => const SizedBox.shrink(),
+            error: (_, _) => const SizedBox.shrink(),
             data: (meta) => meta.isPremium
-                ? _buildActivePremiumCard(meta)
+                ? _buildActivePremiumCard(l10n, meta)
                 : _buildCard([
                     _buildNavTile(
-                      title: 'Upgrade to Premium',
-                      subtitle: 'Unlock smart matching, priority rides & more',
+                      title: l10n.premium,
+                      subtitle: l10n.unlock_smart_matching_priority_rides_more,
                       icon: Icons.workspace_premium_rounded,
-                      onTap: () => context.push(AppRoutes.premiumSubscribe.path),
+                      onTap: () =>
+                          context.push(AppRoutes.premiumSubscribe.path),
                       color: AppColors.warning,
                     ),
                   ]),
@@ -134,8 +137,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             _buildDivider(),
             _buildNavTile(
-              title: 'Notification Permission',
-              subtitle: 'Re-allow push notifications for this device',
+              title: l10n.notification_permission,
+              subtitle: l10n.reallow_push_notifications_for_this_device,
               icon: Icons.notifications_none_rounded,
               onTap: () => _resetAndRequestNotificationPermission(context),
             ),
@@ -145,11 +148,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           _buildSectionHeader(l10n.settingsAppearance, Icons.palette_outlined),
           SizedBox(height: 12.h),
           _buildCard([
-            _buildMapStyleTile(
-              currentStyle: settings.mapStyle,
-              onChanged: settingsViewModel.setMapStyle,
-            ),
-            _buildDivider(),
             _buildLanguageTile(
               l10n: l10n,
               currentLocale: currentLocale,
@@ -192,8 +190,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             _buildDivider(),
             _buildSwitchTile(
-              title: 'Analytics & Crash Reports',
-              subtitle: 'Allow anonymous usage data and crash reports',
+              title: l10n.analytics_crash_reports,
+              subtitle: l10n.allow_anonymous_usage_data_and_crash_reports,
               value: settings.analyticsEnabled,
               icon: Icons.analytics_outlined,
               onChanged: (v) =>
@@ -201,24 +199,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             _buildDivider(),
             _buildNavTile(
-              title: 'Data Processing Notice',
-              subtitle: 'How we collect, use, and protect your data',
+              title: l10n.data_processing_notice,
+              subtitle: l10n.how_we_collect_use_and_protect_your_data,
               icon: Icons.info_outline_rounded,
               onTap: _showDataProcessingNotice,
             ),
             _buildDivider(),
             _buildNavTile(
-              title: 'Withdraw Consent',
-              subtitle: 'Manage or withdraw your data consent',
+              title: l10n.withdraw_consent,
+              subtitle: l10n.manage_or_withdraw_your_data_consent,
               icon: Icons.remove_circle_outline,
               onTap: _showWithdrawConsentDialog,
-            ),
-            _buildDivider(),
-            _buildNavTile(
-              title: 'Download My Data',
-              subtitle: 'Export a copy of your personal data',
-              icon: Icons.download_outlined,
-              onTap: _showDataExportDialog,
             ),
           ]),
 
@@ -239,23 +230,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               _buildDivider(),
               _buildNavTile(
                 title: l10n.vehicles,
-                subtitle: 'Manage your vehicles',
+                subtitle: l10n.manage_your_vehicles,
                 icon: Icons.directions_car_outlined,
                 onTap: () => context.push(AppRoutes.driverVehicles.path),
-              ),
-              _buildDivider(),
-              _buildNavTile(
-                title: l10n.driverDocuments,
-                subtitle: l10n.licenseInsuranceAndRegistration,
-                icon: Icons.folder_outlined,
-                onTap: () => context.push(AppRoutes.driverDocuments.path),
-              ),
-              _buildDivider(),
-              _buildNavTile(
-                title: l10n.backgroundCheck,
-                subtitle: l10n.viewYourVerificationStatus,
-                icon: Icons.verified_user_outlined,
-                onTap: () => context.push(AppRoutes.backgroundCheck.path),
               ),
             ],
             _buildDivider(),
@@ -268,23 +245,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             _buildDivider(),
             _buildNavTile(
               title: l10n.paymentHistory,
-              subtitle: 'View your past rides and charges',
+              subtitle: l10n.view_your_past_rides_and_charges,
               icon: Icons.receipt_long_rounded,
               onTap: () => context.push(AppRoutes.paymentHistory.path),
             ),
             _buildDivider(),
             _buildNavTile(
               title: l10n.changePassword,
-              subtitle: 'Update your account password',
+              subtitle: l10n.update_your_account_password,
               icon: Icons.lock_outline_rounded,
               onTap: () => context.push(AppRoutes.changePassword.path),
-            ),
-            _buildDivider(),
-            _buildNavTile(
-              title: l10n.twoFactorAuthentication,
-              subtitle: l10n.addExtraSecurityToYour,
-              icon: Icons.security_outlined,
-              onTap: () => context.push(AppRoutes.twoFactorAuth.path),
             ),
           ]),
 
@@ -301,7 +271,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             _buildDivider(),
             _buildNavTile(
               title: l10n.contactSupport,
-              subtitle: 'Get help from our team',
+              subtitle: l10n.get_help_from_our_team,
               icon: Icons.support_agent_outlined,
               onTap: () => context.push(AppRoutes.contactSupport.path),
             ),
@@ -402,7 +372,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         children: [
           InkWell(
             onTap: () {
-              HapticFeedback.selectionClick();
+              unawaited(HapticFeedback.selectionClick());
               setState(() => _driverSectionExpanded = !_driverSectionExpanded);
             },
             child: Padding(
@@ -441,7 +411,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             ),
                             SizedBox(height: 3.h),
                             Text(
-                              'Manage booking, pickup radius, payout, and map visibility',
+                              l10n.manage_booking_pickup_radius_payout_and_map_visibility,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
@@ -482,20 +452,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       Expanded(
                         child: _buildDriverStatusPill(
                           icon: Icons.bolt_rounded,
-                          label: 'Booking',
+                          label: l10n.booking,
                           value: settings.driverAllowInstantBooking
-                              ? 'Instant'
-                              : 'Manual',
+                              ? l10n.instant
+                              : l10n.manual,
                           active: settings.driverAllowInstantBooking,
                         ),
                       ),
                       SizedBox(width: 10.w),
                       Expanded(
                         child: _buildDriverStatusPill(
-                          icon: Icons.social_distance_rounded,
-                          label: 'Radius',
-                          value: '${settings.driverMaxDistance.round()} mi',
-                          active: true,
+                          icon: Icons.visibility_rounded,
+                          label: l10n.showOnDriverMap,
+                          value: settings.driverShowOnMap
+                              ? l10n.active
+                              : l10n.inactive,
+                          active: settings.driverShowOnMap,
                         ),
                       ),
                     ],
@@ -534,15 +506,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       onChanged: settingsViewModel.setDriverAllowInstantBooking,
                     ),
                     _buildDivider(),
-                    _buildSliderTile(
-                      title: l10n.maximumPickupDistance,
-                      subtitle: l10n.onlyReceiveRequestsWithinThis,
-                      icon: Icons.social_distance_outlined,
-                      value: settings.driverMaxDistance,
-                      onChanged: settingsViewModel.setDriverMaxDistance,
-                      min: 5,
-                      max: 50,
-                      suffix: 'mi',
+                    _buildSwitchTile(
+                      title: l10n.showOnDriverMap,
+                      subtitle: l10n.allowPassengersToSeeYour,
+                      value: settings.driverShowOnMap,
+                      icon: Icons.visibility_outlined,
+                      onChanged: settingsViewModel.setDriverShowOnMap,
                     ),
                   ],
                 ),
@@ -553,7 +522,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   children: [
                     _buildNavTile(
                       title: l10n.payoutMethod,
-                      subtitle: l10n.bankAccountEndingIn4532,
                       icon: Icons.account_balance_outlined,
                       onTap: () => context.pushNamed(
                         AppRoutes.driverStripeOnboarding.name,
@@ -562,36 +530,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           'returnTo': AppRoutes.driverEarnings.name,
                         },
                       ),
-                    ),
-                  ],
-                ),
-
-                _buildDriverPreferenceGroup(
-                  title: l10n.navigationMap,
-                  icon: Icons.map_outlined,
-                  children: [
-                    _buildSwitchTile(
-                      title: l10n.showOnDriverMap,
-                      subtitle: l10n.allowPassengersToSeeYour,
-                      value: settings.driverShowOnMap,
-                      icon: Icons.visibility_outlined,
-                      onChanged: settingsViewModel.setDriverShowOnMap,
-                    ),
-                    _buildDivider(),
-                    _buildDropdownTile(
-                      title: l10n.preferredNavigationApp,
-                      icon: Icons.navigation_outlined,
-                      value: settings.driverNavigationApp,
-                      options: const [
-                        'In-App',
-                        'Google Maps',
-                        'Waze',
-                        'Apple Maps',
-                      ],
-                      onChanged: (v) {
-                        if (v == null) return;
-                        settingsViewModel.setDriverNavigationApp(v);
-                      },
                     ),
                   ],
                 ),
@@ -818,7 +756,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               value: value && enabled,
               onChanged: enabled
                   ? (v) {
-                      HapticFeedback.selectionClick();
+                      unawaited(HapticFeedback.selectionClick());
                       onChanged(v);
                     }
                   : null,
@@ -879,151 +817,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildSliderTile({
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required double value,
-    required ValueChanged<double> onChanged,
-    double min = 0,
-    double max = 100,
-    String suffix = '',
-  }) {
-    return Padding(
-      padding: EdgeInsets.all(16.w),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Icon(icon, size: 20.sp, color: AppColors.textSecondary),
-              SizedBox(width: 14.w),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    SizedBox(height: 2.h),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
-                decoration: BoxDecoration(
-                  color: AppColors.primarySurface,
-                  borderRadius: BorderRadius.circular(8.r),
-                ),
-                child: Text(
-                  '${value.round()} $suffix',
-                  style: TextStyle(
-                    fontSize: 13.sp,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.primary,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          AdaptiveSlider(
-            value: value,
-            min: min,
-            max: max,
-            onChanged: (v) {
-              HapticFeedback.selectionClick();
-              onChanged(v);
-            },
-            activeColor: AppColors.primary,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDropdownTile({
-    required String title,
-    required String value,
-    required List<String> options,
-    required IconData icon,
-    required ValueChanged<String?> onChanged,
-    String? subtitle,
-  }) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
-      child: Row(
-        children: [
-          Icon(icon, size: 20.sp, color: AppColors.textSecondary),
-          SizedBox(width: 14.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                if (subtitle != null && subtitle.isNotEmpty) ...[
-                  SizedBox(height: 2.h),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
-            decoration: BoxDecoration(
-              color: AppColors.background,
-              borderRadius: BorderRadius.circular(8.r),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: value,
-                isDense: true,
-                style: TextStyle(
-                  fontSize: 13.sp,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.textPrimary,
-                ),
-                icon: Icon(
-                  Icons.keyboard_arrow_down_rounded,
-                  color: AppColors.textSecondary,
-                  size: 18.sp,
-                ),
-                items: options
-                    .map((o) => DropdownMenuItem(value: o, child: Text(o)))
-                    .toList(),
-                onChanged: onChanged,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -1104,85 +897,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  Widget _buildMapStyleTile({
-    required String currentStyle,
-    required ValueChanged<String> onChanged,
-  }) {
-    final styles = ['standard', 'dark', 'satellite'];
-    final icons = {
-      'standard': Icons.map_outlined,
-      'dark': Icons.dark_mode_outlined,
-      'satellite': Icons.satellite_alt_outlined,
-    };
-
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
-      child: Row(
-        children: [
-          Icon(Icons.map_outlined, size: 20.sp, color: AppColors.textSecondary),
-          SizedBox(width: 14.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Map Style',
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                SizedBox(height: 2.h),
-                Text(
-                  'Choose map appearance',
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: currentStyle,
-              borderRadius: BorderRadius.circular(12.r),
-              isDense: true,
-              style: TextStyle(fontSize: 13.sp, color: AppColors.textPrimary),
-              icon: Icon(
-                Icons.keyboard_arrow_down_rounded,
-                color: AppColors.textSecondary,
-                size: 18.sp,
-              ),
-              items: styles
-                  .map(
-                    (s) => DropdownMenuItem(
-                      value: s,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(icons[s], size: 15.sp),
-                          SizedBox(width: 5.w),
-                          Text(s[0].toUpperCase() + s.substring(1)),
-                        ],
-                      ),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (v) {
-                if (v == null) return;
-
-                HapticFeedback.selectionClick();
-                onChanged(v);
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildFooter(AppLocalizations l10n) {
     return Column(
       children: [
@@ -1201,7 +915,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
         SizedBox(height: 12.h),
         Text(
-          'SportConnect',
+          l10n.appTitle,
           style: TextStyle(
             fontSize: 15.sp,
             fontWeight: FontWeight.w700,
@@ -1268,71 +982,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  void _showDataExportDialog() {
-    AppModalSheet.show<void>(
-      context: context,
-      title: AppLocalizations.of(context).downloadMyData,
-      maxHeightFactor: 0.72,
-      child: Container(
-        padding: EdgeInsets.all(24.w),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40.w,
-              height: 4.h,
-              decoration: BoxDecoration(
-                color: AppColors.border,
-                borderRadius: BorderRadius.circular(2.r),
-              ),
-            ),
-            SizedBox(height: 24.h),
-            Icon(
-              Icons.download_outlined,
-              size: 48.sp,
-              color: AppColors.primary,
-            ),
-            SizedBox(height: 16.h),
-            Text(
-              AppLocalizations.of(context).downloadMyData,
-              style: TextStyle(
-                fontSize: 18.sp,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            SizedBox(height: 8.h),
-            Text(
-              AppLocalizations.of(context).downloadMyDataDescription,
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
-            ),
-            SizedBox(height: 24.h),
-            PremiumButton(
-              text: AppLocalizations.of(context).requestDataExport,
-              onPressed: () {
-                Navigator.pop(context);
-                AdaptiveSnackBar.show(
-                  context,
-                  message: AppLocalizations.of(
-                    context,
-                  ).dataExportRequestSubmitted,
-                  type: AdaptiveSnackBarType.success,
-                );
-              },
-              style: PremiumButtonStyle.gradient,
-            ),
-            SizedBox(height: 16.h),
-          ],
-        ),
-      ),
-    );
-  }
-
   void _showDataProcessingNotice() {
+    final l10n = AppLocalizations.of(context);
     AppModalSheet.show<void>(
       context: context,
-      title: AppLocalizations.of(context).dataProcessingNotice,
+      title: l10n.dataProcessingNotice,
       forceMaxHeight: true,
       maxHeightFactor: 0.86,
       child: Container(
@@ -1357,7 +1011,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             SizedBox(height: 16.h),
             Text(
-              AppLocalizations.of(context).dataProcessingNotice,
+              l10n.dataProcessingNotice,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 18.sp,
@@ -1367,33 +1021,33 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             SizedBox(height: 16.h),
             _buildConsentInfoItem(
-              'Personal Information',
-              'We collect your name, email, phone number, and profile photo to create and manage your account.',
+              l10n.personalInformation,
+              l10n.personalInformationDescription,
               Icons.person_outline,
             ),
             _buildConsentInfoItem(
-              'Location Data',
-              'We process your location to match rides, calculate routes, and show nearby destinations.',
+              l10n.locationData,
+              l10n.locationDataDescription,
               Icons.location_on_outlined,
             ),
             _buildConsentInfoItem(
-              'Payment Data',
-              'Payment information is processed securely by Stripe. We do not store your full card details.',
+              l10n.paymentData,
+              l10n.paymentDataDescription,
               Icons.payment_outlined,
             ),
             _buildConsentInfoItem(
-              'Usage Data',
-              'We collect crash reports and usage analytics. This data is anonymized.',
+              l10n.usageData,
+              l10n.usageDataDescription,
               Icons.analytics_outlined,
             ),
             _buildConsentInfoItem(
-              'Your Rights',
-              'You can access, export, correct, or delete your data at any time.',
+              l10n.yourRights,
+              l10n.yourRightsDescription,
               Icons.gavel_outlined,
             ),
             SizedBox(height: 16.h),
             Text(
-              'By using SportConnect, you consent to the data processing described above and in our Privacy Policy.',
+              l10n.by_using_sportconnect_you_consent_to_the_data_processing_described_above_and_in_our_privacy_policy,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 12.sp,
@@ -1412,6 +1066,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     String description,
     IconData icon,
   ) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: EdgeInsets.only(bottom: 16.h),
       child: Row(
@@ -1448,6 +1103,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   void _showWithdrawConsentDialog() {
+    final l10n = AppLocalizations.of(context);
+
     showDialog<void>(
       context: context,
       barrierLabel: AppLocalizations.of(context).withdrawConsent,
@@ -1472,18 +1129,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             SizedBox(height: 16.h),
             _buildConsentInfoItem(
-              'Disable Location',
-              'Turn off location in Privacy & Safety settings.',
+              l10n.settingsShowLocation,
+              l10n.settingsShowLocationDesc,
               Icons.location_off_outlined,
             ),
             _buildConsentInfoItem(
-              'Export Data',
-              'Request a copy of all your personal data.',
-              Icons.download_outlined,
-            ),
-            _buildConsentInfoItem(
-              'Delete Account',
-              'Permanently delete your account and all data.',
+              l10n.settingsDeleteAccount,
+              l10n.settingsDeleteAccountDesc,
               Icons.delete_forever_outlined,
             ),
           ],
@@ -1766,11 +1418,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  Widget _buildActivePremiumCard(PremiumMetadata meta) {
+  Widget _buildActivePremiumCard(AppLocalizations l10n, PremiumMetadata meta) {
     final planLabel = switch (meta.plan) {
-      'monthly' => 'Monthly',
-      'yearly' => 'Yearly',
-      _ => 'Premium',
+      'monthly' => l10n.monthly,
+      'yearly' => l10n.yearly,
+      _ => l10n.premium,
     };
     final dateLabel = meta.updatedAt != null
         ? DateFormat('MMM d, yyyy').format(meta.updatedAt!)
@@ -1815,7 +1467,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'SportConnect Premium',
+                        l10n.sportconnect_premium,
                         style: TextStyle(
                           fontSize: 14.sp,
                           fontWeight: FontWeight.w700,
@@ -1825,7 +1477,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       if (dateLabel != null) ...[
                         SizedBox(height: 2.h),
                         Text(
-                          'Active since $dateLabel',
+                          '${l10n.active} $dateLabel',
                           style: TextStyle(
                             fontSize: 12.sp,
                             color: AppColors.textSecondary,
@@ -1836,7 +1488,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ),
                 ),
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 10.w,
+                    vertical: 4.h,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.warning.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(8.r),
@@ -1855,15 +1510,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           Divider(height: 1, color: AppColors.warning.withValues(alpha: 0.2)),
           _buildNavTile(
-            title: 'Manage Subscription',
-            subtitle: 'Cancel or change your plan in the store',
+            title: l10n.manage_subscription,
+            subtitle: l10n.cancel_or_change_your_plan_in_the_store,
             icon: Icons.subscriptions,
             onTap: _manageSubscription,
           ),
           _buildDivider(),
           _buildNavTile(
-            title: 'Restore Purchases',
-            subtitle: 'Re-apply your active subscription',
+            title: l10n.restore_purchases,
+            subtitle: l10n.reapply_your_active_subscription,
             icon: Icons.restore_rounded,
             onTap: _restorePurchases,
           ),
@@ -1873,6 +1528,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<void> _manageSubscription() async {
+    final l10n = AppLocalizations.of(context);
     final uri = defaultTargetPlatform == TargetPlatform.iOS
         ? Uri.parse('https://apps.apple.com/account/subscriptions')
         : Uri.parse('https://play.google.com/store/account/subscriptions');
@@ -1880,21 +1536,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       if (!mounted) return;
       AdaptiveSnackBar.show(
         context,
-        message: 'Could not open subscription management.',
+        message: l10n.could_not_open_subscription_management,
         type: AdaptiveSnackBarType.error,
       );
     }
   }
 
   Future<void> _restorePurchases() async {
-    final result =
-        await ref.read(premiumIapServiceProvider.notifier).restorePurchases();
+    final result = await ref
+        .read(premiumIapServiceProvider.notifier)
+        .restorePurchases();
     if (!mounted) return;
+    final l10n = AppLocalizations.of(context);
     AdaptiveSnackBar.show(
       context,
       message: result.isSuccess
-          ? 'Purchases restored successfully.'
-          : (result.errorMessage ?? 'Could not restore purchases.'),
+          ? l10n.purchasesRestoredSuccessfully
+          : (result.errorMessage ?? l10n.couldNotRestorePurchases),
       type: result.isSuccess
           ? AdaptiveSnackBarType.success
           : AdaptiveSnackBarType.error,
@@ -1939,8 +1597,7 @@ class _BlockedUsersScreenState extends ConsumerState<_BlockedUsersScreen> {
         title: l10n.settingsBlockedUsers,
       ),
       body: blockedUsersAsync.when(
-        loading: () =>
-            const SkeletonLoader(type: SkeletonType.profileCard, itemCount: 4),
+        loading: () => const SkeletonLoader(type: SkeletonType.profileCard),
         error: (_, _) => Center(
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 24.w),
@@ -2207,5 +1864,4 @@ class _BlockedUsersScreenState extends ConsumerState<_BlockedUsersScreen> {
       ),
     );
   }
-
 }

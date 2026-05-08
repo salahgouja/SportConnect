@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -12,6 +14,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
+import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
@@ -22,7 +25,6 @@ import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/core/widgets/ride_feature_widgets.dart';
 import 'package:sport_connect/core/widgets/safety_widgets.dart';
 import 'package:sport_connect/core/widgets/skeleton_loader.dart';
-import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/messaging/view_models/chat_view_model.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
@@ -86,7 +88,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen> {
       appBar: AdaptiveAppBar(
         title: AppLocalizations.of(context).yourRide,
       ),
-      body: const SkeletonLoader(type: SkeletonType.rideCard, itemCount: 5),
+      body: const SkeletonLoader(itemCount: 5),
     );
   }
 
@@ -197,12 +199,14 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen> {
         body: AdaptiveTabBarView(
           tabs: [
             AppLocalizations.of(context).details,
-            pendingBookings.isNotEmpty
-                ? '${AppLocalizations.of(context).requests} (${pendingBookings.length})'
-                : AppLocalizations.of(context).requests,
-            confirmedBookings.isNotEmpty
-                ? '${AppLocalizations.of(context).passengers} (${confirmedBookings.length})'
-                : AppLocalizations.of(context).passengers,
+            if (pendingBookings.isNotEmpty)
+              '${AppLocalizations.of(context).requests} (${pendingBookings.length})'
+            else
+              AppLocalizations.of(context).requests,
+            if (confirmedBookings.isNotEmpty)
+              '${AppLocalizations.of(context).passengers} (${confirmedBookings.length})'
+            else
+              AppLocalizations.of(context).passengers,
           ],
           selectedColor: Colors.white,
           backgroundColor: AppColors.primary,
@@ -1611,7 +1615,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen> {
   }
 
   Future<void> _acceptBooking(RideModel ride, RideBooking booking) async {
-    HapticFeedback.mediumImpact();
+    unawaited(HapticFeedback.mediumImpact());
 
     try {
       // Fetch passenger profile for confirmation message
@@ -1686,7 +1690,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen> {
       return;
     }
 
-    HapticFeedback.mediumImpact();
+    unawaited(HapticFeedback.mediumImpact());
 
     try {
       final success = await ref
@@ -1713,7 +1717,6 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen> {
       if (phoneNumber == null || phoneNumber.isEmpty) {
         _showInfoSnackBar(
           message: AppLocalizations.of(context).phoneNumberNotAvailable,
-          backgroundColor: AppColors.success,
         );
         return;
       }
@@ -1789,7 +1792,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen> {
   }
 
   Future<void> _openPassengerChat(RideBooking booking) async {
-    HapticFeedback.lightImpact();
+    unawaited(HapticFeedback.lightImpact());
 
     final currentUser = ref.read(currentUserProvider).value;
     if (currentUser == null) return;
@@ -1843,12 +1846,12 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen> {
   }
 
   void _editRide(RideModel ride) {
-    HapticFeedback.lightImpact();
+    unawaited(HapticFeedback.lightImpact());
     context.push(AppRoutes.driverEditRide.path.replaceFirst(':id', ride.id));
   }
 
   Future<void> _shareRide(RideModel ride) async {
-    HapticFeedback.lightImpact();
+    unawaited(HapticFeedback.lightImpact());
     final l10n = AppLocalizations.of(context);
 
     try {
@@ -1894,7 +1897,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen> {
   }
 
   void _duplicateRide(RideModel ride) {
-    HapticFeedback.lightImpact();
+    unawaited(HapticFeedback.lightImpact());
     context.push(AppRoutes.driverOfferRide.path, extra: ride);
   }
 

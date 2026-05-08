@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -8,6 +10,7 @@ import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// About screen showing app info, version, team, and legal links.
 class AboutScreen extends ConsumerWidget {
@@ -63,7 +66,7 @@ class AboutScreen extends ConsumerWidget {
             SizedBox(height: 20.h),
 
             Text(
-              'SportConnect',
+              l10n.appTitle,
               style: TextStyle(
                 fontSize: 28.sp,
                 fontWeight: FontWeight.w800,
@@ -75,7 +78,7 @@ class AboutScreen extends ConsumerWidget {
             SizedBox(height: 4.h),
 
             Text(
-              'Version 1.1.11',
+              'Version 1.1.12',
               style: TextStyle(fontSize: 14.sp, color: AppColors.textTertiary),
             ).animate().fadeIn(delay: 150.ms),
 
@@ -88,7 +91,7 @@ class AboutScreen extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(20.r),
               ),
               child: Text(
-                'Built with Flutter',
+                l10n.built_with_flutter,
                 style: TextStyle(
                   fontSize: 11.sp,
                   color: AppColors.success,
@@ -114,10 +117,7 @@ class AboutScreen extends ConsumerWidget {
                 ],
               ),
               child: Text(
-                'SportConnect is a carpooling and rideshare platform designed '
-                'for sports enthusiasts. Share rides to games, tournaments, '
-                'and training sessions while saving money, reducing emissions, '
-                'and connecting with fellow athletes.',
+                l10n.sportconnectDescription,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14.sp,
@@ -132,11 +132,23 @@ class AboutScreen extends ConsumerWidget {
             // Features
             Row(
               children: [
-                _buildStatCard('Eco', 'Ride-Share', Icons.eco_rounded),
+                _buildStatCard(
+                  l10n.ecoStatLabel,
+                  l10n.rideShareLabel,
+                  Icons.eco_rounded,
+                ),
                 SizedBox(width: 12.w),
-                _buildStatCard('Live', 'Tracking', Icons.gps_fixed_rounded),
+                _buildStatCard(
+                  l10n.liveStatLabel,
+                  l10n.trackingLabel,
+                  Icons.gps_fixed_rounded,
+                ),
                 SizedBox(width: 12.w),
-                _buildStatCard('Sport', 'Community', Icons.sports_rounded),
+                _buildStatCard(
+                  l10n.sportStatLabel,
+                  l10n.communityLabel,
+                  Icons.sports_rounded,
+                ),
               ],
             ).animate().fadeIn(delay: 400.ms),
 
@@ -161,11 +173,11 @@ class AboutScreen extends ConsumerWidget {
 
             _buildLinkCard(
               icon: Icons.code_rounded,
-              title: 'Open Source Licenses',
+              title: l10n.open_source_licenses,
               onTap: () => showLicensePage(
                 context: context,
-                applicationName: 'SportConnect',
-                applicationVersion: '1.1.11',
+                applicationName: l10n.appTitle,
+                applicationVersion: '1.1.12',
               ),
             ).animate().fadeIn(delay: 600.ms).slideX(begin: 0.05),
 
@@ -181,7 +193,7 @@ class AboutScreen extends ConsumerWidget {
 
             // Social / Community
             Text(
-              'Join the Community',
+              l10n.join_the_community,
               style: TextStyle(
                 fontSize: 16.sp,
                 fontWeight: FontWeight.w700,
@@ -196,20 +208,31 @@ class AboutScreen extends ConsumerWidget {
               children: [
                 _buildSocialButton(
                   Icons.language_rounded,
-                  'Website',
+                  l10n.websiteLabel,
                   AppColors.primary,
+                  onTap: () => launchUrl(
+                    Uri.parse('https://sportaxitrip.com'),
+                    mode: LaunchMode.externalApplication,
+                  ).ignore(),
                 ),
                 SizedBox(width: 16.w),
                 _buildSocialButton(
                   Icons.email_outlined,
-                  'Email',
+                  l10n.emailLabel,
                   const Color(0xFFEA4335),
+                  onTap: () => launchUrl(
+                    Uri.parse('mailto:support@sportaxitrip.com'),
+                  ).ignore(),
                 ),
                 SizedBox(width: 16.w),
                 _buildSocialButton(
                   Icons.group_rounded,
-                  'Community',
+                  l10n.communityLabel,
                   const Color(0xFF1DA1F2),
+                  onTap: () => launchUrl(
+                    Uri.parse('https://sportaxitrip.com/community'),
+                    mode: LaunchMode.externalApplication,
+                  ).ignore(),
                 ),
               ],
             ).animate().fadeIn(delay: 750.ms),
@@ -218,7 +241,7 @@ class AboutScreen extends ConsumerWidget {
 
             // Copyright
             Text(
-              '\u00a9 2025-2026 SportConnect. All rights reserved.',
+              l10n.copyrightNotice,
               style: TextStyle(fontSize: 12.sp, color: AppColors.textTertiary),
             ).animate().fadeIn(delay: 700.ms),
 
@@ -229,27 +252,38 @@ class AboutScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildSocialButton(IconData icon, String label, Color color) {
-    return Column(
-      children: [
-        Container(
-          padding: EdgeInsets.all(14.w),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.1),
-            shape: BoxShape.circle,
+  Widget _buildSocialButton(
+    IconData icon,
+    String label,
+    Color color, {
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: () {
+        unawaited(HapticFeedback.lightImpact());
+        onTap();
+      },
+      child: Column(
+        children: [
+          Container(
+            padding: EdgeInsets.all(14.w),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, size: 22.sp, color: color),
           ),
-          child: Icon(icon, size: 22.sp, color: color),
-        ),
-        SizedBox(height: 6.h),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 11.sp,
-            color: AppColors.textSecondary,
-            fontWeight: FontWeight.w500,
+          SizedBox(height: 6.h),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11.sp,
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w500,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -297,7 +331,7 @@ class AboutScreen extends ConsumerWidget {
   }) {
     return GestureDetector(
       onTap: () {
-        HapticFeedback.lightImpact();
+        unawaited(HapticFeedback.lightImpact());
         onTap();
       },
       child: Container(

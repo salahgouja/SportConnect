@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -229,7 +231,7 @@ class IntlPhoneInputState extends State<IntlPhoneInput> {
   }
 
   void _clear() {
-    HapticFeedback.selectionClick();
+    unawaited(HapticFeedback.selectionClick());
 
     _controller.clear();
 
@@ -333,7 +335,6 @@ class IntlPhoneInputState extends State<IntlPhoneInput> {
             borderRadius: BorderRadius.circular(18.r),
             border: Border.all(
               color: borderColor,
-              width: 1,
             ),
             boxShadow: [
               BoxShadow(
@@ -558,7 +559,6 @@ class _InternationalFrenchPhoneFormatter extends TextInputFormatter {
     return TextEditingValue(
       text: formatted,
       selection: TextSelection.collapsed(offset: formatted.length),
-      composing: TextRange.empty,
     );
   }
 }

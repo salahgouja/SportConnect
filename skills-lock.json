@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "app-store": {
+      "source": "rshankras/claude-code-apple-skills",
+      "sourceType": "github",
+      "skillPath": "skills/app-store/SKILL.md",
+      "computedHash": "9accc24fe0901b1c5a59b5af8192d4bad3b217f6016abaf377f88f821f0d1d79"
+    },
     "ui-ux-pro-max": {
       "source": "nextlevelbuilder/ui-ux-pro-max-skill",
       "sourceType": "github",

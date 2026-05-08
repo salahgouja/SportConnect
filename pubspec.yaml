@@ -2,7 +2,7 @@ name: sport_connect
 description: "SportConnect - Social carpooling app for sports enthusiasts"
 publish_to: "none"
 
-version: 1.1.11
+version: 1.1.12
 
 environment:
   sdk: ^3.11.0
@@ -132,7 +132,6 @@ dependencies:
   talker_flutter: ^5.1.12
   talker_riverpod_logger: ^5.1.12
   talker_dio_logger: ^5.1.12
-  accessibility_tools: ^2.8.0
 
   riverpod_devtools_tracker: ^1.0.7
 
@@ -178,6 +177,7 @@ dev_dependencies:
   # Development Tools
   very_good_analysis: ^10.2.0
   build_runner: ^2.14.1
+  accessibility_tools: ^2.8.0
 
 flutter:
   uses-material-design: true

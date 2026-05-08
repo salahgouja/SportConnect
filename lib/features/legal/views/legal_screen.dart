@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
@@ -55,7 +55,11 @@ class LegalScreen extends ConsumerWidget {
           children: [
             InAppWebView(
               initialData: InAppWebViewInitialData(
-                data: _buildHtmlContent(title, type),
+                data: _buildHtmlContent(
+                  title,
+                  type,
+                  Localizations.localeOf(context).languageCode,
+                ),
               ),
               initialSettings: InAppWebViewSettings(
                 javaScriptEnabled: false,
@@ -106,11 +110,17 @@ class LegalScreen extends ConsumerWidget {
     );
   }
 
-  String _buildHtmlContent(String title, LegalDocumentType type) {
-    if (type == LegalDocumentType.privacy) return _privacyHtmlDocument;
+  String _buildHtmlContent(
+    String title,
+    LegalDocumentType type,
+    String langCode,
+  ) {
+    if (type == LegalDocumentType.privacy) {
+      return langCode == 'fr' ? _privacyHtmlDocumentFr : _privacyHtmlDocumentEn;
+    }
 
     const lastUpdated = 'Last updated: February 23, 2026';
-    final body = _termsBody;
+    const body = _termsBody;
     return '''
 <!DOCTYPE html>
 <html lang="en">
@@ -198,7 +208,8 @@ class LegalScreen extends ConsumerWidget {
   <p>Questions? Contact <a href="mailto:legal@sportconnect.app">legal@sportconnect.app</a>.</p>
 ''';
 
-  static const String _privacyHtmlDocument = r'''<!doctype html>
+  static const String _privacyHtmlDocumentFr = '''
+<!doctype html>
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
@@ -1098,6 +1109,820 @@ class LegalScreen extends ConsumerWidget {
     <hr style="margin-top: 48px; border: none; border-top: 1px solid #e0e0e0" />
     <p style="color: #999; font-size: 0.85rem; text-align: center">
       © 2026 SportConnect. Tous droits réservés.
+    </p>
+  </body>
+</html>
+''';
+
+  static const String _privacyHtmlDocumentEn = '''
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Privacy Policy - SportConnect</title>
+    <style>
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        max-width: 860px;
+        margin: 0 auto;
+        padding: 40px 24px;
+        color: #1a1a1a;
+        line-height: 1.7;
+      }
+      h1 { font-size: 2rem; margin-bottom: 4px; }
+      h2 {
+        font-size: 1.25rem;
+        margin-top: 40px;
+        border-bottom: 1px solid #e0e0e0;
+        padding-bottom: 6px;
+      }
+      h3 { font-size: 1rem; margin-top: 24px; }
+      p, li { font-size: 0.97rem; }
+      ul { padding-left: 20px; }
+      a { color: #0066cc; }
+      .meta { color: #666; font-size: 0.9rem; margin-bottom: 32px; }
+      table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+      th, td {
+        border: 1px solid #ddd;
+        padding: 10px 14px;
+        text-align: left;
+        font-size: 0.93rem;
+      }
+      th { background: #f5f5f5; font-weight: 600; }
+    </style>
+  </head>
+  <body>
+    <h1>Privacy Policy</h1>
+    <p class="meta">
+      App: <strong>SportConnect</strong><br />
+      Last updated: April 2026<br />
+      Contact:
+      <a href="mailto:support@sportaxitrip.com">support@sportaxitrip.com</a>
+    </p>
+
+    <p>
+      SportConnect ("we", "our", or "us") operates a social carpooling platform
+      for sports enthusiasts. This Privacy Policy explains what personal data we
+      collect, why we collect it, how we use and share it, and what rights you
+      have over your data.
+    </p>
+
+    <p>
+      By using the SportConnect mobile app (iOS or Android), you acknowledge
+      that you have read and understood this policy.
+    </p>
+
+    <h2>1. Who We Are</h2>
+    <p>
+      SportConnect is operated by the app publisher. For any privacy or
+      personal data enquiries, please contact us:
+    </p>
+    <ul>
+      <li>Phone: +33 06 20 18 48 96</li>
+      <li>
+        Email:
+        <a href="mailto:support@sportaxitrip.com">support@sportaxitrip.com</a>
+      </li>
+      <li>
+        Website:
+        <a href="https://sportaxitrip.com" target="_blank">sportaxitrip.com</a>
+      </li>
+    </ul>
+    <p>
+      We are committed to responding to any request within
+      <strong>30 days</strong>.
+    </p>
+
+    <h2>2. Data We Collect and Why</h2>
+
+    <h3>2.1 Identity and Account Data</h3>
+    <ul>
+      <li>
+        <strong>Email address</strong> — required to create an account, sign in,
+        and recover access
+      </li>
+      <li>
+        <strong>First name, last name, or username</strong> — displayed on your
+        public profile and in conversations
+      </li>
+      <li>
+        <strong>Date of birth</strong> — to verify you are at least 18 years old
+      </li>
+      <li>
+        <strong>Gender</strong> — optional; used to enable the
+        "women-only rides" preference
+      </li>
+      <li>
+        <strong>Phone number</strong> — optional; used for identity verification
+        and ride coordination
+      </li>
+      <li>
+        <strong>Profile photo</strong> — optional; visible to other users
+      </li>
+      <li>
+        <strong>Password</strong> — stored in hashed form by Firebase
+        Authentication; we never store passwords in plain text
+      </li>
+    </ul>
+    <p>
+      You may also sign in via <strong>Google Sign-In</strong> or
+      <strong>Apple Sign-In</strong>. In that case, we receive your name, email
+      address, and profile photo from those providers. We do not receive your
+      Google or Apple password.
+    </p>
+
+    <h3>2.2 Driver-Specific Data</h3>
+    <p>Users registering as drivers also provide:</p>
+    <ul>
+      <li>
+        Vehicle make, model, year, colour, licence plate, type, and fuel type
+      </li>
+      <li>
+        Vehicle photos and documents (registration certificate, insurance
+        certificate) — stored securely
+      </li>
+      <li>Insurance expiry date</li>
+      <li>
+        Identity and banking information required by Stripe for payouts
+        (see section 4)
+      </li>
+    </ul>
+
+    <h3>2.3 Location Data</h3>
+    <p>
+      Location is central to how SportConnect works. We collect two types of
+      location data:
+    </p>
+
+    <table>
+      <tr>
+        <th>Type</th>
+        <th>When collected</th>
+        <th>Purpose</th>
+      </tr>
+      <tr>
+        <td><strong>Foreground location</strong></td>
+        <td>While you are actively using the app</td>
+        <td>
+          Show your position on the map, find nearby rides, calculate distances,
+          display nearby events
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Background location</strong></td>
+        <td>
+          Only during an active ride (app in background or screen locked)
+        </td>
+        <td>
+          Automatically detect driver or passenger arrival within the pickup
+          zone (150 m radius) or drop-off zone (180 m radius), to advance the
+          ride status without manual confirmation
+        </td>
+      </tr>
+    </table>
+
+    <p>
+      <strong>Background location.</strong> SportConnect requests the always-on
+      location permission only after a ride has started. This permission is used
+      exclusively to trigger geofencing events — detecting arrival within the
+      pickup zone (150 m) or drop-off zone (180 m) — during an active ride.
+      Background location data is retained as event logs for a maximum of
+      <strong>18 hours</strong>, then automatically deleted. It is used solely
+      to advance the ride status and is never used for advertising or behavioural
+      analysis. You are informed at the time the permission is requested in the
+      app.
+    </p>
+
+    <p>
+      You can revoke the location permission at any time in your device
+      Settings. Revoking background location will disable automatic pickup/
+      drop-off detection; you will need to confirm your arrival manually.
+    </p>
+
+    <p>
+      Address-to-GPS coordinate conversions are processed via the
+      <strong>Nominatim API</strong> from the OpenStreetMap Foundation. Your
+      address search queries are sent to their servers in accordance with their
+      <a href="https://osmfoundation.org/wiki/Privacy_Policy" target="_blank"
+        >privacy policy</a>.
+    </p>
+
+    <h3>2.4 Ride and Event Data</h3>
+    <ul>
+      <li>Pickup and drop-off addresses and coordinates</li>
+      <li>Scheduled departure and arrival times</li>
+      <li>
+        Number of seats, price per seat, preferences (luggage, pets, smoking,
+        women-only)
+      </li>
+      <li>Booking history and ride status</li>
+      <li>
+        Event title, description, venue, times, participant list, and associated
+        rides
+      </li>
+    </ul>
+
+    <h3>2.5 Payment and Financial Data</h3>
+    <p>
+      All payments are processed by <strong>Stripe</strong> (Stripe, Inc. and
+      its affiliates). We do not store full card numbers on our servers.
+    </p>
+
+    <p><strong>For passengers:</strong></p>
+    <ul>
+      <li>
+        Stripe stores your payment methods (card type, last 4 digits, expiry
+        date, country)
+      </li>
+      <li>
+        We store your Stripe customer ID and transaction records (amounts,
+        timestamps, statuses)
+      </li>
+    </ul>
+
+    <p><strong>For drivers:</strong></p>
+    <ul>
+      <li>
+        Drivers create a Stripe Connect account. Stripe collects and stores the
+        required identity and banking information (name, date of birth, address,
+        tax number, IBAN). We do not store this information on our servers — it
+        is held by Stripe in accordance with their
+        <a href="https://stripe.com/privacy" target="_blank"
+          >privacy policy</a>.
+      </li>
+      <li>
+        We store your Stripe Connect account ID, payout history, and earnings
+        summary
+      </li>
+    </ul>
+
+    <p>
+      <strong>Premium subscriptions:</strong> SportConnect offers an optional
+      premium subscription (€4.99/month or €49.99/year) processed entirely
+      through the Apple App Store or Google Play. We do not receive your payment
+      details for subscriptions. Billing is managed by Apple or Google depending
+      on your platform.
+    </p>
+
+    <p>
+      <strong>Platform fee:</strong> A percentage is deducted from each ride
+      transaction before the payout to the driver. This amount is shown in the
+      app at the time of booking.
+    </p>
+
+    <h3>2.6 Messaging and Chat Data</h3>
+    <p>
+      SportConnect includes in-app messaging between users. The following are
+      stored on our servers:
+    </p>
+    <ul>
+      <li>
+        Text messages in private, ride group, and event group conversations
+      </li>
+      <li>Images shared in conversations (stored in Firebase Storage)</li>
+      <li>
+        Voice messages (audio recordings you choose to send; stored in Firebase
+        Storage)
+      </li>
+      <li>
+        Location messages (coordinates you choose to share manually in a
+        conversation)
+      </li>
+      <li>
+        Message metadata: sender, timestamp, delivery status, read receipts,
+        reactions
+      </li>
+    </ul>
+    <p>
+      Messages are visible to all participants in the relevant conversation.
+      Message content is not used for advertising purposes. You can delete
+      individual messages or clear your conversation history at any time.
+    </p>
+
+    <h3>2.7 Audio Data (Voice Messages)</h3>
+    <p>
+      The app requests microphone permission to allow sending voice messages in
+      chat. Recording only begins when you actively press the voice message
+      button. Recordings are uploaded to our secure cloud storage and shared
+      only with conversation participants. You can delete your sent voice
+      messages at any time.
+    </p>
+
+    <h3>2.8 Camera and Photo Library</h3>
+    <p>Camera and photo library access is requested to:</p>
+    <ul>
+      <li>Upload a profile photo</li>
+      <li>Upload vehicle photos and documents (drivers)</li>
+      <li>Upload an event cover image</li>
+      <li>Share images in chat</li>
+      <li>Attach supporting documents to a dispute</li>
+    </ul>
+    <p>
+      Photos are uploaded to Firebase Storage (Google Cloud) and linked to your
+      account. We do not analyse photo content beyond storage and delivery.
+    </p>
+
+    <h3>2.9 Usage and Diagnostic Data</h3>
+    <ul>
+      <li>
+        <strong>Firebase Analytics</strong> — anonymous usage statistics
+        (screens viewed, features used, session duration). This data is
+        associated with a randomly generated analytics identifier, not your
+        name or email.
+      </li>
+      <li>
+        <strong>Firebase Crashlytics</strong> — error reports and stack traces
+        when the app crashes. Includes device model, OS version, app version,
+        and the event sequence preceding the crash. No message content or
+        payment data is included in crash reports.
+      </li>
+      <li>
+        <strong>FCM token</strong> — a device-specific token used for push
+        notification delivery. Stored on our servers and deleted on logout or
+        app uninstall.
+      </li>
+    </ul>
+    <p>
+      You can disable analytics and crash reporting at any time via
+      <strong>Settings → Privacy → Analytics &amp; Crash Reports</strong>
+      in the app.
+    </p>
+
+    <h3>2.10 Ratings, Reviews, and Gamification</h3>
+    <ul>
+      <li>
+        Ratings and written reviews you submit about other users (published on
+        their profile)
+      </li>
+      <li>Ratings and reviews other users submit about you</li>
+      <li>
+        Gamification data: XP points, level, unlocked achievements, ride
+        streaks, leaderboard
+      </li>
+    </ul>
+
+    <h3>2.11 Support and Dispute Data</h3>
+    <ul>
+      <li>
+        Dispute descriptions, supporting documents (images, PDFs), and dispute
+        status
+      </li>
+      <li>Support messages and exchange history with our team</li>
+    </ul>
+
+    <h2>3. Why We Use Your Data</h2>
+    <table>
+      <tr>
+        <th>Use</th>
+        <th>Reason</th>
+      </tr>
+      <tr>
+        <td>Account creation and authentication</td>
+        <td>Necessary to provide the service</td>
+      </tr>
+      <tr>
+        <td>Ride matching and coordination</td>
+        <td>Necessary to provide the service</td>
+      </tr>
+      <tr>
+        <td>Payment processing and driver payouts</td>
+        <td>Necessary to provide the service and meet our legal accounting
+        retention obligations</td>
+      </tr>
+      <tr>
+        <td>Background location during active rides</td>
+        <td>Necessary to advance ride status in real time</td>
+      </tr>
+      <tr>
+        <td>Analytics and crash reporting</td>
+        <td>To improve app reliability and performance</td>
+      </tr>
+      <tr>
+        <td>Push notifications</td>
+        <td>With your consent — revocable at any time in Settings</td>
+      </tr>
+      <tr>
+        <td>Premium subscription management</td>
+        <td>Necessary to provide the subscribed premium features</td>
+      </tr>
+      <tr>
+        <td>Financial data retention</td>
+        <td>Our legal obligation to retain accounting records (10 years)</td>
+      </tr>
+      <tr>
+        <td>Age verification (18+ minimum)</td>
+        <td>Compliance with our Terms of Service and applicable law</td>
+      </tr>
+    </table>
+
+    <h2>4. Who We Share Your Data With</h2>
+
+    <h3>4.1 Other App Users</h3>
+    <ul>
+      <li>
+        Your name, profile photo, rating, and reviews are visible to other
+        SportConnect users
+      </li>
+      <li>
+        Your pickup/drop-off address is visible to the driver and confirmed
+        passengers of a ride
+      </li>
+      <li>
+        Chat messages are visible to all participants in the relevant
+        conversation
+      </li>
+      <li>
+        Your email address and payment details are <strong>never</strong> shared
+        with other users
+      </li>
+    </ul>
+
+    <h3>4.2 Service Providers</h3>
+    <p>
+      We use the following providers to operate the platform. Each is bound by
+      its own privacy commitments:
+    </p>
+    <table>
+      <tr>
+        <th>Provider</th>
+        <th>Service</th>
+        <th>Data transmitted</th>
+        <th>Server location</th>
+        <th>Privacy policy</th>
+      </tr>
+      <tr>
+        <td>Google (Firebase)</td>
+        <td>
+          Backend infrastructure, authentication, analytics, crash reporting,
+          push notifications, storage
+        </td>
+        <td>All app data stored on Google Cloud</td>
+        <td>European Union (europe-west1) and potentially other regions</td>
+        <td>
+          <a href="https://policies.google.com/privacy" target="_blank"
+            >policies.google.com/privacy</a>
+        </td>
+      </tr>
+      <tr>
+        <td>Stripe</td>
+        <td>Payment processing and driver payouts</td>
+        <td>Payment methods, transactions, driver identity</td>
+        <td>USA and EU</td>
+        <td>
+          <a href="https://stripe.com/privacy" target="_blank"
+            >stripe.com/privacy</a>
+        </td>
+      </tr>
+      <tr>
+        <td>Apple</td>
+        <td>Apple Sign-In, App Store subscriptions, push notifications</td>
+        <td>Identity token, subscription status</td>
+        <td>USA and EU</td>
+        <td>
+          <a href="https://www.apple.com/legal/privacy/" target="_blank"
+            >apple.com/legal/privacy</a>
+        </td>
+      </tr>
+      <tr>
+        <td>Google (Sign-In)</td>
+        <td>Sign in with Google</td>
+        <td>Email, name, profile photo</td>
+        <td>USA and EU</td>
+        <td>
+          <a href="https://policies.google.com/privacy" target="_blank"
+            >policies.google.com/privacy</a>
+        </td>
+      </tr>
+      <tr>
+        <td>OpenStreetMap Foundation (Nominatim)</td>
+        <td>Address geocoding</td>
+        <td>Address search queries</td>
+        <td>Netherlands</td>
+        <td>
+          <a href="https://osmfoundation.org/wiki/Privacy_Policy" target="_blank"
+            >osmfoundation.org</a>
+        </td>
+      </tr>
+    </table>
+
+    <h3>4.3 Legal Disclosure</h3>
+    <p>
+      We may disclose your data if required by law, court order, or to protect
+      the rights and safety of our users or the public.
+    </p>
+
+    <h3>4.4 No Sale of Personal Data</h3>
+    <p>
+      We do not sell, rent, or trade your personal data with third parties for
+      marketing or advertising purposes.
+    </p>
+
+    <h2>5. International Data Transfers</h2>
+    <p>
+      Some of our providers (including Stripe and Google) may process your data
+      in the United States or other countries. These transfers are governed by
+      appropriate safeguards, including standard contractual clauses approved by
+      the European Commission and the EU–US Data Privacy Framework. You can
+      obtain more information by contacting us at
+      <a href="mailto:support@sportaxitrip.com">support@sportaxitrip.com</a>.
+    </p>
+
+    <h2>6. Refund Policy</h2>
+
+    <h3>6.1 Ride Payments</h3>
+    <p>
+      Ride payments are processed via Stripe. Refunds are subject to the
+      following rules:
+    </p>
+    <ul>
+      <li>
+        <strong>Ride cancelled by the driver before departure:</strong> full
+        automatic refund within 5–10 business days to the original payment
+        method.
+      </li>
+      <li>
+        <strong>Ride cancelled by the passenger:</strong> eligibility for a
+        refund depends on the notice period at the time of cancellation, as
+        indicated in the app at the time of booking. Cancellations made with
+        sufficient notice may be eligible for a full or partial refund.
+      </li>
+      <li>
+        <strong>Ride not completed as expected:</strong> contact us at
+        <a href="mailto:support@sportaxitrip.com">support@sportaxitrip.com</a>
+        within <strong>30 days</strong> of the ride. We will review the case
+        and issue a refund where appropriate.
+      </li>
+      <li>
+        <strong>Charge dispute:</strong> use the in-app dispute feature or
+        contact support. Disputes must be submitted within
+        <strong>30 days</strong> of the transaction.
+      </li>
+    </ul>
+
+    <h3>6.2 Premium Subscriptions</h3>
+    <p>
+      Premium subscriptions are purchased through the
+      <strong>Apple App Store</strong> or <strong>Google Play Store</strong>.
+      Subscription refunds are handled directly by Apple or Google:
+    </p>
+    <ul>
+      <li>
+        <strong>Apple App Store:</strong> request a refund at
+        <a href="https://reportaproblem.apple.com" target="_blank"
+          >reportaproblem.apple.com</a>.
+      </li>
+      <li>
+        <strong>Google Play Store:</strong> request a refund via the Google
+        Play app.
+      </li>
+    </ul>
+    <p>
+      We cannot issue refunds for in-app purchases on your behalf — all
+      subscription billing and refunds are managed by Apple or Google. You may
+      cancel your subscription at any time in your device's subscription
+      settings; cancellation takes effect at the end of the current billing
+      period.
+    </p>
+
+    <h2>7. Data Retention</h2>
+    <table>
+      <tr>
+        <th>Data type</th>
+        <th>Retention period</th>
+      </tr>
+      <tr>
+        <td>Account and profile data</td>
+        <td>Until account deletion</td>
+      </tr>
+      <tr>
+        <td>Ride history</td>
+        <td>
+          Retained for audit and dispute resolution purposes, even after
+          account deletion
+        </td>
+      </tr>
+      <tr>
+        <td>Payment transaction records</td>
+        <td>
+          <strong>10 years</strong> — statutory accounting retention period
+        </td>
+      </tr>
+      <tr>
+        <td>Chat messages</td>
+        <td>Until deleted by the user or account deletion</td>
+      </tr>
+      <tr>
+        <td>Audio files and images</td>
+        <td>Until the associated message or account is deleted</td>
+      </tr>
+      <tr>
+        <td>Background location (geofencing events)</td>
+        <td>
+          <strong>Maximum 18 hours</strong> after the event, then automatically
+          deleted
+        </td>
+      </tr>
+      <tr>
+        <td>Analytics data</td>
+        <td>
+          Per Google Analytics retention settings (14 months by default)
+        </td>
+      </tr>
+      <tr>
+        <td>Crash reports</td>
+        <td>90 days (Firebase Crashlytics default setting)</td>
+      </tr>
+      <tr>
+        <td>Push notification tokens (FCM)</td>
+        <td>Until logout or app uninstall</td>
+      </tr>
+      <tr>
+        <td>Dispute and support documents</td>
+        <td>5 years after case closure</td>
+      </tr>
+    </table>
+
+    <h2>8. Your Rights</h2>
+    <p>You have the following rights over your personal data:</p>
+    <ul>
+      <li>
+        <strong>Access:</strong> obtain a copy of the personal data we hold
+        about you
+      </li>
+      <li>
+        <strong>Rectification:</strong> correct inaccurate or incomplete data
+        (most fields are editable directly in the app)
+      </li>
+      <li>
+        <strong>Deletion:</strong> delete your account and data via
+        "Delete my account" in Settings, or via our
+        <a href="https://sportaxitrip.com/delete-account.html"
+          >online form</a>. See section 9 for details.
+      </li>
+      <li>
+        <strong>Portability:</strong> receive your data in a structured,
+        machine-readable format
+      </li>
+      <li>
+        <strong>Restriction:</strong> request restriction of processing in
+        certain circumstances
+      </li>
+      <li>
+        <strong>Objection:</strong> object to the use of your data for
+        analytics or service improvement
+      </li>
+      <li>
+        <strong>Withdrawal of consent:</strong> withdraw consent for push
+        notifications or analytics at any time in app Settings
+      </li>
+    </ul>
+    <p>
+      To exercise any of these rights, contact us at
+      <a href="mailto:support@sportaxitrip.com">support@sportaxitrip.com</a>.
+      We will respond within <strong>30 days</strong>.
+    </p>
+
+    <h2>9. Account Deletion</h2>
+    <p>
+      You can delete your account at any time via
+      <strong>Settings → Account → Delete my account</strong> in the app, or
+      via our
+      <a href="https://sportaxitrip.com/delete-account.html"
+        >web deletion form</a>.
+    </p>
+
+    <p><strong>Data deleted on account closure:</strong></p>
+    <ul>
+      <li>Profile, account information, profile photo, and cover image</li>
+      <li>All rides created as a driver</li>
+      <li>All bookings made as a passenger</li>
+      <li>Driver financial data and Stripe Connect account link</li>
+      <li>All reviews written about other users</li>
+      <li>All sent messages</li>
+      <li>Vehicle information and associated documents</li>
+      <li>Participation in all conversations</li>
+    </ul>
+    <p><strong>Data retained after account closure:</strong></p>
+    <ul>
+      <li>
+        Reviews written by other users about you, retained in anonymised form
+        to preserve platform integrity
+      </li>
+      <li>
+        Payment transaction records, retained for 10 years in compliance with
+        statutory accounting requirements
+      </li>
+      <li>
+        Ride records involving other participants, retained for potential
+        dispute resolution
+      </li>
+    </ul>
+
+    <p>
+      <strong>Note:</strong> Account deletion is blocked if you have an active
+      ride in progress. Complete or cancel the ride before requesting deletion.
+    </p>
+
+    <h2>10. Minors</h2>
+    <p>
+      SportConnect is not intended for persons under 18 years of age. We verify
+      age at registration. If we discover that a user under 18 has created an
+      account, we will delete it promptly. If you believe a minor has
+      registered, contact us at
+      <a href="mailto:support@sportaxitrip.com">support@sportaxitrip.com</a>.
+    </p>
+
+    <h2>11. Push Notifications</h2>
+    <p>
+      We send push notifications for ride updates, new messages, booking
+      confirmations, and account activity. Your
+      <strong>explicit consent</strong> is collected before any notification is
+      sent. You can:
+    </p>
+    <ul>
+      <li>
+        Disable all notifications in Device Settings → Notifications →
+        SportConnect
+      </li>
+      <li>
+        Control individual notification types in the app under Settings →
+        Notifications
+      </li>
+      <li>Set quiet hours to block notifications during certain time slots</li>
+    </ul>
+
+    <h2>12. Data Security</h2>
+    <p>
+      We implement the following security measures to protect your data:
+    </p>
+    <ul>
+      <li>
+        All communications between the app and our servers are encrypted via
+        HTTPS/TLS
+      </li>
+      <li>
+        Hashed password management and token-based sessions via Firebase
+        Authentication
+      </li>
+      <li>
+        Unauthorised API access protection via Firebase App Check
+      </li>
+      <li>
+        Payment processing exclusively through Stripe, PCI DSS certified
+      </li>
+      <li>
+        Firebase Storage access control limited to authorised users
+      </li>
+      <li>
+        Re-authentication required for sensitive operations (payments, account
+        deletion)
+      </li>
+      <li>Uploaded files limited to 5 MB</li>
+    </ul>
+    <p>
+      No system is 100% secure. If you suspect unauthorised access to your
+      account, change your password immediately and contact us.
+    </p>
+
+    <h2>13. Analytics Trackers</h2>
+    <p>
+      The SportConnect mobile app does not use cookies. Analytics and
+      performance data are collected via Firebase SDKs (Google Analytics for
+      Firebase and Firebase Crashlytics). This data is used solely to improve
+      app reliability and experience, not for advertising purposes. You can
+      disable this at any time in Settings → Privacy.
+    </p>
+
+    <h2>14. Changes to This Policy</h2>
+    <p>
+      We may update this Privacy Policy periodically. We will notify you of any
+      significant changes via push notification or an in-app alert. The "Last
+      updated" date at the top of this page always reflects the most recent
+      version. Continued use of the app after a change constitutes acceptance
+      of the updated policy.
+    </p>
+
+    <h2>15. Contact Us</h2>
+    <p>
+      For any questions about this Privacy Policy, to exercise your rights, or
+      to report a privacy concern:
+    </p>
+    <ul>
+      <li>
+        Email:
+        <a href="mailto:support@sportaxitrip.com">support@sportaxitrip.com</a>
+      </li>
+      <li>
+        Website:
+        <a href="https://sportaxitrip.com" target="_blank">sportaxitrip.com</a>
+      </li>
+    </ul>
+
+    <hr style="margin-top: 48px; border: none; border-top: 1px solid #e0e0e0" />
+    <p style="color: #999; font-size: 0.85rem; text-align: center">
+      © 2026 SportConnect. All rights reserved.
     </p>
   </body>
 </html>

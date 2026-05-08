@@ -1,3 +1,7 @@
+import 'dart:async';
+
+
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -256,7 +260,7 @@ class _PremiumTextFieldState extends State<PremiumTextField>
                     (widget.suffixIcon != null
                         ? GestureDetector(
                             onTap: () {
-                              HapticFeedback.lightImpact();
+                              unawaited(HapticFeedback.lightImpact());
                               widget.onSuffixTap?.call();
                             },
                             child: Container(
@@ -375,7 +379,7 @@ class _PremiumSearchFieldState extends State<PremiumSearchField> {
   }
 
   void _onClear() {
-    HapticFeedback.lightImpact();
+    unawaited(HapticFeedback.lightImpact());
     _controller.clear();
     widget.onClear?.call();
     widget.onChanged?.call('');
@@ -460,7 +464,7 @@ class _PremiumSearchFieldState extends State<PremiumSearchField> {
             Container(width: 1.w, height: 24.h, color: AppColors.border),
             GestureDetector(
               onTap: () {
-                HapticFeedback.lightImpact();
+                unawaited(HapticFeedback.lightImpact());
                 widget.onFilterTap?.call();
               },
               child: Container(
@@ -558,7 +562,7 @@ class _PremiumPinFieldState extends State<PremiumPinField> {
       widget.onChanged?.call(text);
       if (text.length == widget.length) {
         widget.onCompleted?.call(text);
-        HapticFeedback.heavyImpact();
+        unawaited(HapticFeedback.heavyImpact());
       }
     }
   }

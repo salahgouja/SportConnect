@@ -16,11 +16,8 @@ class SettingsState {
     this.showLocation = true,
     this.publicProfile = true,
     this.analyticsEnabled = true,
-    this.mapStyle = 'standard',
     this.driverAllowInstantBooking = true,
-    this.driverMaxDistance = 25.0,
     this.driverShowOnMap = true,
-    this.driverNavigationApp = 'In-App',
     this.notificationDialogShown = false,
   });
 
@@ -34,11 +31,8 @@ class SettingsState {
       showLocation: repository.showLocation,
       publicProfile: repository.publicProfile,
       analyticsEnabled: repository.analyticsEnabled,
-      mapStyle: repository.mapStyle,
       driverAllowInstantBooking: repository.driverAllowInstantBooking,
-      driverMaxDistance: repository.driverMaxDistance,
       driverShowOnMap: repository.driverShowOnMap,
-      driverNavigationApp: repository.driverNavigationApp,
       notificationDialogShown: repository.notificationDialogShown,
     );
   }
@@ -54,12 +48,9 @@ class SettingsState {
   final bool publicProfile;
 
   final bool analyticsEnabled;
-  final String mapStyle;
 
   final bool driverAllowInstantBooking;
-  final double driverMaxDistance;
   final bool driverShowOnMap;
-  final String driverNavigationApp;
 
   final bool notificationDialogShown;
 
@@ -72,11 +63,8 @@ class SettingsState {
     bool? showLocation,
     bool? publicProfile,
     bool? analyticsEnabled,
-    String? mapStyle,
     bool? driverAllowInstantBooking,
-    double? driverMaxDistance,
     bool? driverShowOnMap,
-    String? driverNavigationApp,
     bool? notificationDialogShown,
   }) {
     return SettingsState(
@@ -90,12 +78,9 @@ class SettingsState {
       showLocation: showLocation ?? this.showLocation,
       publicProfile: publicProfile ?? this.publicProfile,
       analyticsEnabled: analyticsEnabled ?? this.analyticsEnabled,
-      mapStyle: mapStyle ?? this.mapStyle,
       driverAllowInstantBooking:
           driverAllowInstantBooking ?? this.driverAllowInstantBooking,
-      driverMaxDistance: driverMaxDistance ?? this.driverMaxDistance,
       driverShowOnMap: driverShowOnMap ?? this.driverShowOnMap,
-      driverNavigationApp: driverNavigationApp ?? this.driverNavigationApp,
       notificationDialogShown:
           notificationDialogShown ?? this.notificationDialogShown,
     );
@@ -182,14 +167,6 @@ class SettingsViewModel extends _$SettingsViewModel {
     state = state.copyWith(analyticsEnabled: value);
   }
 
-  Future<void> setMapStyle(String style) async {
-    final value = await _repository.setMapStyle(style);
-
-    if (!ref.mounted) return;
-
-    state = state.copyWith(mapStyle: value);
-  }
-
   Future<void> setDriverAllowInstantBooking(bool value) async {
     final updatedValue = await _repository.setDriverAllowInstantBooking(value);
 
@@ -198,28 +175,12 @@ class SettingsViewModel extends _$SettingsViewModel {
     state = state.copyWith(driverAllowInstantBooking: updatedValue);
   }
 
-  Future<void> setDriverMaxDistance(double value) async {
-    final updatedValue = await _repository.setDriverMaxDistance(value);
-
-    if (!ref.mounted) return;
-
-    state = state.copyWith(driverMaxDistance: updatedValue);
-  }
-
   Future<void> setDriverShowOnMap(bool value) async {
     final updatedValue = await _repository.setDriverShowOnMap(value);
 
     if (!ref.mounted) return;
 
     state = state.copyWith(driverShowOnMap: updatedValue);
-  }
-
-  Future<void> setDriverNavigationApp(String value) async {
-    final updatedValue = await _repository.setDriverNavigationApp(value);
-
-    if (!ref.mounted) return;
-
-    state = state.copyWith(driverNavigationApp: updatedValue);
   }
 
   Future<void> setNotificationDialogShown({bool value = true}) async {

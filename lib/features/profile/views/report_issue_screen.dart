@@ -1,7 +1,8 @@
+import 'dart:async';
 import 'dart:io';
 
-import 'package:flutter/material.dart';
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -54,23 +55,23 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
     final l10n = AppLocalizations.of(context);
     final source = await AppModalSheet.show<ImageSource>(
       context: context,
-      title: 'Attach evidence',
+      title: l10n.attach_evidence,
       maxHeightFactor: 0.45,
       child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AdaptiveListTile(
-              leading: const Icon(Icons.photo_library_rounded),
-              title: Text(l10n.chooseFromGallery),
-              onTap: () => Navigator.pop(context, ImageSource.gallery),
-            ),
-            AdaptiveListTile(
-              leading: const Icon(Icons.camera_alt_rounded),
-              title: Text(l10n.takeAPhoto),
-              onTap: () => Navigator.pop(context, ImageSource.camera),
-            ),
-          ],
-        ),
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AdaptiveListTile(
+            leading: const Icon(Icons.photo_library_rounded),
+            title: Text(l10n.chooseFromGallery),
+            onTap: () => Navigator.pop(context, ImageSource.gallery),
+          ),
+          AdaptiveListTile(
+            leading: const Icon(Icons.camera_alt_rounded),
+            title: Text(l10n.takeAPhoto),
+            onTap: () => Navigator.pop(context, ImageSource.camera),
+          ),
+        ],
+      ),
     );
 
     if (source == null) return;
@@ -78,10 +79,7 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
 
     final accepted = await PermissionDialogHelper.showCameraRationale(
       context,
-      customMessage:
-          'Access to your ${source == ImageSource.camera ? 'camera' : 'photo library'} '
-          'is needed to attach screenshots or photos to your '
-          'issue report.',
+      customMessage: l10n.permissionCameraPhotosMessage,
     );
     if (!accepted) return;
 
@@ -132,7 +130,7 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
       }
 
       if (next.isSubmitted && previous?.isSubmitted != true) {
-        HapticFeedback.mediumImpact();
+        unawaited(HapticFeedback.mediumImpact());
       }
     });
 
@@ -247,7 +245,7 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
             return Expanded(
               child: GestureDetector(
                 onTap: () {
-                  HapticFeedback.selectionClick();
+                  unawaited(HapticFeedback.selectionClick());
                   ref.read(_reportFormProvider.notifier).setSeverity(sev.name);
                 },
                 child: AnimatedContainer(
@@ -471,7 +469,7 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
   Widget _buildTypeChip(_ReportType type, bool isSelected) {
     return GestureDetector(
       onTap: () {
-        HapticFeedback.selectionClick();
+        unawaited(HapticFeedback.selectionClick());
         ref.read(_reportFormProvider.notifier).selectType(type.label);
       },
       child: AnimatedContainer(

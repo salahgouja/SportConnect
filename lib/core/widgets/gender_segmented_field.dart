@@ -1,8 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:reactive_forms/reactive_forms.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+
+abstract final class _GenderValue {
+  static const male = 'Male';
+  static const female = 'Female';
+}
 
 class GenderSegmentedField extends StatelessWidget {
   const GenderSegmentedField({
@@ -30,6 +37,14 @@ class GenderSegmentedField extends StatelessWidget {
         final showError = field.control.touched && field.control.invalid;
         final errorText = showError ? field.errorText : null;
 
+        void selectGender(String nextValue) {
+          if (value == nextValue) return;
+
+          unawaited(HapticFeedback.selectionClick());
+          field.didChange(nextValue);
+          field.control.markAsTouched();
+        }
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -55,12 +70,8 @@ class GenderSegmentedField extends StatelessWidget {
                     child: _GenderSegmentButton(
                       label: maleLabel,
                       icon: Icons.male_rounded,
-                      selected: value == 'Male',
-                      onTap: () {
-                        HapticFeedback.selectionClick();
-                        field.didChange('Male');
-                        field.control.markAsTouched();
-                      },
+                      selected: value == _GenderValue.male,
+                      onTap: () => selectGender(_GenderValue.male),
                     ),
                   ),
                   SizedBox(width: 4.w),
@@ -68,12 +79,8 @@ class GenderSegmentedField extends StatelessWidget {
                     child: _GenderSegmentButton(
                       label: femaleLabel,
                       icon: Icons.female_rounded,
-                      selected: value == 'Female',
-                      onTap: () {
-                        HapticFeedback.selectionClick();
-                        field.didChange('Female');
-                        field.control.markAsTouched();
-                      },
+                      selected: value == _GenderValue.female,
+                      onTap: () => selectGender(_GenderValue.female),
                     ),
                   ),
                 ],
@@ -102,53 +109,59 @@ class _GenderSegmentButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 160),
-      curve: Curves.easeOutCubic,
-      decoration: BoxDecoration(
-        color: selected ? AppColors.surface : Colors.transparent,
-        borderRadius: BorderRadius.circular(11.r),
-        boxShadow: selected
-            ? [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.06),
-                  blurRadius: 10,
-                  offset: Offset(0, 4.h),
-                ),
-              ]
-            : null,
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
+    return Semantics(
+      button: true,
+      selected: selected,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        curve: Curves.easeOutCubic,
+        decoration: BoxDecoration(
+          color: selected ? AppColors.surface : Colors.transparent,
           borderRadius: BorderRadius.circular(11.r),
-          onTap: onTap,
-          child: Padding(
-            padding: EdgeInsets.symmetric(vertical: 11.h),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  icon,
-                  size: 18.sp,
-                  color: selected ? AppColors.primary : AppColors.textSecondary,
-                ),
-                SizedBox(width: 6.w),
-                Flexible(
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w700,
-                      color: selected
-                          ? AppColors.textPrimary
-                          : AppColors.textSecondary,
+          boxShadow: selected
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 10,
+                    offset: Offset(0, 4.h),
+                  ),
+                ]
+              : null,
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(11.r),
+            onTap: onTap,
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 11.h),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    icon,
+                    size: 18.sp,
+                    color: selected
+                        ? AppColors.primary
+                        : AppColors.textSecondary,
+                  ),
+                  SizedBox(width: 6.w),
+                  Flexible(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w700,
+                        color: selected
+                            ? AppColors.textPrimary
+                            : AppColors.textSecondary,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -186,15 +199,17 @@ class _FieldErrorText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final errorText = text;
+
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 160),
-      child: text == null
+      child: errorText == null
           ? const SizedBox.shrink()
           : Padding(
-              key: ValueKey(text),
+              key: ValueKey(errorText),
               padding: EdgeInsets.only(top: 6.h, left: 2.w),
               child: Text(
-                text!,
+                errorText,
                 style: TextStyle(
                   fontSize: 11.5.sp,
                   fontWeight: FontWeight.w500,

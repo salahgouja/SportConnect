@@ -40,18 +40,15 @@ class OnboardingViewModel extends _$OnboardingViewModel {
     return const OnboardingState();
   }
 
-  /// Get all onboarding pages
-  List<OnboardingPage> get pages => onboardingPages;
-
   /// Set current page index
   void setPageIndex(int index) {
-    final isLast = index == pages.length - 1;
+    final isLast = index == onboardingPageCount - 1;
     state = state.copyWith(currentPageIndex: index, isLastPage: isLast);
   }
 
   /// Go to next page
   void nextPage() {
-    if (state.currentPageIndex < pages.length - 1) {
+    if (state.currentPageIndex < onboardingPageCount - 1) {
       setPageIndex(state.currentPageIndex + 1);
     }
   }
@@ -65,7 +62,7 @@ class OnboardingViewModel extends _$OnboardingViewModel {
 
   /// Skip to last page
   void skipToEnd() {
-    setPageIndex(pages.length - 1);
+    setPageIndex(onboardingPageCount - 1);
   }
 
   /// Complete onboarding
@@ -88,7 +85,7 @@ class OnboardingViewModel extends _$OnboardingViewModel {
       if (!ref.mounted) return false;
       state = state.copyWith(
         isCompleting: false,
-        errorMessage: 'Failed to save progress: $e',
+        errorMessage: e.toString(),
       );
       return false;
     }

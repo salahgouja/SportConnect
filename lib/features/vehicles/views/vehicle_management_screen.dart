@@ -285,6 +285,7 @@ class _StatsHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Container(
       padding: EdgeInsets.fromLTRB(20.w, 22.h, 20.w, 18.h),
       decoration: BoxDecoration(
@@ -322,7 +323,7 @@ class _StatsHero extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Your Fleet',
+                      l10n.yourFleet,
                       style: TextStyle(
                         fontSize: 12.sp,
                         fontWeight: FontWeight.w600,
@@ -331,7 +332,7 @@ class _StatsHero extends StatelessWidget {
                     ),
                     SizedBox(height: 2.h),
                     Text(
-                      activeName ?? 'No active vehicle',
+                      activeName ?? l10n.noActiveVehicle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -351,7 +352,7 @@ class _StatsHero extends StatelessWidget {
               Expanded(
                 child: _HeroStat(
                   value: '$total',
-                  label: total == 1 ? 'Vehicle' : 'Vehicles',
+                  label: total == 1 ? l10n.vehicle : l10n.vehicles,
                 ),
               ),
               Container(
@@ -362,7 +363,7 @@ class _StatsHero extends StatelessWidget {
               Expanded(
                 child: _HeroStat(
                   value: '$verified',
-                  label: 'Verified',
+                  label: l10n.verified,
                 ),
               ),
               Container(
@@ -373,7 +374,7 @@ class _StatsHero extends StatelessWidget {
               Expanded(
                 child: _HeroStat(
                   value: activeName == null ? '—' : '1',
-                  label: 'Active',
+                  label: l10n.active,
                 ),
               ),
             ],
@@ -412,6 +413,23 @@ class _HeroStat extends StatelessWidget {
         ),
       ],
     );
+  }
+}
+
+String _vehicleValidationMessage(AppLocalizations l10n, String raw) {
+  switch (raw) {
+    case 'Invalid year':
+      return l10n.invalid_year;
+    case 'Vehicle too old':
+      return l10n.vehicle_is_too_old;
+    case 'License plate too short':
+      return l10n.license_plate_is_too_short;
+    case 'License plate too long':
+      return l10n.license_plate_is_too_long;
+    case 'Invalid characters':
+      return l10n.invalid_license_plate_format;
+    default:
+      return raw;
   }
 }
 
@@ -464,7 +482,9 @@ class _AddVehicleBanner extends StatelessWidget {
                     ),
                     SizedBox(height: 2.h),
                     Text(
-                      'Register a new car for carpool rides',
+                      AppLocalizations.of(
+                        context,
+                      ).register_a_new_car_for_carpool_rides,
                       style: TextStyle(
                         fontSize: 12.sp,
                         color: AppColors.textSecondary,
@@ -927,7 +947,7 @@ class _ActiveBadge extends StatelessWidget {
           Icon(Icons.bolt_rounded, color: Colors.white, size: 13.sp),
           SizedBox(width: 4.w),
           Text(
-            'In Use',
+            AppLocalizations.of(context).in_use,
             style: TextStyle(
               fontSize: 11.sp,
               fontWeight: FontWeight.w700,
@@ -1286,9 +1306,9 @@ class _VehicleFormSheetState extends ConsumerState<_VehicleFormSheet> {
                   ),
                   SizedBox(height: 20.h),
 
-                  const _FormSectionHeader(
+                  _FormSectionHeader(
                     icon: Icons.info_outline_rounded,
-                    title: 'Vehicle details',
+                    title: l10n.vehicle_details,
                   ),
                   SizedBox(height: 12.h),
                   _FormCard(
@@ -1296,14 +1316,14 @@ class _VehicleFormSheetState extends ConsumerState<_VehicleFormSheet> {
                       _formField(
                         name: 'make',
                         label: l10n.make,
-                        hint: 'e.g., Toyota',
+                        hint: l10n.vehicleMakeHint,
                         icon: Icons.business_rounded,
                       ),
                       SizedBox(height: 14.h),
                       _formField(
                         name: 'model',
                         label: l10n.model,
-                        hint: 'e.g., Camry',
+                        hint: l10n.vehicleModelHint,
                         icon: Icons.directions_car_rounded,
                       ),
                       SizedBox(height: 14.h),
@@ -1313,13 +1333,16 @@ class _VehicleFormSheetState extends ConsumerState<_VehicleFormSheet> {
                             child: _formField(
                               name: 'year',
                               label: l10n.year,
-                              hint: 'e.g., 2022',
+                              hint: l10n.vehicleYearHint,
                               icon: Icons.calendar_today_rounded,
                               keyboardType: TextInputType.number,
                               validationMessages: {
                                 ValidationMessage.required: (_) =>
                                     l10n.pleaseEnterValue(l10n.year),
-                                'vehicleYear': (e) => e as String,
+                                'vehicleYear': (e) => _vehicleValidationMessage(
+                                  l10n,
+                                  e as String,
+                                ),
                               },
                             ),
                           ),
@@ -1328,7 +1351,7 @@ class _VehicleFormSheetState extends ConsumerState<_VehicleFormSheet> {
                             child: _formField(
                               name: 'color',
                               label: l10n.color,
-                              hint: 'e.g., Silver',
+                              hint: l10n.vehicleColorHint,
                               icon: Icons.palette_rounded,
                             ),
                           ),
@@ -1338,13 +1361,14 @@ class _VehicleFormSheetState extends ConsumerState<_VehicleFormSheet> {
                       _formField(
                         name: 'license_plate',
                         label: l10n.licensePlate,
-                        hint: 'e.g., ABC 1234',
+                        hint: l10n.licensePlateHint,
                         icon: Icons.confirmation_number_rounded,
                         textCapitalization: TextCapitalization.characters,
                         validationMessages: {
                           ValidationMessage.required: (_) =>
                               l10n.pleaseEnterValue(l10n.licensePlate),
-                          'licensePlate': (e) => e as String,
+                          'licensePlate': (e) =>
+                              _vehicleValidationMessage(l10n, e as String),
                         },
                       ),
                     ],
@@ -1519,6 +1543,7 @@ class _ImagePickerHero extends StatelessWidget {
   }
 
   Widget _placeholder(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -1546,7 +1571,7 @@ class _ImagePickerHero extends StatelessWidget {
           ),
           SizedBox(height: 2.h),
           Text(
-            'Riders see this photo before booking',
+            l10n.riders_see_this_photo_before_booking,
             style: TextStyle(
               fontSize: 11.sp,
               color: AppColors.textSecondary,
@@ -1966,7 +1991,9 @@ class _DetailsHero extends StatelessWidget {
             alignment: WrapAlignment.center,
             children: [
               _heroChip(
-                vehicle.isActive ? 'Active' : 'Inactive',
+                vehicle.isActive
+                    ? AppLocalizations.of(context).active
+                    : AppLocalizations.of(context).inactive,
                 vehicle.isActive,
               ),
               _heroChip(

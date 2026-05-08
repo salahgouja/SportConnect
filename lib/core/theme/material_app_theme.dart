@@ -46,7 +46,6 @@ class AppMaterialTheme {
   static ColorScheme get _lightColorScheme => ColorScheme.light(
     primary: AppColors.primary,
     primaryContainer: AppColors.primaryLight,
-    onPrimary: AppColors.textOnPrimary,
     onPrimaryContainer: AppColors.primary,
     secondary: AppColors.secondary,
     secondaryContainer: AppColors.secondaryLight,
@@ -58,9 +57,7 @@ class AppMaterialTheme {
     onTertiaryContainer: AppColors.accent,
     error: AppColors.error,
     errorContainer: AppColors.errorLight,
-    onError: Colors.white,
     onErrorContainer: AppColors.error,
-    surface: AppColors.surface,
     onSurface: AppColors.textPrimary,
     onSurfaceVariant: AppColors.textSecondary,
     outline: AppColors.border,
@@ -140,7 +137,7 @@ class AppMaterialTheme {
       displayMedium: base.displayMedium?.copyWith(
         fontSize: 32.sp,
         fontWeight: FontWeight.w700,
-        letterSpacing: -1.0,
+        letterSpacing: -1,
         height: 1.16,
         color: primary,
       ),
@@ -266,7 +263,7 @@ class AppMaterialTheme {
         overlayColor: WidgetStateProperty.all(
           Colors.white.withValues(alpha: 0.10),
         ),
-        elevation: WidgetStateProperty.all(0.0),
+        elevation: WidgetStateProperty.all(0),
         padding: WidgetStateProperty.all(
           EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
         ),
@@ -550,22 +547,20 @@ class AppMaterialTheme {
   // ═══════════════════════════════════════════════════════════════════════════
 
   static ThemeData _build({required ColorScheme cs, required TextTheme tt}) {
-    final bool isDark = cs.brightness == Brightness.dark;
+    final isDark = cs.brightness == Brightness.dark;
 
-    final Color textPrimary = isDark
+    final textPrimary = isDark
         ? AppColors.textPrimaryDark
         : AppColors.textPrimary;
-    final Color textSecondary = isDark
+    final textSecondary = isDark
         ? AppColors.textSecondaryDark
         : AppColors.textSecondary;
-    final Color textTertiary = isDark
+    final textTertiary = isDark
         ? AppColors.textTertiaryDark
         : AppColors.textTertiary;
-    final Color surfaceBg = isDark ? AppColors.surfaceDark : AppColors.surface;
-    final Color borderColor = isDark ? AppColors.borderDark : AppColors.border;
-    final Color dividerColor = isDark
-        ? AppColors.dividerDark
-        : AppColors.divider;
+    final surfaceBg = isDark ? AppColors.surfaceDark : AppColors.surface;
+    final borderColor = isDark ? AppColors.borderDark : AppColors.border;
+    final dividerColor = isDark ? AppColors.dividerDark : AppColors.divider;
 
     return ThemeData(
       useMaterial3: true,

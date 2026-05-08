@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
@@ -135,7 +136,7 @@ class PaymentHistoryScreen extends ConsumerWidget {
                           ],
                         );
                       },
-                      loading: () => _buildLoadingSliver(),
+                      loading: _buildLoadingSliver,
                       error: (error, stack) => SliverFillRemaining(
                         child: _buildErrorState(context, ref, userId, error),
                       ),
@@ -225,8 +226,8 @@ class PaymentHistoryScreen extends ConsumerWidget {
   }
 
   Widget _buildLoadingSliver() {
-    return SliverToBoxAdapter(
-      child: const SkeletonLoader(type: SkeletonType.rideCard, itemCount: 5),
+    return const SliverToBoxAdapter(
+      child: SkeletonLoader(itemCount: 5),
     );
   }
 
@@ -291,7 +292,7 @@ class PaymentHistoryScreen extends ConsumerWidget {
       margin: EdgeInsets.fromLTRB(16.w, 4.h, 16.w, 8.h),
       padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
+        gradient: const LinearGradient(
           colors: [AppColors.primary, AppColors.primaryDark],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -454,7 +455,7 @@ class PaymentHistoryScreen extends ConsumerWidget {
       key: ValueKey('payment_${payment.id}_$index'),
       direction: DismissDirection.endToStart,
       confirmDismiss: (_) async {
-        HapticFeedback.mediumImpact();
+        unawaited(HapticFeedback.mediumImpact());
         _showPaymentDetails(context, ref, payment);
         return false;
       },
@@ -683,7 +684,6 @@ class PaymentHistoryScreen extends ConsumerWidget {
     AppModalSheet.show<void>(
       context: context,
       title: AppLocalizations.of(context).paymentDetails,
-      maxHeightFactor: 0.90,
       child: SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 32.h),
         child: Column(
@@ -958,7 +958,7 @@ class PaymentHistoryScreen extends ConsumerWidget {
   }
 
   Widget _buildDivider() {
-    return Divider(
+    return const Divider(
       height: 1,
       thickness: 1,
       color: AppColors.divider,

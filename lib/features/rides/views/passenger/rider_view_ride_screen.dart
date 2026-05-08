@@ -1,3 +1,7 @@
+import 'dart:async';
+
+
+
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -145,7 +149,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
       appBar: AdaptiveAppBar(
         title: AppLocalizations.of(context).rideDetails,
       ),
-      body: const SkeletonLoader(type: SkeletonType.rideCard, itemCount: 5),
+      body: const SkeletonLoader(itemCount: 5),
     );
   }
 
@@ -1375,7 +1379,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
                           ride.remainingSeats,
                           (i) => GestureDetector(
                             onTap: () {
-                              HapticFeedback.selectionClick();
+                              unawaited(HapticFeedback.selectionClick());
                               ref
                                   .read(
                                     riderViewRideUiViewModelProvider(
@@ -1482,7 +1486,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
   // === Actions ===
 
   Future<void> _shareRide(RideModel ride) async {
-    HapticFeedback.lightImpact();
+    unawaited(HapticFeedback.lightImpact());
     final l10n = AppLocalizations.of(context);
 
     try {
@@ -1528,7 +1532,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
   }
 
   Future<void> _openChat(RideModel ride) async {
-    HapticFeedback.lightImpact();
+    unawaited(HapticFeedback.lightImpact());
 
     final currentUser = ref.read(currentUserProvider).value;
     if (currentUser == null) return;
@@ -1596,7 +1600,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
   }
 
   Future<void> _bookRide(RideModel ride) async {
-    HapticFeedback.mediumImpact();
+    unawaited(HapticFeedback.mediumImpact());
 
     try {
       final currentUser = ref.read(currentUserProvider).value;

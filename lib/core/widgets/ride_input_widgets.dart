@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 // ─── Seats Stepper Widget ─────────────────────────────────────────────────────
 
@@ -35,6 +38,7 @@ class SeatsStepper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final accent = accentColor ?? AppColors.primary;
+    final l10n = AppLocalizations.of(context);
     final canDecrement = enabled && value > min;
     final canIncrement = enabled && value < max;
 
@@ -68,13 +72,13 @@ class SeatsStepper extends StatelessWidget {
                 enabled: canDecrement,
                 accent: accent,
                 onTap: () {
-                  HapticFeedback.lightImpact();
+                  unawaited(HapticFeedback.lightImpact());
                   onChanged?.call(value - 1);
                 },
               ),
               SizedBox(width: 16.w),
               Semantics(
-                label: '$value seats',
+                label: '$value ${l10n.seats}',
                 child: AnimatedSwitcher(
                   duration: 200.ms,
                   transitionBuilder: (child, anim) =>
@@ -107,7 +111,7 @@ class SeatsStepper extends StatelessWidget {
                 enabled: canIncrement,
                 accent: accent,
                 onTap: () {
-                  HapticFeedback.lightImpact();
+                  unawaited(HapticFeedback.lightImpact());
                   onChanged?.call(value + 1);
                 },
               ),
@@ -118,7 +122,9 @@ class SeatsStepper extends StatelessWidget {
         Padding(
           padding: EdgeInsets.only(top: 4.h, left: 4.w),
           child: Text(
-            value == max ? 'Maximum seats' : '${max - value} more available',
+            value == max
+                ? l10n.maximumSeats
+                : '${max - value} ${l10n.seatsLeft}',
             style: TextStyle(fontSize: 11.sp, color: AppColors.textTertiary),
           ),
         ),
@@ -252,7 +258,7 @@ class PriceInputState extends State<PriceInput> {
 
   void _applySuggestion() {
     if (widget.suggestedPrice == null) return;
-    HapticFeedback.lightImpact();
+    unawaited(HapticFeedback.lightImpact());
     _controller.text = widget.suggestedPrice!.toStringAsFixed(2);
     widget.onChanged?.call(widget.suggestedPrice);
     validate();
@@ -263,6 +269,7 @@ class PriceInputState extends State<PriceInput> {
     final accent = widget.accentColor ?? AppColors.primary;
     final fill = accent.withValues(alpha: 0.06);
     final hasError = _errorText != null;
+    final l10n = AppLocalizations.of(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -270,7 +277,7 @@ class PriceInputState extends State<PriceInput> {
       children: [
         if (widget.label != null) ...[
           Text(
-            widget.label!,
+            widget.label ?? l10n.priceSummaryLabel,
             style: TextStyle(
               fontSize: 13.sp,
               fontWeight: FontWeight.w600,
@@ -310,7 +317,7 @@ class PriceInputState extends State<PriceInput> {
               ),
               Expanded(
                 child: Semantics(
-                  label: widget.label ?? 'Price',
+                  label: widget.label ?? l10n.priceSummaryLabel,
                   child: TextField(
                     controller: _controller,
                     focusNode: _focusNode,
@@ -375,7 +382,9 @@ class PriceInputState extends State<PriceInput> {
                     Icon(Icons.auto_awesome, size: 14.sp, color: Colors.green),
                     SizedBox(width: 6.w),
                     Text(
-                      'Suggested: €${widget.suggestedPrice!.toStringAsFixed(2)}',
+                      l10n.suggestedPriceValue(
+                        widget.suggestedPrice!.toStringAsFixed(2),
+                      ),
                       style: TextStyle(
                         fontSize: 12.sp,
                         fontWeight: FontWeight.w600,
@@ -384,7 +393,7 @@ class PriceInputState extends State<PriceInput> {
                     ),
                     SizedBox(width: 4.w),
                     Text(
-                      'Tap to apply',
+                      l10n.tap_to_apply,
                       style: TextStyle(
                         fontSize: 11.sp,
                         color: Colors.green.shade400,
@@ -431,6 +440,7 @@ class DateTimePickerField extends StatelessWidget {
   Widget build(BuildContext context) {
     final accent = accentColor ?? AppColors.primary;
     final hasError = error != null;
+    final l10n = AppLocalizations.of(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -453,8 +463,8 @@ class DateTimePickerField extends StatelessWidget {
               child: _DateTimeChip(
                 icon: Icons.calendar_today_rounded,
                 text: selectedDate != null
-                    ? _formatDate(selectedDate!)
-                    : 'Select date',
+                    ? _formatDate(context, selectedDate!)
+                    : l10n.selectDatePlaceholder,
                 accent: accent,
                 hasError: hasError,
                 onTap: () => _pickDate(context, accent),
@@ -466,7 +476,7 @@ class DateTimePickerField extends StatelessWidget {
                 icon: Icons.access_time_rounded,
                 text: selectedTime != null
                     ? selectedTime!.format(context)
-                    : 'Select time',
+                    : l10n.selectTimePlaceholder,
                 accent: accent,
                 hasError: hasError,
                 onTap: () => _pickTime(context, accent),
@@ -486,18 +496,19 @@ class DateTimePickerField extends StatelessWidget {
     );
   }
 
-  String _formatDate(DateTime date) {
+  String _formatDate(BuildContext context, DateTime date) {
+    final l10n = AppLocalizations.of(context);
     final now = DateTime.now();
     final tomorrow = DateTime(now.year, now.month, now.day + 1);
     if (date.year == now.year &&
         date.month == now.month &&
         date.day == now.day) {
-      return 'Today';
+      return l10n.today;
     }
     if (date.year == tomorrow.year &&
         date.month == tomorrow.month &&
         date.day == tomorrow.day) {
-      return 'Tomorrow';
+      return l10n.tomorrow;
     }
     return '${date.day}/${date.month}/${date.year}';
   }
@@ -576,7 +587,15 @@ class _DateTimeChip extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 13.sp,
                     fontWeight: FontWeight.w500,
-                    color: text.startsWith('Select')
+                    color:
+                        text ==
+                                AppLocalizations.of(
+                                  context,
+                                ).selectDatePlaceholder ||
+                            text ==
+                                AppLocalizations.of(
+                                  context,
+                                ).selectTimePlaceholder
                         ? AppColors.textTertiary
                         : AppColors.textPrimary,
                   ),
@@ -622,7 +641,7 @@ class PreferenceToggle extends StatelessWidget {
       child: GestureDetector(
         onTap: enabled
             ? () {
-                HapticFeedback.lightImpact();
+                unawaited(HapticFeedback.lightImpact());
                 onChanged?.call(!value);
               }
             : null,

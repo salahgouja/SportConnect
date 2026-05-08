@@ -8,6 +8,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
@@ -15,7 +16,6 @@ import 'package:sport_connect/core/theme/platform_adaptive.dart';
 import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/core/widgets/skeleton_loader.dart';
-import 'package:sport_connect/features/auth/models/models.dart';
 import 'package:sport_connect/features/messaging/view_models/chat_view_model.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
@@ -50,9 +50,7 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen> {
       ),
       body: AdaptiveTabBarView(
         tabs: [
-          pendingCount > 0
-              ? '${AppLocalizations.of(context).pending} ($pendingCount)'
-              : AppLocalizations.of(context).pending,
+          if (pendingCount > 0) '${AppLocalizations.of(context).pending} ($pendingCount)' else AppLocalizations.of(context).pending,
           AppLocalizations.of(context).accepted,
           AppLocalizations.of(context).declined,
         ],
@@ -110,7 +108,7 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen> {
             return Dismissible(
               key: ValueKey('booking_${booking.id}_$index'),
               confirmDismiss: (direction) async {
-                HapticFeedback.mediumImpact();
+                unawaited(HapticFeedback.mediumImpact());
                 if (direction == DismissDirection.startToEnd) {
                   _handleAccept(booking);
                 } else {
@@ -186,7 +184,7 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen> {
         );
       },
       loading: () =>
-          const SkeletonLoader(type: SkeletonType.rideCard, itemCount: 4),
+          const SkeletonLoader(),
       error: (_, _) => Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -262,7 +260,7 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen> {
         );
       },
       loading: () =>
-          const SkeletonLoader(type: SkeletonType.rideCard, itemCount: 4),
+          const SkeletonLoader(),
       error: (_, _) => Center(
         child: Icon(Icons.error_outline, size: 64.sp, color: AppColors.error),
       ),
@@ -312,7 +310,7 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen> {
         );
       },
       loading: () =>
-          const SkeletonLoader(type: SkeletonType.rideCard, itemCount: 4),
+          const SkeletonLoader(),
       error: (_, _) => Center(
         child: Icon(Icons.error_outline, size: 64.sp, color: AppColors.error),
       ),
@@ -376,7 +374,7 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen> {
   }
 
   void _handleAccept(RideBooking booking) {
-    HapticFeedback.heavyImpact();
+    unawaited(HapticFeedback.heavyImpact());
     final scaffoldContext = context;
     final formattedDate = DateFormat(
       'EEE, MMM d',
@@ -438,7 +436,7 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen> {
   }
 
   void _handleDecline(RideBooking booking) {
-    HapticFeedback.lightImpact();
+    unawaited(HapticFeedback.lightImpact());
     final scaffoldContext = context;
     AppModalSheet.show<void>(
       context: scaffoldContext,
@@ -526,7 +524,7 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen> {
           'receiverId': passengerProfile.uid,
           'receiverName': passengerProfile.username,
           if (passengerProfile.photoUrl != null)
-            'receiverPhotoUrl': passengerProfile.photoUrl!,
+            'receiverPhotoUrl': passengerProfile.photoUrl,
         },
         extra: passengerProfile,
       );
@@ -565,8 +563,12 @@ class _PendingBookingCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final profile = ref.watch(userProfileProvider(booking.passengerId).select((a) => a.value));
-    final ride = ref.watch(requestCardRideProvider(booking.rideId).select((a) => a.value));
+    final profile = ref.watch(
+      userProfileProvider(booking.passengerId).select((a) => a.value),
+    );
+    final ride = ref.watch(
+      requestCardRideProvider(booking.rideId).select((a) => a.value),
+    );
     final pickupAddress =
         booking.pickupLocation?.address ?? ride?.origin.address ?? '—';
     final dropoffAddress =
@@ -869,7 +871,9 @@ class _PendingBookingCard extends ConsumerWidget {
                           Icons.chat_bubble_outline_rounded,
                           size: 18.sp,
                         ),
-                        label: const Text('Message passenger'),
+                        label: Text(
+                          AppLocalizations.of(context).messagePassenger,
+                        ),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.primary,
                           side: BorderSide(
@@ -945,8 +949,12 @@ class _AcceptedBookingCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final profile = ref.watch(userProfileProvider(booking.passengerId).select((a) => a.value));
-    final ride = ref.watch(requestCardRideProvider(booking.rideId).select((a) => a.value));
+    final profile = ref.watch(
+      userProfileProvider(booking.passengerId).select((a) => a.value),
+    );
+    final ride = ref.watch(
+      requestCardRideProvider(booking.rideId).select((a) => a.value),
+    );
     final pickupAddress =
         booking.pickupLocation?.address ?? ride?.origin.address ?? '—';
     final dropoffAddress =
@@ -1105,9 +1113,15 @@ class _DeclinedBookingCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final passengerName =
-        ref.watch(userProfileProvider(booking.passengerId).select((a) => a.value))?.username ??
+        ref
+            .watch(
+              userProfileProvider(booking.passengerId).select((a) => a.value),
+            )
+            ?.username ??
         '…';
-    final ride = ref.watch(requestCardRideProvider(booking.rideId).select((a) => a.value));
+    final ride = ref.watch(
+      requestCardRideProvider(booking.rideId).select((a) => a.value),
+    );
     final pickupAddress =
         booking.pickupLocation?.address ?? ride?.origin.address ?? '—';
     final dropoffAddress =

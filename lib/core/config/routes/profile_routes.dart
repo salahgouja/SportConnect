@@ -11,16 +11,12 @@ import 'package:sport_connect/features/payments/views/payment_history_screen.dar
 import 'package:sport_connect/features/payments/views/payout_detail_screen.dart';
 import 'package:sport_connect/features/profile/views/about_screen.dart';
 import 'package:sport_connect/features/profile/views/achievements_screen.dart';
-import 'package:sport_connect/features/profile/views/background_check_screen.dart';
 import 'package:sport_connect/features/profile/views/contact_support_screen.dart';
-import 'package:sport_connect/features/profile/views/driver_documents_screen.dart';
 import 'package:sport_connect/features/profile/views/edit_profile_screen.dart';
 import 'package:sport_connect/features/profile/views/help_center_screen.dart';
 import 'package:sport_connect/features/profile/views/profile_screen.dart';
 import 'package:sport_connect/features/profile/views/report_issue_screen.dart';
 import 'package:sport_connect/features/profile/views/settings_screen.dart';
-import 'package:sport_connect/features/profile/views/tax_documents_screen.dart';
-import 'package:sport_connect/features/profile/views/two_factor_auth_screen.dart';
 import 'package:sport_connect/features/profile/views/user_search_screen.dart';
 import 'package:sport_connect/features/vehicles/views/vehicle_management_screen.dart';
 
@@ -185,66 +181,6 @@ class ProfileRoutes {
                   child: ProfileScreen(userId: userId),
                 );
         },
-      ),
-
-      // Driver Documents
-      GoRoute(
-        path: AppRoutes.driverDocuments.path,
-        name: AppRoutes.driverDocuments.name,
-        pageBuilder: (context, state) => PlatformInfo.isIOS
-            ? CupertinoPage(
-                key: state.pageKey,
-                child: const DriverDocumentsScreen(),
-              )
-            : MaterialPage(
-                key: state.pageKey,
-                child: const DriverDocumentsScreen(),
-              ),
-      ),
-
-      // Tax Documents
-      GoRoute(
-        path: AppRoutes.taxDocuments.path,
-        name: AppRoutes.taxDocuments.name,
-        pageBuilder: (context, state) => PlatformInfo.isIOS
-            ? CupertinoPage(
-                key: state.pageKey,
-                child: const TaxDocumentsScreen(),
-              )
-            : MaterialPage(
-                key: state.pageKey,
-                child: const TaxDocumentsScreen(),
-              ),
-      ),
-
-      // Background Check
-      GoRoute(
-        path: AppRoutes.backgroundCheck.path,
-        name: AppRoutes.backgroundCheck.name,
-        pageBuilder: (context, state) => PlatformInfo.isIOS
-            ? CupertinoPage(
-                key: state.pageKey,
-                child: const BackgroundCheckScreen(),
-              )
-            : MaterialPage(
-                key: state.pageKey,
-                child: const BackgroundCheckScreen(),
-              ),
-      ),
-
-      // Two-Factor Authentication
-      GoRoute(
-        path: AppRoutes.twoFactorAuth.path,
-        name: AppRoutes.twoFactorAuth.name,
-        pageBuilder: (context, state) => PlatformInfo.isIOS
-            ? CupertinoPage(
-                key: state.pageKey,
-                child: const TwoFactorAuthScreen(),
-              )
-            : MaterialPage(
-                key: state.pageKey,
-                child: const TwoFactorAuthScreen(),
-              ),
       ),
 
       // NOTE: driverEarnings is defined as a StatefulShellBranch in app_router.dart

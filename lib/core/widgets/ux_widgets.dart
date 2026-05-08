@@ -1,5 +1,7 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
+
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
@@ -96,7 +98,7 @@ class SwipeActionTile extends StatelessWidget {
         label: leftLabel,
       ),
       confirmDismiss: (direction) async {
-        HapticFeedback.mediumImpact();
+        unawaited(HapticFeedback.mediumImpact());
         if (direction == DismissDirection.startToEnd) {
           onSwipeRight?.call();
         } else {
@@ -171,7 +173,7 @@ class ListViewToggle extends StatelessWidget {
           icon: Icons.view_list_rounded,
           isSelected: !isCompact,
           onTap: () {
-            HapticFeedback.selectionClick();
+            unawaited(HapticFeedback.selectionClick());
             onToggle(false);
           },
           tooltip: AppLocalizations.of(context).expandedView,
@@ -181,7 +183,7 @@ class ListViewToggle extends StatelessWidget {
           icon: Icons.view_module_rounded,
           isSelected: isCompact,
           onTap: () {
-            HapticFeedback.selectionClick();
+            unawaited(HapticFeedback.selectionClick());
             onToggle(true);
           },
           tooltip: AppLocalizations.of(context).compactView,

@@ -1,5 +1,7 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
+
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -278,7 +280,7 @@ class _POISearchSheetState extends ConsumerState<POISearchSheet> {
               max: 10000,
               divisions: 19,
               onChanged: (value) {
-                HapticFeedback.selectionClick();
+                unawaited(HapticFeedback.selectionClick());
                 setState(() => _searchRadius = value);
               },
               onChangeEnd: (value) {
@@ -307,7 +309,7 @@ class _POISearchSheetState extends ConsumerState<POISearchSheet> {
 
           return GestureDetector(
                 onTap: () {
-                  HapticFeedback.selectionClick();
+                  unawaited(HapticFeedback.selectionClick());
                   _searchPOI(category.type);
                 },
                 child: AnimatedContainer(
@@ -373,7 +375,6 @@ class _POISearchSheetState extends ConsumerState<POISearchSheet> {
         separatorBuilder: (_, _) => SizedBox(height: 12.h),
         itemBuilder: (context, index) {
           return Skeletonizer(
-            enabled: true,
             containersColor: AppColors.surfaceVariant,
             child: _buildSkeletonCard(),
           );
@@ -491,7 +492,7 @@ class _POISearchSheetState extends ConsumerState<POISearchSheet> {
 
     return GestureDetector(
       onTap: () {
-        HapticFeedback.selectionClick();
+        unawaited(HapticFeedback.selectionClick());
         widget.onPOISelected(poi);
         context.pop();
       },

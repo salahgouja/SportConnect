@@ -18,133 +18,116 @@ import 'package:sport_connect/l10n/generated/app_localizations.dart';
 class HelpCenterScreen extends ConsumerWidget {
   const HelpCenterScreen({super.key});
 
-  static const _faqCategories = [
-    _FAQCategory(
-      title: 'Getting Started',
-      icon: Icons.rocket_launch_rounded,
-      color: Color(0xFF4CAF50),
-      questions: [
-        _FAQ(
-          'How do I create an account?',
-          'Download the app, tap "Sign Up", and follow the wizard. '
-              'You can sign up with email, Google, or Apple ID.',
+  List<_FAQCategory> _faqCategories(AppLocalizations l10n) => [
+        _FAQCategory(
+          title: l10n.getting_started,
+          icon: Icons.rocket_launch_rounded,
+          color: const Color(0xFF4CAF50),
+          questions: [
+            _FAQ(
+              l10n.helpCenterGettingStartedCreateAccountQuestion,
+              l10n.helpCenterGettingStartedCreateAccountAnswer,
+            ),
+            _FAQ(
+              l10n.helpCenterGettingStartedSwitchRoleQuestion,
+              l10n.helpCenterGettingStartedSwitchRoleAnswer,
+            ),
+            _FAQ(
+              l10n.helpCenterGettingStartedFreeQuestion,
+              l10n.helpCenterGettingStartedFreeAnswer,
+            ),
+          ],
         ),
-        _FAQ(
-          'How do I switch between rider and driver?',
-          "Go to Profile → Settings → Switch Role. If you haven't "
-              "registered as a driver yet, you'll need to complete the "
-              'driver onboarding process.',
+        _FAQCategory(
+          title: l10n.rides_booking,
+          icon: Icons.directions_car_rounded,
+          color: const Color(0xFF2196F3),
+          questions: [
+            _FAQ(
+              l10n.helpCenterRidesBookingQuestion,
+              l10n.helpCenterRidesBookingAnswer,
+            ),
+            _FAQ(
+              l10n.helpCenterRidesCancelQuestion,
+              l10n.helpCenterRidesCancelAnswer,
+            ),
+            _FAQ(
+              l10n.helpCenterRidesMatchingQuestion,
+              l10n.helpCenterRidesMatchingAnswer,
+            ),
+            _FAQ(
+              l10n.helpCenterRidesLateQuestion,
+              l10n.helpCenterRidesLateAnswer,
+            ),
+          ],
         ),
-        _FAQ(
-          'Is SportConnect free to use?',
-          'Creating an account is free. Riders pay per ride booked. '
-              'Drivers earn money by offering rides minus a small service fee.',
+        _FAQCategory(
+          title: l10n.payments,
+          icon: Icons.payment_rounded,
+          color: const Color(0xFFFF9800),
+          questions: [
+            _FAQ(
+              l10n.helpCenterPaymentsQuestion,
+              l10n.helpCenterPaymentsAnswer,
+            ),
+            _FAQ(
+              l10n.helpCenterPayoutsQuestion,
+              l10n.helpCenterPayoutsAnswer,
+            ),
+            _FAQ(
+              l10n.helpCenterFeesQuestion,
+              l10n.helpCenterFeesAnswer,
+            ),
+          ],
         ),
-      ],
-    ),
-    _FAQCategory(
-      title: 'Rides & Booking',
-      icon: Icons.directions_car_rounded,
-      color: Color(0xFF2196F3),
-      questions: [
-        _FAQ(
-          'How do I book a ride?',
-          'Search for rides from the Explore tab, select a ride that '
-              'matches your route, review the details, and tap "Book Ride".',
+        _FAQCategory(
+          title: l10n.safety_trust,
+          icon: Icons.shield_rounded,
+          color: const Color(0xFFF44336),
+          questions: [
+            _FAQ(
+              l10n.helpCenterSafetyQuestion,
+              l10n.helpCenterSafetyAnswer,
+            ),
+            _FAQ(
+              l10n.helpCenterSafetyReportQuestion,
+              l10n.helpCenterSafetyReportAnswer,
+            ),
+            _FAQ(
+              l10n.helpCenterSafetyShareQuestion,
+              l10n.helpCenterSafetyShareAnswer,
+            ),
+          ],
         ),
-        _FAQ(
-          'Can I cancel a booked ride?',
-          'Yes, go to Activity → select the ride → Cancel. Please note '
-              'that frequent cancellations may affect your rating.',
+        _FAQCategory(
+          title: l10n.account_profile,
+          icon: Icons.person_rounded,
+          color: const Color(0xFF9C27B0),
+          questions: [
+            _FAQ(
+              l10n.helpCenterAccountVerifyQuestion,
+              l10n.helpCenterAccountVerifyAnswer,
+            ),
+            _FAQ(
+              l10n.helpCenterAccountDeleteQuestion,
+              l10n.helpCenterAccountDeleteAnswer,
+            ),
+            _FAQ(
+              l10n.helpCenterAccountEmailQuestion,
+              l10n.helpCenterAccountEmailAnswer,
+            ),
+          ],
         ),
-        _FAQ(
-          'How does ride matching work?',
-          'Our algorithm matches riders with drivers based on route '
-              'overlap, departure time, and user preferences. You can also '
-              'request a ride and let drivers find you.',
-        ),
-        _FAQ(
-          'What if my ride is late?',
-          "You'll receive real-time updates on your ride status. If the "
-              'driver is significantly late, you can contact them directly '
-              'through the in-app chat.',
-        ),
-      ],
-    ),
-    _FAQCategory(
-      title: 'Payments',
-      icon: Icons.payment_rounded,
-      color: Color(0xFFFF9800),
-      questions: [
-        _FAQ(
-          'How do payments work?',
-          'Payments are processed securely through Stripe. Riders pay '
-              'when booking, and drivers receive earnings after ride completion.',
-        ),
-        _FAQ(
-          'When do drivers get paid?',
-          'Drivers receive payouts weekly to their linked Stripe account. '
-              'You can track your earnings in the Earnings tab.',
-        ),
-        _FAQ(
-          'What are the service fees?',
-          'SportConnect charges a small service fee (typically 10%) to '
-              'cover platform costs, payment processing, and insurance.',
-        ),
-      ],
-    ),
-    _FAQCategory(
-      title: 'Safety & Trust',
-      icon: Icons.shield_rounded,
-      color: Color(0xFFF44336),
-      questions: [
-        _FAQ(
-          'How is my safety ensured?',
-          'All drivers undergo verification. Rides include live GPS '
-              'tracking, in-app chat, and all trips '
-              'are logged for safety.',
-        ),
-        _FAQ(
-          'How do I report a safety issue?',
-          'Go to Settings → Report a Problem during or after a ride. '
-              'Safety reports are prioritized and '
-              'reviewed within 24 hours.',
-        ),
-        _FAQ(
-          'Can I share my ride with someone?',
-          'Yes, during an active ride you can share your live trip '
-              'details with trusted contacts.',
-        ),
-      ],
-    ),
-    _FAQCategory(
-      title: 'Account & Profile',
-      icon: Icons.person_rounded,
-      color: Color(0xFF9C27B0),
-      questions: [
-        _FAQ(
-          'How do I verify my account?',
-          'Go to Settings → Verify Account. You can verify your email, '
-              'phone number, and provide government ID for full verification.',
-        ),
-        _FAQ(
-          'How do I delete my account?',
-          'Go to Settings → Account Actions → Delete Account. This action '
-              'is permanent and cannot be undone.',
-        ),
-        _FAQ(
-          'Can I change my email address?',
-          'Currently, you can update your display name and profile info. '
-              'For email changes, please contact support.',
-        ),
-      ],
-    ),
-  ];
+      ];
 
-  List<_FAQCategory> _filteredCategories(String searchQuery) {
-    if (searchQuery.isEmpty) return _faqCategories;
+  List<_FAQCategory> _filteredCategories(
+    String searchQuery,
+    AppLocalizations l10n,
+  ) {
+    final faqCategories = _faqCategories(l10n);
+    if (searchQuery.isEmpty) return faqCategories;
     final normalizedQuery = searchQuery.toLowerCase();
-    return _faqCategories
+    return faqCategories
         .map((cat) {
           final filteredQuestions = cat.questions
               .where(
@@ -169,7 +152,7 @@ class HelpCenterScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final uiState = ref.watch(helpCenterUiViewModelProvider);
-    final filteredCategories = _filteredCategories(uiState.searchQuery);
+    final filteredCategories = _filteredCategories(uiState.searchQuery, l10n);
 
     return AdaptiveScaffold(
       appBar: AdaptiveAppBar(
@@ -226,7 +209,7 @@ class HelpCenterScreen extends ConsumerWidget {
             }),
 
             if (filteredCategories.isEmpty)
-              _buildEmptySearch().animate().fadeIn(duration: 300.ms),
+              _buildEmptySearch(context).animate().fadeIn(duration: 300.ms),
 
             SizedBox(height: 32.h),
           ],
@@ -372,7 +355,7 @@ class HelpCenterScreen extends ConsumerWidget {
             ),
           ),
           subtitle: Text(
-            '${category.questions.length} articles',
+            '${category.questions.length} ${AppLocalizations.of(context).articles}',
             style: TextStyle(fontSize: 12.sp, color: AppColors.textTertiary),
           ),
           children: category.questions.map((faq) {
@@ -418,7 +401,7 @@ class HelpCenterScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptySearch() {
+  Widget _buildEmptySearch(BuildContext context) {
     return Center(
       child: Padding(
         padding: EdgeInsets.symmetric(vertical: 40.h),
@@ -431,7 +414,7 @@ class HelpCenterScreen extends ConsumerWidget {
             ),
             SizedBox(height: 12.h),
             Text(
-              'No results found',
+              AppLocalizations.of(context).noResultsFound,
               style: TextStyle(
                 fontSize: 16.sp,
                 fontWeight: FontWeight.w600,
@@ -440,7 +423,7 @@ class HelpCenterScreen extends ConsumerWidget {
             ),
             SizedBox(height: 4.h),
             Text(
-              'Try different keywords or contact support',
+              AppLocalizations.of(context).tryDifferentKeywordsOrContactSupport,
               style: TextStyle(fontSize: 13.sp, color: AppColors.textTertiary),
             ),
           ],

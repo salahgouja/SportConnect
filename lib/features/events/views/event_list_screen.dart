@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -51,7 +53,6 @@ class EventListScreen extends ConsumerWidget {
               const SliverToBoxAdapter(
                 child: SkeletonLoader(
                   type: SkeletonType.eventCard,
-                  itemCount: 4,
                 ),
               )
             else if (vm.error != null)
@@ -273,8 +274,10 @@ class EventListScreen extends ConsumerWidget {
                   SizedBox(width: 6.w),
                   Text(
                     vm.hasLocationFilter
-                        ? 'Within ${vm.radiusKm!.toInt()} km'
-                        : 'Near me',
+                        ? AppLocalizations.of(context).withinValueKm(
+                            vm.radiusKm!.toInt(),
+                          )
+                        : AppLocalizations.of(context).nearMe,
                     style: TextStyle(
                       fontSize: 13.sp,
                       fontWeight: FontWeight.w600,
@@ -314,7 +317,7 @@ class EventListScreen extends ConsumerWidget {
     final options = [5.0, 10.0, 25.0, 50.0];
     final chosen = await AppModalSheet.show<double?>(
       context: context,
-      title: 'Events near me',
+      title: AppLocalizations.of(context).events_near_me,
       maxHeightFactor: 0.6,
       child: Padding(
         padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 32.h),
@@ -331,7 +334,7 @@ class EventListScreen extends ConsumerWidget {
             ),
             SizedBox(height: 16.h),
             Text(
-              'Events near me',
+              AppLocalizations.of(context).events_near_me,
               style: TextStyle(
                 fontSize: 17.sp,
                 fontWeight: FontWeight.w700,
@@ -354,7 +357,9 @@ class EventListScreen extends ConsumerWidget {
                           size: 20.sp,
                         ),
                         title: Text(
-                          'Within ${km.toInt()} km',
+                          AppLocalizations.of(
+                            context,
+                          ).withinValueKm(km.toInt()),
                           style: TextStyle(
                             fontSize: 14.sp,
                             fontWeight: FontWeight.w600,
@@ -371,7 +376,7 @@ class EventListScreen extends ConsumerWidget {
                         color: AppColors.textSecondary,
                       ),
                       title: Text(
-                        'Everywhere',
+                        AppLocalizations.of(context).everywhere,
                         style: TextStyle(
                           fontSize: 14.sp,
                           color: AppColors.textSecondary,
@@ -503,7 +508,7 @@ class _FilterChip extends StatelessWidget {
       padding: EdgeInsets.only(right: 8.w),
       child: GestureDetector(
         onTap: () {
-          HapticFeedback.selectionClick();
+          unawaited(HapticFeedback.selectionClick());
           onTap();
         },
         child: AnimatedContainer(

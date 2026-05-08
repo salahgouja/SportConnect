@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -13,10 +15,11 @@ import 'package:image_picker/image_picker.dart';
 import 'package:reactive_forms/reactive_forms.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
+import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/core/widgets/expertise_picker.dart';
 import 'package:sport_connect/core/widgets/intl_phone_input.dart';
 import 'package:sport_connect/core/widgets/reactive_adaptive_text_field.dart';
-import 'package:sport_connect/features/auth/models/models.dart';
+import 'package:sport_connect/features/auth/models/auth_exception.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
 import 'package:sport_connect/features/auth/view_models/social_auth_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
@@ -208,7 +211,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
     }
 
     FocusScope.of(context).unfocus();
-    HapticFeedback.mediumImpact();
+    unawaited(HapticFeedback.mediumImpact());
     ref.read(signupWizardUiViewModelProvider.notifier).setCurrentStep(target);
   }
 
@@ -218,7 +221,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
       context.pop();
       return;
     }
-    HapticFeedback.lightImpact();
+    unawaited(HapticFeedback.lightImpact());
     ref.read(signupWizardUiViewModelProvider.notifier).previousStep();
   }
 
@@ -267,7 +270,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
       ref
           .read(signupWizardUiViewModelProvider.notifier)
           .setProfileImage(File(xf.path));
-      HapticFeedback.lightImpact();
+      unawaited(HapticFeedback.lightImpact());
     }
   }
 
@@ -496,6 +499,10 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
     final l10n = AppLocalizations.of(context);
     final wizardUiState = ref.watch(signupWizardUiViewModelProvider);
     final socialState = ref.watch(socialAuthViewModelProvider);
+    final isApplePlatform =
+        defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.macOS;
+
     return ReactiveForm(
       formGroup: _forms[0],
       child: Column(
@@ -503,18 +510,21 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // SSO First
-          _GoogleButton(
-            onPressed: socialState.isLoading ? null : _handleGoogleSignIn,
-            l10n: l10n,
-          ),
+          if (!isApplePlatform)
+            _GoogleButton(
+              onPressed: socialState.isLoading ? null : _handleGoogleSignIn,
+              l10n: l10n,
+            ),
           SizedBox(height: 10.h),
-          SignInWithAppleButton(
-            onPressed: socialState.isLoading ? () {} : _handleAppleSignIn,
-            text: l10n.continueWithApple,
-            height: 48.h,
-            borderRadius: BorderRadius.circular(14.r),
-          ),
-          SizedBox(height: 24.h),
+          if (isApplePlatform) ...[
+            SignInWithAppleButton(
+              onPressed: socialState.isLoading ? null : _handleAppleSignIn,
+              text: l10n.continueWithApple,
+              height: 48.h,
+              borderRadius: BorderRadius.circular(14.r),
+            ),
+            SizedBox(height: 24.h),
+          ],
           _Divider(accent: theme.accent, label: 'Or continue with email'),
           SizedBox(height: 24.h),
 
@@ -628,7 +638,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
               ref
                   .read(signupWizardUiViewModelProvider.notifier)
                   .toggleTermsAgreement();
-              HapticFeedback.selectionClick();
+              unawaited(HapticFeedback.selectionClick());
             },
             onTermsTap: () => context.push(AppRoutes.terms.path),
             onPrivacyTap: () => context.push(AppRoutes.privacy.path),
@@ -666,7 +676,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
             title: l10n.wizardFindRides,
             desc: l10n.wizardFindRidesDesc,
             onTap: () {
-              HapticFeedback.selectionClick();
+              unawaited(HapticFeedback.selectionClick());
               ref
                   .read(signupWizardUiViewModelProvider.notifier)
                   .setSelectedRole(UserRole.rider);
@@ -681,7 +691,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
             title: l10n.wizardOfferRides,
             desc: l10n.wizardOfferRidesDesc,
             onTap: () {
-              HapticFeedback.selectionClick();
+              unawaited(HapticFeedback.selectionClick());
               ref
                   .read(signupWizardUiViewModelProvider.notifier)
                   .setSelectedRole(UserRole.driver);
@@ -1146,7 +1156,7 @@ class _DobPickerState extends State<_DobPicker>
   void _toggle() {
     setState(() => _expanded = !_expanded);
     _expanded ? _expandCtrl.forward() : _expandCtrl.reverse();
-    HapticFeedback.selectionClick();
+    unawaited(HapticFeedback.selectionClick());
   }
 
   void _emit() {

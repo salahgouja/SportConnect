@@ -1239,7 +1239,6 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
         context: context,
         forceMaxHeight: true,
         maxHeightFactor: 0.8,
-        showDragHandle: false,
         showCloseButton: false,
         child: Consumer(
           builder: (context, ref, child) {
@@ -2158,7 +2157,6 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
         ),
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Expanded(
             child: Wrap(
@@ -2249,7 +2247,6 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
       AppModalSheet.show<void>(
         context: context,
         maxHeightFactor: 0.55,
-        showDragHandle: false,
         showCloseButton: false,
         child: Container(
           decoration: BoxDecoration(

@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'package:sport_connect/features/auth/models/models.dart';
+import 'package:sport_connect/core/models/user/models.dart';
 
 /// Result of a social sign-in operation (Google, Apple, etc.)
 ///

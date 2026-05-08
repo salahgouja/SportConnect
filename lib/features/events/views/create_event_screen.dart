@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
@@ -145,7 +146,7 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
             final active = createState.type == type;
             return GestureDetector(
               onTap: () {
-                HapticFeedback.selectionClick();
+                unawaited(HapticFeedback.selectionClick());
                 ref
                     .read(createEventFormViewModelProvider.notifier)
                     .setType(type);
@@ -169,7 +170,7 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
                     Icon(type.icon, size: 14.sp, color: type.color),
                     SizedBox(width: 6.w),
                     Text(
-                      type.label,
+                      _eventTypeLabel(l10n, type),
                       style: TextStyle(
                         fontSize: 12.sp,
                         fontWeight: active ? FontWeight.w700 : FontWeight.w500,
@@ -199,9 +200,8 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
           .read(createEventFormViewModelProvider.notifier)
           .setTitle(control.value ?? ''),
       validationMessages: {
-        ValidationMessage.required: (_) => 'Title is required',
-        ValidationMessage.minLength: (_) =>
-            'Title must be at least 3 characters',
+        ValidationMessage.required: (_) => l10n.eventTitleRequired,
+        ValidationMessage.minLength: (_) => l10n.eventTitleMinLength,
       },
       labelText: l10n.eventTitleField,
       hintText: l10n.eventTitleField,
@@ -574,7 +574,7 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
         SwitchListTile.adaptive(
           value: createState.isRecurring,
           onChanged: (v) {
-            HapticFeedback.selectionClick();
+            unawaited(HapticFeedback.selectionClick());
             ref
                 .read(createEventFormViewModelProvider.notifier)
                 .setIsRecurring(v);
@@ -624,7 +624,12 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
                       ),
                       SizedBox(width: 10.w),
                       Text(
-                        createState.recurringPattern?.label ?? 'Select pattern',
+                        createState.recurringPattern != null
+                            ? _recurrenceLabel(
+                                l10n,
+                                createState.recurringPattern!,
+                              )
+                            : l10n.select_a_recurrence_pattern,
                         style: TextStyle(
                           fontSize: 13.sp,
                           color: createState.recurringPattern != null
@@ -696,6 +701,7 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
     WidgetRef ref,
     CreateEventFormState createState,
   ) async {
+    final l10n = AppLocalizations.of(context);
     final liveState = ref.read(createEventFormViewModelProvider);
     final patterns = liveState.applicablePatterns;
 
@@ -703,7 +709,7 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
 
     await AppModalSheet.show<void>(
       context: context,
-      title: 'Repeat',
+      title: l10n.repeat,
       maxHeightFactor: 0.7,
       child: Container(
         padding: EdgeInsets.symmetric(vertical: 16.h),
@@ -713,7 +719,7 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
             Padding(
               padding: EdgeInsets.only(bottom: 12.h),
               child: Text(
-                'Repeat',
+                l10n.repeat,
                 style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600),
               ),
             ),
@@ -721,8 +727,8 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
                 child: Text(
-                  'No recurrence pattern fits this start/end window. '
-                  'Extend end time or set a later repeat end date.',
+                  '${l10n.no_recurrence_pattern_fits_this_startend_window}'
+                  '${l10n.extend_end_time_or_set_a_later_repeat_end_date}',
                   style: TextStyle(
                     fontSize: 12.sp,
                     color: AppColors.textSecondary,
@@ -774,7 +780,7 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
                           ),
                           SizedBox(width: 12.w),
                           Text(
-                            pattern.label,
+                            _recurrenceLabel(l10n, pattern),
                             style: TextStyle(
                               fontSize: 13.sp,
                               fontWeight: selected
@@ -861,6 +867,22 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
       color: ThemeData.light().colorScheme.error,
     ),
   );
+
+  String _eventTypeLabel(AppLocalizations l10n, EventType type) {
+    return switch (type) {
+      EventType.running => l10n.running,
+    };
+  }
+
+  String _recurrenceLabel(AppLocalizations l10n, RecurrencePattern pattern) {
+    return switch (pattern) {
+      RecurrencePattern.daily => l10n.every_day,
+      RecurrencePattern.weekly => l10n.every_week,
+      RecurrencePattern.biweekly => l10n.every_2_weeks,
+      RecurrencePattern.monthly => l10n.every_month,
+      RecurrencePattern.yearly => l10n.every_year,
+    };
+  }
 
   // ── Pickers ──────────────────────────────────────────────────
   Future<void> _pickLocation(
