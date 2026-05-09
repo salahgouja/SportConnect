@@ -679,14 +679,23 @@ async function recomputeDriverStats(
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const yearStart = new Date(now.getFullYear(), 0, 1);
 
-  // Recompute from canonical succeeded payments so webhook retries and refund
-  // transitions are idempotent. Store cents as canonical fields for Flutter,
-  // and legacy major-unit fields for older app versions.
+  // Recompute from canonical succeeded payments whose rides are completed, so
+  // paid bookings do not become driver earnings before the trip is finished.
+  // Store cents as canonical fields for Flutter, and legacy major-unit fields
+  // for older app versions.
   const paymentsSnap = await db
     .collection("payments")
     .where("driverId", "==", driverId)
     .where("status", "==", "succeeded")
     .get();
+  const rideIds = [...new Set(
+    paymentsSnap.docs
+      .map((doc) => doc.data().rideId)
+      .filter((rideId): rideId is string =>
+        typeof rideId === "string" && rideId.trim().length > 0,
+      ),
+  )];
+  const completedRideIds = await getCompletedRideIds(db, rideIds);
 
   let totalEarningsInCents = 0;
   let totalPlatformFeesInCents = 0;
@@ -705,10 +714,15 @@ async function recomputeDriverStats(
   let ridesThisWeek = 0;
   let ridesThisMonth = 0;
   let ridesThisYear = 0;
+  let completedPaymentCount = 0;
   let lastRideAt: Date | null = null;
 
   for (const doc of paymentsSnap.docs) {
     const data = doc.data();
+    const rideId = typeof data.rideId === "string" ? data.rideId : "";
+    if (!completedRideIds.has(rideId)) continue;
+    completedPaymentCount += 1;
+
     const earningsCents =
       finiteNumber(data.driverEarningsInCents) ??
       Math.round((finiteNumber(data.driverEarnings) ?? 0) * 100);
@@ -722,6 +736,7 @@ async function recomputeDriverStats(
     const platformFee = platformFeeCents / 100;
     const stripeFee = stripeFeeCents / 100;
     const completedAt =
+      (data.rideCompletedAt as Timestamp | null)?.toDate() ??
       (data.completedAt as Timestamp | null)?.toDate() ??
       (data.createdAt as Timestamp | null)?.toDate();
 
@@ -769,7 +784,7 @@ async function recomputeDriverStats(
     earningsThisWeekInCents,
     earningsThisMonthInCents,
     earningsThisYearInCents,
-    totalRides: paymentsSnap.size,
+    totalRides: completedPaymentCount,
     totalPlatformFees,
     totalStripeFees,
     totalEarnings: totalEarningsInCents / 100,
@@ -795,7 +810,7 @@ async function recomputeDriverStats(
     earningsDelta,
     ridesDelta,
     totalEarningsInCents,
-    totalRides: paymentsSnap.size,
+    totalRides: completedPaymentCount,
   });
 }
 
@@ -1274,6 +1289,30 @@ export const onRideStatusChanged = onDocumentUpdated(
       });
       if (!bookingsSnap.empty) await completionBatch.commit();
 
+      const driverId =
+        typeof after.driverId === "string" ? after.driverId : null;
+      if (driverId) {
+        const paymentsSnap = await db
+          .collection("payments")
+          .where("rideId", "==", event.params.rideId)
+          .where("driverId", "==", driverId)
+          .where("status", "==", "succeeded")
+          .get();
+        if (!paymentsSnap.empty) {
+          const paymentBatch = db.batch();
+          paymentsSnap.docs.forEach((doc) => {
+            paymentBatch.update(doc.ref, {
+              payoutEligible: true,
+              rideCompletedAt: FieldValue.serverTimestamp(),
+              updatedAt: FieldValue.serverTimestamp(),
+            });
+          });
+          await paymentBatch.commit();
+        }
+
+        await recomputeDriverStats(db, driverId);
+      }
+
       // GAP-8/9: Send ride-complete push with review CTA
       await sendPushToMultipleUsers(
         passengerIds,
@@ -1287,8 +1326,6 @@ export const onRideStatusChanged = onDocumentUpdated(
       );
 
       // Notify driver their ride is done
-      const driverId =
-        typeof after.driverId === "string" ? after.driverId : null;
       if (driverId) {
         await sendPushToUser(
           driverId,
@@ -1549,6 +1586,119 @@ function sumBalanceForCurrency(
       (entry) => (entry.currency ?? "").toLowerCase() === selectedCurrency,
     )
     .reduce((sum, entry) => sum + (entry.amount ?? 0), 0);
+}
+
+async function getCompletedRideIds(
+  db: Firestore,
+  rideIds: string[],
+): Promise<Set<string>> {
+  const completedRideIds = new Set<string>();
+  const uniqueRideIds = [...new Set(rideIds.filter((id) => id.length > 0))];
+
+  for (let i = 0; i < uniqueRideIds.length; i += 100) {
+    const chunk = uniqueRideIds.slice(i, i + 100);
+    const refs = chunk.map((rideId) => db.collection("rides").doc(rideId));
+    const snapshots = await db.getAll(...refs);
+    snapshots.forEach((snapshot) => {
+      if (snapshot.data()?.status === "completed") {
+        completedRideIds.add(snapshot.id);
+      }
+    });
+  }
+
+  return completedRideIds;
+}
+
+async function getDriverPayoutEligibilitySnapshot(
+  db: Firestore,
+  stripe: StripeClient,
+  opts: {
+    driverId: string;
+    stripeAccountId: string;
+    currency: string;
+    stripeAvailableBalanceInCents?: number;
+  },
+): Promise<{
+  completedEarningsInCents: number;
+  activePayoutsInCents: number;
+  eligibleBalanceInCents: number;
+  stripeAvailableBalanceInCents: number;
+  withdrawableBalanceInCents: number;
+  blockedPendingRideEarningsInCents: number;
+}> {
+  const paymentsSnap = await db
+    .collection("payments")
+    .where("driverId", "==", opts.driverId)
+    .where("status", "==", "succeeded")
+    .get();
+  const rideIds = paymentsSnap.docs
+    .map((doc) => doc.data().rideId)
+    .filter((rideId): rideId is string =>
+      typeof rideId === "string" && rideId.trim().length > 0,
+    );
+  const completedRideIds = await getCompletedRideIds(db, rideIds);
+
+  let completedEarningsInCents = 0;
+  let blockedPendingRideEarningsInCents = 0;
+
+  for (const doc of paymentsSnap.docs) {
+    const data = doc.data();
+    const amountInCents =
+      finiteNumber(data.driverEarningsInCents) ??
+      Math.round((finiteNumber(data.driverEarnings) ?? 0) * 100);
+    const rideId = typeof data.rideId === "string" ? data.rideId : "";
+
+    if (completedRideIds.has(rideId)) {
+      completedEarningsInCents += amountInCents;
+    } else {
+      blockedPendingRideEarningsInCents += amountInCents;
+    }
+  }
+
+  const payoutsSnap = await db
+    .collection("payouts")
+    .where("driverId", "==", opts.driverId)
+    .where("status", "in", ["pending", "inTransit", "paid"])
+    .get();
+
+  const activePayoutsInCents = payoutsSnap.docs.reduce((sum, doc) => {
+    const data = doc.data();
+    const amountInCents =
+      finiteNumber(data.amountInCents) ??
+      Math.round((finiteNumber(data.amount) ?? 0) * 100);
+    return sum + amountInCents;
+  }, 0);
+
+  let stripeAvailableBalanceInCents = opts.stripeAvailableBalanceInCents;
+  if (stripeAvailableBalanceInCents === undefined) {
+    const balance = await stripe.balance.retrieve(
+      {},
+      { stripeAccount: opts.stripeAccountId },
+    );
+    const instantAvailableField =
+      ((balance as any).instant_available ?? balance.available) as typeof balance.available;
+    stripeAvailableBalanceInCents = sumBalanceForCurrency(
+      instantAvailableField,
+      opts.currency,
+    );
+  }
+
+  const eligibleBalanceInCents = Math.max(
+    0,
+    completedEarningsInCents - activePayoutsInCents,
+  );
+
+  return {
+    completedEarningsInCents,
+    activePayoutsInCents,
+    eligibleBalanceInCents,
+    stripeAvailableBalanceInCents,
+    withdrawableBalanceInCents: Math.max(
+      0,
+      Math.min(eligibleBalanceInCents, stripeAvailableBalanceInCents),
+    ),
+    blockedPendingRideEarningsInCents,
+  };
 }
 
 // ============================================
@@ -1919,6 +2069,90 @@ export const getAccountStatus = onCall(
 );
 
 // ============================================
+// Stripe: Driver Payout Eligibility
+// ============================================
+
+export const getDriverPayoutEligibility = onCall(
+  { secrets: [stripeSecretKey], cors: true },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "User must be authenticated");
+    }
+
+    await checkRateLimit(
+      admin.firestore(),
+      request.auth.uid,
+      "getDriverPayoutEligibility",
+      20,
+      60,
+    );
+
+    const db = admin.firestore();
+    const stripe = getStripeClient(stripeSecretKey.value().trim());
+    const requestedStripeAccountId =
+      typeof request.data?.stripeAccountId === "string"
+        ? request.data.stripeAccountId.trim()
+        : "";
+    const normalizedCurrency =
+      typeof request.data?.currency === "string" &&
+      request.data.currency.trim().length > 0
+        ? request.data.currency.trim().toLowerCase()
+        : DEFAULT_CURRENCY;
+
+    const [callerDoc, connectedAccountDoc] = await Promise.all([
+      db.collection("users").doc(request.auth.uid).get(),
+      db.collection("driver_connected_accounts").doc(request.auth.uid).get(),
+    ]);
+    const callerData = callerDoc.data();
+    const connectedAccountData = connectedAccountDoc.data();
+    const callerStripeAccountId =
+      typeof callerData?.stripeAccountId === "string"
+        ? callerData.stripeAccountId
+        : "";
+    const connectedStripeAccountId =
+      typeof connectedAccountData?.stripeAccountId === "string"
+        ? connectedAccountData.stripeAccountId
+        : "";
+    const stripeAccountId =
+      requestedStripeAccountId || connectedStripeAccountId || callerStripeAccountId;
+
+    if (!callerData || !stripeAccountId) {
+      throw new HttpsError(
+        "failed-precondition",
+        "Driver must complete Stripe onboarding before payouts are available",
+      );
+    }
+
+    if (
+      stripeAccountId !== callerStripeAccountId &&
+      stripeAccountId !== connectedStripeAccountId
+    ) {
+      throw new HttpsError(
+        "permission-denied",
+        "You are not authorized to inspect payouts for this account",
+      );
+    }
+
+    const eligibility = await getDriverPayoutEligibilitySnapshot(db, stripe, {
+      driverId: request.auth.uid,
+      stripeAccountId,
+      currency: normalizedCurrency,
+    });
+
+    try {
+      await recomputeDriverStats(db, request.auth.uid);
+    } catch (error) {
+      logger.warn("getDriverPayoutEligibility: stats recompute failed", {
+        driverId: request.auth.uid,
+        error,
+      });
+    }
+
+    return eligibility;
+  },
+);
+
+// ============================================
 // Stripe: Create Instant Payout
 // ============================================
 
@@ -2051,6 +2285,20 @@ export const createInstantPayout = onCall(
         `Insufficient available balance. Available: ${(
           availableBalanceInCents / 100
         ).toFixed(2)} ${normalizedCurrency.toUpperCase()}`,
+      );
+    }
+
+    const eligibility = await getDriverPayoutEligibilitySnapshot(db, stripe, {
+      driverId: request.auth.uid,
+      stripeAccountId,
+      currency: normalizedCurrency,
+      stripeAvailableBalanceInCents: availableBalanceInCents,
+    });
+
+    if (eligibility.withdrawableBalanceInCents < payoutAmountInCents) {
+      throw new HttpsError(
+        "failed-precondition",
+        `Only €${(eligibility.withdrawableBalanceInCents / 100).toFixed(2)} is eligible for withdrawal. Ride payments become withdrawable after the ride is completed.`,
       );
     }
 
@@ -3469,6 +3717,16 @@ export const stripeWebhook = onRequest(
           let stripeChargeId = latestChargeId;
           let stripeTransferId: string | null = null;
           let stripeBalanceTransactionId: string | null = null;
+          const payoutEligibilityUpdate: Record<string, unknown> = {};
+
+          if (rideId) {
+            const paidRideDoc = await db.collection("rides").doc(rideId).get();
+            if (paidRideDoc.data()?.status === "completed") {
+              payoutEligibilityUpdate.payoutEligible = true;
+              payoutEligibilityUpdate.rideCompletedAt =
+                FieldValue.serverTimestamp();
+            }
+          }
 
           if (latestChargeId) {
             try {
@@ -3502,6 +3760,7 @@ export const stripeWebhook = onRequest(
               ...(stripeBalanceTransactionId && {
                 stripeBalanceTransactionId,
               }),
+              ...payoutEligibilityUpdate,
             });
           }
 

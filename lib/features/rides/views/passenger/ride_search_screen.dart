@@ -22,6 +22,7 @@ import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/core/widgets/utility_widgets.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
+import 'package:sport_connect/features/rides/views/passenger/ride_search_widgets.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Ride Search Screen with filters - Enhanced UI
@@ -715,9 +716,11 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
 
     if (_searchState.draftMaxPrice < 100) {
       filters.add(
-        _buildFilterTag(
-          AppLocalizations.of(context).maxValue(_searchState.draftMaxPrice),
-          () {
+        SearchFilterTag(
+          label: AppLocalizations.of(
+            context,
+          ).maxValue(_searchState.draftMaxPrice),
+          onRemove: () {
             ref
                 .read(rideSearchViewModelProvider.notifier)
                 .setDraftMaxPrice(100);
@@ -728,61 +731,76 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
 
     if (_searchState.draftFemaleOnly) {
       filters.add(
-        _buildFilterTag(AppLocalizations.of(context).femaleOnly, () {
-          ref
-              .read(rideSearchViewModelProvider.notifier)
-              .setDraftFemaleOnly(false);
-        }),
+        SearchFilterTag(
+          label: AppLocalizations.of(context).femaleOnly,
+          onRemove: () {
+            ref
+                .read(rideSearchViewModelProvider.notifier)
+                .setDraftFemaleOnly(false);
+          },
+        ),
       );
     }
 
     if (_searchState.draftVerifiedOnly) {
       filters.add(
-        _buildFilterTag(AppLocalizations.of(context).verifiedDriver2, () {
-          ref
-              .read(rideSearchViewModelProvider.notifier)
-              .setDraftVerifiedOnly(false);
-        }),
+        SearchFilterTag(
+          label: AppLocalizations.of(context).verifiedDriver2,
+          onRemove: () {
+            ref
+                .read(rideSearchViewModelProvider.notifier)
+                .setDraftVerifiedOnly(false);
+          },
+        ),
       );
     }
 
     if (_searchState.draftPetFriendly) {
       filters.add(
-        _buildFilterTag(AppLocalizations.of(context).petFriendly, () {
-          ref
-              .read(rideSearchViewModelProvider.notifier)
-              .setDraftPetFriendly(false);
-        }),
+        SearchFilterTag(
+          label: AppLocalizations.of(context).petFriendly,
+          onRemove: () {
+            ref
+                .read(rideSearchViewModelProvider.notifier)
+                .setDraftPetFriendly(false);
+          },
+        ),
       );
     }
 
     if (_searchState.draftNoSmoking) {
       filters.add(
-        _buildFilterTag(AppLocalizations.of(context).noSmoking, () {
-          ref
-              .read(rideSearchViewModelProvider.notifier)
-              .setDraftNoSmoking(false);
-        }),
+        SearchFilterTag(
+          label: AppLocalizations.of(context).noSmoking,
+          onRemove: () {
+            ref
+                .read(rideSearchViewModelProvider.notifier)
+                .setDraftNoSmoking(false);
+          },
+        ),
       );
     }
 
     if (_searchState.draftLuggageRequired) {
       filters.add(
-        _buildFilterTag(AppLocalizations.of(context).allowLuggageToggle, () {
-          ref
-              .read(rideSearchViewModelProvider.notifier)
-              .setDraftLuggageRequired(false);
-        }),
+        SearchFilterTag(
+          label: AppLocalizations.of(context).allowLuggageToggle,
+          onRemove: () {
+            ref
+                .read(rideSearchViewModelProvider.notifier)
+                .setDraftLuggageRequired(false);
+          },
+        ),
       );
     }
 
     if (_searchState.draftMinRating > 0) {
       filters.add(
-        _buildFilterTag(
-          AppLocalizations.of(
+        SearchFilterTag(
+          label: AppLocalizations.of(
             context,
           ).valueRating(_searchState.draftMinRating.toStringAsFixed(1)),
-          () {
+          onRemove: () {
             ref.read(rideSearchViewModelProvider.notifier).setDraftMinRating(0);
           },
         ),
@@ -791,11 +809,14 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
 
     if (_searchState.draftVehicleType != 'any') {
       filters.add(
-        _buildFilterTag(_vehicleTypeLabel(_searchState.draftVehicleType), () {
-          ref
-              .read(rideSearchViewModelProvider.notifier)
-              .setDraftVehicleType('any');
-        }),
+        SearchFilterTag(
+          label: _vehicleTypeLabel(_searchState.draftVehicleType),
+          onRemove: () {
+            ref
+                .read(rideSearchViewModelProvider.notifier)
+                .setDraftVehicleType('any');
+          },
+        ),
       );
     }
 
@@ -842,48 +863,6 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
         ],
       ),
     ).animate().fadeIn();
-  }
-
-  Widget _buildFilterTag(String label, VoidCallback onRemove) {
-    return Container(
-      constraints: BoxConstraints(maxWidth: 220.w),
-      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
-      decoration: BoxDecoration(
-        color: AppColors.primarySurface,
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Flexible(
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 12.sp,
-                fontWeight: FontWeight.w500,
-                color: AppColors.primary,
-              ),
-            ),
-          ),
-          SizedBox(width: 4.w),
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () {
-              unawaited(HapticFeedback.lightImpact());
-              onRemove();
-            },
-            child: Icon(
-              Icons.close_rounded,
-              size: 14.sp,
-              color: AppColors.primary,
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   List<Widget> _buildDiscoverySection() {
@@ -1315,8 +1294,8 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _buildFilterSectionTitle(
-                            AppLocalizations.of(context).priceRange,
+                          SearchFilterSectionTitle(
+                            title: AppLocalizations.of(context).priceRange,
                           ),
                           SizedBox(height: 8.h),
                           Row(
@@ -1387,8 +1366,8 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
 
                           SizedBox(height: 20.h),
 
-                          _buildFilterSectionTitle(
-                            AppLocalizations.of(context).minimumRating,
+                          SearchFilterSectionTitle(
+                            title: AppLocalizations.of(context).minimumRating,
                           ),
                           SizedBox(height: 12.h),
                           Wrap(
@@ -1461,15 +1440,15 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
 
                           SizedBox(height: 24.h),
 
-                          _buildFilterSectionTitle(
-                            AppLocalizations.of(context).preferences,
+                          SearchFilterSectionTitle(
+                            title: AppLocalizations.of(context).preferences,
                           ),
                           SizedBox(height: 12.h),
                           Wrap(
                             spacing: 10.w,
                             runSpacing: 10.h,
                             children: [
-                              _buildToggleChip(
+                              SearchToggleChip(
                                 label: AppLocalizations.of(context).femaleOnly,
                                 icon: Icons.female_rounded,
                                 isSelected: searchState.draftFemaleOnly,
@@ -1483,7 +1462,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
                                       );
                                 },
                               ),
-                              _buildToggleChip(
+                              SearchToggleChip(
                                 label: AppLocalizations.of(
                                   context,
                                 ).verifiedDriver2,
@@ -1499,7 +1478,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
                                       );
                                 },
                               ),
-                              _buildToggleChip(
+                              SearchToggleChip(
                                 label: AppLocalizations.of(context).petFriendly,
                                 icon: Icons.pets_rounded,
                                 isSelected: searchState.draftPetFriendly,
@@ -1513,7 +1492,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
                                       );
                                 },
                               ),
-                              _buildToggleChip(
+                              SearchToggleChip(
                                 label: AppLocalizations.of(context).noSmoking,
                                 icon: Icons.smoke_free_rounded,
                                 isSelected: searchState.draftNoSmoking,
@@ -1527,7 +1506,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
                                       );
                                 },
                               ),
-                              _buildToggleChip(
+                              SearchToggleChip(
                                 label: AppLocalizations.of(
                                   context,
                                 ).allowLuggageToggle,
@@ -1548,8 +1527,8 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
 
                           SizedBox(height: 24.h),
 
-                          _buildFilterSectionTitle(
-                            AppLocalizations.of(context).vehicleType,
+                          SearchFilterSectionTitle(
+                            title: AppLocalizations.of(context).vehicleType,
                           ),
                           SizedBox(height: 12.h),
                           Row(
@@ -1612,68 +1591,6 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
             .read(rideSearchViewModelProvider.notifier)
             .setFilterPanelOpen(false);
       }),
-    );
-  }
-
-  Widget _buildFilterSectionTitle(String title) {
-    return Text(
-      title,
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      style: TextStyle(
-        fontSize: 15.sp,
-        fontWeight: FontWeight.w600,
-        color: AppColors.textPrimary,
-      ),
-    );
-  }
-
-  Widget _buildToggleChip({
-    required String label,
-    required IconData icon,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: () {
-        unawaited(HapticFeedback.selectionClick());
-        onTap();
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        constraints: BoxConstraints(maxWidth: 220.w),
-        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : AppColors.surfaceVariant,
-          borderRadius: BorderRadius.circular(12.r),
-          border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.border,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 16.sp,
-              color: isSelected ? Colors.white : AppColors.textSecondary,
-            ),
-            SizedBox(width: 6.w),
-            Flexible(
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 13.sp,
-                  fontWeight: FontWeight.w500,
-                  color: isSelected ? Colors.white : AppColors.textPrimary,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -2111,34 +2028,34 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
   Widget _buildRideCardBottomBar(RideModel ride) {
     final chips = <Widget>[
       if (ride.status == RideStatus.full)
-        _buildInfoChip(
-          Icons.do_not_disturb_rounded,
-          AppLocalizations.of(context).fullyBooked.toUpperCase(),
-          AppColors.textSecondary,
+        RideInfoChip(
+          icon: Icons.do_not_disturb_rounded,
+          label: AppLocalizations.of(context).fullyBooked.toUpperCase(),
+          color: AppColors.textSecondary,
         )
       else
-        _buildInfoChip(
-          Icons.event_seat_rounded,
-          AppLocalizations.of(context).valueSeats(ride.remainingSeats),
-          AppColors.primary,
+        RideInfoChip(
+          icon: Icons.event_seat_rounded,
+          label: AppLocalizations.of(context).valueSeats(ride.remainingSeats),
+          color: AppColors.primary,
         ),
       if (ride.isEco)
-        _buildInfoChip(
-          Icons.eco_rounded,
-          AppLocalizations.of(context).eco,
-          AppColors.success,
+        RideInfoChip(
+          icon: Icons.eco_rounded,
+          label: AppLocalizations.of(context).eco,
+          color: AppColors.success,
         ),
       if (ride.isPremium)
-        _buildInfoChip(
-          Icons.star_rounded,
-          'Premium',
-          AppColors.warning,
+        RideInfoChip(
+          icon: Icons.star_rounded,
+          label: 'Premium',
+          color: AppColors.warning,
         ),
       if (ride.xpReward > 0)
-        _buildInfoChip(
-          Icons.bolt_rounded,
-          '+${ride.xpReward} XP',
-          AppColors.primary,
+        RideInfoChip(
+          icon: Icons.bolt_rounded,
+          label: '+${ride.xpReward} XP',
+          color: AppColors.primary,
         ),
     ];
 
@@ -2197,36 +2114,6 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
             color: Colors.white,
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildInfoChip(IconData icon, String label, Color color) {
-    return Container(
-      constraints: BoxConstraints(maxWidth: 120.w),
-      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(6.r),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12.sp, color: color),
-          SizedBox(width: 4.w),
-          Flexible(
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 11.sp,
-                fontWeight: FontWeight.w500,
-                color: color,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

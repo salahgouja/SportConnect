@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/features/messaging/models/message_model.dart';
-import 'package:sport_connect/features/messaging/widgets/audio_message_player.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Dispatches to the correct content widget based on [MessageType].
@@ -38,11 +37,6 @@ class MessageContent extends StatelessWidget {
             ),
           ),
         ),
-      MessageType.audio when message.mediaUrl != null => AudioMessagePlayer(
-        message: message,
-        audioUrl: message.mediaUrl!,
-        isMe: isMe,
-      ),
       _ => TextMessageContent(message: message, isMe: isMe),
     };
   }

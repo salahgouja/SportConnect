@@ -68,17 +68,6 @@ class PermissionDialogHelper {
     );
   }
 
-  /// Shows a rationale dialog for microphone access (voice recording).
-  static Future<bool> showMicrophoneRationale(BuildContext context) {
-    return _showRationale(
-      context,
-      icon: Icons.mic_outlined,
-      iconColor: AppColors.accent,
-      title: AppLocalizations.of(context).permissionMicrophoneTitle,
-      message: AppLocalizations.of(context).permissionMicrophoneMessage,
-    );
-  }
-
   /// Shows a rationale dialog for notification permission.
   static Future<bool> showNotificationRationale(BuildContext context) {
     return _showRationale(
@@ -146,6 +135,10 @@ class PermissionDialogHelper {
           ),
         ),
         actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(AppLocalizations.of(context).actionCancel),
+          ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
             style: FilledButton.styleFrom(

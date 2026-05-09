@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
-import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
+import 'package:emoji_picker_flutter/emoji_picker_flutter.dart' as emoji_picker;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -11,8 +11,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:record/record.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
@@ -52,9 +50,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final FocusNode _focusNode = FocusNode();
-  final AudioRecorder _audioRecorder = AudioRecorder();
 
-  Timer? _recordingTimer;
   late String _activeChatId;
   late UserModel _resolvedReceiver;
   bool _isResolvingReceiver = false;
@@ -112,8 +108,6 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     _messageController.dispose();
     _scrollController.dispose();
     _focusNode.dispose();
-    _recordingTimer?.cancel();
-    _audioRecorder.dispose();
     super.dispose();
   }
 
@@ -327,176 +321,6 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       _showStatusSnackBar(
         l10n.failedToSendImageValue(e),
         type: AdaptiveSnackBarType.error,
-      );
-    }
-  }
-
-  // ── Recording ────────────────────────────────────────────────────────────
-
-  Future<void> _startRecording() async {
-    try {
-      final accepted = await PermissionDialogHelper.showMicrophoneRationale(
-        context,
-      );
-      if (!accepted) return;
-
-      if (!await _audioRecorder.hasPermission()) return;
-
-      final directory = await getTemporaryDirectory();
-      final path =
-          '${directory.path}/audio_${DateTime.now().millisecondsSinceEpoch}.m4a';
-
-      // FIX: Specify encoder explicitly for reliability across platforms.
-      await _audioRecorder.start(
-        const RecordConfig(),
-        path: path,
-      );
-
-      ref
-          .read(
-            chatDetailViewModelProvider(
-              _chatId,
-              currentUser?.uid ?? '',
-            ).notifier,
-          )
-          .beginRecording(path);
-
-      _recordingTimer = Timer.periodic(const Duration(milliseconds: 100), (
-        timer,
-      ) {
-        if (!mounted) return;
-        ref
-            .read(
-              chatDetailViewModelProvider(
-                _chatId,
-                currentUser?.uid ?? '',
-              ).notifier,
-            )
-            .updateRecordingDuration(Duration(milliseconds: timer.tick * 100));
-      });
-
-      unawaited(HapticFeedback.mediumImpact());
-    } on Exception {
-      if (!mounted) return;
-      AdaptiveSnackBar.show(
-        context,
-        message: AppLocalizations.of(context).recordingFailedError,
-        type: AdaptiveSnackBarType.error,
-      );
-    }
-  }
-
-  Future<void> _stopRecording() async {
-    final notifier = ref.read(
-      chatDetailViewModelProvider(_chatId, currentUser?.uid ?? '').notifier,
-    );
-    try {
-      final path = await _audioRecorder.stop();
-      _recordingTimer?.cancel();
-      if (path != null && mounted) {
-        await _sendAudioMessage(path);
-      }
-      notifier.clearRecording();
-      unawaited(HapticFeedback.mediumImpact());
-    } on Exception {
-      notifier.clearRecording();
-      if (!mounted) return;
-      _showStatusSnackBar(
-        AppLocalizations.of(context).stopRecordingFailedError,
-        type: AdaptiveSnackBarType.error,
-      );
-    }
-  }
-
-  Future<void> _cancelRecording() async {
-    try {
-      await _audioRecorder.stop();
-      _recordingTimer?.cancel();
-      final recordingPath = ref
-          .read(chatDetailViewModelProvider(_chatId, currentUser?.uid ?? ''))
-          .recordingPath;
-      if (recordingPath != null) {
-        final file = File(recordingPath);
-        if (await file.exists()) await file.delete();
-      }
-      ref
-          .read(
-            chatDetailViewModelProvider(
-              _chatId,
-              currentUser?.uid ?? '',
-            ).notifier,
-          )
-          .clearRecording();
-      unawaited(HapticFeedback.lightImpact());
-    } on Exception {
-      // Silently discard — user-initiated cancel, nothing to recover.
-    }
-  }
-
-  Future<void> _sendAudioMessage(String audioPath) async {
-    if (!await _ensurePersistedChat()) return;
-    unawaited(HapticFeedback.lightImpact());
-    if (!mounted) return;
-    _showSendingSnackBar(AppLocalizations.of(context).sendingVoiceMessage);
-
-    try {
-      final file = File(audioPath);
-      final notifier = ref.read(
-        chatDetailViewModelProvider(_chatId, currentUser?.uid ?? '').notifier,
-      );
-      final duration = ref
-          .read(chatDetailViewModelProvider(_chatId, currentUser?.uid ?? ''))
-          .recordingDuration;
-      final durationText =
-          '${duration.inMinutes}:${(duration.inSeconds % 60).toString().padLeft(2, '0')}';
-
-      final success = await notifier.sendAudioMessage(
-        audioFile: file,
-        fileName: 'audio_${DateTime.now().millisecondsSinceEpoch}.m4a',
-        durationText: durationText,
-        senderName: currentUser?.username ?? AppLocalizations.of(context).user,
-        senderPhotoUrl: currentUser?.photoUrl,
-      );
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-
-      if (!success) {
-        throw Exception(
-          ref
-                  .read(
-                    chatDetailViewModelProvider(
-                      _chatId,
-                      currentUser?.uid ?? '',
-                    ),
-                  )
-                  .error ??
-              AppLocalizations.of(context).failedToSendVoiceMessage,
-        );
-      }
-      // Delete temp file only after confirmed success so RETRY can re-send it.
-      if (file.existsSync()) file.deleteSync();
-      _scrollToBottom();
-    } on Exception catch (e, st) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-
-      final errorText =
-          e.toString().contains('permission') || e.toString().contains('403')
-          ? AppLocalizations.of(
-              context,
-            ).permissionDeniedPleaseCheckYourConnectionAndTryAgain
-          : e.toString().contains('network')
-          ? AppLocalizations.of(
-              context,
-            ).networkErrorPleaseCheckYourInternetConnection
-          : AppLocalizations.of(context).failedToSendVoiceMessage;
-
-      _showStatusSnackBar(
-        errorText,
-        type: AdaptiveSnackBarType.error,
-        action: AppLocalizations.of(context).retry,
-        onActionPressed: () => _sendAudioMessage(audioPath),
       );
     }
   }
@@ -994,46 +818,25 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
               if (!isReceiverBlocked && chatState.showEmojiPicker)
                 SizedBox(
                   height: 280.h,
-                  child: EmojiPicker(
+                  child: emoji_picker.EmojiPicker(
                     textEditingController: _messageController,
-                    onEmojiSelected: (_, emoji) {
-                      final text = _messageController.text;
-                      final sel = _messageController.selection;
-                      _messageController
-                        ..text = text.replaceRange(
-                          sel.start,
-                          sel.end,
-                          emoji.emoji,
-                        )
-                        ..selection = TextSelection.collapsed(
-                          offset: sel.start + emoji.emoji.length,
-                        );
-                    },
-                    onBackspacePressed: () {
-                      _messageController
-                        ..text = _messageController.text.characters
-                            .skipLast(1)
-                            .toString()
-                        ..selection = TextSelection.fromPosition(
-                          TextPosition(offset: _messageController.text.length),
-                        );
-                    },
-                    config: Config(
+                    config: emoji_picker.Config(
                       height: 280.h,
-                      emojiViewConfig: const EmojiViewConfig(
+                      emojiViewConfig: const emoji_picker.EmojiViewConfig(
                         backgroundColor: AppColors.cardBg,
                         columns: 8,
                       ),
-                      categoryViewConfig: const CategoryViewConfig(
+                      categoryViewConfig: const emoji_picker.CategoryViewConfig(
                         backgroundColor: AppColors.cardBg,
                         indicatorColor: AppColors.primary,
                         iconColor: AppColors.textTertiary,
                         iconColorSelected: AppColors.primary,
                       ),
-                      bottomActionBarConfig: const BottomActionBarConfig(
-                        enabled: false,
-                      ),
-                      searchViewConfig: const SearchViewConfig(
+                      bottomActionBarConfig:
+                          const emoji_picker.BottomActionBarConfig(
+                            enabled: false,
+                          ),
+                      searchViewConfig: const emoji_picker.SearchViewConfig(
                         backgroundColor: AppColors.cardBg,
                         buttonIconColor: AppColors.textSecondary,
                       ),
@@ -1042,7 +845,6 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                 ).animate().fadeIn(duration: 200.ms).slideY(begin: 0.2),
             ],
           ),
-          if (chatState.isRecording) _buildRecordingBanner(chatState),
         ],
       ),
     );
@@ -1737,36 +1539,21 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                 valueListenable: _messageController,
                 builder: (context, value, _) {
                   final hasText = value.text.trim().isNotEmpty;
-                  final showPrimary = hasText || chatState.isRecording;
+                  final showPrimary = hasText;
                   return Semantics(
                     button: true,
-                    label: chatState.isRecording
-                        ? AppLocalizations.of(context).stopRecording
-                        : hasText
-                        ? AppLocalizations.of(context).sendMessage
-                        : AppLocalizations.of(context).recordVoiceMessage,
+                    label: AppLocalizations.of(context).sendMessage,
                     child: GestureDetector(
                       onTap: () {
-                        if (chatState.isRecording) {
-                          _stopRecording();
-                        } else if (hasText) {
+                        if (hasText) {
                           _sendMessage();
-                        } else {
-                          _startRecording();
                         }
                       },
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 200),
                         padding: EdgeInsets.all(11.w),
                         decoration: BoxDecoration(
-                          gradient: chatState.isRecording
-                              ? const LinearGradient(
-                                  colors: [
-                                    Color(0xFFE91E63),
-                                    Color(0xFFF44336),
-                                  ],
-                                )
-                              : showPrimary
+                          gradient: showPrimary
                               ? AppColors.primaryGradient
                               : null,
                           color: showPrimary ? null : AppColors.surfaceVariant,
@@ -1774,11 +1561,9 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                           boxShadow: showPrimary
                               ? [
                                   BoxShadow(
-                                    color:
-                                        (chatState.isRecording
-                                                ? const Color(0xFFE91E63)
-                                                : AppColors.primary)
-                                            .withValues(alpha: 0.26),
+                                    color: AppColors.primary.withValues(
+                                      alpha: 0.26,
+                                    ),
                                     blurRadius: 8,
                                     offset: const Offset(0, 3),
                                   ),
@@ -1786,11 +1571,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                               : const [],
                         ),
                         child: Icon(
-                          chatState.isRecording
-                              ? Icons.stop_rounded
-                              : hasText
-                              ? Icons.send_rounded
-                              : Icons.mic_rounded,
+                          Icons.send_rounded,
                           color: showPrimary
                               ? Colors.white
                               : AppColors.textSecondary,
@@ -2027,80 +1808,5 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
         type: AdaptiveSnackBarType.error,
       );
     }
-  }
-
-  // ── Recording banner ─────────────────────────────────────────────────────
-
-  Widget _buildRecordingBanner(ChatDetailState chatState) {
-    return Positioned(
-      top: 0,
-      left: 0,
-      right: 0,
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFFE91E63), Color(0xFFF44336)],
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-                  width: 12.w,
-                  height: 12.w,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                  ),
-                )
-                .animate(onPlay: (c) => c.repeat())
-                .fadeIn(duration: 600.ms)
-                .then()
-                .fadeOut(duration: 600.ms),
-            SizedBox(width: 12.w),
-            Icon(Icons.mic, color: Colors.white, size: 20.sp),
-            SizedBox(width: 8.w),
-            Text(
-              AppLocalizations.of(context).recording,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 15.sp,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const Spacer(),
-            Text(
-              '${chatState.recordingDuration.inMinutes}:'
-              '${(chatState.recordingDuration.inSeconds % 60).toString().padLeft(2, '0')}',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 15.sp,
-                fontWeight: FontWeight.w600,
-                fontFeatures: const [FontFeature.tabularFigures()],
-              ),
-            ),
-            SizedBox(width: 12.w),
-            GestureDetector(
-              onTap: _cancelRecording,
-              child: Container(
-                padding: EdgeInsets.all(6.w),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(6.r),
-                ),
-                child: Icon(Icons.close, color: Colors.white, size: 18.sp),
-              ),
-            ),
-          ],
-        ),
-      ).animate().slideY(begin: -1).fadeIn(),
-    );
   }
 }

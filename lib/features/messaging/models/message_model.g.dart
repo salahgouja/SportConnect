@@ -82,7 +82,6 @@ const _$MessageTypeEnumMap = {
   MessageType.location: 'location',
   MessageType.ride: 'ride',
   MessageType.system: 'system',
-  MessageType.audio: 'audio',
 };
 
 const _$MessageStatusEnumMap = {

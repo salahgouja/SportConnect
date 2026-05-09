@@ -15,9 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$MessageModel {
 
- String get id; String get chatId; String get senderId; String get senderName; String get content; String? get senderPhotoUrl; MessageType get type; MessageStatus get status;// FIX: unified media field — replaces the old split imageUrl / (misused)
-// imageUrl-for-audio pattern. One field for image, audio, and video URLs.
- String? get mediaUrl; String? get thumbnailUrl;// Location
+ String get id; String get chatId; String get senderId; String get senderName; String get content; String? get senderPhotoUrl; MessageType get type; MessageStatus get status; String? get mediaUrl; String? get thumbnailUrl;// Location
  double? get latitude; double? get longitude; String? get locationName;// Ride attachment
  String? get rideId;// Reply context
  String? get replyToMessageId; String? get replyToContent;// Reactions: emoji → [userId, ...]
@@ -250,8 +248,6 @@ class _MessageModel extends MessageModel {
 @override final  String? senderPhotoUrl;
 @override@JsonKey() final  MessageType type;
 @override@JsonKey() final  MessageStatus status;
-// FIX: unified media field — replaces the old split imageUrl / (misused)
-// imageUrl-for-audio pattern. One field for image, audio, and video URLs.
 @override final  String? mediaUrl;
 @override final  String? thumbnailUrl;
 // Location

@@ -31,6 +31,7 @@ import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/view_models/driver_view_ride_view_model.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
+import 'package:sport_connect/features/rides/views/driver/driver_view_ride_widgets.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -504,7 +505,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen> {
       child: Row(
         children: [
           Expanded(
-            child: _buildStatItem(
+            child: RideStatItem(
               icon: Icons.event_seat_rounded,
               value: '$confirmedSeats/${ride.availableSeats}',
               label: AppLocalizations.of(context).seatsFilled,
@@ -512,7 +513,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen> {
           ),
           Container(width: 1.w, height: 40.h, color: Colors.white30),
           Expanded(
-            child: _buildStatItem(
+            child: RideStatItem(
               icon: Icons.pending_actions_rounded,
               value: '$pendingCount',
               label: AppLocalizations.of(context).pending,
@@ -521,7 +522,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen> {
           ),
           Container(width: 1.w, height: 40.h, color: Colors.white30),
           Expanded(
-            child: _buildStatItem(
+            child: RideStatItem(
               icon: Icons.euro_rounded,
               value: '€${(ride.pricePerSeatInCents / 100).toStringAsFixed(2)}',
               label: AppLocalizations.of(context).perSeat,
@@ -532,35 +533,6 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen> {
     ).animate().fadeIn(duration: 300.ms).slideY(begin: 0.1, end: 0);
   }
 
-  Widget _buildStatItem({
-    required IconData icon,
-    required String value,
-    required String label,
-    bool highlight = false,
-  }) {
-    return Column(
-      children: [
-        Icon(
-          icon,
-          size: 20.sp,
-          color: highlight ? AppColors.warning : Colors.white,
-        ),
-        SizedBox(height: 4.h),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 18.sp,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-        Text(
-          label,
-          style: TextStyle(fontSize: 11.sp, color: Colors.white70),
-        ),
-      ],
-    );
-  }
 
   Widget _buildDetailsTab(RideModel ride) {
     return ListView(

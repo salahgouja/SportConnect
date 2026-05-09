@@ -51,7 +51,7 @@ final class ChatActionsViewModelProvider
 }
 
 String _$chatActionsViewModelHash() =>
-    r'151e425e7f7793f1ec0a1d9c854df0096221858d';
+    r'28a7c22e554722ed004680d215f1164454719513';
 
 /// Plain-class wrapper for one-shot chat operations (upload, mute, block, etc.)
 /// that don't require reactive state of their own.
@@ -460,7 +460,7 @@ final class ChatDetailViewModelProvider
 }
 
 String _$chatDetailViewModelHash() =>
-    r'154807713c1c1787390e43ffe86571ca38daa530';
+    r'e7f6c92188e3e0bf348a7edacea0b9a065b5dfb2';
 
 final class ChatDetailViewModelFamily extends $Family
     with

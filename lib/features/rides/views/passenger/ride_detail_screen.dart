@@ -37,6 +37,7 @@ import 'package:sport_connect/features/profile/view_models/profile_view_model.da
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
+import 'package:sport_connect/features/rides/views/passenger/ride_detail_widgets.dart';
 import 'package:sport_connect/features/rides/views/passenger/rider_view_ride_screen.dart'
     show RiderViewRideScreen;
 import 'package:sport_connect/features/rides/views/widgets/ride_shared_widgets.dart';
@@ -1155,31 +1156,31 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
               spacing: 8.w,
               runSpacing: 6.h,
               children: [
-                _buildMatchChip(
-                  Icons.luggage_rounded,
-                  AppLocalizations.of(context).luggage,
-                  prefs.allowLuggage,
+                RideMatchChip(
+                  icon: Icons.luggage_rounded,
+                  label: AppLocalizations.of(context).luggage,
+                  positive: prefs.allowLuggage,
                 ),
-                _buildMatchChip(
-                  Icons.chat_bubble_outline,
-                  AppLocalizations.of(context).navChat,
-                  prefs.allowChat,
+                RideMatchChip(
+                  icon: Icons.chat_bubble_outline,
+                  label: AppLocalizations.of(context).navChat,
+                  positive: prefs.allowChat,
                 ),
-                _buildMatchChip(
-                  Icons.smoke_free_rounded,
-                  AppLocalizations.of(context).nonSmoking,
-                  !prefs.allowSmoking,
+                RideMatchChip(
+                  icon: Icons.smoke_free_rounded,
+                  label: AppLocalizations.of(context).nonSmoking,
+                  positive: !prefs.allowSmoking,
                 ),
-                _buildMatchChip(
-                  Icons.route_rounded,
-                  AppLocalizations.of(context).directRoute,
-                  prefs.maxDetourMinutes == null ||
+                RideMatchChip(
+                  icon: Icons.route_rounded,
+                  label: AppLocalizations.of(context).directRoute,
+                  positive: prefs.maxDetourMinutes == null ||
                       prefs.maxDetourMinutes! <= 15,
                 ),
-                _buildMatchChip(
-                  Icons.event_seat_rounded,
-                  AppLocalizations.of(context).spacious,
-                  ride.remainingSeats > 1,
+                RideMatchChip(
+                  icon: Icons.event_seat_rounded,
+                  label: AppLocalizations.of(context).spacious,
+                  positive: ride.remainingSeats > 1,
                 ),
               ],
             ),
@@ -1189,36 +1190,6 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
     );
   }
 
-  Widget _buildMatchChip(IconData icon, String label, bool positive) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-      decoration: BoxDecoration(
-        color: positive
-            ? AppColors.success.withValues(alpha: 0.08)
-            : AppColors.textTertiary.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(6.r),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            positive ? Icons.check_circle_rounded : Icons.cancel_rounded,
-            size: 14.sp,
-            color: positive ? AppColors.success : AppColors.textTertiary,
-          ),
-          SizedBox(width: 4.w),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11.sp,
-              color: positive ? AppColors.success : AppColors.textTertiary,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildPassengers(
     RideModel ride, {
@@ -2144,7 +2115,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    _buildCounterButton(
+                    SeatCounterButton(
                       icon: Icons.remove_rounded,
                       onPressed: uiState.selectedSeats > 1
                           ? () {
@@ -2170,7 +2141,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                         ),
                       ),
                     ),
-                    _buildCounterButton(
+                    SeatCounterButton(
                       icon: Icons.add_rounded,
                       onPressed: uiState.selectedSeats < ride.remainingSeats
                           ? () {
@@ -2233,18 +2204,18 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
             ),
             child: Column(
               children: [
-                _buildPriceRow(
-                  AppLocalizations.of(context).pricePerSeat2,
-                  AppLocalizations.of(context).valueValue5(
+                BookingPriceRow(
+                  label: AppLocalizations.of(context).pricePerSeat2,
+                  value: AppLocalizations.of(context).valueValue5(
                     currencySymbol,
                     pricePerSeat.toStringAsFixed(2),
                   ),
                 ),
                 if (uiState.selectedSeats > 1) ...[
                   SizedBox(height: 8.h),
-                  _buildPriceRow(
-                    AppLocalizations.of(context).numberOfSeats,
-                    AppLocalizations.of(context).value12(uiState.selectedSeats),
+                  BookingPriceRow(
+                    label: AppLocalizations.of(context).numberOfSeats,
+                    value: AppLocalizations.of(context).value12(uiState.selectedSeats),
                   ),
                 ],
                 Padding(
@@ -2356,47 +2327,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
     );
   }
 
-  Widget _buildCounterButton({
-    required IconData icon,
-    required VoidCallback? onPressed,
-    required bool isEnabled,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(12.r),
-        child: Container(
-          padding: EdgeInsets.all(12.w),
-          child: Icon(
-            icon,
-            color: isEnabled ? AppColors.primary : AppColors.textTertiary,
-            size: 22.sp,
-          ),
-        ),
-      ),
-    );
-  }
 
-  Widget _buildPriceRow(String label, String value) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
-        ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 14.sp,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
-          ),
-        ),
-      ],
-    );
-  }
 
   /// Gets the currency symbol for display
   String _getCurrencySymbol() => '€';

@@ -4,7 +4,7 @@ import 'package:sport_connect/core/converters/timestamp_converter.dart';
 part 'message_model.freezed.dart';
 part 'message_model.g.dart';
 
-enum MessageType { text, image, location, ride, system, audio }
+enum MessageType { text, image, location, ride, system }
 
 enum MessageStatus { sending, sent, delivered, read, failed }
 
@@ -24,8 +24,6 @@ abstract class MessageModel with _$MessageModel {
     @Default(MessageType.text) MessageType type,
     @Default(MessageStatus.sending) MessageStatus status,
 
-    // FIX: unified media field — replaces the old split imageUrl / (misused)
-    // imageUrl-for-audio pattern. One field for image, audio, and video URLs.
     String? mediaUrl,
     String? thumbnailUrl,
 

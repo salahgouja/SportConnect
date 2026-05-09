@@ -647,20 +647,6 @@ class ChatRepository {
     return ref.getDownloadURL();
   }
 
-  Future<String> uploadAudioMessage({
-    required String chatId,
-    required File audioFile,
-    required String fileName,
-  }) async {
-    final size = await audioFile.length();
-    if (size > _maxUploadBytes) {
-      throw Exception('Audio message must be smaller than 5 MB');
-    }
-    final ref = _storage.ref().child('chats/$chatId/audio/$fileName');
-    await ref.putFile(audioFile);
-    return ref.getDownloadURL();
-  }
-
   Future<({List<MessageModel> messages, bool hasMore})>
   loadMoreMessagesForUser({
     required String chatId,

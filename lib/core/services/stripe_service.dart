@@ -44,6 +44,16 @@ class StripeService {
     await _functions.httpsCallable('syncDriverBalance').call();
   }
 
+  Future<Map<String, dynamic>> getDriverPayoutEligibility({
+    required String stripeAccountId,
+    required String currency,
+  }) async {
+    return _callFunction('getDriverPayoutEligibility', {
+      'stripeAccountId': stripeAccountId,
+      'currency': currency.toLowerCase(),
+    });
+  }
+
   /// Initialize Stripe with publishable key
   Future<void> initialize({required String publishableKey}) async {
     Stripe.publishableKey = publishableKey;

@@ -439,11 +439,42 @@ class PaymentRepository {
           .limit(limit)
           .get();
 
-      return snapshot.docs.map((doc) => doc.data()).toList();
+      return _filterCompletedRidePayments(
+        snapshot.docs.map((doc) => doc.data()).toList(),
+      );
     } on Exception catch (e, st) {
       TalkerService.error('Error getting driver earnings: $e');
       rethrow;
     }
+  }
+
+  Future<List<PaymentTransaction>> _filterCompletedRidePayments(
+    List<PaymentTransaction> payments,
+  ) async {
+    if (payments.isEmpty) return payments;
+
+    final rideIds = payments.map((payment) => payment.rideId).toSet().toList();
+    final completedRideIds = <String>{};
+
+    for (var i = 0; i < rideIds.length; i += 30) {
+      final batch = rideIds.sublist(
+        i,
+        i + 30 > rideIds.length ? rideIds.length : i + 30,
+      );
+      final ridesSnapshot = await _firestore
+          .collection(AppConstants.ridesCollection)
+          .where(FieldPath.documentId, whereIn: batch)
+          .get();
+      for (final doc in ridesSnapshot.docs) {
+        if (doc.data()['status'] == 'completed') {
+          completedRideIds.add(doc.id);
+        }
+      }
+    }
+
+    return payments
+        .where((payment) => completedRideIds.contains(payment.rideId))
+        .toList();
   }
 
   /// Calculate earnings summary for driver.
@@ -547,7 +578,9 @@ class PaymentRepository {
           .limit(500)
           .get();
 
-      final payments = allPayments.docs.map((doc) => doc.data()).toList();
+      final payments = await _filterCompletedRidePayments(
+        allPayments.docs.map((doc) => doc.data()).toList(),
+      );
 
       var totalEarningsInCents = 0;
       var totalPlatformFeesInCents = 0;

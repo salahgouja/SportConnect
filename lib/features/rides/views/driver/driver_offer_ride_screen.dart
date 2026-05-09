@@ -28,6 +28,7 @@ import 'package:sport_connect/features/events/views/widgets/inline_event_selecto
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/view_models/driver_offer_ride_view_model.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
+import 'package:sport_connect/features/rides/views/driver/driver_offer_ride_widgets.dart';
 import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
 import 'package:sport_connect/features/vehicles/view_models/vehicle_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
@@ -407,81 +408,16 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
     final l10n = AppLocalizations.of(context);
     return Row(
       children: [
-        _buildStepItem(0, l10n.routeStep),
-        _buildStepConnector(0),
-        _buildStepItem(1, l10n.detailsStep),
-        _buildStepConnector(1),
-        _buildStepItem(2, l10n.preferencesStep),
+        OfferStepItem(step: 0, label: l10n.routeStep, currentStep: _currentStep),
+        OfferStepConnector(step: 0, currentStep: _currentStep),
+        OfferStepItem(step: 1, label: l10n.detailsStep, currentStep: _currentStep),
+        OfferStepConnector(step: 1, currentStep: _currentStep),
+        OfferStepItem(step: 2, label: l10n.preferencesStep, currentStep: _currentStep),
       ],
     );
   }
 
-  Widget _buildStepItem(int step, String label) {
-    final isActive = _currentStep >= step;
-    final isCurrent = _currentStep == step;
 
-    return Expanded(
-      child: Column(
-        children: [
-          AnimatedContainer(
-            duration: 300.ms,
-            width: 30.w,
-            height: 30.w,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: isActive ? AppColors.primary : AppColors.surface,
-              border: Border.all(
-                color: isActive ? AppColors.primary : AppColors.border,
-                width: 2,
-              ),
-              boxShadow: isActive
-                  ? [
-                      BoxShadow(
-                        color: AppColors.primary.withValues(alpha: 0.25),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ]
-                  : null,
-            ),
-            child: Center(
-              child: isActive
-                  ? Icon(Icons.check, size: 14.sp, color: Colors.white)
-                  : Text(
-                      '${step + 1}',
-                      style: TextStyle(
-                        color: AppColors.textSecondary,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13.sp,
-                      ),
-                    ),
-            ),
-          ),
-          SizedBox(height: 6.h),
-          Text(
-            label,
-            style: TextStyle(
-              color: isCurrent
-                  ? AppColors.textPrimary
-                  : AppColors.textSecondary,
-              fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w500,
-              fontSize: 11.sp,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStepConnector(int step) {
-    return Expanded(
-      child: Container(
-        height: 2,
-        margin: EdgeInsets.only(bottom: 22.h),
-        color: _currentStep > step ? AppColors.primary : AppColors.border,
-      ),
-    );
-  }
 
   // --- Step 1: Route ---
   Widget _buildRouteStep() {
@@ -1778,69 +1714,69 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
             ],
           ),
           SizedBox(height: 14.h),
-          _buildSummaryRow(
-            Icons.my_location_rounded,
-            l10n.fromLabel,
-            _fromAddress.isNotEmpty ? _fromAddress : l10n.notSetPlaceholder,
+          OfferSummaryRow(
+            icon: Icons.my_location_rounded,
+            label: l10n.fromLabel,
+            value: _fromAddress.isNotEmpty ? _fromAddress : l10n.notSetPlaceholder,
           ),
           SizedBox(height: 8.h),
-          _buildSummaryRow(
-            Icons.location_on_rounded,
-            l10n.toLabel,
-            _toAddress.isNotEmpty ? _toAddress : l10n.notSetPlaceholder,
+          OfferSummaryRow(
+            icon: Icons.location_on_rounded,
+            label: l10n.toLabel,
+            value: _toAddress.isNotEmpty ? _toAddress : l10n.notSetPlaceholder,
           ),
           if (_waypoints.isNotEmpty) ...[
             SizedBox(height: 8.h),
-            _buildSummaryRow(
-              Icons.route_rounded,
-              l10n.summaryStopsLabel,
-              l10n.intermediateStopsCount(_waypoints.length),
+            OfferSummaryRow(
+              icon: Icons.route_rounded,
+              label: l10n.summaryStopsLabel,
+              value: l10n.intermediateStopsCount(_waypoints.length),
             ),
           ],
           SizedBox(height: 8.h),
-          _buildSummaryRow(
-            Icons.schedule_rounded,
-            l10n.departureSummaryLabel,
-            departure != null
+          OfferSummaryRow(
+            icon: Icons.schedule_rounded,
+            label: l10n.departureSummaryLabel,
+            value: departure != null
                 ? DateFormat('EEE, MMM d \u2022 HH:mm').format(departure)
                 : l10n.notSetPlaceholder,
           ),
           SizedBox(height: 8.h),
-          _buildSummaryRow(
-            Icons.directions_car_rounded,
-            l10n.vehicleLabel,
-            selectedVehicle != null
+          OfferSummaryRow(
+            icon: Icons.directions_car_rounded,
+            label: l10n.vehicleLabel,
+            value: selectedVehicle != null
                 ? '${selectedVehicle.make} ${selectedVehicle.model}'
                 : l10n.notSelectedPlaceholder,
           ),
           SizedBox(height: 8.h),
-          _buildSummaryRow(
-            Icons.event_seat_rounded,
-            l10n.seatsSummaryLabel,
-            l10n.seatsAvailableCount(_availableSeats),
+          OfferSummaryRow(
+            icon: Icons.event_seat_rounded,
+            label: l10n.seatsSummaryLabel,
+            value: l10n.seatsAvailableCount(_availableSeats),
           ),
           SizedBox(height: 8.h),
-          _buildSummaryRow(
-            Icons.euro_rounded,
-            l10n.priceSummaryLabel,
-            l10n.pricePerSeatSummary(
+          OfferSummaryRow(
+            icon: Icons.euro_rounded,
+            label: l10n.priceSummaryLabel,
+            value: l10n.pricePerSeatSummary(
               (_pricePerSeatInCents / 100).toStringAsFixed(2),
             ),
           ),
           if (_selectedEvent != null) ...[
             SizedBox(height: 8.h),
-            _buildSummaryRow(
-              Icons.event_rounded,
-              l10n.eventSummaryLabel,
-              _selectedEvent!.title,
+            OfferSummaryRow(
+              icon: Icons.event_rounded,
+              label: l10n.eventSummaryLabel,
+              value: _selectedEvent!.title,
             ),
           ],
           if (_isRecurring && _recurringDays.isNotEmpty) ...[
             SizedBox(height: 8.h),
-            _buildSummaryRow(
-              Icons.repeat_rounded,
-              l10n.recurringSummaryLabel,
-              _recurringDays
+            OfferSummaryRow(
+              icon: Icons.repeat_rounded,
+              label: l10n.recurringSummaryLabel,
+              value: _recurringDays
                   .map(
                     (d) => [
                       l10n.dayMon,
@@ -1856,10 +1792,10 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
             ),
             if (_formState.recurringEndDate != null) ...[
               SizedBox(height: 8.h),
-              _buildSummaryRow(
-                Icons.event_rounded,
-                'Ends',
-                DateFormat('MMM d, yyyy').format(_formState.recurringEndDate!),
+              OfferSummaryRow(
+                icon: Icons.event_rounded,
+                label: 'Ends',
+                value: DateFormat('MMM d, yyyy').format(_formState.recurringEndDate!),
               ),
             ],
           ],
@@ -1868,42 +1804,6 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
     ).animate().fadeIn(delay: 50.ms).slideY(begin: 0.1, end: 0);
   }
 
-  Widget _buildSummaryRow(IconData icon, String label, String value) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(
-          icon,
-          size: 16.sp,
-          color: AppColors.primary.withValues(alpha: 0.7),
-        ),
-        SizedBox(width: 10.w),
-        SizedBox(
-          width: 70.w,
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 12.sp,
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-        Expanded(
-          child: Text(
-            value,
-            style: TextStyle(
-              fontSize: 13.sp,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-      ],
-    );
-  }
 
   /// Max detour slider for how far drivers will deviate for pickups
   Widget _buildMaxDetourSlider() {
@@ -2023,7 +1923,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
       ),
       child: Column(
         children: [
-          _buildPreferenceSwitch(
+          OfferPreferenceSwitch(
             title: AppLocalizations.of(context).allowPetsToggle,
             subtitle: AppLocalizations.of(context).allowPetsSubtitle,
             icon: Icons.pets_rounded,
@@ -2033,7 +1933,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                 .setAllowPets(val),
           ),
           const Divider(),
-          _buildPreferenceSwitch(
+          OfferPreferenceSwitch(
             title: AppLocalizations.of(context).allowSmokingToggle,
             subtitle: AppLocalizations.of(context).allowSmokingSubtitle,
             icon: Icons.smoke_free_rounded,
@@ -2043,7 +1943,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                 .setAllowSmoking(val),
           ),
           const Divider(),
-          _buildPreferenceSwitch(
+          OfferPreferenceSwitch(
             title: AppLocalizations.of(context).allowLuggageToggle,
             subtitle: AppLocalizations.of(context).allowLuggageSubtitle,
             icon: Icons.luggage_rounded,
@@ -2053,7 +1953,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                 .setAllowLuggage(val),
           ),
           const Divider(),
-          _buildPreferenceSwitch(
+          OfferPreferenceSwitch(
             title: AppLocalizations.of(context).womenOnlyToggle,
             subtitle: AppLocalizations.of(context).womenOnlySubtitle,
             icon: Icons.female_rounded,
@@ -2067,41 +1967,6 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
     ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1, end: 0);
   }
 
-  Widget _buildPreferenceSwitch({
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-  }) {
-    return SwitchListTile.adaptive(
-      value: value,
-      onChanged: onChanged,
-      title: Row(
-        children: [
-          Icon(icon, size: 18.sp, color: AppColors.primary),
-          SizedBox(width: 10.w),
-          Text(
-            title,
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 14.sp,
-              color: AppColors.textPrimary,
-            ),
-          ),
-        ],
-      ),
-      subtitle: Padding(
-        padding: EdgeInsets.only(left: 28.w),
-        child: Text(
-          subtitle,
-          style: TextStyle(fontSize: 12.sp, color: AppColors.textSecondary),
-        ),
-      ),
-      activeColor: AppColors.primary,
-      contentPadding: EdgeInsets.symmetric(horizontal: 12.w),
-    );
-  }
 
   Widget _buildBottomBar(List<VehicleModel> vehicles) {
     final isLastStep = _currentStep == 2;

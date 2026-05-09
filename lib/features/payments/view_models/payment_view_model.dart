@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart' as fr;
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/core/models/user/models.dart';
@@ -153,6 +154,56 @@ class DriverEarningsPeriodState {
     );
   }
 }
+
+class DriverPayoutEligibility {
+  const DriverPayoutEligibility({
+    this.completedEarningsInCents = 0,
+    this.activePayoutsInCents = 0,
+    this.eligibleBalanceInCents = 0,
+    this.stripeAvailableBalanceInCents = 0,
+    this.withdrawableBalanceInCents = 0,
+    this.blockedPendingRideEarningsInCents = 0,
+  });
+
+  factory DriverPayoutEligibility.fromJson(Map<String, dynamic> json) {
+    int cents(String key) => (json[key] as num?)?.round() ?? 0;
+    return DriverPayoutEligibility(
+      completedEarningsInCents: cents('completedEarningsInCents'),
+      activePayoutsInCents: cents('activePayoutsInCents'),
+      eligibleBalanceInCents: cents('eligibleBalanceInCents'),
+      stripeAvailableBalanceInCents: cents('stripeAvailableBalanceInCents'),
+      withdrawableBalanceInCents: cents('withdrawableBalanceInCents'),
+      blockedPendingRideEarningsInCents: cents(
+        'blockedPendingRideEarningsInCents',
+      ),
+    );
+  }
+
+  final int completedEarningsInCents;
+  final int activePayoutsInCents;
+  final int eligibleBalanceInCents;
+  final int stripeAvailableBalanceInCents;
+  final int withdrawableBalanceInCents;
+  final int blockedPendingRideEarningsInCents;
+}
+
+final fr.FutureProvider<DriverPayoutEligibility>
+driverPayoutEligibilityProvider =
+    fr.FutureProvider.autoDispose<DriverPayoutEligibility>((ref) async {
+      final status = await ref.watch(driverStripeStatusProvider.future);
+      final stripeAccountId = status.stripeAccountId;
+      if (stripeAccountId == null || stripeAccountId.isEmpty) {
+        return const DriverPayoutEligibility();
+      }
+
+      final response = await ref
+          .read(stripeServiceProvider)
+          .getDriverPayoutEligibility(
+            stripeAccountId: stripeAccountId,
+            currency: status.currency,
+          );
+      return DriverPayoutEligibility.fromJson(response);
+    });
 
 @riverpod
 class DriverEarningsPeriodViewModel extends _$DriverEarningsPeriodViewModel {

@@ -125,16 +125,22 @@ class DriverEarningsScreen extends ConsumerWidget {
     final driverStats = ref.watch(driverStatsProvider);
     final transactions = ref.watch(earningsTransactionsProvider);
     final selectedPeriod = ref.watch(
-        driverEarningsPeriodViewModelProvider.select((s) => s.selectedPeriod));
+      driverEarningsPeriodViewModelProvider.select((s) => s.selectedPeriod),
+    );
 
     return AdaptiveScaffold(
       body: RefreshIndicator.adaptive(
         onRefresh: () async {
           ref.invalidate(driverStripeStatusProvider);
+          ref.invalidate(driverPayoutEligibilityProvider);
           await Future.wait<Object?>(
             [
               ref.refresh(driverStatsProvider.future),
               ref.refresh(earningsTransactionsProvider.future),
+              ref
+                  .refresh(driverPayoutEligibilityProvider.future)
+                  .timeout(const Duration(seconds: 8))
+                  .catchError((_) => const DriverPayoutEligibility()),
               ref
                   .read(driverStripeStatusProvider.future)
                   .timeout(const Duration(seconds: 8))
@@ -746,7 +752,9 @@ class DriverEarningsScreen extends ConsumerWidget {
   /// Build the payout section with Stripe integration
   Widget _buildPayoutSection(BuildContext context, WidgetRef ref) {
     final connectedAccount = ref.watch(currentDriverConnectedAccountProvider);
-    final resolvedLiveStatus = ref.watch(driverStripeStatusProvider.select((a) => a.value));
+    final resolvedLiveStatus = ref.watch(
+      driverStripeStatusProvider.select((a) => a.value),
+    );
     final cachedStatus = _statusFromConnectedAccount(connectedAccount.value);
 
     return connectedAccount.when(
@@ -828,12 +836,31 @@ class DriverEarningsScreen extends ConsumerWidget {
   ) {
     final isConnected = status?.isConnected ?? false;
     final payoutsEnabled = status?.payoutsEnabled ?? false;
-    final availableBalanceInCents = status?.availableBalanceInCents ?? 0;
+    final rawStripeAvailableBalanceInCents =
+        status?.availableBalanceInCents ?? 0;
     final pendingBalanceInCents = status?.pendingBalanceInCents ?? 0;
     final totalStripeBalanceInCents =
-        availableBalanceInCents + pendingBalanceInCents;
+        rawStripeAvailableBalanceInCents + pendingBalanceInCents;
+    final payoutEligibility = ref.watch(driverPayoutEligibilityProvider);
+    final eligibility = payoutEligibility.value;
+    final isEligibilityLoading =
+        payoutEligibility.isLoading && eligibility == null;
+    final withdrawableBalanceInCents =
+        eligibility?.withdrawableBalanceInCents ?? 0;
+    final completedEarningsInCents =
+        eligibility?.completedEarningsInCents ??
+        (ref
+                .watch(driverStatsProvider.select((a) => a.value))
+                ?.totalEarningsInCents ??
+            0);
+    final activePayoutsInCents = eligibility?.activePayoutsInCents ?? 0;
+    final blockedPendingRideEarningsInCents =
+        eligibility?.blockedPendingRideEarningsInCents ?? 0;
     final tripEarningsInCents =
-        ref.watch(driverStatsProvider.select((a) => a.value))?.totalEarningsInCents ?? 0;
+        ref
+            .watch(driverStatsProvider.select((a) => a.value))
+            ?.totalEarningsInCents ??
+        0;
     final stripeAccountId = status?.stripeAccountId;
 
     return Container(
@@ -985,9 +1012,9 @@ class DriverEarningsScreen extends ConsumerWidget {
                                         ).availableBalance,
                                       ),
                                       content: const Text(
-                                        'Withdrawable Now is your instant-available balance — you can transfer this to your bank immediately.\n\n'
-                                        'Processing is money that has reached Stripe but is not yet eligible for instant withdrawal.\n\n'
-                                        'Total Earnings (shown above) is your lifetime trip revenue.',
+                                        'Withdrawable Now is the part of your Stripe instant-available balance backed by completed rides.\n\n'
+                                        'Paid rides that are not completed yet stay blocked for withdrawal.\n\n'
+                                        'Processing is money that has reached Stripe but is not yet eligible for instant withdrawal.',
                                       ),
                                       actions: [
                                         TextButton(
@@ -1015,9 +1042,8 @@ class DriverEarningsScreen extends ConsumerWidget {
                               AppLocalizations.of(
                                 context,
                               ).value5(
-                                (availableBalanceInCents / 100).toStringAsFixed(
-                                  2,
-                                ),
+                                (withdrawableBalanceInCents / 100)
+                                    .toStringAsFixed(2),
                               ),
                               style: TextStyle(
                                 fontSize: 22.sp,
@@ -1034,10 +1060,16 @@ class DriverEarningsScreen extends ConsumerWidget {
                           context,
                           ref,
                           stripeAccountId: stripeAccountId,
-                          availableBalanceInCents: availableBalanceInCents,
+                          availableBalanceInCents: withdrawableBalanceInCents,
                           pendingBalanceInCents: pendingBalanceInCents,
+                          blockedPendingRideEarningsInCents:
+                              blockedPendingRideEarningsInCents,
                           isFullySetup: payoutsEnabled,
                         ),
+                        isLoading: isEligibilityLoading,
+                        isDisabled:
+                            isEligibilityLoading ||
+                            withdrawableBalanceInCents <= 0,
                         style: PremiumButtonStyle.secondary,
                       ),
                     ],
@@ -1045,7 +1077,31 @@ class DriverEarningsScreen extends ConsumerWidget {
                   SizedBox(height: 14.h),
                   _buildStripeBalanceLine(
                     'Withdrawable now',
-                    availableBalanceInCents,
+                    withdrawableBalanceInCents,
+                    AppColors.success,
+                  ),
+                  SizedBox(height: 8.h),
+                  _buildStripeBalanceLine(
+                    'Completed ride earnings',
+                    completedEarningsInCents,
+                    AppColors.primary,
+                  ),
+                  SizedBox(height: 8.h),
+                  _buildStripeBalanceLine(
+                    'Payouts already requested',
+                    activePayoutsInCents,
+                    AppColors.textSecondary,
+                  ),
+                  SizedBox(height: 8.h),
+                  _buildStripeBalanceLine(
+                    'Paid rides awaiting completion',
+                    blockedPendingRideEarningsInCents,
+                    AppColors.warning,
+                  ),
+                  SizedBox(height: 8.h),
+                  _buildStripeBalanceLine(
+                    'Stripe instant available',
+                    rawStripeAvailableBalanceInCents,
                     AppColors.success,
                   ),
                   SizedBox(height: 8.h),
@@ -1058,7 +1114,7 @@ class DriverEarningsScreen extends ConsumerWidget {
                   _buildStripeBalanceLine(
                     'Stripe balance total',
                     totalStripeBalanceInCents,
-                    AppColors.primary,
+                    AppColors.textSecondary,
                   ),
                   SizedBox(height: 8.h),
                   _buildStripeBalanceLine(
@@ -1068,7 +1124,7 @@ class DriverEarningsScreen extends ConsumerWidget {
                   ),
                   SizedBox(height: 12.h),
                   Text(
-                    "Withdrawable Now is your instant-available balance. Processing funds are in Stripe's pipeline and not yet eligible for instant withdrawal.",
+                    'Withdrawable Now only includes completed rides. Paid rides still in progress unlock after the driver completes the ride.',
                     style: TextStyle(
                       fontSize: 11.sp,
                       color: AppColors.textSecondary,
@@ -1170,6 +1226,7 @@ class DriverEarningsScreen extends ConsumerWidget {
           type: AdaptiveSnackBarType.success,
         );
         ref.invalidate(driverStripeStatusProvider);
+        ref.invalidate(driverPayoutEligibilityProvider);
         ref.invalidate(driverStatsProvider);
         ref.invalidate(earningsTransactionsProvider);
         unawaited(_refreshStripeStatusAfterPayout(context, ref));
@@ -1214,6 +1271,7 @@ class DriverEarningsScreen extends ConsumerWidget {
     required String? stripeAccountId,
     required int availableBalanceInCents,
     required int pendingBalanceInCents,
+    required int blockedPendingRideEarningsInCents,
     required bool isFullySetup,
   }) async {
     if (!isFullySetup) {
@@ -1236,12 +1294,14 @@ class DriverEarningsScreen extends ConsumerWidget {
     }
 
     if (availableBalanceInCents <= 0) {
-      final pendingText = pendingBalanceInCents > 0
+      final pendingText = blockedPendingRideEarningsInCents > 0
+          ? ' €${(blockedPendingRideEarningsInCents / 100).toStringAsFixed(2)} is waiting for ride completion.'
+          : pendingBalanceInCents > 0
           ? ' €${(pendingBalanceInCents / 100).toStringAsFixed(2)} is still processing.'
           : '';
       AdaptiveSnackBar.show(
         context,
-        message: 'No settled balance available yet.$pendingText',
+        message: 'No completed ride balance available yet.$pendingText',
         type: AdaptiveSnackBarType.error,
       );
       return;

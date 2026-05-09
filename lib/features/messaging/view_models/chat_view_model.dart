@@ -90,18 +90,6 @@ class ChatActionsViewModel extends _$ChatActionsViewModel {
         fileName: fileName,
       );
 
-  Future<String> uploadAudioMessage({
-    required String chatId,
-    required File audioFile,
-    required String fileName,
-  }) => ref
-      .read(chatRepositoryProvider)
-      .uploadAudioMessage(
-        chatId: chatId,
-        audioFile: audioFile,
-        fileName: fileName,
-      );
-
   Future<void> toggleMute({
     required String chatId,
     required String userId,
@@ -274,7 +262,7 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
   // ── Send operations ─────────────────────────────────────────────────────
 
   // FIX: Renamed `imageUrl` → `mediaUrl` to match the unified field on
-  // MessageModel (which replaced the old split imageUrl/audioUrl fields).
+  // MessageModel (which replaced the old split imageUrl fields).
   Future<bool> sendMessage({
     required String content,
     required String senderName,
@@ -387,42 +375,6 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
         senderPhotoUrl: senderPhotoUrl,
         type: MessageType.image,
         // FIX: Was `imageUrl: imageUrl` — param renamed to mediaUrl.
-        mediaUrl: url,
-        replyToMessageId: state.replyToMessage?.id,
-        replyToContent: state.replyToMessage?.content,
-      );
-    } on Exception catch (e, st) {
-      if (!ref.mounted) return false;
-      state = state.copyWith(isSending: false, error: userFacingError(e));
-      return false;
-    }
-  }
-
-  Future<bool> sendAudioMessage({
-    required File audioFile,
-    required String fileName,
-    required String durationText,
-    required String senderName,
-    String? senderPhotoUrl,
-  }) async {
-    if (!ref.mounted) return false;
-    state = state.copyWith(isSending: true, error: null);
-    try {
-      final url = await ref
-          .read(chatRepositoryProvider)
-          .uploadAudioMessage(
-            chatId: chatId,
-            audioFile: audioFile,
-            fileName: fileName,
-          );
-      if (!ref.mounted) return false;
-      return sendMessage(
-        content: 'Voice message ($durationText)',
-        senderName: senderName,
-        senderPhotoUrl: senderPhotoUrl,
-        type: MessageType.audio,
-        // FIX: Was `imageUrl: audioUrl` — audio URL was stored in the image
-        // field. Now uses the unified mediaUrl field.
         mediaUrl: url,
         replyToMessageId: state.replyToMessage?.id,
         replyToContent: state.replyToMessage?.content,
@@ -581,29 +533,6 @@ class ChatDetailViewModel extends _$ChatDetailViewModel {
     if (!ref.mounted || state.showEmojiPicker == visible) return;
     state = state.copyWith(showEmojiPicker: visible);
   }
-
-  void beginRecording(String path) {
-    if (!ref.mounted) return;
-    state = state.copyWith(
-      isRecording: true,
-      recordingPath: path,
-      recordingDuration: Duration.zero,
-    );
-  }
-
-  void updateRecordingDuration(Duration duration) {
-    if (!ref.mounted || !state.isRecording) return;
-    state = state.copyWith(recordingDuration: duration);
-  }
-
-  void clearRecording() {
-    if (!ref.mounted) return;
-    state = state.copyWith(
-      isRecording: false,
-      recordingPath: null,
-      recordingDuration: Duration.zero,
-    );
-  }
 }
 
 // ── ChatDetailState ───────────────────────────────────────────────────────────
@@ -622,9 +551,6 @@ abstract class ChatDetailState with _$ChatDetailState {
     @Default(true) bool hasMoreMessages,
     @Default(false) bool showEmojiPicker,
     @Default(false) bool isLocallyTyping,
-    @Default(false) bool isRecording,
-    String? recordingPath,
-    @Default(Duration.zero) Duration recordingDuration,
     String? error,
     MessageModel? replyToMessage,
   }) = _ChatDetailState;

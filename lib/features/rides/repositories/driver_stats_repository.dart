@@ -150,11 +150,15 @@ class DriverStatsRepository {
           .orderBy('createdAt', descending: true)
           .limit(50)
           .snapshots()
-          .listen((snapshot) {
-            paymentTransactions = snapshot.docs
-                .map(_paymentDocToEarningsTransaction)
-                .toList();
-            emit();
+          .listen((snapshot) async {
+            try {
+              paymentTransactions = await _completedRidePaymentTransactions(
+                snapshot.docs,
+              );
+              emit();
+            } on Object catch (error, stackTrace) {
+              controller.addError(error, stackTrace);
+            }
           }, onError: controller.addError);
 
       payoutsSub = _firestore
@@ -177,6 +181,45 @@ class DriverStatsRepository {
     };
 
     return controller.stream;
+  }
+
+  Future<List<EarningsTransaction>> _completedRidePaymentTransactions(
+    List<QueryDocumentSnapshot<Map<String, dynamic>>> docs,
+  ) async {
+    if (docs.isEmpty) return const [];
+
+    final rideIds = docs
+        .map((doc) => doc.data()['rideId'] as String? ?? '')
+        .where((rideId) => rideId.isNotEmpty)
+        .toSet()
+        .toList();
+    final completedRideIds = <String>{};
+
+    for (var i = 0; i < rideIds.length; i += 30) {
+      final batch = rideIds.sublist(
+        i,
+        i + 30 > rideIds.length ? rideIds.length : i + 30,
+      );
+      final rideSnapshot = await _firestore
+          .collection(AppConstants.ridesCollection)
+          .where(FieldPath.documentId, whereIn: batch)
+          .get();
+      for (final doc in rideSnapshot.docs) {
+        if (doc.data()['status'] == RideStatus.completed.name) {
+          completedRideIds.add(doc.id);
+        }
+      }
+    }
+
+    return docs
+        .where((doc) {
+          final data = doc.data();
+          if (data['payoutEligible'] == true) return true;
+          final rideId = data['rideId'] as String? ?? '';
+          return completedRideIds.contains(rideId);
+        })
+        .map(_paymentDocToEarningsTransaction)
+        .toList();
   }
 
   EarningsTransaction _paymentDocToEarningsTransaction(
@@ -202,6 +245,7 @@ class DriverStatsRepository {
       amountInCents: isRefund ? -amountInCents : amountInCents,
       description: description,
       createdAt:
+          _dateValue(data['rideCompletedAt']) ??
           _dateValue(data['completedAt']) ??
           _dateValue(data['createdAt']) ??
           DateTime.now(),
@@ -372,9 +416,7 @@ Stream<List<RideBooking>> pendingRideRequests(Ref ref) async* {
     yield const <RideBooking>[];
     return;
   }
-  yield* ref
-      .watch(driverStatsRepositoryProvider)
-      .streamPendingRequests(userId);
+  yield* ref.watch(driverStatsRepositoryProvider).streamPendingRequests(userId);
 }
 
 @riverpod

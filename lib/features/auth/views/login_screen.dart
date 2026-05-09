@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -111,20 +110,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     final hasApple = _isAppleSignInAvailable;
     final hasSocialOption = !isIos || hasApple;
 
-    ref.listen(loginViewModelProvider, (previous, next) {
-      if (next.hasError && previous?.error != next.error) {
-        final errorMessage = _getAuthErrorMessage(next.error);
-        _showAdaptiveMessage(errorMessage, isError: true);
-      }
-    });
-
-    ref.listen(socialAuthViewModelProvider, (previous, next) {
-      if (next.error != null && next.error != previous?.error) {
-        final errorMessage = _getAuthErrorMessage(next.error);
-        if (errorMessage.isEmpty) return; // user canceled — no snackbar
-        _showAdaptiveMessage(errorMessage, isError: true);
-      }
-    });
+    ref
+      ..listen(loginViewModelProvider, (previous, next) {
+        if (next.hasError && previous?.error != next.error) {
+          final errorMessage = _getAuthErrorMessage(next.error);
+          _showAdaptiveMessage(errorMessage, isError: true);
+        }
+      })
+      ..listen(socialAuthViewModelProvider, (previous, next) {
+        if (next.error != null && next.error != previous?.error) {
+          final errorMessage = _getAuthErrorMessage(next.error);
+          if (errorMessage.isEmpty) return; // user canceled — no snackbar
+          _showAdaptiveMessage(errorMessage, isError: true);
+        }
+      });
 
     final loginBody = SafeArea(
       child: FadeTransition(

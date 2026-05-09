@@ -1,7 +1,5 @@
 import 'dart:async';
 
-
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -362,17 +360,26 @@ class AddressAutocompleteFieldState
     return display.contains('france') || display.endsWith(', fr');
   }
 
-  Future<LatLng> _determineCurrentLocation() async {
+  Future<bool> _ensureLocationAccess() async {
     final serviceEnabled = await Geolocator.isLocationServiceEnabled();
 
     if (!serviceEnabled) {
-      throw Exception('Location services are disabled.');
+      await Geolocator.openLocationSettings();
+      throw Exception('Please enable location services and try again.');
     }
 
     var permission = await Geolocator.checkPermission();
 
+    if (permission == LocationPermission.whileInUse) {
+      return true;
+    }
+
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
+
+      if (permission == LocationPermission.whileInUse) {
+        return true;
+      }
 
       if (permission == LocationPermission.denied) {
         throw Exception('Location permission was denied.');
@@ -380,11 +387,16 @@ class AddressAutocompleteFieldState
     }
 
     if (permission == LocationPermission.deniedForever) {
+      await Geolocator.openAppSettings();
       throw Exception(
-        'Location permission is permanently denied. Enable it in Settings.',
+        'Location permission is permanently denied. Enable it in app settings.',
       );
     }
 
+    return false;
+  }
+
+  Future<LatLng> _getCurrentLatLng() async {
     final position = await Geolocator.getCurrentPosition(
       locationSettings: const LocationSettings(
         accuracy: LocationAccuracy.high,
@@ -408,8 +420,10 @@ class AddressAutocompleteFieldState
     });
 
     try {
-      final location = await _determineCurrentLocation();
+      final hasAccess = await _ensureLocationAccess();
+      if (!hasAccess || !mounted) return;
 
+      final location = await _getCurrentLatLng();
       if (!_isFiniteLatLng(location)) {
         setState(() {
           _errorText = 'Unable to read a valid current location.';
