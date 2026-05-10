@@ -800,7 +800,7 @@ class PaymentHistoryScreen extends ConsumerWidget {
               ),
               SizedBox(height: 10.h),
             ],
-            if (payment.canBeRefunded)
+            if (payment.canRequestRefund)
               SizedBox(
                 width: double.infinity,
                 child: FilledButton.icon(
@@ -811,9 +811,10 @@ class PaymentHistoryScreen extends ConsumerWidget {
                     onSubmit: (request) async {
                       await ref
                           .read(paymentViewModelProvider.notifier)
-                          .refundBookingPayment(
+                          .requestBookingRefund(
                             paymentId: payment.id,
                             reason: request.reason.name,
+                            details: request.details,
                           );
                       if (!context.mounted) return;
                       Navigator.of(context).pop(); // close refund sheet

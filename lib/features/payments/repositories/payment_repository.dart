@@ -279,11 +279,12 @@ class PaymentRepository {
   static const _validTransitions = <String, Set<String>>{
     'pending': {'processing', 'failed'},
     'processing': {'succeeded', 'failed'},
-    'succeeded': {'refunded', 'partiallyRefunded'},
+    'succeeded': {'refunding', 'refunded', 'partiallyRefunded'},
     'failed': {},
     'refunded': {},
-    'partiallyRefunded': {'refunded'},
-    'refunding': {'refunded', 'failed'},
+    'partiallyRefunded': {'refunding', 'refunded'},
+    'refunding': {'refunded', 'partiallyRefunded', 'refundFailed'},
+    'refundFailed': {'refunding'},
   };
 
   /// Update payment transaction status — enforces valid state machine.
@@ -765,32 +766,29 @@ class PaymentRepository {
     }
   }
 
-  /// Process refund
+  /// Request a server-policy refund.
 
-  Future<void> processRefund({
+  Future<void> requestRefundReview({
     required String paymentId,
-    int? amountInCents,
-    String? reason,
+    required String reason,
+    String? details,
   }) async {
     try {
       final payment = await getPaymentById(paymentId);
       if (payment == null) throw Exception('Payment not found');
-      if (payment.stripePaymentIntentId == null) {
-        throw Exception('Payment has no Stripe intent — cannot refund');
+      if (!payment.canRequestRefund) {
+        throw Exception('This payment is not eligible for automatic refund');
       }
 
-      // Call Stripe service to process refund
-      // The Cloud Function also updates the Firestore payment record
-      // (status, refundedAt, refundReason) — no client-side update needed
-      await _stripeService.refundPayment(
-        paymentIntentId: payment.stripePaymentIntentId!,
-        amountInCents: amountInCents,
+      await _stripeService.requestRefund(
+        paymentId: payment.id,
         reason: reason,
+        details: details,
       );
 
-      TalkerService.info('Refund processed: $paymentId');
-    } on Exception catch (e, st) {
-      TalkerService.error('Error processing refund: $e');
+      TalkerService.info('Automatic refund requested: $paymentId');
+    } on Exception catch (e) {
+      TalkerService.error('Error requesting automatic refund: $e');
       rethrow;
     }
   }

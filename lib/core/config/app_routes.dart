@@ -77,6 +77,7 @@ class AppRoutes {
   static const settings = AppRoute('/settings', 'settings');
   static const achievements = AppRoute('/achievements', 'achievements');
   static const notifications = AppRoute('/notifications', 'notifications');
+  static const adminDashboard = AppRoute('/admin', 'admin-dashboard');
 
   // Chat
   static const chat = AppRoute('/chat', 'chat');

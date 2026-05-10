@@ -2425,7 +2425,7 @@ packages:
       sha256: "99fd9fbd34d9f9a32efd7b6a6aae14125d8237b10403b422a6a6dfeac2806146"
       url: "https://pub.dev"
     source: hosted
-    version: "1.1.14"
+    version: "1.1.13"
   vector_graphics_compiler:
     dependency: transitive
     description:

@@ -275,7 +275,7 @@ final class PaymentViewModelProvider
   PaymentViewModel create() => PaymentViewModel();
 }
 
-String _$paymentViewModelHash() => r'73297131508ba21bacd9c799a71f2fe7bdb7be96';
+String _$paymentViewModelHash() => r'acc56f8712053b555974e074f88c173173d2d0f3';
 
 /// Payment Processing View Model
 
@@ -284,12 +284,12 @@ abstract class _$PaymentViewModel extends $AsyncNotifier<void> {
   @$mustCallSuper
   @override
   void runBuild() {
-    final ref = this.ref as $Ref<AsyncValue<void>, void>;
+    final ref = this.ref as $Ref<fr.AsyncValue<void>, void>;
     final element =
         ref.element
             as $ClassProviderElement<
-              AnyNotifier<AsyncValue<void>, void>,
-              AsyncValue<void>,
+              AnyNotifier<fr.AsyncValue<void>, void>,
+              fr.AsyncValue<void>,
               Object?,
               Object?
             >;
@@ -343,12 +343,12 @@ abstract class _$DriverOnboardingViewModel extends $AsyncNotifier<void> {
   @$mustCallSuper
   @override
   void runBuild() {
-    final ref = this.ref as $Ref<AsyncValue<void>, void>;
+    final ref = this.ref as $Ref<fr.AsyncValue<void>, void>;
     final element =
         ref.element
             as $ClassProviderElement<
-              AnyNotifier<AsyncValue<void>, void>,
-              AsyncValue<void>,
+              AnyNotifier<fr.AsyncValue<void>, void>,
+              fr.AsyncValue<void>,
               Object?,
               Object?
             >;
@@ -437,7 +437,7 @@ final riderPaymentHistoryProvider = RiderPaymentHistoryFamily._();
 final class RiderPaymentHistoryProvider
     extends
         $FunctionalProvider<
-          AsyncValue<List<PaymentTransaction>>,
+          fr.AsyncValue<List<PaymentTransaction>>,
           List<PaymentTransaction>,
           FutureOr<List<PaymentTransaction>>
         >
@@ -524,7 +524,7 @@ final riderPaymentHistoryStreamProvider = RiderPaymentHistoryStreamFamily._();
 final class RiderPaymentHistoryStreamProvider
     extends
         $FunctionalProvider<
-          AsyncValue<List<PaymentTransaction>>,
+          fr.AsyncValue<List<PaymentTransaction>>,
           List<PaymentTransaction>,
           Stream<List<PaymentTransaction>>
         >
@@ -662,7 +662,7 @@ final class DriverConnectedAccountViewModelFamily extends $Family
     with
         $ClassFamilyOverride<
           DriverConnectedAccountViewModel,
-          AsyncValue<DriverConnectedAccount?>,
+          fr.AsyncValue<DriverConnectedAccount?>,
           DriverConnectedAccount?,
           FutureOr<DriverConnectedAccount?>,
           String
@@ -699,17 +699,17 @@ abstract class _$DriverConnectedAccountViewModel
     final ref =
         this.ref
             as $Ref<
-              AsyncValue<DriverConnectedAccount?>,
+              fr.AsyncValue<DriverConnectedAccount?>,
               DriverConnectedAccount?
             >;
     final element =
         ref.element
             as $ClassProviderElement<
               AnyNotifier<
-                AsyncValue<DriverConnectedAccount?>,
+                fr.AsyncValue<DriverConnectedAccount?>,
                 DriverConnectedAccount?
               >,
-              AsyncValue<DriverConnectedAccount?>,
+              fr.AsyncValue<DriverConnectedAccount?>,
               Object?,
               Object?
             >;
@@ -727,7 +727,7 @@ final driverEarningsSummaryProvider = DriverEarningsSummaryFamily._();
 final class DriverEarningsSummaryProvider
     extends
         $FunctionalProvider<
-          AsyncValue<EarningsSummary>,
+          fr.AsyncValue<EarningsSummary>,
           EarningsSummary,
           FutureOr<EarningsSummary>
         >
@@ -812,7 +812,7 @@ final driverEarningsTransactionsProvider = DriverEarningsTransactionsFamily._();
 final class DriverEarningsTransactionsProvider
     extends
         $FunctionalProvider<
-          AsyncValue<List<PaymentTransaction>>,
+          fr.AsyncValue<List<PaymentTransaction>>,
           List<PaymentTransaction>,
           FutureOr<List<PaymentTransaction>>
         >
@@ -916,7 +916,7 @@ final driverPayoutsProvider = DriverPayoutsFamily._();
 final class DriverPayoutsProvider
     extends
         $FunctionalProvider<
-          AsyncValue<List<DriverPayout>>,
+          fr.AsyncValue<List<DriverPayout>>,
           List<DriverPayout>,
           FutureOr<List<DriverPayout>>
         >
@@ -1002,7 +1002,7 @@ final payoutDetailProvider = PayoutDetailFamily._();
 final class PayoutDetailProvider
     extends
         $FunctionalProvider<
-          AsyncValue<DriverPayout?>,
+          fr.AsyncValue<DriverPayout?>,
           DriverPayout?,
           FutureOr<DriverPayout?>
         >
@@ -1114,12 +1114,12 @@ abstract class _$DriverPayoutViewModel extends $AsyncNotifier<void> {
   @$mustCallSuper
   @override
   void runBuild() {
-    final ref = this.ref as $Ref<AsyncValue<void>, void>;
+    final ref = this.ref as $Ref<fr.AsyncValue<void>, void>;
     final element =
         ref.element
             as $ClassProviderElement<
-              AnyNotifier<AsyncValue<void>, void>,
-              AsyncValue<void>,
+              AnyNotifier<fr.AsyncValue<void>, void>,
+              fr.AsyncValue<void>,
               Object?,
               Object?
             >;
@@ -1137,7 +1137,7 @@ final driverStripeStatusProvider = DriverStripeStatusProvider._();
 final class DriverStripeStatusProvider
     extends
         $FunctionalProvider<
-          AsyncValue<DriverStripeStatus>,
+          fr.AsyncValue<DriverStripeStatus>,
           DriverStripeStatus,
           FutureOr<DriverStripeStatus>
         >
@@ -1181,7 +1181,7 @@ final currentDriverConnectedAccountProvider =
 final class CurrentDriverConnectedAccountProvider
     extends
         $FunctionalProvider<
-          AsyncValue<DriverConnectedAccount?>,
+          fr.AsyncValue<DriverConnectedAccount?>,
           DriverConnectedAccount?,
           Stream<DriverConnectedAccount?>
         >

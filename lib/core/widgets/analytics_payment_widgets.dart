@@ -386,7 +386,7 @@ class _RefundRequestSheetState extends State<RefundRequestSheet> {
         ),
       );
       // caller handles navigation on success
-    } catch (e) {
+    } on Exception {
       if (!mounted) return;
       setState(() {
         _isSubmitting = false;
@@ -438,7 +438,7 @@ class _RefundRequestSheetState extends State<RefundRequestSheet> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Refund amount',
+                        'Refund check',
                         style: TextStyle(
                           fontSize: 11.sp,
                           color: AppColors.textSecondary,
@@ -467,14 +467,14 @@ class _RefundRequestSheetState extends State<RefundRequestSheet> {
                     ),
                     SizedBox(height: 2.h),
                     Text(
-                      '5–10 business',
+                      'If',
                       style: TextStyle(
                         fontSize: 10.sp,
                         color: AppColors.textTertiary,
                       ),
                     ),
                     Text(
-                      'days',
+                      'eligible',
                       style: TextStyle(
                         fontSize: 10.sp,
                         color: AppColors.textTertiary,
@@ -501,7 +501,7 @@ class _RefundRequestSheetState extends State<RefundRequestSheet> {
           SizedBox(height: 10.h),
 
           // Reason tiles with icons
-          ...RefundReason.values.map((reason) {
+          ...RefundReason.automaticValues.map((reason) {
             final selected = reason == _reason;
             return Padding(
               padding: EdgeInsets.only(bottom: 8.h),
@@ -663,6 +663,12 @@ enum RefundReason {
   overcharged,
   cancelledByDriver,
   other,
+  ;
+
+  static const List<RefundReason> automaticValues = [
+    driverNoShow,
+    cancelledByDriver,
+  ];
 }
 
 extension RefundReasonL10n on RefundReason {

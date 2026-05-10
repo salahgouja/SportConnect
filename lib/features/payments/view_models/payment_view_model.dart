@@ -335,20 +335,20 @@ class PaymentViewModel extends _$PaymentViewModel {
     }
   }
 
-  /// Refund payment
-  Future<void> refundBookingPayment({
+  /// Request an automatic refund for a ride payment.
+  Future<void> requestBookingRefund({
     required String paymentId,
-    int? amountInCents,
-    String? reason,
+    required String reason,
+    String? details,
   }) async {
     state = const AsyncValue.loading();
 
     try {
       final paymentRepo = ref.read(paymentRepositoryProvider);
-      await paymentRepo.processRefund(
+      await paymentRepo.requestRefundReview(
         paymentId: paymentId,
-        amountInCents: amountInCents,
         reason: reason,
+        details: details,
       );
 
       // Check if provider is still mounted after async operation
@@ -356,7 +356,7 @@ class PaymentViewModel extends _$PaymentViewModel {
 
       state = const AsyncValue.data(null);
     } on Exception catch (e, st) {
-      TalkerService.error('Error processing refund: $e');
+      TalkerService.error('Error requesting automatic refund: $e');
 
       // Check if provider is still mounted before setting error state
       if (ref.mounted) {

@@ -33,6 +33,17 @@ const supportInboxEmail = defineSecret("SUPPORT_INBOX_EMAIL");
 
 const PLATFORM_FEE_PERCENT = 0.15; // 15%
 const RESOLVED_STATUSES = new Set(["resolved", "closed", "done", "completed"]);
+const OPEN_REFUND_REQUEST_STATUSES = new Set([
+  "open",
+  "pending",
+  "inReview",
+  "refunding",
+]);
+const REFUND_REQUEST_WINDOW_DAYS = 30;
+const AUTOMATIC_REFUND_REASONS = new Set([
+  "cancelledByDriver",
+  "driverNoShow",
+]);
 
 type StripeClient = Stripe.Stripe;
 type StripeAccount = Awaited<ReturnType<StripeClient["accounts"]["create"]>>;
@@ -92,7 +103,7 @@ function mapRefundStatusToPaymentStatus(
     case "failed":
       return "refundFailed";
     case "canceled":
-      return "refunding";
+      return "refundFailed";
     default:
       return "refunding";
   }
@@ -119,6 +130,313 @@ async function findPaymentDocsByPaymentIntent(
   for (const doc of byStripePaymentIntent.docs) unique.set(doc.id, doc);
 
   return [...unique.values()];
+}
+
+function isRefundOperator(auth: unknown): boolean {
+  const authRecord = asRecord(auth);
+  const token = asRecord(authRecord?.token);
+  return (
+    token?.admin === true ||
+    token?.support === true ||
+    token?.refunds === true ||
+    token?.role === "admin" ||
+    token?.role === "support"
+  );
+}
+
+function stringOrEmpty(value: unknown): string {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function paymentAmountInCents(data: DocumentData): number {
+  return (
+    finiteNumber(data.amountInCents) ??
+    Math.round((finiteNumber(data.amount) ?? 0) * 100)
+  );
+}
+
+function refundedAmountInCents(data: DocumentData): number {
+  const status = stringOrEmpty(data.status);
+  const stripeRefundStatus = stringOrEmpty(data.stripeRefundStatus);
+  if (
+    status !== "refunded" &&
+    status !== "partiallyRefunded" &&
+    stripeRefundStatus !== "succeeded"
+  ) {
+    return 0;
+  }
+  return Math.max(0, Math.round(finiteNumber(data.refundAmountInCents) ?? 0));
+}
+
+function timestampToMillis(value: unknown): number | null {
+  if (value instanceof Timestamp) return value.toMillis();
+  if (value instanceof Date) return value.getTime();
+  const record = asRecord(value);
+  const seconds = finiteNumber(record?.seconds);
+  if (seconds !== undefined) return seconds * 1000;
+  return null;
+}
+
+function isWithinRefundRequestWindow(createdAt: unknown): boolean {
+  const millis = timestampToMillis(createdAt);
+  if (millis === null) return true;
+  const maxAgeMs = REFUND_REQUEST_WINDOW_DAYS * 24 * 60 * 60 * 1000;
+  return Date.now() - millis <= maxAgeMs;
+}
+
+async function findPaymentDocsForRefundRequest(
+  db: Firestore,
+  data: Record<string, unknown>,
+): Promise<QueryDocumentSnapshot[]> {
+  const paymentId = stringOrEmpty(data.paymentId);
+  if (paymentId.length > 0) {
+    const doc = await db.collection("payments").doc(paymentId).get();
+    if (doc.exists) return [doc as QueryDocumentSnapshot];
+  }
+
+  const paymentIntentId = stringOrEmpty(data.paymentIntentId);
+  if (paymentIntentId.length === 0) return [];
+  return findPaymentDocsByPaymentIntent(db, paymentIntentId);
+}
+
+function getNestedRecord(
+  value: Record<string, unknown> | undefined,
+  key: string,
+): Record<string, unknown> | undefined {
+  return asRecord(value?.[key]);
+}
+
+function getDepartureMillis(ride: Record<string, unknown> | undefined): number | null {
+  const schedule = getNestedRecord(ride, "schedule");
+  return timestampToMillis(schedule?.departureTime ?? ride?.departureTime);
+}
+
+function isRideObjectivelyRefundable({
+  reason,
+  ride,
+  booking,
+}: {
+  reason: string;
+  ride: Record<string, unknown> | undefined;
+  booking: Record<string, unknown> | undefined;
+}): { eligible: boolean; reason: string } {
+  const rideStatus = stringOrEmpty(ride?.status);
+  const bookingStatus = stringOrEmpty(booking?.status);
+  const cancellationReason = stringOrEmpty(ride?.cancellationReason);
+  const departureMillis = getDepartureMillis(ride);
+  const now = Date.now();
+
+  if (reason === "cancelledByDriver") {
+    if (
+      rideStatus === "cancelled" &&
+      cancellationReason !== "expired" &&
+      cancellationReason !== "event_cancelled" &&
+      cancellationReason !== "payment_failed" &&
+      bookingStatus !== "completed"
+    ) {
+      return { eligible: true, reason: "driver_cancelled_ride" };
+    }
+    return {
+      eligible: false,
+      reason: "The ride is not recorded as cancelled by the driver.",
+    };
+  }
+
+  if (reason === "driverNoShow") {
+    const noShowWindowMs = 30 * 60 * 1000;
+    if (
+      departureMillis !== null &&
+      now >= departureMillis + noShowWindowMs &&
+      ["active", "full", "cancelled"].includes(rideStatus) &&
+      bookingStatus !== "completed"
+    ) {
+      return { eligible: true, reason: "driver_no_show" };
+    }
+    return {
+      eligible: false,
+      reason: "No-show refunds become automatic 30 minutes after departure if the ride was not started or completed.",
+    };
+  }
+
+  return {
+    eligible: false,
+    reason: "This refund reason needs a dispute review because it cannot be verified automatically.",
+  };
+}
+
+async function createStripeRefundForPayment({
+  db,
+  stripe,
+  paymentDocs,
+  paymentIntentId,
+  amountInCents,
+  reason,
+  source,
+  requestedByUid,
+  idempotencyKey,
+  refundRequestId,
+}: {
+  db: Firestore;
+  stripe: StripeClient;
+  paymentDocs: QueryDocumentSnapshot[];
+  paymentIntentId: string;
+  amountInCents?: number;
+  reason: string;
+  source: string;
+  requestedByUid: string;
+  idempotencyKey: string;
+  refundRequestId?: string;
+}): Promise<StripeRefund> {
+  if (paymentDocs.length === 0) {
+    throw new HttpsError("not-found", "Payment not found");
+  }
+
+  if (amountInCents !== undefined && amountInCents <= 0) {
+    throw new HttpsError(
+      "invalid-argument",
+      "amountInCents must be greater than zero",
+    );
+  }
+
+  const paymentRef = paymentDocs[0].ref;
+  let claimedPayment: DocumentData = paymentDocs[0].data();
+  let amountToRefundInCents = amountInCents ?? 0;
+
+  try {
+    await db.runTransaction(async (txn) => {
+      const snap = await txn.get(paymentRef);
+      if (!snap.exists) throw new Error("payment_not_found");
+      const data = snap.data()!;
+      const currentStatus = stringOrEmpty(data.status);
+
+      if (currentStatus === "refunded") {
+        throw new Error("already_refunded");
+      }
+      if (currentStatus === "refunding" && data.stripeRefundId) {
+        throw new Error("already_refunded");
+      }
+      if (
+        currentStatus !== "succeeded" &&
+        currentStatus !== "partiallyRefunded" &&
+        currentStatus !== "refundFailed" &&
+        currentStatus !== "refunding"
+      ) {
+        throw new Error("payment_not_succeeded");
+      }
+
+      const remainingAmount = Math.max(
+        0,
+        paymentAmountInCents(data) - refundedAmountInCents(data),
+      );
+      amountToRefundInCents = amountInCents ?? remainingAmount;
+      if (amountToRefundInCents <= 0) {
+        throw new Error("already_refunded");
+      }
+      if (amountToRefundInCents > remainingAmount) {
+        throw new Error("invalid_refund_amount");
+      }
+
+      claimedPayment = data;
+      txn.update(paymentRef, {
+        status: "refunding",
+        latestRefundRequestId:
+          refundRequestId && refundRequestId.length > 0
+            ? refundRequestId
+            : (data.latestRefundRequestId ?? null),
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (message === "already_refunded") {
+      throw new HttpsError(
+        "failed-precondition",
+        "Payment has already been refunded",
+      );
+    }
+    if (message === "payment_not_succeeded") {
+      throw new HttpsError(
+        "failed-precondition",
+        "Only succeeded payments can be refunded",
+      );
+    }
+    if (message === "invalid_refund_amount") {
+      throw new HttpsError(
+        "invalid-argument",
+        "Refund amount exceeds the remaining refundable amount",
+      );
+    }
+    throw error;
+  }
+
+  const refundReason = stringOrEmpty(reason);
+  const stripeRefundReason: StripeRefundCreateParams["reason"] = [
+    "duplicate",
+    "fraudulent",
+    "requested_by_customer",
+  ].includes(refundReason)
+    ? (refundReason as StripeRefundCreateParams["reason"])
+    : "requested_by_customer";
+
+  const refundParams: StripeRefundCreateParams = {
+    payment_intent: paymentIntentId,
+    reason: stripeRefundReason,
+    reverse_transfer: true,
+    refund_application_fee: true,
+    metadata: {
+      paymentIntentId,
+      paymentDocId: paymentRef.id,
+      bookingId: stringOrEmpty(claimedPayment.bookingId),
+      driverId: stringOrEmpty(claimedPayment.driverId),
+      riderId:
+        stringOrEmpty(claimedPayment.riderId) ||
+        stringOrEmpty(claimedPayment.passengerId),
+      refundReason,
+      requestedByUid,
+      ...(refundRequestId ? { refundRequestId } : {}),
+      source,
+    },
+  };
+
+  const originalAmountInCents = paymentAmountInCents(claimedPayment);
+  if (amountToRefundInCents < originalAmountInCents) {
+    refundParams.amount = amountToRefundInCents;
+  }
+
+  let refund: StripeRefund;
+  try {
+    refund = await stripe.refunds.create(refundParams, { idempotencyKey });
+  } catch (stripeError) {
+    await paymentRef
+      .update({
+        status: stringOrEmpty(claimedPayment.status) || "succeeded",
+        updatedAt: FieldValue.serverTimestamp(),
+      })
+      .catch(() => { /* best-effort */ });
+    const e = stripeError as { message?: string };
+    throw new HttpsError(
+      "internal",
+      `Stripe refund failed: ${e.message ?? "unknown error"}`,
+    );
+  }
+
+  for (const doc of paymentDocs) {
+    await doc.ref.update({
+      status: "refunding",
+      stripeRefundId: refund.id,
+      stripeRefundStatus: refund.status ?? "pending",
+      refundReason: refundReason || stripeRefundReason,
+      requestedRefundAmountInCents: amountToRefundInCents,
+      refundedAt: null,
+      latestRefundRequestId:
+        refundRequestId && refundRequestId.length > 0
+          ? refundRequestId
+          : FieldValue.delete(),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+  }
+
+  return refund;
 }
 
 async function findDriverIdForConnectedAccount(
@@ -847,6 +1165,10 @@ export const onSupportTicketCreated = onDocumentCreated(
           (url): url is string => typeof url === "string",
         )
       : [];
+    const metadata = asRecord(ticket.metadata);
+    const metadataLines = metadata
+      ? Object.entries(metadata).map(([key, value]) => `${key}: ${String(value)}`)
+      : [];
 
     const emailSubject = `[Support Ticket][${category}] ${subject}`;
     const emailBody = [
@@ -860,6 +1182,9 @@ export const onSupportTicketCreated = onDocumentCreated(
       "",
       "Message:",
       message,
+      "",
+      "Metadata:",
+      listToText(metadataLines),
       "",
       "Attachment URLs:",
       listToText(attachmentUrls),
@@ -978,6 +1303,20 @@ export const onSupportTicketResolved = onDocumentUpdated(
     }
 
     const ticketId = event.params.ticketId;
+    const metadata = asRecord(after.metadata);
+    const refundRequestId = stringOrEmpty(metadata?.refundRequestId);
+    if (refundRequestId.length > 0) {
+      await admin.firestore().collection("refund_requests").doc(refundRequestId).set(
+        {
+          status: afterStatus,
+          supportTicketId: ticketId,
+          resolvedAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      );
+    }
+
     const subject = `Your SportConnect support ticket (${ticketId}) is resolved`;
     const text = [
       "Hello,",
@@ -2487,6 +2826,211 @@ export const cancelInstantPayout = onCall(
 );
 
 // ============================================
+// Stripe: Request Automatic Refund
+// ============================================
+
+export const requestRefund = onCall(
+  { secrets: [stripeSecretKey], cors: true },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "User must be authenticated");
+    }
+
+    const requestData = asRecord(request.data) ?? {};
+    const db = admin.firestore();
+    const paymentDocs = await findPaymentDocsForRefundRequest(db, requestData);
+
+    if (paymentDocs.length === 0) {
+      throw new HttpsError("not-found", "Payment not found");
+    }
+
+    const paymentRef = paymentDocs[0].ref;
+    const payment = paymentDocs[0].data();
+    const requesterId = request.auth.uid;
+    const riderId = stringOrEmpty(payment.riderId) || stringOrEmpty(payment.passengerId);
+
+    if (riderId !== requesterId) {
+      throw new HttpsError(
+        "permission-denied",
+        "Only the rider who paid can request a refund",
+      );
+    }
+
+    const paymentStatus = stringOrEmpty(payment.status);
+    if (paymentStatus === "refunded") {
+      throw new HttpsError(
+        "failed-precondition",
+        "This payment has already been refunded",
+      );
+    }
+    if (paymentStatus === "refunding") {
+      throw new HttpsError(
+        "failed-precondition",
+        "A refund is already being processed for this payment",
+      );
+    }
+    if (!["succeeded", "partiallyRefunded", "refundFailed"].includes(paymentStatus)) {
+      throw new HttpsError(
+        "failed-precondition",
+        "Only completed ride payments can be reviewed for a refund",
+      );
+    }
+    if (!isWithinRefundRequestWindow(payment.createdAt)) {
+      throw new HttpsError(
+        "failed-precondition",
+        `Refund requests must be submitted within ${REFUND_REQUEST_WINDOW_DAYS} days of payment`,
+      );
+    }
+
+    const paymentIntentId =
+      stringOrEmpty(payment.paymentIntentId) ||
+      stringOrEmpty(payment.stripePaymentIntentId);
+    if (paymentIntentId.length === 0) {
+      throw new HttpsError(
+        "failed-precondition",
+        "This payment is missing its Stripe payment reference",
+      );
+    }
+
+    const reason = stringOrEmpty(requestData.reason) || "other";
+    const details = stringOrEmpty(requestData.details).slice(0, 2000);
+    const amountInCents = paymentAmountInCents(payment);
+    const alreadyRefundedInCents = refundedAmountInCents(payment);
+    const remainingAmountInCents = Math.max(0, amountInCents - alreadyRefundedInCents);
+
+    const requestId = `${paymentRef.id}_${requesterId}`;
+    const refundRequestRef = db.collection("refund_requests").doc(requestId);
+    const existingRequest = await refundRequestRef.get();
+    if (existingRequest.exists) {
+      const status = stringOrEmpty(existingRequest.data()?.status);
+      if (OPEN_REFUND_REQUEST_STATUSES.has(status)) {
+        return {
+          requestId,
+          status,
+          alreadyExists: true,
+        };
+      }
+      if (!["notAutomaticallyEligible", "failed"].includes(status)) {
+        throw new HttpsError(
+          "failed-precondition",
+          "This payment already has a reviewed refund request",
+        );
+      }
+    }
+
+    const userSnap = await db.collection("users").doc(requesterId).get();
+    const user = userSnap.data() ?? {};
+    const requesterEmail =
+      stringOrEmpty(user.email) ||
+      stringOrEmpty(user.userEmail) ||
+      "unknown";
+    const rideId = stringOrEmpty(payment.rideId);
+    const bookingId = stringOrEmpty(payment.bookingId);
+    const driverId = stringOrEmpty(payment.driverId);
+    const [rideSnap, bookingSnap] = await Promise.all([
+      rideId.length > 0 ? db.collection("rides").doc(rideId).get() : null,
+      bookingId.length > 0 ? db.collection("bookings").doc(bookingId).get() : null,
+    ]);
+    const ride = rideSnap?.data();
+    const booking = bookingSnap?.data();
+    const policy = isRideObjectivelyRefundable({ reason, ride, booking });
+
+    const metadata = {
+      refundRequestId: requestId,
+      paymentDocId: paymentRef.id,
+      paymentIntentId,
+      bookingId,
+      rideId,
+      driverId,
+      requesterId,
+      amountInCents,
+      remainingAmountInCents,
+      reason,
+    };
+
+    if (!AUTOMATIC_REFUND_REASONS.has(reason) || !policy.eligible) {
+      await refundRequestRef.set({
+        ...metadata,
+        status: "notAutomaticallyEligible",
+        requesterEmail,
+        details,
+        policyReason: policy.reason,
+        paymentStatus,
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+      throw new HttpsError("failed-precondition", policy.reason);
+    }
+
+    await refundRequestRef.set({
+      ...metadata,
+      status: "refunding",
+      requesterEmail,
+      details,
+      policyReason: policy.reason,
+      paymentStatus,
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+
+    const stripe = getStripeClient(stripeSecretKey.value().trim());
+    let refund: StripeRefund;
+    try {
+      refund = await createStripeRefundForPayment({
+        db,
+        stripe,
+        paymentDocs,
+        paymentIntentId,
+        reason: policy.reason,
+        source: "sportconnect_systematic_refund",
+        requestedByUid: requesterId,
+        refundRequestId: requestId,
+        idempotencyKey: `refund_request_${requestId}`,
+      });
+    } catch (error) {
+      await refundRequestRef.set(
+        {
+          status: "failed",
+          failureReason: error instanceof Error ? error.message : String(error),
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      );
+      throw error;
+    }
+
+    await db.runTransaction(async (txn) => {
+      txn.set(refundRequestRef, {
+        ...metadata,
+        status: "refunding",
+        requesterEmail,
+        policyReason: policy.reason,
+        paymentStatus,
+        details,
+        stripeRefundId: refund.id,
+        stripeRefundStatus: refund.status ?? "pending",
+        requestedRefundAmountInCents: refund.amount ?? remainingAmountInCents,
+        updatedAt: FieldValue.serverTimestamp(),
+      }, { merge: true });
+      txn.update(paymentRef, {
+        latestRefundRequestId: requestId,
+        latestRefundRequestedAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+    });
+
+    return {
+      requestId,
+      refundId: refund.id,
+      status: refund.status ?? "pending",
+      amount: (refund.amount ?? 0) / 100,
+      amountInCents: refund.amount ?? 0,
+      alreadyExists: false,
+    };
+  },
+);
+
+// ============================================
 // Stripe: Refund Payment
 // ============================================
 
@@ -2496,12 +3040,20 @@ export const refundPayment = onCall(
     if (!request.auth) {
       throw new HttpsError("unauthenticated", "User must be authenticated");
     }
+    if (!isRefundOperator(request.auth)) {
+      throw new HttpsError(
+        "permission-denied",
+        "Refunds must be issued by support or an administrator",
+      );
+    }
 
     const {
       paymentIntentId,
       amountInCents: requestedAmountInCents,
       amount: legacyAmount,
       reason = "requested_by_customer",
+      refundRequestId,
+      idempotencyKey,
     } = request.data;
 
     if (!paymentIntentId) {
@@ -2511,27 +3063,10 @@ export const refundPayment = onCall(
     const stripe = getStripeClient(stripeSecretKey.value().trim());
     const db = admin.firestore();
 
-    // FIX: Single Firestore query — reuse paymentSnap for both auth check
-    // and update loop. The original code queried the same collection twice.
-    const paymentSnap = await db
-      .collection("payments")
-      .where("paymentIntentId", "==", paymentIntentId)
-      .get();
+    const paymentDocs = await findPaymentDocsByPaymentIntent(db, paymentIntentId);
 
-    if (paymentSnap.empty) {
+    if (paymentDocs.length === 0) {
       throw new HttpsError("not-found", "Payment not found");
-    }
-
-    const paymentDoc = paymentSnap.docs[0].data();
-    if (
-      paymentDoc.riderId !== request.auth.uid &&
-      paymentDoc.passengerId !== request.auth.uid &&
-      paymentDoc.driverId !== request.auth.uid
-    ) {
-      throw new HttpsError(
-        "permission-denied",
-        "You are not authorized to refund this payment",
-      );
     }
 
     const refundAmountInCents =
@@ -2548,27 +3083,45 @@ export const refundPayment = onCall(
       );
     }
 
-    const paymentRef = paymentSnap.docs[0].ref;
-    let claimedPayment: DocumentData = paymentDoc;
+    const paymentRef = paymentDocs[0].ref;
+    let claimedPayment: DocumentData = paymentDocs[0].data();
+    let amountToRefundInCents = refundAmountInCents ?? 0;
     try {
       await db.runTransaction(async (txn) => {
         const snap = await txn.get(paymentRef);
         if (!snap.exists) throw new Error("payment_not_found");
         const data = snap.data()!;
-        if (
-          data.status === "refunded" ||
-          data.status === "partiallyRefunded"
-        ) {
+        const currentStatus = stringOrEmpty(data.status);
+        if (currentStatus === "refunded") {
           throw new Error("already_refunded");
         }
         // "refunding" + stripeRefundId = Stripe accepted it, block duplicate
         // "refunding" without stripeRefundId = previous attempt failed, allow retry
-        if (data.status === "refunding" && data.stripeRefundId) {
+        if (currentStatus === "refunding" && data.stripeRefundId) {
           throw new Error("already_refunded");
         }
-        if (data.status !== "succeeded" && data.status !== "refunding") {
+        if (
+          currentStatus !== "succeeded" &&
+          currentStatus !== "partiallyRefunded" &&
+          currentStatus !== "refundFailed" &&
+          currentStatus !== "refunding"
+        ) {
           throw new Error("payment_not_succeeded");
         }
+
+        const originalAmount = paymentAmountInCents(data);
+        const remainingAmount = Math.max(
+          0,
+          originalAmount - refundedAmountInCents(data),
+        );
+        amountToRefundInCents = refundAmountInCents ?? remainingAmount;
+        if (amountToRefundInCents <= 0) {
+          throw new Error("already_refunded");
+        }
+        if (amountToRefundInCents > remainingAmount) {
+          throw new Error("invalid_refund_amount");
+        }
+
         claimedPayment = data;
         txn.update(paymentRef, {
           status: "refunding",
@@ -2589,11 +3142,26 @@ export const refundPayment = onCall(
           "Only succeeded payments can be refunded",
         );
       }
+      if (message === "invalid_refund_amount") {
+        throw new HttpsError(
+          "invalid-argument",
+          "Refund amount exceeds the remaining refundable amount",
+        );
+      }
       throw error;
     }
+    const refundReason = stringOrEmpty(reason);
+    const stripeRefundReason: StripeRefundCreateParams["reason"] = [
+      "duplicate",
+      "fraudulent",
+      "requested_by_customer",
+    ].includes(refundReason)
+      ? (refundReason as StripeRefundCreateParams["reason"])
+      : "requested_by_customer";
+
     const refundParams: StripeRefundCreateParams = {
       payment_intent: paymentIntentId,
-      reason,
+      reason: stripeRefundReason,
       reverse_transfer: true,
       refund_application_fee: true,
       metadata: {
@@ -2611,25 +3179,31 @@ export const refundPayment = onCall(
           typeof claimedPayment.riderId === "string"
             ? claimedPayment.riderId
             : "",
+        refundReason,
         source: "sportconnect_manual_refund",
       },
     };
 
-    if (refundAmountInCents !== undefined) {
-      refundParams.amount = refundAmountInCents;
+    const originalAmountInCents = paymentAmountInCents(claimedPayment);
+    if (amountToRefundInCents < originalAmountInCents) {
+      refundParams.amount = amountToRefundInCents;
     }
 
-    const refundIdempotencyKey = `refund_${paymentIntentId}_${refundAmountInCents ?? "full"}`;
+    const stableIdempotencyKey =
+      stringOrEmpty(idempotencyKey) ||
+      (stringOrEmpty(refundRequestId).length > 0
+        ? `refund_request_${stringOrEmpty(refundRequestId)}`
+        : `manual_refund_${paymentIntentId}_${amountToRefundInCents}_${request.auth.uid}_${Date.now()}`);
 
     let refund: StripeRefund;
     try {
       refund = await stripe.refunds.create(refundParams, {
-        idempotencyKey: refundIdempotencyKey,
+        idempotencyKey: stableIdempotencyKey,
       });
     } catch (stripeError) {
       // Stripe rejected the refund — roll back to "succeeded" so it can be retried
       await paymentRef.update({
-        status: "succeeded",
+        status: stringOrEmpty(claimedPayment.status) || "succeeded",
         updatedAt: FieldValue.serverTimestamp(),
       }).catch(() => { /* best-effort */ });
       const e = stripeError as { message?: string };
@@ -2639,27 +3213,299 @@ export const refundPayment = onCall(
       );
     }
 
-    const originalAmountInCents =
-      (claimedPayment.amountInCents as number | undefined) ??
-      Math.round(((claimedPayment.amount as number | undefined) ?? 0) * 100);
-
-    for (const doc of paymentSnap.docs) {
+    for (const doc of paymentDocs) {
       await doc.ref.update({
         status: "refunding",
         stripeRefundId: refund.id,
         stripeRefundStatus: refund.status ?? "pending",
-        refundReason: reason,
-        requestedRefundAmountInCents:
-          refundAmountInCents ?? originalAmountInCents,
+        refundReason: refundReason || stripeRefundReason,
+        requestedRefundAmountInCents: amountToRefundInCents,
         refundedAt: null,
         updatedAt: FieldValue.serverTimestamp(),
       });
+    }
+
+    const requestId = stringOrEmpty(refundRequestId);
+    if (requestId.length > 0) {
+      await db.collection("refund_requests").doc(requestId).set(
+        {
+          status: "refunding",
+          stripeRefundId: refund.id,
+          stripeRefundStatus: refund.status ?? "pending",
+          reviewedByUid: request.auth.uid,
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      );
     }
 
     return {
       refundId: refund.id,
       status: refund.status,
       amount: (refund.amount ?? 0) / 100,
+      amountInCents: refund.amount ?? 0,
+    };
+  },
+);
+
+// ============================================
+// Admin: Resolve Refund / Dispute / Support Issues
+// ============================================
+
+export const approveRefundRequest = onCall(
+  { secrets: [stripeSecretKey], cors: true },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "User must be authenticated");
+    }
+    if (!isRefundOperator(request.auth)) {
+      throw new HttpsError("permission-denied", "Admin access required");
+    }
+
+    const requestData = asRecord(request.data) ?? {};
+    const refundRequestId = stringOrEmpty(requestData.refundRequestId);
+    const amountInCents =
+      finiteNumber(requestData.amountInCents) !== undefined
+        ? Math.round(finiteNumber(requestData.amountInCents)!)
+        : undefined;
+
+    if (refundRequestId.length === 0) {
+      throw new HttpsError("invalid-argument", "refundRequestId is required");
+    }
+
+    const db = admin.firestore();
+    const refundRequestRef = db.collection("refund_requests").doc(refundRequestId);
+    const refundRequestSnap = await refundRequestRef.get();
+    if (!refundRequestSnap.exists) {
+      throw new HttpsError("not-found", "Refund request not found");
+    }
+
+    const refundRequest = refundRequestSnap.data()!;
+    const paymentIntentId = stringOrEmpty(refundRequest.paymentIntentId);
+    if (paymentIntentId.length === 0) {
+      throw new HttpsError(
+        "failed-precondition",
+        "Refund request is missing paymentIntentId",
+      );
+    }
+
+    const paymentDocs = await findPaymentDocsByPaymentIntent(db, paymentIntentId);
+    const stripe = getStripeClient(stripeSecretKey.value().trim());
+    const refund = await createStripeRefundForPayment({
+      db,
+      stripe,
+      paymentDocs,
+      paymentIntentId,
+      amountInCents,
+      reason: stringOrEmpty(requestData.reason) || stringOrEmpty(refundRequest.reason) || "requested_by_customer",
+      source: "sportconnect_admin_refund",
+      requestedByUid: request.auth.uid,
+      refundRequestId,
+      idempotencyKey: `admin_refund_${refundRequestId}_${amountInCents ?? "remaining"}`,
+    });
+
+    await refundRequestRef.set(
+      {
+        status: "refunding",
+        reviewedByUid: request.auth.uid,
+        stripeRefundId: refund.id,
+        stripeRefundStatus: refund.status ?? "pending",
+        requestedRefundAmountInCents: refund.amount ?? amountInCents ?? null,
+        resolutionNote: stringOrEmpty(requestData.note),
+        updatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true },
+    );
+
+    return {
+      refundId: refund.id,
+      status: refund.status,
+      amountInCents: refund.amount ?? 0,
+    };
+  },
+);
+
+export const rejectRefundRequest = onCall({ cors: true }, async (request) => {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "User must be authenticated");
+  }
+  if (!isRefundOperator(request.auth)) {
+    throw new HttpsError("permission-denied", "Admin access required");
+  }
+
+  const requestData = asRecord(request.data) ?? {};
+  const refundRequestId = stringOrEmpty(requestData.refundRequestId);
+  if (refundRequestId.length === 0) {
+    throw new HttpsError("invalid-argument", "refundRequestId is required");
+  }
+
+  await admin.firestore().collection("refund_requests").doc(refundRequestId).set(
+    {
+      status: "rejected",
+      reviewedByUid: request.auth.uid,
+      resolutionNote: stringOrEmpty(requestData.note),
+      resolvedAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    },
+    { merge: true },
+  );
+
+  return { success: true };
+});
+
+export const resolveSupportTicket = onCall({ cors: true }, async (request) => {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "User must be authenticated");
+  }
+  if (!isRefundOperator(request.auth)) {
+    throw new HttpsError("permission-denied", "Admin access required");
+  }
+
+  const requestData = asRecord(request.data) ?? {};
+  const ticketId = stringOrEmpty(requestData.ticketId);
+  if (ticketId.length === 0) {
+    throw new HttpsError("invalid-argument", "ticketId is required");
+  }
+
+  await admin.firestore().collection("support_tickets").doc(ticketId).set(
+    {
+      status: "resolved",
+      resolvedByUid: request.auth.uid,
+      resolutionNote: stringOrEmpty(requestData.note),
+      resolvedAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    },
+    { merge: true },
+  );
+
+  return { success: true };
+});
+
+export const rejectDispute = onCall({ cors: true }, async (request) => {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "User must be authenticated");
+  }
+  if (!isRefundOperator(request.auth)) {
+    throw new HttpsError("permission-denied", "Admin access required");
+  }
+
+  const requestData = asRecord(request.data) ?? {};
+  const disputeId = stringOrEmpty(requestData.disputeId);
+  if (disputeId.length === 0) {
+    throw new HttpsError("invalid-argument", "disputeId is required");
+  }
+
+  await admin.firestore().collection("disputes").doc(disputeId).set(
+    {
+      status: "closed",
+      resolution: stringOrEmpty(requestData.note) || "Closed without refund",
+      resolvedByUid: request.auth.uid,
+      resolvedAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    },
+    { merge: true },
+  );
+
+  return { success: true };
+});
+
+export const approveDisputeRefund = onCall(
+  { secrets: [stripeSecretKey], cors: true },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "User must be authenticated");
+    }
+    if (!isRefundOperator(request.auth)) {
+      throw new HttpsError("permission-denied", "Admin access required");
+    }
+
+    const requestData = asRecord(request.data) ?? {};
+    const disputeId = stringOrEmpty(requestData.disputeId);
+    const amountInCents =
+      finiteNumber(requestData.amountInCents) !== undefined
+        ? Math.round(finiteNumber(requestData.amountInCents)!)
+        : undefined;
+    if (disputeId.length === 0) {
+      throw new HttpsError("invalid-argument", "disputeId is required");
+    }
+
+    const db = admin.firestore();
+    const disputeRef = db.collection("disputes").doc(disputeId);
+    const disputeSnap = await disputeRef.get();
+    if (!disputeSnap.exists) {
+      throw new HttpsError("not-found", "Dispute not found");
+    }
+
+    const dispute = disputeSnap.data()!;
+    const rideId = stringOrEmpty(dispute.rideId);
+    const riderId =
+      stringOrEmpty(dispute.complainantId) || stringOrEmpty(dispute.userId);
+    if (rideId.length === 0 || riderId.length === 0) {
+      throw new HttpsError(
+        "failed-precondition",
+        "Dispute is missing ride or complainant data",
+      );
+    }
+
+    let paymentsSnap = await db
+      .collection("payments")
+      .where("rideId", "==", rideId)
+      .where("riderId", "==", riderId)
+      .limit(1)
+      .get();
+    if (paymentsSnap.empty) {
+      paymentsSnap = await db
+        .collection("payments")
+        .where("rideId", "==", rideId)
+        .where("passengerId", "==", riderId)
+        .limit(1)
+        .get();
+    }
+    if (paymentsSnap.empty) {
+      throw new HttpsError("not-found", "No payment found for this dispute");
+    }
+
+    const paymentDoc = paymentsSnap.docs[0];
+    const payment = paymentDoc.data();
+    const paymentIntentId =
+      stringOrEmpty(payment.paymentIntentId) ||
+      stringOrEmpty(payment.stripePaymentIntentId);
+    if (paymentIntentId.length === 0) {
+      throw new HttpsError(
+        "failed-precondition",
+        "Payment is missing paymentIntentId",
+      );
+    }
+
+    const stripe = getStripeClient(stripeSecretKey.value().trim());
+    const refund = await createStripeRefundForPayment({
+      db,
+      stripe,
+      paymentDocs: [paymentDoc],
+      paymentIntentId,
+      amountInCents,
+      reason: "dispute_resolution",
+      source: "sportconnect_dispute_refund",
+      requestedByUid: request.auth.uid,
+      idempotencyKey: `dispute_refund_${disputeId}_${amountInCents ?? "remaining"}`,
+    });
+
+    await disputeRef.set(
+      {
+        status: "resolved",
+        resolution: stringOrEmpty(requestData.note) || "Refund approved",
+        resolvedByUid: request.auth.uid,
+        stripeRefundId: refund.id,
+        stripeRefundStatus: refund.status ?? "pending",
+        resolvedAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true },
+    );
+
+    return {
+      refundId: refund.id,
+      status: refund.status,
       amountInCents: refund.amount ?? 0,
     };
   },
@@ -3459,7 +4305,7 @@ export const stripeWebhook = onRequest(
             if (bookingId) {
               await db.collection("bookings").doc(bookingId).set(
                 {
-                  paymentStatus: "refunded",
+                  paymentStatus: isFullRefund ? "refunded" : "partiallyRefunded",
                   updatedAt: FieldValue.serverTimestamp(),
                 },
                 { merge: true },
@@ -3504,7 +4350,9 @@ export const stripeWebhook = onRequest(
               status: nextStatus,
               stripeRefundId: refund.id,
               stripeRefundStatus: refund.status ?? "unknown",
-              refundAmountInCents: refund.amount,
+              ...(refund.status === "succeeded"
+                ? { refundAmountInCents: refund.amount }
+                : { requestedRefundAmountInCents: refund.amount }),
               refundedAt:
                 refund.status === "succeeded"
                   ? FieldValue.serverTimestamp()
@@ -3527,13 +4375,7 @@ export const stripeWebhook = onRequest(
                 .doc(bookingId)
                 .set(
                   {
-                    paymentStatus:
-                      refund.status === "succeeded"
-                        ? "refunded"
-                        : refund.status === "failed" ||
-                            refund.status === "canceled"
-                          ? "refundFailed"
-                          : "refunding",
+                    paymentStatus: nextStatus,
                     updatedAt: FieldValue.serverTimestamp(),
                   },
                   { merge: true },
@@ -3559,6 +4401,25 @@ export const stripeWebhook = onRequest(
                 "Refund Failed",
                 "Your refund could not be completed. Please contact support.",
                 { type: "payment", referenceId: paymentIntentId },
+              );
+            }
+
+            const refundRequestId = stringOrEmpty(data.latestRefundRequestId);
+            if (refundRequestId.length > 0) {
+              await db.collection("refund_requests").doc(refundRequestId).set(
+                {
+                  status: nextStatus,
+                  stripeRefundId: refund.id,
+                  stripeRefundStatus: refund.status ?? "unknown",
+                  ...(refund.status === "succeeded"
+                    ? { refundAmountInCents: refund.amount }
+                    : { requestedRefundAmountInCents: refund.amount }),
+                  updatedAt: FieldValue.serverTimestamp(),
+                  ...(refund.status === "succeeded" && {
+                    resolvedAt: FieldValue.serverTimestamp(),
+                  }),
+                },
+                { merge: true },
               );
             }
           }
@@ -4274,12 +5135,9 @@ export const onBookingCancelled = onDocumentUpdated(
       // concurrent Firestore triggers (e.g. passenger + driver cancelling
       // simultaneously) can both pass the "already refunded?" check and issue
       // two separate Stripe refunds.
-      const paymentsSnap = await db
-        .collection("payments")
-        .where("paymentIntentId", "==", paymentIntentId)
-        .get();
+      const paymentDocs = await findPaymentDocsByPaymentIntent(db, paymentIntentId);
 
-      if (paymentsSnap.empty) {
+      if (paymentDocs.length === 0) {
         logger.warn("No payment record found for paymentIntentId", {
           paymentIntentId,
         });
@@ -4289,7 +5147,7 @@ export const onBookingCancelled = onDocumentUpdated(
       // Attempt to atomically transition the payment from "succeeded" →
       // "refunding".  If another trigger already claimed it the transaction
       // will throw and we bail out.
-      const paymentRef = paymentsSnap.docs[0].ref;
+      const paymentRef = paymentDocs[0].ref;
       let paymentData: DocumentData = {};
       try {
         await db.runTransaction(async (txn) => {
@@ -4571,17 +5429,15 @@ export const onRideCancelled = onDocumentUpdated(
       if (passengerId) passengerIds.push(passengerId);
 
       // FIX CF-6: Use a Firestore transaction to prevent double-refund
-      const paymentsSnap = await db
-        .collection("payments")
-        .where("paymentIntentId", "==", paymentIntentId)
-        .get();
+      const paymentDocs = await findPaymentDocsByPaymentIntent(db, paymentIntentId);
 
-      if (paymentsSnap.empty) continue;
-      const paymentRef = paymentsSnap.docs[0].ref;
+      if (paymentDocs.length === 0) continue;
+      const paymentRef = paymentDocs[0].ref;
 
       try {
         let refundableAmount: number | undefined = undefined;
         let paymentData: DocumentData = {};
+        let previousPaymentStatus = "succeeded";
 
         await db.runTransaction(async (txn) => {
           const snap = await txn.get(paymentRef);
@@ -4597,9 +5453,23 @@ export const onRideCancelled = onDocumentUpdated(
           // FIX CF-6: Full refund if ride never started; partial (driver
           // amount only, platform keeps the fee) if cancelled mid-trip.
           if (rideWasInProgress) {
-            refundableAmount = (data.driverEarnings as number) ?? undefined;
+            const originalAmountInCents = paymentAmountInCents(data);
+            const platformFeeInCents =
+              finiteNumber(data.platformFeeInCents) ??
+              Math.round((finiteNumber(data.platformFee) ?? 0) * 100);
+            const legacyDriverEarningsInCents = Math.round(
+              (finiteNumber(data.driverEarnings) ?? 0) * 100,
+            );
+            const driverEarningsInCents =
+              finiteNumber(data.driverEarningsInCents) ??
+              (legacyDriverEarningsInCents > 0
+                ? legacyDriverEarningsInCents
+                : Math.max(0, originalAmountInCents - platformFeeInCents));
+            refundableAmount =
+              driverEarningsInCents > 0 ? driverEarningsInCents : 0;
           }
           paymentData = data;
+          previousPaymentStatus = stringOrEmpty(data.status) || "succeeded";
           txn.update(paymentRef, {
             status: "refunding",
             updatedAt: FieldValue.serverTimestamp(),
@@ -4612,19 +5482,40 @@ export const onRideCancelled = onDocumentUpdated(
           reverse_transfer: true,
         };
         if (refundableAmount !== undefined) {
-          refundParams.amount = Math.round(refundableAmount * 100);
+          refundParams.amount = Math.round(refundableAmount);
+          if (refundParams.amount <= 0) {
+            throw new Error("no_refundable_amount");
+          }
         } else {
           // BUG-CF-03: Full refund (ride never started) — reclaim the platform
           // application fee so the platform doesn't retain its cut.
           refundParams.refund_application_fee = true;
         }
 
-        const refund = await stripe.refunds.create(refundParams);
+        let refund: StripeRefund;
+        try {
+          refund = await stripe.refunds.create(refundParams, {
+            idempotencyKey: `refund_ride_${rideId}_${bookingDoc.id}_${paymentIntentId}`,
+          });
+        } catch (stripeError) {
+          await paymentRef
+            .update({
+              status: previousPaymentStatus,
+              updatedAt: FieldValue.serverTimestamp(),
+            })
+            .catch(() => { /* best-effort */ });
+          throw stripeError;
+        }
         const isFullRefund = refundableAmount === undefined;
 
         await paymentRef.update({
-          status: isFullRefund ? "refunded" : "partiallyRefunded",
-          refundedAt: FieldValue.serverTimestamp(),
+          status: "refunding",
+          stripeRefundId: refund.id,
+          stripeRefundStatus: refund.status ?? "pending",
+          requestedRefundAmountInCents:
+            (refund.amount as number | undefined) ??
+            (isFullRefund ? paymentAmountInCents(paymentData) : refundableAmount),
+          refundedAt: null,
           refundReason: "driver_cancelled_ride",
           updatedAt: FieldValue.serverTimestamp(),
         });
@@ -4698,7 +5589,7 @@ export const onRideCancelled = onDocumentUpdated(
       await sendPushToMultipleUsers(
         passengerIds,
         "Ride Cancelled",
-        `${driverName} cancelled the ride. Any payments have been refunded automatically.`,
+        `${driverName} cancelled the ride. Eligible payments have been sent for refund.`,
         { type: "ride_update", referenceId: rideId, status: "cancelled" },
       );
     }

@@ -131,12 +131,18 @@ abstract class PaymentTransaction with _$PaymentTransaction {
 
   bool get isSuccessful => status == PaymentStatus.succeeded;
 
-  bool get canBeRefunded =>
-      status == PaymentStatus.succeeded &&
+  bool get canRequestRefund =>
+      (status == PaymentStatus.succeeded ||
+          status == PaymentStatus.partiallyRefunded ||
+          status == PaymentStatus.refundFailed) &&
       stripePaymentIntentId != null &&
-      stripeRefundId == null &&
       createdAt != null &&
       DateTime.now().difference(createdAt!).inDays <= 30;
+
+  bool get canBeRefunded =>
+      canRequestRefund &&
+      status == PaymentStatus.succeeded &&
+      stripeRefundId == null;
 }
 
 /// Driver Payout Model

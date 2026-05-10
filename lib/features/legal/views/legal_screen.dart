@@ -786,10 +786,11 @@ class LegalScreen extends ConsumerWidget {
       </li>
       <li>
         <strong>Trajet non effectué conformément aux attentes :</strong>
-        contactez-nous à
-        <a href="mailto:support@sportaxitrip.com">support@sportaxitrip.com</a>
-        dans les <strong>30 jours</strong> suivant le trajet. Nous instruirons
-        le dossier et émettrons un remboursement le cas échéant.
+        les cas vérifiables, comme une absence du conducteur 30 minutes après
+        l'heure de départ prévue, sont traités automatiquement dans
+        l'application. Les autres désaccords doivent être signalés via la
+        fonctionnalité de litige intégrée dans les <strong>30 jours</strong>
+        suivant le trajet.
       </li>
       <li>
         <strong>Contestation de prélèvement :</strong> utilisez la
@@ -1609,10 +1610,11 @@ class LegalScreen extends ConsumerWidget {
         sufficient notice may be eligible for a full or partial refund.
       </li>
       <li>
-        <strong>Ride not completed as expected:</strong> contact us at
-        <a href="mailto:support@sportaxitrip.com">support@sportaxitrip.com</a>
-        within <strong>30 days</strong> of the ride. We will review the case
-        and issue a refund where appropriate.
+        <strong>Ride not completed as expected:</strong>
+        objectively verifiable cases, such as a driver no-show 30 minutes after
+        scheduled departure, are processed automatically in the app. Other
+        disagreements must be submitted through the in-app dispute feature
+        within <strong>30 days</strong> of the ride.
       </li>
       <li>
         <strong>Charge dispute:</strong> use the in-app dispute feature or

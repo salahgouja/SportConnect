@@ -11,6 +11,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/models/user/models.dart';
+import 'package:sport_connect/core/providers/admin_access_provider.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/services/push_notification_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
@@ -49,6 +50,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         (value) => value.value?.role == UserRole.driver,
       ),
     );
+    final hasAdminAccess = ref.watch(adminAccessProvider).valueOrNull ?? false;
     final premiumMeta = ref.watch(premiumMetadataProvider);
 
     return AdaptiveScaffold(
@@ -249,6 +251,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               icon: Icons.receipt_long_rounded,
               onTap: () => context.push(AppRoutes.paymentHistory.path),
             ),
+            if (hasAdminAccess) ...[
+              _buildDivider(),
+              _buildNavTile(
+                title: 'Admin Dashboard',
+                subtitle: 'Review refunds, disputes, and support tickets',
+                icon: Icons.admin_panel_settings_outlined,
+                onTap: () => context.push(AppRoutes.adminDashboard.path),
+              ),
+            ],
             _buildDivider(),
             _buildNavTile(
               title: l10n.changePassword,

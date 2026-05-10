@@ -386,6 +386,30 @@ class StripeService {
     }
   }
 
+  /// Request an automatic ride-payment refund.
+  ///
+  /// The Cloud Function validates the rider and applies the server refund
+  /// policy before creating a Stripe refund.
+  Future<Map<String, dynamic>> requestRefund({
+    required String paymentId,
+    required String reason,
+    String? details,
+  }) async {
+    try {
+      final response = await _callFunction('requestRefund', {
+        'paymentId': paymentId,
+        'reason': reason,
+        'details': details,
+      });
+
+      return response;
+    } catch (e) {
+      TalkerService.error('Error requesting refund review: $e');
+      if (e is StripePaymentException) rethrow;
+      throw StripePaymentException('Refund request failed: $e');
+    }
+  }
+
   /// Calculate platform fees (client-side preview)
   Map<String, double> calculateFees({
     required double totalAmount,
