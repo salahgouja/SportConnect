@@ -99,12 +99,6 @@ service firebase.storage {
       allow write: if isEventOwner(eventId) && isValidImage();
     }
 
-    // Chat audio messages
-    match /chats/{chatId}/audio/{fileName} {
-      allow read: if isChatParticipant(chatId);
-      allow write: if isChatParticipant(chatId) && isValidAttachment();
-    }
-
     // Ride photos (for drop-off/pick-up verification)
     match /rides/{rideId}/photos/{fileName} {
       allow read: if isAuthenticated();

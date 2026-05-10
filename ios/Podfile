@@ -44,6 +44,18 @@ post_install do |installer|
     target.build_configurations.each do |config|
       # Enforce minimum iOS version across all pods
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
+
+      definitions = config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= ['$(inherited)']
+      definitions = [definitions] if definitions.is_a?(String)
+      config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = definitions
+
+      # SportConnect only needs foreground / When In Use location on iOS.
+      # This removes geolocator_apple's compiled Always-location request path,
+      # which can trigger App Review scrutiny even when the app never asks for it.
+      if target.name == 'geolocator_apple'
+        flag = 'BYPASS_PERMISSION_LOCATION_ALWAYS=1'
+        definitions << flag unless definitions.include?(flag)
+      end
     end
   end
 end

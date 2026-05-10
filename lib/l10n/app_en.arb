@@ -922,22 +922,6 @@
   "@couldNotOpenMapsValue": {
     "description": "Text from Text in chat_detail_screen.dart"
   },
-  "recordingReleaseToSend": "Recording... Release to send",
-  "@recordingReleaseToSend": {
-    "description": "Text from Text in chat_detail_screen.dart"
-  },
-  "voiceNote": "Voice note",
-  "@voiceNote": {
-    "description": "Text from Text in chat_detail_screen.dart"
-  },
-  "voiceNotesComingSoonUse": "Voice notes coming soon! Use text for now.",
-  "@voiceNotesComingSoonUse": {
-    "description": "Text from Text in chat_detail_screen.dart"
-  },
-  "recordingCancelled": "Recording cancelled",
-  "@recordingCancelled": {
-    "description": "Text from Text in chat_detail_screen.dart"
-  },
   "messages": "Messages",
   "@messages": {
     "description": "Text from Text in chat_list_screen.dart"
@@ -976,10 +960,6 @@
   },
   "videoCall": "Video call",
   "@videoCall": {
-    "description": "Text from Text in chat_list_screen.dart"
-  },
-  "voiceCall": "Voice call",
-  "@voiceCall": {
     "description": "Text from Text in chat_list_screen.dart"
   },
   "text3": " • ",
@@ -4333,9 +4313,6 @@
     }
   },
   "@_MESSAGING_SCREENS": {},
-  "sendingVoiceMessage": "Sending voice message...",
-  "recordingFailedError": "Failed to start recording. Please try again.",
-  "stopRecordingFailedError": "Failed to stop recording",
   "searchUsersTooltip": "Search users",
   "muteChat": "Mute",
   "unmuteChat": "Unmute",
@@ -4513,7 +4490,6 @@
   "averageResponseTime": "Average response time",
   "backToSettings": "Back to Settings",
   "couldNotClearChatTryAgain": "Could not clear chat. Please try again.",
-  "recording": "Recording",
   "sendEmoji": "Send Emoji",
   "sendPhoto": "Send Photo",
   "moreOptions": "More options",
@@ -4529,9 +4505,7 @@
   "attachFile": "Attach file",
   "showKeyboard": "Show keyboard",
   "showEmojiPicker": "Show emoji picker",
-  "stopRecording": "Stop recording",
   "sendMessage": "Send message",
-  "recordVoiceMessage": "Record voice message",
   "rejected": "Rejected",
   "pleaseEnterValue": "Please enter {value}",
   "@pleaseEnterValue": {
@@ -4592,12 +4566,10 @@
   "permissionLocationAccessMessage": "SportConnect needs your location to show nearby rides, calculate distances, and provide accurate navigation during your trips.",
   "permissionShareLocationTitle": "Share Your Location",
   "permissionShareLocationMessage": "Your current location will be shared with this chat so other participants can see where you are. Your location is only shared when you choose to send it.",
-  "permissionRideNavigationTitle": "Background Location Required",
-  "permissionRideNavigationMessage": "SportConnect accesses your location in the background — even when the app is closed — to detect when you enter pickup and drop-off zones during an active ride and notify your passengers in time. This is used only while a ride is in progress.",
+  "permissionRideNavigationTitle": "Location Access Required",
+  "permissionRideNavigationMessage": "SportConnect uses your location while you use the app to show live trip progress, detect pickup and drop-off arrival, and help coordinate rides. It is not used for background tracking.",
   "permissionCameraPhotosTitle": "Camera & Photos",
   "permissionCameraPhotosMessage": "Access to your camera and photo library is needed to attach images. Your photos are only uploaded when you explicitly choose to share them.",
-  "permissionMicrophoneTitle": "Microphone Access",
-  "permissionMicrophoneMessage": "Microphone access is needed to record voice messages. Audio is only recorded when you press and hold the record button.",
   "permissionStayUpdatedTitle": "Stay Updated",
   "permissionStayUpdatedMessage": "Enable notifications to receive ride updates, messages from other riders, booking confirmations, and important safety alerts.",
   "notNow": "Not Now",
@@ -5367,7 +5339,6 @@
   "failedToSendMessage": "Failed to send message",
   "cameraAccessIsNeededToTakeAndSendPhotosInThisChat": "Camera access is needed to take and send photos in this chat.",
   "failedToSendImage": "Failed to send image",
-  "failedToSendVoiceMessage": "Failed to send voice message",
   "permissionDeniedPleaseCheckYourConnectionAndTryAgain": "Permission denied. Please check your connection and try again.",
   "networkErrorPleaseCheckYourInternetConnection": "Network error. Please check your internet connection.",
   "clearChatHistoryMessage": "This will clear the messages from this chat for you only. The conversation will stay in your chat list.",
@@ -6064,7 +6035,6 @@
   "notificationChatReferenceType": "chat",
   "notificationEventReferenceType": "event",
   "sharedLocation": "Shared location",
-  "voiceMessage": "Voice message",
   "rideAttachment": "Ride attachment",
   "systemMessage": "System message",
   "imageMessage": "Image",

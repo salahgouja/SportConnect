@@ -1850,30 +1850,6 @@ abstract class AppLocalizations {
   /// **'Could not open maps: {value}'**
   String couldNotOpenMapsValue(Object value);
 
-  /// Text from Text in chat_detail_screen.dart
-  ///
-  /// In en, this message translates to:
-  /// **'Recording... Release to send'**
-  String get recordingReleaseToSend;
-
-  /// Text from Text in chat_detail_screen.dart
-  ///
-  /// In en, this message translates to:
-  /// **'Voice note'**
-  String get voiceNote;
-
-  /// Text from Text in chat_detail_screen.dart
-  ///
-  /// In en, this message translates to:
-  /// **'Voice notes coming soon! Use text for now.'**
-  String get voiceNotesComingSoonUse;
-
-  /// Text from Text in chat_detail_screen.dart
-  ///
-  /// In en, this message translates to:
-  /// **'Recording cancelled'**
-  String get recordingCancelled;
-
   /// Text from Text in chat_list_screen.dart
   ///
   /// In en, this message translates to:
@@ -1933,12 +1909,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Video call'**
   String get videoCall;
-
-  /// Text from Text in chat_list_screen.dart
-  ///
-  /// In en, this message translates to:
-  /// **'Voice call'**
-  String get voiceCall;
 
   /// Text from Text in chat_list_screen.dart
   ///
@@ -9182,24 +9152,6 @@ abstract class AppLocalizations {
   /// **'Step {step} of {total}'**
   String stepOfCount(int step, int total);
 
-  /// No description provided for @sendingVoiceMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'Sending voice message...'**
-  String get sendingVoiceMessage;
-
-  /// No description provided for @recordingFailedError.
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to start recording. Please try again.'**
-  String get recordingFailedError;
-
-  /// No description provided for @stopRecordingFailedError.
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to stop recording'**
-  String get stopRecordingFailedError;
-
   /// No description provided for @searchUsersTooltip.
   ///
   /// In en, this message translates to:
@@ -10070,12 +10022,6 @@ abstract class AppLocalizations {
   /// **'Could not clear chat. Please try again.'**
   String get couldNotClearChatTryAgain;
 
-  /// No description provided for @recording.
-  ///
-  /// In en, this message translates to:
-  /// **'Recording'**
-  String get recording;
-
   /// No description provided for @sendEmoji.
   ///
   /// In en, this message translates to:
@@ -10124,23 +10070,11 @@ abstract class AppLocalizations {
   /// **'Show emoji picker'**
   String get showEmojiPicker;
 
-  /// No description provided for @stopRecording.
-  ///
-  /// In en, this message translates to:
-  /// **'Stop recording'**
-  String get stopRecording;
-
   /// No description provided for @sendMessage.
   ///
   /// In en, this message translates to:
   /// **'Send message'**
   String get sendMessage;
-
-  /// No description provided for @recordVoiceMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'Record voice message'**
-  String get recordVoiceMessage;
 
   /// No description provided for @rejected.
   ///
@@ -10463,13 +10397,13 @@ abstract class AppLocalizations {
   /// No description provided for @permissionRideNavigationTitle.
   ///
   /// In en, this message translates to:
-  /// **'Background Location Required'**
+  /// **'Location Access Required'**
   String get permissionRideNavigationTitle;
 
   /// No description provided for @permissionRideNavigationMessage.
   ///
   /// In en, this message translates to:
-  /// **'SportConnect accesses your location in the background — even when the app is closed — to detect when you enter pickup and drop-off zones during an active ride and notify your passengers in time. This is used only while a ride is in progress.'**
+  /// **'SportConnect uses your location while you use the app to show live trip progress, detect pickup and drop-off arrival, and help coordinate rides. It is not used for background tracking.'**
   String get permissionRideNavigationMessage;
 
   /// No description provided for @permissionCameraPhotosTitle.
@@ -10483,18 +10417,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Access to your camera and photo library is needed to attach images. Your photos are only uploaded when you explicitly choose to share them.'**
   String get permissionCameraPhotosMessage;
-
-  /// No description provided for @permissionMicrophoneTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Microphone Access'**
-  String get permissionMicrophoneTitle;
-
-  /// No description provided for @permissionMicrophoneMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'Microphone access is needed to record voice messages. Audio is only recorded when you press and hold the record button.'**
-  String get permissionMicrophoneMessage;
 
   /// No description provided for @permissionStayUpdatedTitle.
   ///
@@ -14032,12 +13954,6 @@ abstract class AppLocalizations {
   /// **'Failed to send image'**
   String get failedToSendImage;
 
-  /// No description provided for @failedToSendVoiceMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to send voice message'**
-  String get failedToSendVoiceMessage;
-
   /// No description provided for @permissionDeniedPleaseCheckYourConnectionAndTryAgain.
   ///
   /// In en, this message translates to:
@@ -17250,12 +17166,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Shared location'**
   String get sharedLocation;
-
-  /// No description provided for @voiceMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'Voice message'**
-  String get voiceMessage;
 
   /// No description provided for @rideAttachment.
   ///

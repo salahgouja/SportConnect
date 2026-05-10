@@ -965,19 +965,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get recordingReleaseToSend => 'Recording... Release to send';
-
-  @override
-  String get voiceNote => 'Voice note';
-
-  @override
-  String get voiceNotesComingSoonUse =>
-      'Voice notes coming soon! Use text for now.';
-
-  @override
-  String get recordingCancelled => 'Recording cancelled';
-
-  @override
   String get messages => 'Messages';
 
   @override
@@ -1006,9 +993,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get videoCall => 'Video call';
-
-  @override
-  String get voiceCall => 'Voice call';
 
   @override
   String get text3 => ' • ';
@@ -4986,16 +4970,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get sendingVoiceMessage => 'Sending voice message...';
-
-  @override
-  String get recordingFailedError =>
-      'Failed to start recording. Please try again.';
-
-  @override
-  String get stopRecordingFailedError => 'Failed to stop recording';
-
-  @override
   String get searchUsersTooltip => 'Search users';
 
   @override
@@ -5456,9 +5430,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not clear chat. Please try again.';
 
   @override
-  String get recording => 'Recording';
-
-  @override
   String get sendEmoji => 'Send Emoji';
 
   @override
@@ -5485,13 +5456,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get showEmojiPicker => 'Show emoji picker';
 
   @override
-  String get stopRecording => 'Stop recording';
-
-  @override
   String get sendMessage => 'Send message';
-
-  @override
-  String get recordVoiceMessage => 'Record voice message';
 
   @override
   String get rejected => 'Rejected';
@@ -5663,11 +5628,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your current location will be shared with this chat so other participants can see where you are. Your location is only shared when you choose to send it.';
 
   @override
-  String get permissionRideNavigationTitle => 'Background Location Required';
+  String get permissionRideNavigationTitle => 'Location Access Required';
 
   @override
   String get permissionRideNavigationMessage =>
-      'SportConnect accesses your location in the background — even when the app is closed — to detect when you enter pickup and drop-off zones during an active ride and notify your passengers in time. This is used only while a ride is in progress.';
+      'SportConnect uses your location while you use the app to show live trip progress, detect pickup and drop-off arrival, and help coordinate rides. It is not used for background tracking.';
 
   @override
   String get permissionCameraPhotosTitle => 'Camera & Photos';
@@ -5675,13 +5640,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get permissionCameraPhotosMessage =>
       'Access to your camera and photo library is needed to attach images. Your photos are only uploaded when you explicitly choose to share them.';
-
-  @override
-  String get permissionMicrophoneTitle => 'Microphone Access';
-
-  @override
-  String get permissionMicrophoneMessage =>
-      'Microphone access is needed to record voice messages. Audio is only recorded when you press and hold the record button.';
 
   @override
   String get permissionStayUpdatedTitle => 'Stay Updated';
@@ -7633,9 +7591,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get failedToSendImage => 'Failed to send image';
 
   @override
-  String get failedToSendVoiceMessage => 'Failed to send voice message';
-
-  @override
   String get permissionDeniedPleaseCheckYourConnectionAndTryAgain =>
       'Permission denied. Please check your connection and try again.';
 
@@ -9423,9 +9378,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sharedLocation => 'Shared location';
-
-  @override
-  String get voiceMessage => 'Voice message';
 
   @override
   String get rideAttachment => 'Ride attachment';

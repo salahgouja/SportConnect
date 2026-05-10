@@ -988,20 +988,6 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get recordingReleaseToSend =>
-      'Enregistrement... Relâchez pour envoyer';
-
-  @override
-  String get voiceNote => 'Note vocale';
-
-  @override
-  String get voiceNotesComingSoonUse =>
-      'Notes vocales bientôt disponibles ! Utilisez le texte pour le moment.';
-
-  @override
-  String get recordingCancelled => 'Enregistrement annulé';
-
-  @override
   String get messages => 'Messages';
 
   @override
@@ -1031,9 +1017,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get videoCall => 'Appel vidéo';
-
-  @override
-  String get voiceCall => 'Appel vocal';
 
   @override
   String get text3 => ' • ';
@@ -5095,17 +5078,6 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get sendingVoiceMessage => 'Envoi du message vocal...';
-
-  @override
-  String get recordingFailedError =>
-      'Échec du démarrage de l\'enregistrement. Veuillez réessayer.';
-
-  @override
-  String get stopRecordingFailedError =>
-      'Échec de l\'arrêt de l\'enregistrement';
-
-  @override
   String get searchUsersTooltip => 'Rechercher des utilisateurs';
 
   @override
@@ -5574,9 +5546,6 @@ class AppLocalizationsFr extends AppLocalizations {
       'Impossible d\'effacer la discussion. Veuillez réessayer.';
 
   @override
-  String get recording => 'Enregistrement';
-
-  @override
   String get sendEmoji => 'Envoyer un emoji';
 
   @override
@@ -5603,13 +5572,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get showEmojiPicker => 'Afficher le sélecteur d\'emojis';
 
   @override
-  String get stopRecording => 'Arrêter l\'enregistrement';
-
-  @override
   String get sendMessage => 'Envoyer le message';
-
-  @override
-  String get recordVoiceMessage => 'Enregistrer un message vocal';
 
   @override
   String get rejected => 'Rejeté';
@@ -5784,12 +5747,11 @@ class AppLocalizationsFr extends AppLocalizations {
       'Votre position actuelle sera partagée dans cette discussion pour que les autres participants puissent vous localiser. Votre position n\'est partagée que lorsque vous choisissez de l\'envoyer.';
 
   @override
-  String get permissionRideNavigationTitle =>
-      'Localisation en arrière-plan requise';
+  String get permissionRideNavigationTitle => 'Localisation requise';
 
   @override
   String get permissionRideNavigationMessage =>
-      'SportConnect accède à votre localisation en arrière-plan — même lorsque l\'application est fermée — pour détecter lorsque vous entrez dans les zones de prise en charge et de dépose pendant un trajet actif, et notifier vos passagers à temps. Cet accès n\'est utilisé que pendant un trajet en cours.';
+      'SportConnect utilise votre localisation lorsque vous utilisez l\'application pour afficher la progression du trajet, détecter l\'arrivée aux points de prise en charge et de dépose, et coordonner les trajets. Elle n\'est pas utilisée pour le suivi en arrière-plan.';
 
   @override
   String get permissionCameraPhotosTitle => 'Caméra et photos';
@@ -5797,13 +5759,6 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get permissionCameraPhotosMessage =>
       'L\'accès à votre caméra et à votre galerie photo est nécessaire pour joindre des images. Vos photos ne sont envoyées que lorsque vous choisissez explicitement de les partager.';
-
-  @override
-  String get permissionMicrophoneTitle => 'Accès au microphone';
-
-  @override
-  String get permissionMicrophoneMessage =>
-      'L\'accès au microphone est nécessaire pour enregistrer des messages vocaux. L\'audio est enregistré uniquement lorsque vous maintenez le bouton d\'enregistrement enfoncé.';
 
   @override
   String get permissionStayUpdatedTitle => 'Restez informé';
@@ -7779,9 +7734,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get failedToSendImage => 'Échec de l\'envoi de l\'image';
 
   @override
-  String get failedToSendVoiceMessage => 'Échec de l\'envoi du message vocal';
-
-  @override
   String get permissionDeniedPleaseCheckYourConnectionAndTryAgain =>
       'Autorisation refusée. Veuillez vérifier votre connexion et réessayer.';
 
@@ -9587,9 +9539,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get sharedLocation => 'Position partagée';
-
-  @override
-  String get voiceMessage => 'Message vocal';
 
   @override
   String get rideAttachment => 'Pièce jointe de trajet';

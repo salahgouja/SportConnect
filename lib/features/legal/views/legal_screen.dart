@@ -398,40 +398,32 @@ class LegalScreen extends ConsumerWidget {
         </td>
       </tr>
       <tr>
-        <td><strong>Localisation en arrière-plan</strong></td>
+        <td><strong>Localisation pendant un trajet actif</strong></td>
         <td>
-          Uniquement pendant un trajet actif (application en arrière-plan ou
-          écran verrouillé)
+          Lorsque vous utilisez l'application pendant un trajet actif
         </td>
         <td>
-          Détecter automatiquement l'arrivée du conducteur ou du passager dans
-          la zone de prise en charge (rayon 150 m) ou de dépôt (rayon 180 m),
-          afin de faire progresser le statut du trajet sans confirmation
-          manuelle
+          Afficher la progression du trajet, aider à coordonner les
+          participants et faciliter la confirmation d'arrivée aux points de
+          prise en charge et de dépose
         </td>
       </tr>
     </table>
 
     <p>
-      <strong>Localisation en arrière-plan.</strong> SportConnect demande
-      l'autorisation de localisation permanente uniquement après le démarrage
-      d'un trajet. Cette autorisation est utilisée exclusivement pour déclencher
-      des événements de géofencing — détection de l'arrivée dans la zone de
-      prise en charge (rayon 150 m) ou de dépose (rayon 180 m) — pendant un
-      trajet actif. Les données de localisation collectées en arrière-plan sont
-      conservées sous forme de journaux d'événements pendant
-      <strong>18 heures maximum</strong>, puis supprimées automatiquement. Elles
-      sont utilisées uniquement pour faire progresser le statut du trajet et ne
-      sont en aucun cas exploitées à des fins publicitaires ou d'analyse
-      comportementale. Vous en êtes informé au moment où l'autorisation est
-      demandée dans l'application.
+      <strong>Localisation pendant les trajets.</strong> SportConnect demande
+      uniquement l'autorisation de localisation « lorsque l'application est
+      utilisée ». L'application ne demande pas l'autorisation de localisation
+      permanente. Votre localisation est utilisée lorsque vous utilisez
+      l'application pour afficher les trajets proches, montrer la progression du
+      trajet et aider à coordonner les participants. Elle n'est jamais utilisée
+      pour de la publicité ou de l'analyse comportementale.
     </p>
 
     <p>
       Vous pouvez révoquer l'autorisation de localisation à tout moment dans les
-      Paramètres de votre appareil. La révocation de la localisation en
-      arrière-plan désactivera la détection automatique de prise en
-      charge/dépose ; vous devrez confirmer manuellement votre arrivée.
+      Paramètres de votre appareil. Sans cette autorisation, certaines fonctions
+      de carte et de coordination de trajet peuvent être limitées.
     </p>
 
     <p>
@@ -525,10 +517,6 @@ class LegalScreen extends ConsumerWidget {
         Images partagées dans les conversations (stockées dans Firebase Storage)
       </li>
       <li>
-        Messages vocaux (enregistrements audio que vous choisissez d'envoyer ;
-        stockés dans Firebase Storage)
-      </li>
-      <li>
         Messages de localisation (coordonnées que vous choisissez de partager
         manuellement dans une conversation)
       </li>
@@ -544,17 +532,7 @@ class LegalScreen extends ConsumerWidget {
       votre historique de conversation à tout moment.
     </p>
 
-    <h3>2.7 Enregistrements audio (messages vocaux)</h3>
-    <p>
-      L'application demande l'autorisation d'accès au microphone pour permettre
-      l'envoi de messages vocaux dans le chat. L'enregistrement ne commence que
-      lorsque vous appuyez activement sur le bouton de message vocal. Les
-      enregistrements sont téléchargés sur notre stockage cloud sécurisé et
-      transmis uniquement aux participants de la conversation. Vous pouvez
-      supprimer vos messages vocaux envoyés à tout moment.
-    </p>
-
-    <h3>2.8 Caméra et photothèque</h3>
+    <h3>2.7 Caméra et photothèque</h3>
     <p>L'accès à la caméra et à la photothèque est demandé pour :</p>
     <ul>
       <li>Télécharger une photo de profil</li>
@@ -569,7 +547,7 @@ class LegalScreen extends ConsumerWidget {
       au-delà du stockage et de la livraison.
     </p>
 
-    <h3>2.9 Données d'utilisation et de diagnostic</h3>
+    <h3>2.8 Données d'utilisation et de diagnostic</h3>
     <ul>
       <li>
         <strong>Firebase Analytics</strong> — statistiques d'utilisation
@@ -597,7 +575,7 @@ class LegalScreen extends ConsumerWidget {
       Analytics &amp; Rapports de plantage</strong> dans l'application.
     </p>
 
-    <h3>2.10 Avis, évaluations et gamification</h3>
+    <h3>2.9 Avis, évaluations et gamification</h3>
     <ul>
       <li>
         Notes et avis écrits que vous soumettez sur d'autres utilisateurs
@@ -638,8 +616,8 @@ class LegalScreen extends ConsumerWidget {
         <td>Nécessaire pour fournir le service et respecter nos obligations légales de conservation comptable</td>
       </tr>
       <tr>
-        <td>Localisation en arrière-plan pendant les trajets actifs</td>
-        <td>Nécessaire pour faire progresser le statut du trajet en temps réel</td>
+        <td>Localisation pendant les trajets actifs</td>
+        <td>Nécessaire pour afficher et coordonner le trajet en temps réel</td>
       </tr>
       <tr>
         <td>Analytique et rapports de plantage</td>
@@ -880,14 +858,14 @@ class LegalScreen extends ConsumerWidget {
         </td>
       </tr>
       <tr>
-        <td>Fichiers audio et images</td>
+        <td>Images</td>
         <td>Jusqu'à la suppression du message ou du compte associé</td>
       </tr>
       <tr>
-        <td>Localisation en arrière-plan (événements de géofencing)</td>
+        <td>Localisation pendant les trajets actifs</td>
         <td>
-          <strong>18 heures maximum</strong> après l'événement, puis suppression
-          automatique
+          Conservée uniquement selon les besoins de fonctionnement du trajet et
+          les réglages de votre compte
         </td>
       </tr>
       <tr>
@@ -1271,34 +1249,29 @@ class LegalScreen extends ConsumerWidget {
         </td>
       </tr>
       <tr>
-        <td><strong>Background location</strong></td>
+        <td><strong>Active ride location</strong></td>
         <td>
-          Only during an active ride (app in background or screen locked)
+          While you use the app during an active ride
         </td>
         <td>
-          Automatically detect driver or passenger arrival within the pickup
-          zone (150 m radius) or drop-off zone (180 m radius), to advance the
-          ride status without manual confirmation
+          Show live trip progress, help coordinate participants, and support
+          arrival confirmation at pickup and drop-off points
         </td>
       </tr>
     </table>
 
     <p>
-      <strong>Background location.</strong> SportConnect requests the always-on
-      location permission only after a ride has started. This permission is used
-      exclusively to trigger geofencing events — detecting arrival within the
-      pickup zone (150 m) or drop-off zone (180 m) — during an active ride.
-      Background location data is retained as event logs for a maximum of
-      <strong>18 hours</strong>, then automatically deleted. It is used solely
-      to advance the ride status and is never used for advertising or behavioural
-      analysis. You are informed at the time the permission is requested in the
-      app.
+      <strong>Ride location.</strong> SportConnect requests only the "When In
+      Use" location permission. The app does not request Always location.
+      Location is used while you use the app to show nearby rides, display live
+      trip progress, and help coordinate participants. It is never used for
+      advertising or behavioural analysis.
     </p>
 
     <p>
       You can revoke the location permission at any time in your device
-      Settings. Revoking background location will disable automatic pickup/
-      drop-off detection; you will need to confirm your arrival manually.
+      Settings. Without this permission, some map and ride coordination features
+      may be limited.
     </p>
 
     <p>
@@ -1383,10 +1356,6 @@ class LegalScreen extends ConsumerWidget {
       </li>
       <li>Images shared in conversations (stored in Firebase Storage)</li>
       <li>
-        Voice messages (audio recordings you choose to send; stored in Firebase
-        Storage)
-      </li>
-      <li>
         Location messages (coordinates you choose to share manually in a
         conversation)
       </li>
@@ -1401,16 +1370,7 @@ class LegalScreen extends ConsumerWidget {
       individual messages or clear your conversation history at any time.
     </p>
 
-    <h3>2.7 Audio Data (Voice Messages)</h3>
-    <p>
-      The app requests microphone permission to allow sending voice messages in
-      chat. Recording only begins when you actively press the voice message
-      button. Recordings are uploaded to our secure cloud storage and shared
-      only with conversation participants. You can delete your sent voice
-      messages at any time.
-    </p>
-
-    <h3>2.8 Camera and Photo Library</h3>
+    <h3>2.7 Camera and Photo Library</h3>
     <p>Camera and photo library access is requested to:</p>
     <ul>
       <li>Upload a profile photo</li>
@@ -1424,7 +1384,7 @@ class LegalScreen extends ConsumerWidget {
       account. We do not analyse photo content beyond storage and delivery.
     </p>
 
-    <h3>2.9 Usage and Diagnostic Data</h3>
+    <h3>2.8 Usage and Diagnostic Data</h3>
     <ul>
       <li>
         <strong>Firebase Analytics</strong> — anonymous usage statistics
@@ -1450,7 +1410,7 @@ class LegalScreen extends ConsumerWidget {
       in the app.
     </p>
 
-    <h3>2.10 Ratings, Reviews, and Gamification</h3>
+    <h3>2.9 Ratings, Reviews, and Gamification</h3>
     <ul>
       <li>
         Ratings and written reviews you submit about other users (published on
@@ -1714,7 +1674,7 @@ class LegalScreen extends ConsumerWidget {
         <td>Until deleted by the user or account deletion</td>
       </tr>
       <tr>
-        <td>Audio files and images</td>
+        <td>Images</td>
         <td>Until the associated message or account is deleted</td>
       </tr>
       <tr>

@@ -187,40 +187,32 @@
         </td>
       </tr>
       <tr>
-        <td><strong>Localisation en arrière-plan</strong></td>
+        <td><strong>Localisation pendant un trajet actif</strong></td>
         <td>
-          Uniquement pendant un trajet actif (application en arrière-plan ou
-          écran verrouillé)
+          Lorsque vous utilisez l'application pendant un trajet actif
         </td>
         <td>
-          Détecter automatiquement l'arrivée du conducteur ou du passager dans
-          la zone de prise en charge (rayon 150 m) ou de dépôt (rayon 180 m),
-          afin de faire progresser le statut du trajet sans confirmation
-          manuelle
+          Afficher la progression du trajet, aider à coordonner les
+          participants et faciliter la confirmation d'arrivée aux points de
+          prise en charge et de dépose
         </td>
       </tr>
     </table>
 
     <p>
-      <strong>Localisation en arrière-plan.</strong> SportConnect demande
-      l'autorisation de localisation permanente uniquement après le démarrage
-      d'un trajet. Cette autorisation est utilisée exclusivement pour déclencher
-      des événements de géofencing — détection de l'arrivée dans la zone de
-      prise en charge (rayon 150 m) ou de dépose (rayon 180 m) — pendant un
-      trajet actif. Les données de localisation collectées en arrière-plan sont
-      conservées sous forme de journaux d'événements pendant
-      <strong>18 heures maximum</strong>, puis supprimées automatiquement. Elles
-      sont utilisées uniquement pour faire progresser le statut du trajet et ne
-      sont en aucun cas exploitées à des fins publicitaires ou d'analyse
-      comportementale. Vous en êtes informé au moment où l'autorisation est
-      demandée dans l'application.
+      <strong>Localisation pendant les trajets.</strong> SportConnect demande
+      uniquement l'autorisation de localisation « lorsque l'application est
+      utilisée ». L'application ne demande pas l'autorisation de localisation
+      permanente. Votre localisation est utilisée lorsque vous utilisez
+      l'application pour afficher les trajets proches, montrer la progression du
+      trajet et aider à coordonner les participants. Elle n'est jamais utilisée
+      pour de la publicité ou de l'analyse comportementale.
     </p>
 
     <p>
       Vous pouvez révoquer l'autorisation de localisation à tout moment dans les
-      Paramètres de votre appareil. La révocation de la localisation en
-      arrière-plan désactivera la détection automatique de prise en
-      charge/dépose ; vous devrez confirmer manuellement votre arrivée.
+      Paramètres de votre appareil. Sans cette autorisation, certaines fonctions
+      de carte et de coordination de trajet peuvent être limitées.
     </p>
 
     <p>
@@ -314,10 +306,6 @@
         Images partagées dans les conversations (stockées dans Firebase Storage)
       </li>
       <li>
-        Messages vocaux (enregistrements audio que vous choisissez d'envoyer ;
-        stockés dans Firebase Storage)
-      </li>
-      <li>
         Messages de localisation (coordonnées que vous choisissez de partager
         manuellement dans une conversation)
       </li>
@@ -333,17 +321,7 @@
       votre historique de conversation à tout moment.
     </p>
 
-    <h3>2.7 Enregistrements audio (messages vocaux)</h3>
-    <p>
-      L'application demande l'autorisation d'accès au microphone pour permettre
-      l'envoi de messages vocaux dans le chat. L'enregistrement ne commence que
-      lorsque vous appuyez activement sur le bouton de message vocal. Les
-      enregistrements sont téléchargés sur notre stockage cloud sécurisé et
-      transmis uniquement aux participants de la conversation. Vous pouvez
-      supprimer vos messages vocaux envoyés à tout moment.
-    </p>
-
-    <h3>2.8 Caméra et photothèque</h3>
+    <h3>2.7 Caméra et photothèque</h3>
     <p>L'accès à la caméra et à la photothèque est demandé pour :</p>
     <ul>
       <li>Télécharger une photo de profil</li>
@@ -358,7 +336,7 @@
       au-delà du stockage et de la livraison.
     </p>
 
-    <h3>2.9 Données d'utilisation et de diagnostic</h3>
+    <h3>2.8 Données d'utilisation et de diagnostic</h3>
     <ul>
       <li>
         <strong>Firebase Analytics</strong> — statistiques d'utilisation
@@ -386,7 +364,7 @@
       Analytics &amp; Rapports de plantage</strong> dans l'application.
     </p>
 
-    <h3>2.10 Avis, évaluations et gamification</h3>
+    <h3>2.9 Avis, évaluations et gamification</h3>
     <ul>
       <li>
         Notes et avis écrits que vous soumettez sur d'autres utilisateurs
@@ -427,8 +405,8 @@
         <td>Nécessaire pour fournir le service et respecter nos obligations légales de conservation comptable</td>
       </tr>
       <tr>
-        <td>Localisation en arrière-plan pendant les trajets actifs</td>
-        <td>Nécessaire pour faire progresser le statut du trajet en temps réel</td>
+        <td>Localisation pendant les trajets actifs</td>
+        <td>Nécessaire pour afficher et coordonner le trajet en temps réel</td>
       </tr>
       <tr>
         <td>Analytique et rapports de plantage</td>
@@ -669,14 +647,14 @@
         </td>
       </tr>
       <tr>
-        <td>Fichiers audio et images</td>
+        <td>Images</td>
         <td>Jusqu'à la suppression du message ou du compte associé</td>
       </tr>
       <tr>
-        <td>Localisation en arrière-plan (événements de géofencing)</td>
+        <td>Localisation pendant les trajets actifs</td>
         <td>
-          <strong>18 heures maximum</strong> après l'événement, puis suppression
-          automatique
+          Conservée uniquement selon les besoins de fonctionnement du trajet et
+          les réglages de votre compte
         </td>
       </tr>
       <tr>

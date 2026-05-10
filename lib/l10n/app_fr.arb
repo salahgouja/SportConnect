@@ -922,22 +922,6 @@
   "@couldNotOpenMapsValue": {
     "description": "Text from Text in chat_detail_screen.dart"
   },
-  "recordingReleaseToSend": "Enregistrement... Relâchez pour envoyer",
-  "@recordingReleaseToSend": {
-    "description": "Text from Text in chat_detail_screen.dart"
-  },
-  "voiceNote": "Note vocale",
-  "@voiceNote": {
-    "description": "Text from Text in chat_detail_screen.dart"
-  },
-  "voiceNotesComingSoonUse": "Notes vocales bientôt disponibles ! Utilisez le texte pour le moment.",
-  "@voiceNotesComingSoonUse": {
-    "description": "Text from Text in chat_detail_screen.dart"
-  },
-  "recordingCancelled": "Enregistrement annulé",
-  "@recordingCancelled": {
-    "description": "Text from Text in chat_detail_screen.dart"
-  },
   "messages": "Messages",
   "@messages": {
     "description": "Text from Text in chat_list_screen.dart"
@@ -976,10 +960,6 @@
   },
   "videoCall": "Appel vidéo",
   "@videoCall": {
-    "description": "Text from Text in chat_list_screen.dart"
-  },
-  "voiceCall": "Appel vocal",
-  "@voiceCall": {
     "description": "Text from Text in chat_list_screen.dart"
   },
   "text3": " • ",
@@ -4327,9 +4307,6 @@
     }
   },
   "@_MESSAGING_SCREENS": {},
-  "sendingVoiceMessage": "Envoi du message vocal...",
-  "recordingFailedError": "Échec du démarrage de l'enregistrement. Veuillez réessayer.",
-  "stopRecordingFailedError": "Échec de l'arrêt de l'enregistrement",
   "searchUsersTooltip": "Rechercher des utilisateurs",
   "muteChat": "Muet",
   "unmuteChat": "Réactiver",
@@ -4507,7 +4484,6 @@
   "averageResponseTime": "Temps de réponse moyen",
   "backToSettings": "Retour aux paramètres",
   "couldNotClearChatTryAgain": "Impossible d'effacer la discussion. Veuillez réessayer.",
-  "recording": "Enregistrement",
   "sendEmoji": "Envoyer un emoji",
   "sendPhoto": "Envoyer une photo",
   "moreOptions": "Plus d'options",
@@ -4523,9 +4499,7 @@
   "attachFile": "Joindre un fichier",
   "showKeyboard": "Afficher le clavier",
   "showEmojiPicker": "Afficher le sélecteur d'emojis",
-  "stopRecording": "Arrêter l'enregistrement",
   "sendMessage": "Envoyer le message",
-  "recordVoiceMessage": "Enregistrer un message vocal",
   "rejected": "Rejeté",
   "pleaseEnterValue": "Veuillez saisir {value}",
   "@pleaseEnterValue": {
@@ -4586,12 +4560,10 @@
   "permissionLocationAccessMessage": "SportConnect a besoin de votre localisation pour afficher les trajets à proximité, calculer les distances et fournir une navigation précise pendant vos trajets.",
   "permissionShareLocationTitle": "Partager votre localisation",
   "permissionShareLocationMessage": "Votre position actuelle sera partagée dans cette discussion pour que les autres participants puissent vous localiser. Votre position n'est partagée que lorsque vous choisissez de l'envoyer.",
-  "permissionRideNavigationTitle": "Localisation en arrière-plan requise",
-  "permissionRideNavigationMessage": "SportConnect accède à votre localisation en arrière-plan — même lorsque l'application est fermée — pour détecter lorsque vous entrez dans les zones de prise en charge et de dépose pendant un trajet actif, et notifier vos passagers à temps. Cet accès n'est utilisé que pendant un trajet en cours.",
+  "permissionRideNavigationTitle": "Localisation requise",
+  "permissionRideNavigationMessage": "SportConnect utilise votre localisation lorsque vous utilisez l'application pour afficher la progression du trajet, détecter l'arrivée aux points de prise en charge et de dépose, et coordonner les trajets. Elle n'est pas utilisée pour le suivi en arrière-plan.",
   "permissionCameraPhotosTitle": "Caméra et photos",
   "permissionCameraPhotosMessage": "L'accès à votre caméra et à votre galerie photo est nécessaire pour joindre des images. Vos photos ne sont envoyées que lorsque vous choisissez explicitement de les partager.",
-  "permissionMicrophoneTitle": "Accès au microphone",
-  "permissionMicrophoneMessage": "L'accès au microphone est nécessaire pour enregistrer des messages vocaux. L'audio est enregistré uniquement lorsque vous maintenez le bouton d'enregistrement enfoncé.",
   "permissionStayUpdatedTitle": "Restez informé",
   "permissionStayUpdatedMessage": "Activez les notifications pour recevoir les mises à jour de trajet, les messages des autres passagers, les confirmations de réservation et les alertes de sécurité importantes.",
   "notNow": "Pas maintenant",
@@ -5361,7 +5333,6 @@
   "permissionPhotoLibraryMessage": "L'accès à votre photothèque est nécessaire pour envoyer des images dans cette discussion. Vos photos ne sont partagées que lorsque vous choisissez de les envoyer.",
   "cameraAccessIsNeededToTakeAndSendPhotosInThisChat": "L'accès à la caméra est nécessaire pour prendre et envoyer des photos dans cette discussion.",
   "failedToSendImage": "Échec de l'envoi de l'image",
-  "failedToSendVoiceMessage": "Échec de l'envoi du message vocal",
   "permissionDeniedPleaseCheckYourConnectionAndTryAgain": "Autorisation refusée. Veuillez vérifier votre connexion et réessayer.",
   "networkErrorPleaseCheckYourInternetConnection": "Erreur réseau. Veuillez vérifier votre connexion Internet.",
   "clearChatHistoryMessage": "Cette action effacera les messages de cette discussion pour vous uniquement. La conversation restera dans votre liste de discussions.",
@@ -6058,7 +6029,6 @@
   "notificationChatReferenceType": "chat",
   "notificationEventReferenceType": "event",
   "sharedLocation": "Position partagée",
-  "voiceMessage": "Message vocal",
   "rideAttachment": "Pièce jointe de trajet",
   "systemMessage": "Message système",
   "imageMessage": "Image",

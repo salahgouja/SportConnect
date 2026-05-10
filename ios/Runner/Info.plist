@@ -25,17 +25,13 @@
 		<key>LSRequiresIPhoneOS</key>
 		<true/>
 
-		<!-- Camera and Microphone permissions -->
+		<!-- Camera permission -->
 		<key>NSCameraUsageDescription</key>
 		<string>SportConnect uses your camera to take profile photos and attach images in chat. Photos are only uploaded when you explicitly choose to share them.</string>
-		<key>NSMicrophoneUsageDescription</key>
-		<string>SportConnect uses your microphone to record voice messages in chat. Audio is only recorded when you press and hold the record button.</string>
 
 		<!-- Photo Library permission -->
 		<key>NSPhotoLibraryUsageDescription</key>
 		<string>SportConnect accesses your photo library to attach images in chat and update your profile picture. Photos are only uploaded when you explicitly choose to share them.</string>
-		<key>NSPhotoLibraryAddUsageDescription</key>
-		<string>SportConnect saves photos you receive in chat to your photo library when you tap the save button.</string>
 
 		<!-- Push Notifications -->
 		<key>UIBackgroundModes</key>
