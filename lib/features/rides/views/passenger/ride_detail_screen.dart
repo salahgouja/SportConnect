@@ -1076,19 +1076,13 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
 
   /// Computes a simple preference match score and displays it.
   Widget _buildPreferencesMatch(RideModel ride) {
-    // Score each preference: pets-friendly, luggage allowed,
-    // chat allowed, women-only, max detour < 15 min
     final prefs = ride.preferences;
     var score = 0;
-    const total = 5;
+    const total = 3;
 
     // Positive signals for passenger convenience
     if (prefs.allowLuggage) score++;
-    if (prefs.allowChat) score++;
     if (!prefs.allowSmoking) score++; // most passengers prefer non-smoking
-    if (prefs.maxDetourMinutes == null || prefs.maxDetourMinutes! <= 15) {
-      score++;
-    }
     if (ride.remainingSeats > 1) score++; // spacious ride
 
     final pct = (score / total * 100).round();
@@ -1162,20 +1156,9 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                   positive: prefs.allowLuggage,
                 ),
                 RideMatchChip(
-                  icon: Icons.chat_bubble_outline,
-                  label: AppLocalizations.of(context).navChat,
-                  positive: prefs.allowChat,
-                ),
-                RideMatchChip(
                   icon: Icons.smoke_free_rounded,
                   label: AppLocalizations.of(context).nonSmoking,
                   positive: !prefs.allowSmoking,
-                ),
-                RideMatchChip(
-                  icon: Icons.route_rounded,
-                  label: AppLocalizations.of(context).directRoute,
-                  positive: prefs.maxDetourMinutes == null ||
-                      prefs.maxDetourMinutes! <= 15,
                 ),
                 RideMatchChip(
                   icon: Icons.event_seat_rounded,

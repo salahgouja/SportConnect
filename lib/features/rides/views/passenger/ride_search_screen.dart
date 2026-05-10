@@ -807,19 +807,6 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
       );
     }
 
-    if (_searchState.draftVehicleType != 'any') {
-      filters.add(
-        SearchFilterTag(
-          label: _vehicleTypeLabel(_searchState.draftVehicleType),
-          onRemove: () {
-            ref
-                .read(rideSearchViewModelProvider.notifier)
-                .setDraftVehicleType('any');
-          },
-        ),
-      );
-    }
-
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
       child: Column(
@@ -1525,36 +1512,6 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
                             ],
                           ),
 
-                          SizedBox(height: 24.h),
-
-                          SearchFilterSectionTitle(
-                            title: AppLocalizations.of(context).vehicleType,
-                          ),
-                          SizedBox(height: 12.h),
-                          Row(
-                            children: [
-                              _buildVehicleOption(
-                                Icons.directions_car,
-                                AppLocalizations.of(context).any,
-                                'any',
-                                searchState.draftVehicleType == 'any',
-                              ),
-                              SizedBox(width: 10.w),
-                              _buildVehicleOption(
-                                Icons.electric_car,
-                                AppLocalizations.of(context).electric,
-                                'electric',
-                                searchState.draftVehicleType == 'electric',
-                              ),
-                              SizedBox(width: 10.w),
-                              _buildVehicleOption(
-                                Icons.local_taxi,
-                                AppLocalizations.of(context).comfort,
-                                'comfort',
-                                searchState.draftVehicleType == 'comfort',
-                              ),
-                            ],
-                          ),
                         ],
                       ),
                     ),
@@ -1591,62 +1548,6 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
             .read(rideSearchViewModelProvider.notifier)
             .setFilterPanelOpen(false);
       }),
-    );
-  }
-
-  Widget _buildVehicleOption(
-    IconData icon,
-    String label,
-    String type,
-    bool isSelected,
-  ) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: () {
-          unawaited(HapticFeedback.selectionClick());
-          ref
-              .read(rideSearchViewModelProvider.notifier)
-              .setDraftVehicleType(type);
-        },
-        child: Container(
-          constraints: BoxConstraints(minHeight: 76.h),
-          padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 12.h),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? AppColors.primarySurface
-                : AppColors.surfaceVariant,
-            borderRadius: BorderRadius.circular(12.r),
-            border: Border.all(
-              color: isSelected ? AppColors.primary : AppColors.border,
-              width: isSelected ? 1.5 : 1,
-            ),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                size: 24.sp,
-                color: isSelected ? AppColors.primary : AppColors.textSecondary,
-              ),
-              SizedBox(height: 4.h),
-              Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 12.sp,
-                  fontWeight: FontWeight.w500,
-                  color: isSelected
-                      ? AppColors.primary
-                      : AppColors.textSecondary,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 
@@ -1785,17 +1686,6 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
         ),
       ),
     );
-  }
-
-  String _vehicleTypeLabel(String type) {
-    switch (type) {
-      case 'electric':
-        return AppLocalizations.of(context).electric;
-      case 'comfort':
-        return AppLocalizations.of(context).comfort;
-      default:
-        return type;
-    }
   }
 
   Widget _buildRideModelCard(RideModel ride) {

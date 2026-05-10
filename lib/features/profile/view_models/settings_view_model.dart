@@ -10,14 +10,6 @@ class SettingsState {
   const SettingsState({
     this.languageCode,
     this.locale,
-    this.notificationsEnabled = true,
-    this.rideReminders = true,
-    this.chatNotifications = true,
-    this.showLocation = true,
-    this.publicProfile = true,
-    this.analyticsEnabled = true,
-    this.driverAllowInstantBooking = true,
-    this.driverShowOnMap = true,
     this.notificationDialogShown = false,
   });
 
@@ -25,14 +17,6 @@ class SettingsState {
     return SettingsState(
       languageCode: repository.languageCode,
       locale: repository.locale,
-      notificationsEnabled: repository.notificationsEnabled,
-      rideReminders: repository.rideReminders,
-      chatNotifications: repository.chatNotifications,
-      showLocation: repository.showLocation,
-      publicProfile: repository.publicProfile,
-      analyticsEnabled: repository.analyticsEnabled,
-      driverAllowInstantBooking: repository.driverAllowInstantBooking,
-      driverShowOnMap: repository.driverShowOnMap,
       notificationDialogShown: repository.notificationDialogShown,
     );
   }
@@ -40,31 +24,11 @@ class SettingsState {
   final String? languageCode;
   final Locale? locale;
 
-  final bool notificationsEnabled;
-  final bool rideReminders;
-  final bool chatNotifications;
-
-  final bool showLocation;
-  final bool publicProfile;
-
-  final bool analyticsEnabled;
-
-  final bool driverAllowInstantBooking;
-  final bool driverShowOnMap;
-
   final bool notificationDialogShown;
 
   SettingsState copyWith({
     Object? languageCode = _unset,
     Object? locale = _unset,
-    bool? notificationsEnabled,
-    bool? rideReminders,
-    bool? chatNotifications,
-    bool? showLocation,
-    bool? publicProfile,
-    bool? analyticsEnabled,
-    bool? driverAllowInstantBooking,
-    bool? driverShowOnMap,
     bool? notificationDialogShown,
   }) {
     return SettingsState(
@@ -72,15 +36,6 @@ class SettingsState {
           ? this.languageCode
           : languageCode as String?,
       locale: identical(locale, _unset) ? this.locale : locale as Locale?,
-      notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
-      rideReminders: rideReminders ?? this.rideReminders,
-      chatNotifications: chatNotifications ?? this.chatNotifications,
-      showLocation: showLocation ?? this.showLocation,
-      publicProfile: publicProfile ?? this.publicProfile,
-      analyticsEnabled: analyticsEnabled ?? this.analyticsEnabled,
-      driverAllowInstantBooking:
-          driverAllowInstantBooking ?? this.driverAllowInstantBooking,
-      driverShowOnMap: driverShowOnMap ?? this.driverShowOnMap,
       notificationDialogShown:
           notificationDialogShown ?? this.notificationDialogShown,
     );
@@ -117,70 +72,6 @@ class SettingsViewModel extends _$SettingsViewModel {
       languageCode: null,
       locale: null,
     );
-  }
-
-  Future<void> setNotificationsEnabled(bool enabled) async {
-    final value = await _repository.setNotificationsEnabled(enabled);
-
-    if (!ref.mounted) return;
-
-    state = state.copyWith(notificationsEnabled: value);
-  }
-
-  Future<void> setRideReminders(bool enabled) async {
-    final value = await _repository.setRideReminders(enabled);
-
-    if (!ref.mounted) return;
-
-    state = state.copyWith(rideReminders: value);
-  }
-
-  Future<void> setChatNotifications(bool enabled) async {
-    final value = await _repository.setChatNotifications(enabled);
-
-    if (!ref.mounted) return;
-
-    state = state.copyWith(chatNotifications: value);
-  }
-
-  Future<void> setShowLocation(bool enabled) async {
-    final value = await _repository.setShowLocation(enabled);
-
-    if (!ref.mounted) return;
-
-    state = state.copyWith(showLocation: value);
-  }
-
-  Future<void> setPublicProfile(bool enabled) async {
-    final value = await _repository.setPublicProfile(enabled);
-
-    if (!ref.mounted) return;
-
-    state = state.copyWith(publicProfile: value);
-  }
-
-  Future<void> setAnalyticsEnabled({required bool enabled}) async {
-    final value = await _repository.setAnalyticsEnabled(enabled: enabled);
-
-    if (!ref.mounted) return;
-
-    state = state.copyWith(analyticsEnabled: value);
-  }
-
-  Future<void> setDriverAllowInstantBooking(bool value) async {
-    final updatedValue = await _repository.setDriverAllowInstantBooking(value);
-
-    if (!ref.mounted) return;
-
-    state = state.copyWith(driverAllowInstantBooking: updatedValue);
-  }
-
-  Future<void> setDriverShowOnMap(bool value) async {
-    final updatedValue = await _repository.setDriverShowOnMap(value);
-
-    if (!ref.mounted) return;
-
-    state = state.copyWith(driverShowOnMap: updatedValue);
   }
 
   Future<void> setNotificationDialogShown({bool value = true}) async {

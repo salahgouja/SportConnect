@@ -995,10 +995,6 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
     if (ride.isWomenOnly) {
       preferences.add(const MapEntry(Icons.female_rounded, 'Women only'));
     }
-    if (ride.allowChat) {
-      preferences.add(const MapEntry(Icons.chat_rounded, 'Chat enabled'));
-    }
-
     if (preferences.isEmpty) return const SizedBox.shrink();
 
     return Container(

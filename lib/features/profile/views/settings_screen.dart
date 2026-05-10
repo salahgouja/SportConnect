@@ -13,11 +13,9 @@ import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/core/providers/admin_access_provider.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
-import 'package:sport_connect/core/services/push_notification_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/platform_adaptive.dart';
 import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
-import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/features/auth/models/auth_exception.dart';
 import 'package:sport_connect/features/auth/view_models/auth_view_model.dart';
@@ -36,8 +34,6 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
-  bool _driverSectionExpanded = false;
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -69,21 +65,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       body: ListView(
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
         children: [
-          if (isDriver) ...[
-            SizedBox(height: 32.h),
-            _buildSectionHeader(
-              l10n.driverSettings,
-              Icons.drive_eta_rounded,
-              color: AppColors.secondary,
-            ),
-            SizedBox(height: 12.h),
-            _buildDriverCard(
-              l10n: l10n,
-              settings: settings,
-              settingsViewModel: settingsViewModel,
-            ),
-          ],
-
           SizedBox(height: 32.h),
           _buildSectionHeader(
             l10n.premium,
@@ -109,44 +90,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
 
           SizedBox(height: 32.h),
-          _buildSectionHeader(l10n.settingsNotifications, Icons.tune_rounded),
-          SizedBox(height: 12.h),
-          _buildCard([
-            _buildSwitchTile(
-              title: l10n.settingsPushNotifications,
-              subtitle: l10n.settingsPushNotificationsDesc,
-              value: settings.notificationsEnabled,
-              icon: Icons.notifications_outlined,
-              onChanged: settingsViewModel.setNotificationsEnabled,
-            ),
-            _buildDivider(),
-            _buildSwitchTile(
-              title: l10n.settingsRideReminders,
-              subtitle: l10n.settingsRideRemindersDesc,
-              value: settings.rideReminders,
-              icon: Icons.alarm_outlined,
-              enabled: settings.notificationsEnabled,
-              onChanged: settingsViewModel.setRideReminders,
-            ),
-            _buildDivider(),
-            _buildSwitchTile(
-              title: l10n.settingsChatMessages,
-              subtitle: l10n.settingsChatMessagesDesc,
-              value: settings.chatNotifications,
-              icon: Icons.chat_bubble_outline_rounded,
-              enabled: settings.notificationsEnabled,
-              onChanged: settingsViewModel.setChatNotifications,
-            ),
-            _buildDivider(),
-            _buildNavTile(
-              title: l10n.notification_permission,
-              subtitle: l10n.reallow_push_notifications_for_this_device,
-              icon: Icons.notifications_none_rounded,
-              onTap: () => _resetAndRequestNotificationPermission(context),
-            ),
-          ]),
-
-          SizedBox(height: 32.h),
           _buildSectionHeader(l10n.settingsAppearance, Icons.palette_outlined),
           SizedBox(height: 12.h),
           _buildCard([
@@ -168,36 +111,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           SizedBox(height: 12.h),
           _buildCard([
-            _buildSwitchTile(
-              title: l10n.settingsPublicProfile,
-              subtitle: l10n.settingsPublicProfileDesc,
-              value: settings.publicProfile,
-              icon: Icons.person_outline_rounded,
-              onChanged: settingsViewModel.setPublicProfile,
-            ),
-            _buildDivider(),
-            _buildSwitchTile(
-              title: l10n.settingsShowLocation,
-              subtitle: l10n.settingsShowLocationDesc,
-              value: settings.showLocation,
-              icon: Icons.location_on_outlined,
-              onChanged: settingsViewModel.setShowLocation,
-            ),
-            _buildDivider(),
             _buildNavTile(
               title: l10n.settingsBlockedUsers,
               subtitle: l10n.settingsBlockedUsersDesc,
               icon: Icons.block_outlined,
               onTap: _openBlockedUsersScreen,
-            ),
-            _buildDivider(),
-            _buildSwitchTile(
-              title: l10n.analytics_crash_reports,
-              subtitle: l10n.allow_anonymous_usage_data_and_crash_reports,
-              value: settings.analyticsEnabled,
-              icon: Icons.analytics_outlined,
-              onChanged: (v) =>
-                  settingsViewModel.setAnalyticsEnabled(enabled: v),
             ),
             _buildDivider(),
             _buildNavTile(
@@ -358,304 +276,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  Widget _buildDriverCard({
-    required AppLocalizations l10n,
-    required SettingsState settings,
-    required SettingsViewModel settingsViewModel,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(22.r),
-        border: Border.all(
-          color: AppColors.secondary.withValues(alpha: 0.16),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        children: [
-          InkWell(
-            onTap: () {
-              unawaited(HapticFeedback.selectionClick());
-              setState(() => _driverSectionExpanded = !_driverSectionExpanded);
-            },
-            child: Padding(
-              padding: EdgeInsets.all(18.w),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 44.w,
-                        height: 44.w,
-                        decoration: BoxDecoration(
-                          color: AppColors.secondary.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(14.r),
-                        ),
-                        child: Icon(
-                          Icons.local_taxi_rounded,
-                          color: AppColors.secondary,
-                          size: 22.sp,
-                        ),
-                      ),
-                      SizedBox(width: 14.w),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              l10n.driverSettings,
-                              style: TextStyle(
-                                fontSize: 16.sp,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.textPrimary,
-                                letterSpacing: -0.2,
-                              ),
-                            ),
-                            SizedBox(height: 3.h),
-                            Text(
-                              l10n.manage_booking_pickup_radius_payout_and_map_visibility,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 12.sp,
-                                height: 1.25,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        width: 34.w,
-                        height: 34.w,
-                        decoration: BoxDecoration(
-                          color: AppColors.background,
-                          borderRadius: BorderRadius.circular(10.r),
-                          border: Border.all(
-                            color: AppColors.border.withValues(alpha: 0.55),
-                          ),
-                        ),
-                        child: AnimatedRotation(
-                          turns: _driverSectionExpanded ? 0.5 : 0,
-                          duration: 200.ms,
-                          curve: Curves.easeOutCubic,
-                          child: Icon(
-                            Icons.keyboard_arrow_down_rounded,
-                            color: AppColors.textSecondary,
-                            size: 22.sp,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 16.h),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildDriverStatusPill(
-                          icon: Icons.bolt_rounded,
-                          label: l10n.booking,
-                          value: settings.driverAllowInstantBooking
-                              ? l10n.instant
-                              : l10n.manual,
-                          active: settings.driverAllowInstantBooking,
-                        ),
-                      ),
-                      SizedBox(width: 10.w),
-                      Expanded(
-                        child: _buildDriverStatusPill(
-                          icon: Icons.visibility_rounded,
-                          label: l10n.showOnDriverMap,
-                          value: settings.driverShowOnMap
-                              ? l10n.active
-                              : l10n.inactive,
-                          active: settings.driverShowOnMap,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-          AnimatedCrossFade(
-            duration: 240.ms,
-            sizeCurve: Curves.easeOutCubic,
-            crossFadeState: _driverSectionExpanded
-                ? CrossFadeState.showSecond
-                : CrossFadeState.showFirst,
-            firstChild: const SizedBox.shrink(),
-            secondChild: Column(
-              children: [
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 18.w),
-                  child: Divider(
-                    height: 1,
-                    color: AppColors.border.withValues(alpha: 0.55),
-                  ),
-                ),
-                SizedBox(height: 8.h),
-
-                _buildDriverPreferenceGroup(
-                  title: l10n.ridePreferences,
-                  icon: Icons.route_rounded,
-                  children: [
-                    _buildSwitchTile(
-                      title: l10n.allowInstantBooking,
-                      subtitle: l10n.letPassengersBookWithoutWaiting,
-                      value: settings.driverAllowInstantBooking,
-                      icon: Icons.bolt_outlined,
-                      onChanged: settingsViewModel.setDriverAllowInstantBooking,
-                    ),
-                    _buildDivider(),
-                    _buildSwitchTile(
-                      title: l10n.showOnDriverMap,
-                      subtitle: l10n.allowPassengersToSeeYour,
-                      value: settings.driverShowOnMap,
-                      icon: Icons.visibility_outlined,
-                      onChanged: settingsViewModel.setDriverShowOnMap,
-                    ),
-                  ],
-                ),
-
-                _buildDriverPreferenceGroup(
-                  title: l10n.paymentSettings,
-                  icon: Icons.account_balance_wallet_outlined,
-                  children: [
-                    _buildNavTile(
-                      title: l10n.payoutMethod,
-                      icon: Icons.account_balance_outlined,
-                      onTap: () => context.pushNamed(
-                        AppRoutes.driverStripeOnboarding.name,
-                        queryParameters: {
-                          'mode': 'manage',
-                          'returnTo': AppRoutes.driverEarnings.name,
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-
-                SizedBox(height: 10.h),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDriverStatusPill({
-    required IconData icon,
-    required String label,
-    required String value,
-    required bool active,
-  }) {
-    final color = active ? AppColors.secondary : AppColors.textSecondary;
-
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: active ? 0.10 : 0.07),
-        borderRadius: BorderRadius.circular(14.r),
-        border: Border.all(
-          color: color.withValues(alpha: active ? 0.18 : 0.10),
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: 16.sp, color: color),
-          SizedBox(width: 8.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 10.sp,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                SizedBox(height: 1.h),
-                Text(
-                  value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDriverPreferenceGroup({
-    required String title,
-    required IconData icon,
-    required List<Widget> children,
-  }) {
-    return Padding(
-      padding: EdgeInsets.fromLTRB(12.w, 12.h, 12.w, 0),
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.background.withValues(alpha: 0.55),
-          borderRadius: BorderRadius.circular(18.r),
-          border: Border.all(
-            color: AppColors.border.withValues(alpha: 0.45),
-          ),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: EdgeInsets.fromLTRB(14.w, 12.h, 14.w, 4.h),
-              child: Row(
-                children: [
-                  Icon(
-                    icon,
-                    size: 16.sp,
-                    color: AppColors.secondary,
-                  ),
-                  SizedBox(width: 8.w),
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 11.sp,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.secondary,
-                      letterSpacing: 0.4,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            ...children,
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildSectionHeader(String title, IconData icon, {Color? color}) {
     final c = color ?? AppColors.primary;
 
@@ -717,65 +337,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 16.w),
       child: Divider(height: 1, color: AppColors.border.withValues(alpha: 0.5)),
-    );
-  }
-
-  Widget _buildSwitchTile({
-    required String title,
-    required String subtitle,
-    required bool value,
-    required IconData icon,
-    required ValueChanged<bool> onChanged,
-    bool enabled = true,
-  }) {
-    return Opacity(
-      opacity: enabled ? 1.0 : 0.45,
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              size: 20.sp,
-              color: value ? AppColors.primary : AppColors.textSecondary,
-            ),
-            SizedBox(width: 14.w),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  SizedBox(height: 2.h),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            AdaptiveSwitch(
-              value: value && enabled,
-              onChanged: enabled
-                  ? (v) {
-                      unawaited(HapticFeedback.selectionClick());
-                      onChanged(v);
-                    }
-                  : null,
-              activeColor: AppColors.primary,
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -939,48 +500,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           style: TextStyle(fontSize: 12.sp, color: AppColors.textTertiary),
         ),
       ],
-    );
-  }
-
-  Future<void> _resetAndRequestNotificationPermission(
-    BuildContext context,
-  ) async {
-    final pns = ref.read(pushNotificationServiceProvider);
-    final settingsViewModel = ref.read(settingsViewModelProvider.notifier);
-
-    await settingsViewModel.setNotificationDialogShown(value: false);
-
-    final hasPermission = await pns.hasPermission();
-
-    if (!context.mounted) return;
-
-    if (hasPermission) {
-      AdaptiveSnackBar.show(
-        context,
-        message: AppLocalizations.of(context).notificationsAlreadyEnabled,
-        type: AdaptiveSnackBarType.success,
-      );
-      return;
-    }
-
-    final accepted = await PermissionDialogHelper.showNotificationRationale(
-      context,
-    );
-
-    if (!context.mounted) return;
-
-    await settingsViewModel.setNotificationDialogShown();
-
-    if (!accepted) return;
-
-    await pns.requestPermission();
-
-    if (!context.mounted) return;
-
-    AdaptiveSnackBar.show(
-      context,
-      message: AppLocalizations.of(context).notificationPermissionRequested,
-      type: AdaptiveSnackBarType.success,
     );
   }
 

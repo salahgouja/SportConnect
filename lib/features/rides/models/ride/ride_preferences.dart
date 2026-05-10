@@ -11,8 +11,6 @@ abstract class RidePreferences with _$RidePreferences {
     @Default(false) bool allowSmoking,
     @Default(true) bool allowLuggage,
     @Default(false) bool isWomenOnly,
-    @Default(true) bool allowChat,
-    int? maxDetourMinutes,
   }) = _RidePreferences;
 
   factory RidePreferences.fromJson(Map<String, dynamic> json) =>

@@ -47,7 +47,6 @@ class DriverOfferRideFormState {
     this.allowSmoking = false,
     this.allowLuggage = true,
     this.isWomenOnly = false,
-    this.maxDetourMinutes = 15,
     this.eventId,
     this.eventName,
     this.selectedEvent,
@@ -85,7 +84,6 @@ class DriverOfferRideFormState {
   final bool allowSmoking;
   final bool allowLuggage;
   final bool isWomenOnly;
-  final int? maxDetourMinutes;
 
   // Event attachment
   final String? eventId;
@@ -125,7 +123,6 @@ class DriverOfferRideFormState {
     bool? allowSmoking,
     bool? allowLuggage,
     bool? isWomenOnly,
-    int? maxDetourMinutes,
     Object? eventId = _sentinel,
     Object? eventName = _sentinel,
     Object? selectedEvent = _sentinel,
@@ -161,7 +158,6 @@ class DriverOfferRideFormState {
       allowSmoking: allowSmoking ?? this.allowSmoking,
       allowLuggage: allowLuggage ?? this.allowLuggage,
       isWomenOnly: isWomenOnly ?? this.isWomenOnly,
-      maxDetourMinutes: maxDetourMinutes ?? this.maxDetourMinutes,
       eventId: eventId == _sentinel ? this.eventId : eventId as String?,
       eventName: eventName == _sentinel ? this.eventName : eventName as String?,
       selectedEvent: selectedEvent == _sentinel
@@ -416,10 +412,6 @@ class DriverOfferRideViewModel extends _$DriverOfferRideViewModel {
     state = state.copyWith(isWomenOnly: womenOnly);
   }
 
-  void setMaxDetourMinutes(int? minutes) {
-    state = state.copyWith(maxDetourMinutes: minutes);
-  }
-
   // --- Event ---
   void setEvent(EventModel event) {
     state = state.copyWith(
@@ -537,7 +529,6 @@ class DriverOfferRideViewModel extends _$DriverOfferRideViewModel {
       allowSmoking: ride.preferences.allowSmoking,
       allowLuggage: ride.preferences.allowLuggage,
       isWomenOnly: ride.preferences.isWomenOnly,
-      maxDetourMinutes: ride.preferences.maxDetourMinutes,
       eventId: ride.eventId,
       eventName: ride.eventName,
       routeDistanceKm: ride.route.distanceKm,
@@ -626,20 +617,6 @@ class DriverOfferRideViewModel extends _$DriverOfferRideViewModel {
           return null;
         }
         vehicleInfo = vehicle.fullDisplayName;
-        if (const {
-          FuelType.electric,
-          FuelType.hybrid,
-          FuelType.pluginHybrid,
-          FuelType.hydrogen,
-        }.contains(vehicle.fuelType)) {
-          tags.add('eco');
-        }
-        if (vehicle.isVerified) {
-          tags.add('verified_driver');
-        }
-        if (vehicle.hasAC || vehicle.hasWifi || vehicle.hasCharger) {
-          tags.add('premium');
-        }
       }
 
       // When editing, preserve the existing booked count and bookingIds
@@ -692,7 +669,6 @@ class DriverOfferRideViewModel extends _$DriverOfferRideViewModel {
           allowSmoking: state.allowSmoking,
           allowLuggage: state.allowLuggage,
           isWomenOnly: state.isWomenOnly,
-          maxDetourMinutes: state.maxDetourMinutes,
         ),
         eventId: state.eventId,
         eventName: state.eventName,

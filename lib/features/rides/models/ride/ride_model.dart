@@ -125,12 +125,6 @@ abstract class RideModel with _$RideModel {
   /// Women only
   bool get isWomenOnly => preferences.isWomenOnly;
 
-  /// Max detour minutes
-  int? get maxDetourMinutes => preferences.maxDetourMinutes;
-
-  /// Allow chat convenience getter
-  bool get allowChat => preferences.allowChat;
-
   /// Arrival time
   DateTime? get arrivalTime => schedule.arrivalTime;
 

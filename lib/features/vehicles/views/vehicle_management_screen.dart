@@ -94,7 +94,6 @@ class _VehicleListView extends ConsumerWidget {
       (v) => v.isActive,
       orElse: () => sorted.first,
     );
-    final verifiedCount = sorted.where((v) => v.isVerified).length;
 
     return Stack(
       children: [
@@ -105,7 +104,6 @@ class _VehicleListView extends ConsumerWidget {
             _StatsHero(
               total: sorted.length,
               activeName: active.isActive ? active.displayName : null,
-              verified: verifiedCount,
             ).animate().fadeIn(duration: 320.ms).slideY(begin: 0.05, end: 0),
             SizedBox(height: 24.h),
             _AddVehicleBanner(onTap: () => _openAddSheet(context, ref))
@@ -276,12 +274,10 @@ class _StatsHero extends StatelessWidget {
   const _StatsHero({
     required this.total,
     required this.activeName,
-    required this.verified,
   });
 
   final int total;
   final String? activeName;
-  final int verified;
 
   @override
   Widget build(BuildContext context) {
@@ -353,17 +349,6 @@ class _StatsHero extends StatelessWidget {
                 child: _HeroStat(
                   value: '$total',
                   label: total == 1 ? l10n.vehicle : l10n.vehicles,
-                ),
-              ),
-              Container(
-                width: 1,
-                height: 40.h,
-                color: AppColors.divider,
-              ),
-              Expanded(
-                child: _HeroStat(
-                  value: '$verified',
-                  label: l10n.verified,
                 ),
               ),
               Container(
@@ -601,11 +586,6 @@ class _VehicleCard extends StatelessWidget {
                           label: '${vehicle.capacity} ${l10n.seats}',
                           color: AppColors.primary,
                         ),
-                        _MetaPill(
-                          icon: _fuelIcon(vehicle.fuelType),
-                          label: vehicle.fuelType.name,
-                          color: AppColors.info,
-                        ),
                         if (vehicle.totalRides > 0)
                           _MetaPill(
                             icon: Icons.route_rounded,
@@ -628,8 +608,6 @@ class _VehicleCard extends StatelessWidget {
                     SizedBox(height: 12.h),
                     Row(
                       children: [
-                        _VerificationBadge(status: vehicle.verificationStatus),
-                        const Spacer(),
                         if (isActive)
                           _ActiveBadge()
                         else if (onSetActive != null)
@@ -646,21 +624,6 @@ class _VehicleCard extends StatelessWidget {
     );
   }
 
-  IconData _fuelIcon(FuelType type) {
-    switch (type) {
-      case FuelType.electric:
-        return Icons.bolt_rounded;
-      case FuelType.hybrid:
-      case FuelType.pluginHybrid:
-        return Icons.eco_rounded;
-      case FuelType.hydrogen:
-        return Icons.water_drop_rounded;
-      case FuelType.gasoline:
-      case FuelType.diesel:
-      case FuelType.other:
-        return Icons.local_gas_station_rounded;
-    }
-  }
 }
 
 class _HeroImageStrip extends StatelessWidget {
@@ -873,56 +836,6 @@ class _MetaPill extends StatelessWidget {
             style: TextStyle(
               fontSize: 12.sp,
               fontWeight: FontWeight.w600,
-              color: color,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _VerificationBadge extends StatelessWidget {
-  const _VerificationBadge({required this.status});
-  final VehicleVerificationStatus status;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final (color, icon, label) = switch (status) {
-      VehicleVerificationStatus.verified => (
-        AppColors.success,
-        Icons.verified_rounded,
-        l10n.verified,
-      ),
-      VehicleVerificationStatus.pending => (
-        AppColors.warning,
-        Icons.hourglass_top_rounded,
-        l10n.pending,
-      ),
-      VehicleVerificationStatus.rejected => (
-        AppColors.error,
-        Icons.cancel_rounded,
-        l10n.rejected,
-      ),
-    };
-
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(20.r),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14.sp, color: color),
-          SizedBox(width: 5.w),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11.sp,
-              fontWeight: FontWeight.w700,
               color: color,
             ),
           ),
@@ -1270,12 +1183,8 @@ class _VehicleFormSheetState extends ConsumerState<_VehicleFormSheet> {
       color: (values['color']! as String).trim(),
       licensePlate: (values['license_plate']! as String).trim().toUpperCase(),
       capacity: ui.capacity,
-      fuelType: ui.fuelType,
       imageUrl: widget.vehicle?.imageUrl,
       isActive: widget.vehicle?.isActive ?? false,
-      verificationStatus:
-          widget.vehicle?.verificationStatus ??
-          VehicleVerificationStatus.pending,
     );
 
     unawaited(HapticFeedback.mediumImpact());
@@ -1387,18 +1296,6 @@ class _VehicleFormSheetState extends ConsumerState<_VehicleFormSheet> {
                         .setCapacity(v),
                   ),
 
-                  SizedBox(height: 20.h),
-                  _FormSectionHeader(
-                    icon: Icons.local_gas_station_rounded,
-                    title: l10n.fuelType,
-                  ),
-                  SizedBox(height: 12.h),
-                  _FuelTypeSelector(
-                    selected: ui.fuelType,
-                    onChanged: (v) => ref
-                        .read(addVehicleSheetUiViewModelProvider(_key).notifier)
-                        .setFuelType(v),
-                  ),
                   SizedBox(height: 12.h),
                 ],
               ),
@@ -1683,72 +1580,6 @@ class _CapacitySelector extends StatelessWidget {
   }
 }
 
-class _FuelTypeSelector extends StatelessWidget {
-  const _FuelTypeSelector({required this.selected, required this.onChanged});
-
-  final FuelType selected;
-  final ValueChanged<FuelType> onChanged;
-
-  IconData _iconFor(FuelType type) => switch (type) {
-    FuelType.electric => Icons.bolt_rounded,
-    FuelType.hybrid => Icons.eco_rounded,
-    FuelType.pluginHybrid => Icons.electrical_services_rounded,
-    FuelType.hydrogen => Icons.water_drop_rounded,
-    FuelType.gasoline => Icons.local_gas_station_rounded,
-    FuelType.diesel => Icons.local_gas_station_rounded,
-    FuelType.other => Icons.more_horiz_rounded,
-  };
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 8.w,
-      runSpacing: 8.h,
-      children: FuelType.values.map((type) {
-        final isSelected = type == selected;
-        return GestureDetector(
-          onTap: () {
-            unawaited(HapticFeedback.selectionClick());
-            onChanged(type);
-          },
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
-            padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
-            decoration: BoxDecoration(
-              color: isSelected ? AppColors.primary : AppColors.surface,
-              borderRadius: BorderRadius.circular(14.r),
-              border: Border.all(
-                color: isSelected
-                    ? AppColors.primary
-                    : AppColors.border.withValues(alpha: 0.6),
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  _iconFor(type),
-                  size: 15.sp,
-                  color: isSelected ? Colors.white : AppColors.primary,
-                ),
-                SizedBox(width: 6.w),
-                Text(
-                  type.name,
-                  style: TextStyle(
-                    fontSize: 13.sp,
-                    fontWeight: FontWeight.w700,
-                    color: isSelected ? Colors.white : AppColors.textPrimary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
-}
-
 // ─── Details sheet ───────────────────────────────────────────────────────────
 
 class _VehicleDetailsSheet extends StatelessWidget {
@@ -1791,15 +1622,6 @@ class _VehicleDetailsSheet extends StatelessWidget {
                     SizedBox(width: 10.w),
                     Expanded(
                       child: _DetailMetric(
-                        icon: Icons.local_gas_station_rounded,
-                        label: l10n.fuelType,
-                        value: vehicle.fuelType.name,
-                        color: AppColors.info,
-                      ),
-                    ),
-                    SizedBox(width: 10.w),
-                    Expanded(
-                      child: _DetailMetric(
                         icon: Icons.route_rounded,
                         label: l10n.totalRides,
                         value: '${vehicle.totalRides}',
@@ -1828,40 +1650,6 @@ class _VehicleDetailsSheet extends StatelessWidget {
                     ],
                   ],
                 ),
-                if (vehicle.enabledFeatures.isNotEmpty) ...[
-                  SizedBox(height: 18.h),
-                  _FormSectionHeader(
-                    icon: Icons.star_outline_rounded,
-                    title: l10n.features,
-                  ),
-                  SizedBox(height: 12.h),
-                  Wrap(
-                    spacing: 8.w,
-                    runSpacing: 8.h,
-                    children: vehicle.enabledFeatures
-                        .map(
-                          (f) => Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 12.w,
-                              vertical: 8.h,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.primary.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(16.r),
-                            ),
-                            child: Text(
-                              f,
-                              style: TextStyle(
-                                fontSize: 12.sp,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                          ),
-                        )
-                        .toList(),
-                  ),
-                ],
               ],
             ),
           ),
@@ -1996,10 +1784,6 @@ class _DetailsHero extends StatelessWidget {
                     : AppLocalizations.of(context).inactive,
                 vehicle.isActive,
               ),
-              _heroChip(
-                _verificationLabel(l10n),
-                vehicle.isVerified,
-              ),
             ],
           ),
         ],
@@ -2035,13 +1819,6 @@ class _DetailsHero extends StatelessWidget {
     );
   }
 
-  String _verificationLabel(AppLocalizations l10n) {
-    return switch (vehicle.verificationStatus) {
-      VehicleVerificationStatus.verified => l10n.verified,
-      VehicleVerificationStatus.pending => l10n.pending,
-      VehicleVerificationStatus.rejected => l10n.rejected,
-    };
-  }
 }
 
 class _DetailMetric extends StatelessWidget {

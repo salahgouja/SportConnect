@@ -7,7 +7,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:reactive_forms/reactive_forms.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/reactive_adaptive_text_field.dart';
-import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 // ── Vehicle form field name constants ─────────────────────────────────────────
@@ -19,23 +18,9 @@ abstract final class VehicleFormFields {
   static const color = 'color';
   static const licensePlate = 'license_plate';
   static const seats = 'seats';
-  static const fuelType = 'fuel_type';
 }
 
 // ── Private helpers ───────────────────────────────────────────────────────────
-
-String _fuelTypeLabel(BuildContext context, FuelType fuel) {
-  final l10n = AppLocalizations.of(context);
-  return switch (fuel) {
-    FuelType.gasoline => l10n.gasoline,
-    FuelType.diesel => l10n.diesel,
-    FuelType.electric => l10n.electric,
-    FuelType.hybrid => l10n.hybrid,
-    FuelType.pluginHybrid => l10n.plugin_hybrid,
-    FuelType.hydrogen => l10n.hydrogen,
-    FuelType.other => l10n.other,
-  };
-}
 
 String _vehicleColorLabel(BuildContext context, String label) {
   final l10n = AppLocalizations.of(context);
@@ -49,18 +34,6 @@ String _vehicleColorLabel(BuildContext context, String label) {
     'Green' => l10n.green,
     'Beige / Brown' => l10n.beige_brown,
     _ => label,
-  };
-}
-
-IconData _fuelTypeIcon(FuelType fuel) {
-  return switch (fuel) {
-    FuelType.gasoline => Icons.local_gas_station_rounded,
-    FuelType.diesel => Icons.local_gas_station_outlined,
-    FuelType.electric => Icons.electric_car_rounded,
-    FuelType.hybrid => Icons.energy_savings_leaf_rounded,
-    FuelType.pluginHybrid => Icons.electrical_services_rounded,
-    FuelType.hydrogen => Icons.water_drop_rounded,
-    FuelType.other => Icons.more_horiz_rounded,
   };
 }
 
@@ -184,7 +157,6 @@ class VehicleLiveSummary extends StatelessWidget {
     final color = _stringValue(VehicleFormFields.color);
     final plate = _stringValue(VehicleFormFields.licensePlate);
     final seats = _stringValue(VehicleFormFields.seats);
-    final fuel = form.control(VehicleFormFields.fuelType).value as FuelType?;
     final colorOption = _matchedVehicleColor(color);
     final previewColor = colorOption?.color ?? AppColors.primary;
     final isLightColor = _isLightVehicleColor(previewColor);
@@ -201,7 +173,6 @@ class VehicleLiveSummary extends StatelessWidget {
     final detailsParts = [
       if (plate.isNotEmpty) plate.toUpperCase(),
       if (seats.isNotEmpty) '$seats ${seats == '1' ? l10n.seat : l10n.seats}',
-      if (fuel != null) _fuelTypeLabel(context, fuel),
     ];
 
     return Container(
@@ -1129,122 +1100,6 @@ class _NumberChoiceChip extends StatelessWidget {
                 color: selected ? Colors.white : AppColors.textPrimary,
               ),
             ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class FuelTypeChipSelector extends StatelessWidget {
-  const FuelTypeChipSelector({
-    required this.formControlName,
-    required this.label,
-    required this.fuelTypes,
-    super.key,
-  });
-
-  final String formControlName;
-  final String label;
-  final List<FuelType> fuelTypes;
-
-  @override
-  Widget build(BuildContext context) {
-    return ReactiveValueListenableBuilder<FuelType>(
-      formControlName: formControlName,
-      builder: (context, control, _) {
-        final l10n = AppLocalizations.of(context);
-        final selected = control.value ?? FuelType.gasoline;
-
-        void updateFuel(FuelType fuel) {
-          unawaited(HapticFeedback.selectionClick());
-          control
-            ..updateValue(fuel)
-            ..markAsTouched();
-        }
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _ChoiceHeader(
-              label: label,
-              helper: l10n.optionalDetailUsedForRideContext,
-              icon: Icons.local_gas_station_rounded,
-              hasError: false,
-            ),
-            SizedBox(height: 10.h),
-            Wrap(
-              spacing: 8.w,
-              runSpacing: 8.h,
-              children: fuelTypes
-                  .map(
-                    (fuel) => _FuelChoiceChip(
-                      fuel: fuel,
-                      selected: selected == fuel,
-                      onTap: () => updateFuel(fuel),
-                    ),
-                  )
-                  .toList(),
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _FuelChoiceChip extends StatelessWidget {
-  const _FuelChoiceChip({
-    required this.fuel,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final FuelType fuel;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final label = _fuelTypeLabel(context, fuel);
-
-    return Material(
-      color: selected
-          ? AppColors.primary.withValues(alpha: 0.1)
-          : AppColors.background.withValues(alpha: 0.92),
-      borderRadius: BorderRadius.circular(13.r),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(13.r),
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          padding: EdgeInsets.symmetric(horizontal: 11.w, vertical: 10.h),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(13.r),
-            border: Border.all(
-              color: selected
-                  ? AppColors.primary.withValues(alpha: 0.55)
-                  : AppColors.border.withValues(alpha: 0.45),
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                _fuelTypeIcon(fuel),
-                color: selected ? AppColors.primary : AppColors.textSecondary,
-                size: 16.sp,
-              ),
-              SizedBox(width: 6.w),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12.sp,
-                  fontWeight: FontWeight.w800,
-                  color: selected ? AppColors.primary : AppColors.textPrimary,
-                ),
-              ),
-            ],
           ),
         ),
       ),

@@ -80,7 +80,6 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
   bool get _allowSmoking => _formState.allowSmoking;
   bool get _allowLuggage => _formState.allowLuggage;
   bool get _isWomenOnly => _formState.isWomenOnly;
-  int? get _maxDetourMinutes => _formState.maxDetourMinutes;
   EventModel? get _selectedEvent => _formState.selectedEvent;
   List<LatLng>? get _osrmRoutePoints => _formState.osrmRoutePoints;
   bool get _isLoadingOsrmRoute => _formState.isLoadingRoute;
@@ -1380,7 +1379,7 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                       Row(
                         children: [
                           Icon(
-                            _getVehicleIcon(vehicle.type),
+                            Icons.directions_car,
                             color: isSelected
                                 ? AppColors.primary
                                 : AppColors.textSecondary,
@@ -1442,20 +1441,6 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
         ),
       ],
     ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1, end: 0);
-  }
-
-  IconData _getVehicleIcon(VehicleType type) {
-    switch (type) {
-      case VehicleType.motorcycle:
-      case VehicleType.bicycle:
-        return Icons.two_wheeler;
-      case VehicleType.van:
-      case VehicleType.truck:
-        return Icons.local_shipping;
-      case VehicleType.car:
-      default:
-        return Icons.directions_car;
-    }
   }
 
   Widget _buildSeatsAndPriceWithVehicle(List<VehicleModel> vehicles) {
@@ -1665,8 +1650,6 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
         _buildRideSummaryCard(vehicles),
         SizedBox(height: 16.h),
         _buildPreferencesCard(),
-        SizedBox(height: 16.h),
-        _buildMaxDetourSlider(),
       ],
     );
   }
@@ -1802,108 +1785,6 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
         ],
       ),
     ).animate().fadeIn(delay: 50.ms).slideY(begin: 0.1, end: 0);
-  }
-
-
-  /// Max detour slider for how far drivers will deviate for pickups
-  Widget _buildMaxDetourSlider() {
-    final l10n = AppLocalizations.of(context);
-    return Container(
-      padding: EdgeInsets.all(16.w),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: AppColors.borderLight),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.alt_route_rounded,
-                size: 18.sp,
-                color: AppColors.primary,
-              ),
-              SizedBox(width: 8.w),
-              Text(
-                l10n.maxDetourLabel,
-                style: TextStyle(
-                  fontSize: 15.sp,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const Spacer(),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-                decoration: BoxDecoration(
-                  color: AppColors.primarySurface,
-                  borderRadius: BorderRadius.circular(8.r),
-                ),
-                child: Text(
-                  _maxDetourMinutes != null
-                      ? l10n.maxDetourMinutesValue(_maxDetourMinutes!)
-                      : l10n.noneLabel,
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.primary,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 8.h),
-          Text(
-            l10n.maxDetourHint,
-            style: TextStyle(fontSize: 12.sp, color: AppColors.textSecondary),
-          ),
-          SizedBox(height: 8.h),
-          AdaptiveSlider(
-            value: (_maxDetourMinutes ?? 0).toDouble(),
-            max: 60,
-            divisions: 12,
-            label: _maxDetourMinutes != null
-                ? l10n.maxDetourMinutesValue(_maxDetourMinutes!)
-                : l10n.noneLabel,
-            activeColor: AppColors.primary,
-            onChanged: (val) {
-              unawaited(HapticFeedback.selectionClick());
-              ref
-                  .read(driverOfferRideViewModelProvider.notifier)
-                  .setMaxDetourMinutes(val.toInt() == 0 ? null : val.toInt());
-            },
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                l10n.noneLabel,
-                style: TextStyle(
-                  fontSize: 10.sp,
-                  color: AppColors.textTertiary,
-                ),
-              ),
-              Text(
-                l10n.sixtyMinLabel,
-                style: TextStyle(
-                  fontSize: 10.sp,
-                  color: AppColors.textTertiary,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1, end: 0);
   }
 
   Widget _buildPreferencesCard() {

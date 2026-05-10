@@ -763,7 +763,6 @@ class RideSearchState {
     this.draftLuggageRequired = false,
     this.draftMinRating = 0,
     this.draftSortBy = 'recommended',
-    this.draftVehicleType = 'any',
     this.isFilterPanelOpen = false,
     this.resultViewMode = RideSearchResultViewMode.list,
     this.visibleResultCount = 20,
@@ -796,7 +795,6 @@ class RideSearchState {
   final bool draftLuggageRequired;
   final double draftMinRating;
   final String draftSortBy;
-  final String draftVehicleType;
   final bool isFilterPanelOpen;
   final RideSearchResultViewMode resultViewMode;
   final int visibleResultCount;
@@ -824,7 +822,6 @@ class RideSearchState {
     bool? draftLuggageRequired,
     double? draftMinRating,
     String? draftSortBy,
-    String? draftVehicleType,
     bool? isFilterPanelOpen,
     RideSearchResultViewMode? resultViewMode,
     int? visibleResultCount,
@@ -856,7 +853,6 @@ class RideSearchState {
       draftLuggageRequired: draftLuggageRequired ?? this.draftLuggageRequired,
       draftMinRating: draftMinRating ?? this.draftMinRating,
       draftSortBy: draftSortBy ?? this.draftSortBy,
-      draftVehicleType: draftVehicleType ?? this.draftVehicleType,
       isFilterPanelOpen: isFilterPanelOpen ?? this.isFilterPanelOpen,
       resultViewMode: resultViewMode ?? this.resultViewMode,
       visibleResultCount: visibleResultCount ?? this.visibleResultCount,
@@ -876,8 +872,7 @@ class RideSearchState {
       draftNoSmoking ||
       draftLuggageRequired ||
       draftMaxPrice < 100 ||
-      draftMinRating > 0 ||
-      draftVehicleType != 'any';
+      draftMinRating > 0;
 
   int get activeFilterCount {
     var count = 0;
@@ -888,7 +883,6 @@ class RideSearchState {
     if (draftNoSmoking) count++;
     if (draftLuggageRequired) count++;
     if (draftMinRating > 0) count++;
-    if (draftVehicleType != 'any') count++;
     return count;
   }
 }
@@ -1009,12 +1003,6 @@ List<RideModel> _applyRideSearchPresentation(
       return false;
     }
     if (state.draftMinRating > 0 && ride.averageRating < state.draftMinRating) {
-      return false;
-    }
-    if (state.draftVehicleType == 'electric' && !ride.isEco) {
-      return false;
-    }
-    if (state.draftVehicleType == 'comfort' && !ride.isPremium) {
       return false;
     }
     if (state.draftVerifiedOnly && !ride.isDriverVerified) {
@@ -1180,16 +1168,6 @@ class RideSearchViewModel extends _$RideSearchViewModel {
     );
   }
 
-  void setDraftVehicleType(String vehicleType) {
-    const supportedTypes = {'any', 'electric', 'comfort'};
-    state = state.copyWith(
-      draftVehicleType: supportedTypes.contains(vehicleType)
-          ? vehicleType
-          : 'any',
-      visibleResultCount: _pageSize,
-    );
-  }
-
   void resetFilters() {
     state = state.copyWith(
       draftMaxPrice: 100,
@@ -1200,7 +1178,6 @@ class RideSearchViewModel extends _$RideSearchViewModel {
       draftLuggageRequired: false,
       draftMinRating: 0,
       draftSortBy: 'recommended',
-      draftVehicleType: 'any',
       visibleResultCount: _pageSize,
     );
   }
@@ -1416,7 +1393,6 @@ String _buildDraftQueryKey(RideSearchState state) {
     state.draftLuggageRequired,
     state.draftMinRating.toStringAsFixed(1),
     state.draftSortBy,
-    state.draftVehicleType,
   ].join('|');
 }
 

@@ -269,19 +269,8 @@ class _DriverOnboardingScreenState
           }),
         ],
       ),
-      VehicleFormFields.fuelType: FormControl<FuelType>(
-        value: FuelType.gasoline,
-      ),
     });
   }
-
-  static const List<FuelType> _fuelTypes = [
-    FuelType.gasoline,
-    FuelType.diesel,
-    FuelType.hybrid,
-    FuelType.electric,
-    FuelType.other,
-  ];
 
   @override
   void initState() {
@@ -467,7 +456,6 @@ class _DriverOnboardingScreenState
       color: (values[VehicleFormFields.color] as String?)!,
       licensePlate: (values[VehicleFormFields.licensePlate] as String?)!,
       capacity: int.parse((values[VehicleFormFields.seats] as String?)!),
-      fuelType: (values[VehicleFormFields.fuelType] as FuelType?)!,
       isActive: true,
     );
 
@@ -1513,11 +1501,6 @@ class _DriverOnboardingScreenState
                         'vehicleYearTooOld': (_) => l10n.vehicle_is_too_old,
                         'vehicleYearFuture': (_) => l10n.invalid_year,
                       },
-                    ),
-                    FuelTypeChipSelector(
-                      formControlName: VehicleFormFields.fuelType,
-                      label: l10n.fuelType,
-                      fuelTypes: _fuelTypes,
                     ),
                   ],
                 )

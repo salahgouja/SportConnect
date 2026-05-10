@@ -11,8 +11,6 @@ _RidePreferences _$RidePreferencesFromJson(Map json) => _RidePreferences(
   allowSmoking: json['allowSmoking'] as bool? ?? false,
   allowLuggage: json['allowLuggage'] as bool? ?? true,
   isWomenOnly: json['isWomenOnly'] as bool? ?? false,
-  allowChat: json['allowChat'] as bool? ?? true,
-  maxDetourMinutes: (json['maxDetourMinutes'] as num?)?.toInt(),
 );
 
 Map<String, dynamic> _$RidePreferencesToJson(_RidePreferences instance) =>
@@ -21,6 +19,4 @@ Map<String, dynamic> _$RidePreferencesToJson(_RidePreferences instance) =>
       'allowSmoking': instance.allowSmoking,
       'allowLuggage': instance.allowLuggage,
       'isWomenOnly': instance.isWomenOnly,
-      'allowChat': instance.allowChat,
-      'maxDetourMinutes': instance.maxDetourMinutes,
     };

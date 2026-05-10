@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$RidePreferences {
 
- bool get allowPets; bool get allowSmoking; bool get allowLuggage; bool get isWomenOnly; bool get allowChat; int? get maxDetourMinutes;
+ bool get allowPets; bool get allowSmoking; bool get allowLuggage; bool get isWomenOnly;
 /// Create a copy of RidePreferences
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $RidePreferencesCopyWith<RidePreferences> get copyWith => _$RidePreferencesCopyW
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is RidePreferences&&(identical(other.allowPets, allowPets) || other.allowPets == allowPets)&&(identical(other.allowSmoking, allowSmoking) || other.allowSmoking == allowSmoking)&&(identical(other.allowLuggage, allowLuggage) || other.allowLuggage == allowLuggage)&&(identical(other.isWomenOnly, isWomenOnly) || other.isWomenOnly == isWomenOnly)&&(identical(other.allowChat, allowChat) || other.allowChat == allowChat)&&(identical(other.maxDetourMinutes, maxDetourMinutes) || other.maxDetourMinutes == maxDetourMinutes));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is RidePreferences&&(identical(other.allowPets, allowPets) || other.allowPets == allowPets)&&(identical(other.allowSmoking, allowSmoking) || other.allowSmoking == allowSmoking)&&(identical(other.allowLuggage, allowLuggage) || other.allowLuggage == allowLuggage)&&(identical(other.isWomenOnly, isWomenOnly) || other.isWomenOnly == isWomenOnly));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,allowPets,allowSmoking,allowLuggage,isWomenOnly,allowChat,maxDetourMinutes);
+int get hashCode => Object.hash(runtimeType,allowPets,allowSmoking,allowLuggage,isWomenOnly);
 
 @override
 String toString() {
-  return 'RidePreferences(allowPets: $allowPets, allowSmoking: $allowSmoking, allowLuggage: $allowLuggage, isWomenOnly: $isWomenOnly, allowChat: $allowChat, maxDetourMinutes: $maxDetourMinutes)';
+  return 'RidePreferences(allowPets: $allowPets, allowSmoking: $allowSmoking, allowLuggage: $allowLuggage, isWomenOnly: $isWomenOnly)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $RidePreferencesCopyWith<$Res>  {
   factory $RidePreferencesCopyWith(RidePreferences value, $Res Function(RidePreferences) _then) = _$RidePreferencesCopyWithImpl;
 @useResult
 $Res call({
- bool allowPets, bool allowSmoking, bool allowLuggage, bool isWomenOnly, bool allowChat, int? maxDetourMinutes
+ bool allowPets, bool allowSmoking, bool allowLuggage, bool isWomenOnly
 });
 
 
@@ -65,15 +65,13 @@ class _$RidePreferencesCopyWithImpl<$Res>
 
 /// Create a copy of RidePreferences
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? allowPets = null,Object? allowSmoking = null,Object? allowLuggage = null,Object? isWomenOnly = null,Object? allowChat = null,Object? maxDetourMinutes = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? allowPets = null,Object? allowSmoking = null,Object? allowLuggage = null,Object? isWomenOnly = null,}) {
   return _then(_self.copyWith(
 allowPets: null == allowPets ? _self.allowPets : allowPets // ignore: cast_nullable_to_non_nullable
 as bool,allowSmoking: null == allowSmoking ? _self.allowSmoking : allowSmoking // ignore: cast_nullable_to_non_nullable
 as bool,allowLuggage: null == allowLuggage ? _self.allowLuggage : allowLuggage // ignore: cast_nullable_to_non_nullable
 as bool,isWomenOnly: null == isWomenOnly ? _self.isWomenOnly : isWomenOnly // ignore: cast_nullable_to_non_nullable
-as bool,allowChat: null == allowChat ? _self.allowChat : allowChat // ignore: cast_nullable_to_non_nullable
-as bool,maxDetourMinutes: freezed == maxDetourMinutes ? _self.maxDetourMinutes : maxDetourMinutes // ignore: cast_nullable_to_non_nullable
-as int?,
+as bool,
   ));
 }
 
@@ -158,10 +156,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( bool allowPets,  bool allowSmoking,  bool allowLuggage,  bool isWomenOnly,  bool allowChat,  int? maxDetourMinutes)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( bool allowPets,  bool allowSmoking,  bool allowLuggage,  bool isWomenOnly)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _RidePreferences() when $default != null:
-return $default(_that.allowPets,_that.allowSmoking,_that.allowLuggage,_that.isWomenOnly,_that.allowChat,_that.maxDetourMinutes);case _:
+return $default(_that.allowPets,_that.allowSmoking,_that.allowLuggage,_that.isWomenOnly);case _:
   return orElse();
 
 }
@@ -179,10 +177,10 @@ return $default(_that.allowPets,_that.allowSmoking,_that.allowLuggage,_that.isWo
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool allowPets,  bool allowSmoking,  bool allowLuggage,  bool isWomenOnly,  bool allowChat,  int? maxDetourMinutes)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool allowPets,  bool allowSmoking,  bool allowLuggage,  bool isWomenOnly)  $default,) {final _that = this;
 switch (_that) {
 case _RidePreferences():
-return $default(_that.allowPets,_that.allowSmoking,_that.allowLuggage,_that.isWomenOnly,_that.allowChat,_that.maxDetourMinutes);case _:
+return $default(_that.allowPets,_that.allowSmoking,_that.allowLuggage,_that.isWomenOnly);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -199,10 +197,10 @@ return $default(_that.allowPets,_that.allowSmoking,_that.allowLuggage,_that.isWo
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( bool allowPets,  bool allowSmoking,  bool allowLuggage,  bool isWomenOnly,  bool allowChat,  int? maxDetourMinutes)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( bool allowPets,  bool allowSmoking,  bool allowLuggage,  bool isWomenOnly)?  $default,) {final _that = this;
 switch (_that) {
 case _RidePreferences() when $default != null:
-return $default(_that.allowPets,_that.allowSmoking,_that.allowLuggage,_that.isWomenOnly,_that.allowChat,_that.maxDetourMinutes);case _:
+return $default(_that.allowPets,_that.allowSmoking,_that.allowLuggage,_that.isWomenOnly);case _:
   return null;
 
 }
@@ -214,15 +212,13 @@ return $default(_that.allowPets,_that.allowSmoking,_that.allowLuggage,_that.isWo
 @JsonSerializable()
 
 class _RidePreferences implements RidePreferences {
-  const _RidePreferences({this.allowPets = false, this.allowSmoking = false, this.allowLuggage = true, this.isWomenOnly = false, this.allowChat = true, this.maxDetourMinutes});
+  const _RidePreferences({this.allowPets = false, this.allowSmoking = false, this.allowLuggage = true, this.isWomenOnly = false});
   factory _RidePreferences.fromJson(Map<String, dynamic> json) => _$RidePreferencesFromJson(json);
 
 @override@JsonKey() final  bool allowPets;
 @override@JsonKey() final  bool allowSmoking;
 @override@JsonKey() final  bool allowLuggage;
 @override@JsonKey() final  bool isWomenOnly;
-@override@JsonKey() final  bool allowChat;
-@override final  int? maxDetourMinutes;
 
 /// Create a copy of RidePreferences
 /// with the given fields replaced by the non-null parameter values.
@@ -237,16 +233,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RidePreferences&&(identical(other.allowPets, allowPets) || other.allowPets == allowPets)&&(identical(other.allowSmoking, allowSmoking) || other.allowSmoking == allowSmoking)&&(identical(other.allowLuggage, allowLuggage) || other.allowLuggage == allowLuggage)&&(identical(other.isWomenOnly, isWomenOnly) || other.isWomenOnly == isWomenOnly)&&(identical(other.allowChat, allowChat) || other.allowChat == allowChat)&&(identical(other.maxDetourMinutes, maxDetourMinutes) || other.maxDetourMinutes == maxDetourMinutes));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RidePreferences&&(identical(other.allowPets, allowPets) || other.allowPets == allowPets)&&(identical(other.allowSmoking, allowSmoking) || other.allowSmoking == allowSmoking)&&(identical(other.allowLuggage, allowLuggage) || other.allowLuggage == allowLuggage)&&(identical(other.isWomenOnly, isWomenOnly) || other.isWomenOnly == isWomenOnly));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,allowPets,allowSmoking,allowLuggage,isWomenOnly,allowChat,maxDetourMinutes);
+int get hashCode => Object.hash(runtimeType,allowPets,allowSmoking,allowLuggage,isWomenOnly);
 
 @override
 String toString() {
-  return 'RidePreferences(allowPets: $allowPets, allowSmoking: $allowSmoking, allowLuggage: $allowLuggage, isWomenOnly: $isWomenOnly, allowChat: $allowChat, maxDetourMinutes: $maxDetourMinutes)';
+  return 'RidePreferences(allowPets: $allowPets, allowSmoking: $allowSmoking, allowLuggage: $allowLuggage, isWomenOnly: $isWomenOnly)';
 }
 
 
@@ -257,7 +253,7 @@ abstract mixin class _$RidePreferencesCopyWith<$Res> implements $RidePreferences
   factory _$RidePreferencesCopyWith(_RidePreferences value, $Res Function(_RidePreferences) _then) = __$RidePreferencesCopyWithImpl;
 @override @useResult
 $Res call({
- bool allowPets, bool allowSmoking, bool allowLuggage, bool isWomenOnly, bool allowChat, int? maxDetourMinutes
+ bool allowPets, bool allowSmoking, bool allowLuggage, bool isWomenOnly
 });
 
 
@@ -274,15 +270,13 @@ class __$RidePreferencesCopyWithImpl<$Res>
 
 /// Create a copy of RidePreferences
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? allowPets = null,Object? allowSmoking = null,Object? allowLuggage = null,Object? isWomenOnly = null,Object? allowChat = null,Object? maxDetourMinutes = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? allowPets = null,Object? allowSmoking = null,Object? allowLuggage = null,Object? isWomenOnly = null,}) {
   return _then(_RidePreferences(
 allowPets: null == allowPets ? _self.allowPets : allowPets // ignore: cast_nullable_to_non_nullable
 as bool,allowSmoking: null == allowSmoking ? _self.allowSmoking : allowSmoking // ignore: cast_nullable_to_non_nullable
 as bool,allowLuggage: null == allowLuggage ? _self.allowLuggage : allowLuggage // ignore: cast_nullable_to_non_nullable
 as bool,isWomenOnly: null == isWomenOnly ? _self.isWomenOnly : isWomenOnly // ignore: cast_nullable_to_non_nullable
-as bool,allowChat: null == allowChat ? _self.allowChat : allowChat // ignore: cast_nullable_to_non_nullable
-as bool,maxDetourMinutes: freezed == maxDetourMinutes ? _self.maxDetourMinutes : maxDetourMinutes // ignore: cast_nullable_to_non_nullable
-as int?,
+as bool,
   ));
 }
 

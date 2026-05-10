@@ -362,15 +362,8 @@ class LegalScreen extends ConsumerWidget {
       :
     </p>
     <ul>
-      <li>
-        Marque, modèle, année, couleur, immatriculation, type et carburant du
-        véhicule
-      </li>
-      <li>
-        Photos du véhicule et documents (carte grise, attestation d'assurance) —
-        stockés de manière sécurisée
-      </li>
-      <li>Date d'expiration de l'assurance</li>
+      <li>Marque, modèle, année, couleur, immatriculation et capacité</li>
+      <li>Photo du véhicule, statut actif et véhicule par défaut</li>
       <li>
         Informations d'identité et bancaires requises par Stripe pour les
         virements (voir section 4)
@@ -570,9 +563,9 @@ class LegalScreen extends ConsumerWidget {
       </li>
     </ul>
     <p>
-      Vous pouvez désactiver la collecte de données analytiques et de rapports
-      de plantage à tout moment via <strong>Paramètres → Confidentialité →
-      Analytics &amp; Rapports de plantage</strong> dans l'application.
+      Les données analytiques et les rapports de plantage sont utilisés pour
+      améliorer la fiabilité de l'application et ne sont pas utilisés à des
+      fins publicitaires.
     </p>
 
     <h3>2.9 Avis, évaluations et gamification</h3>
@@ -1055,8 +1048,7 @@ class LegalScreen extends ConsumerWidget {
       analytiques et de performance sont collectées via les SDK Firebase
       (Google Analytics for Firebase et Firebase Crashlytics). Ces données sont
       utilisées uniquement pour améliorer la fiabilité et l'expérience de
-      l'application, et non à des fins publicitaires. Vous pouvez les désactiver
-      à tout moment dans Paramètres → Confidentialité.
+      l'application, et non à des fins publicitaires.
     </p>
 
     <h2>14. Modifications de la présente politique</h2>
@@ -1215,14 +1207,8 @@ class LegalScreen extends ConsumerWidget {
     <h3>2.2 Driver-Specific Data</h3>
     <p>Users registering as drivers also provide:</p>
     <ul>
-      <li>
-        Vehicle make, model, year, colour, licence plate, type, and fuel type
-      </li>
-      <li>
-        Vehicle photos and documents (registration certificate, insurance
-        certificate) — stored securely
-      </li>
-      <li>Insurance expiry date</li>
+      <li>Vehicle make, model, year, colour, licence plate, and capacity</li>
+      <li>Vehicle photo, active status, and default vehicle status</li>
       <li>
         Identity and banking information required by Stripe for payouts
         (see section 4)
@@ -1406,9 +1392,8 @@ class LegalScreen extends ConsumerWidget {
       </li>
     </ul>
     <p>
-      You can disable analytics and crash reporting at any time via
-      <strong>Settings → Privacy → Analytics &amp; Crash Reports</strong>
-      in the app.
+      Analytics and crash reports are used to improve app reliability and are
+      not used for advertising.
     </p>
 
     <h3>2.9 Ratings, Reviews, and Gamification</h3>
@@ -1853,8 +1838,7 @@ class LegalScreen extends ConsumerWidget {
       The SportConnect mobile app does not use cookies. Analytics and
       performance data are collected via Firebase SDKs (Google Analytics for
       Firebase and Firebase Crashlytics). This data is used solely to improve
-      app reliability and experience, not for advertising purposes. You can
-      disable this at any time in Settings → Privacy.
+      app reliability and experience, not for advertising purposes.
     </p>
 
     <h2>14. Changes to This Policy</h2>

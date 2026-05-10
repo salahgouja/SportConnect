@@ -863,10 +863,6 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen> {
     if (ride.isWomenOnly) {
       prefs.add(const MapEntry(Icons.female_rounded, 'Women only'));
     }
-    if (ride.allowChat) {
-      prefs.add(const MapEntry(Icons.chat_rounded, 'Chat enabled'));
-    }
-
     if (prefs.isEmpty) return const SizedBox.shrink();
 
     return Container(

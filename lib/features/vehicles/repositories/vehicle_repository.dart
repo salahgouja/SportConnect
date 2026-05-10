@@ -187,19 +187,6 @@ class VehicleRepository {
     return ref.getDownloadURL();
   }
 
-  /// Update vehicle verification status
-  Future<void> updateVerificationStatus({
-    required String vehicleId,
-    required VehicleVerificationStatus status,
-    String? note,
-  }) async {
-    await _vehiclesCollection.doc(vehicleId).update({
-      'verificationStatus': status.name,
-      'verificationNote': note,
-      'updatedAt': DateTime.now(),
-    });
-  }
-
   /// Update vehicle stats after ride
   Future<void> updateVehicleStats({
     required String vehicleId,

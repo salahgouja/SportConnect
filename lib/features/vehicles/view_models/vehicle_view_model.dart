@@ -306,47 +306,6 @@ class VehicleViewModel extends _$VehicleViewModel {
     }
   }
 
-  /// Update vehicle verification status (admin function)
-  Future<bool> updateVerificationStatus({
-    required String vehicleId,
-    required VehicleVerificationStatus status,
-    String? note,
-  }) async {
-    state = state.copyWith(
-      isLoading: true,
-      isSuccess: false,
-    );
-
-    try {
-      final repository = ref.read(vehicleRepositoryProvider);
-
-      await repository.updateVerificationStatus(
-        vehicleId: vehicleId,
-        status: status,
-        note: note,
-      );
-
-      if (!ref.mounted) return true;
-      state = state.copyWith(isLoading: false, isSuccess: true);
-
-      // Refresh vehicle if we have userId
-      final userId = _getCurrentUserId();
-      if (userId != null) {
-        ref.invalidate(userVehiclesStreamProvider(userId));
-      }
-
-      return true;
-    } on Exception catch (e, st) {
-      if (!ref.mounted) return false;
-      state = state.copyWith(
-        isLoading: false,
-        isSuccess: false,
-        errorMessage: 'Failed to update verification status: $e',
-      );
-      return false;
-    }
-  }
-
   /// Update vehicle stats after a ride
   Future<bool> updateVehicleStats({
     required String vehicleId,
