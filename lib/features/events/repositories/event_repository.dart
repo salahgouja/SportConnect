@@ -190,69 +190,99 @@ class EventRepository {
     final now = DateTime.now();
 
     await _firestore.runTransaction((tx) async {
-      // ── ALL READS FIRST ──────────────────────────────────────────────
       final snap = await tx.get(docRef);
-      if (!snap.exists) throw Exception('Event not found.');
+      if (!snap.exists) {
+        throw Exception('Event not found.');
+      }
 
       final event = snap.data()!;
+      final participants = List<String>.from(event.participantIds);
+
+      if (participants.contains(userId)) {
+        return;
+      }
+
+      final maxParticipants = event.maxParticipants;
+      if (maxParticipants > 0 && participants.length >= maxParticipants) {
+        throw Exception('Event is full.');
+      }
+
+      tx.update(docRef, {
+        'participantIds': FieldValue.arrayUnion([userId]),
+        'updatedAt': now,
+      });
+    });
+  }
+
+  Future<String> ensureEventGroupChat({
+    required EventModel event,
+    required String userId,
+  }) async {
+    final now = DateTime.now();
+    final eventRef = _eventsCollection.doc(event.id);
+
+    return _firestore.runTransaction((tx) async {
+      final eventSnap = await tx.get(eventRef);
+      final latestEvent = eventSnap.exists ? eventSnap.data()! : event;
+
+      final isParticipant =
+          latestEvent.participantIds.contains(userId) ||
+          latestEvent.creatorId == userId;
+
+      if (!isParticipant) {
+        throw Exception('Join the event before opening the group chat.');
+      }
+
+      final userIsPremium = await _isPremiumSubscriber(
+        tx: tx,
+        userId: userId,
+      );
+
+      if (!userIsPremium) {
+        throw Exception(
+          'Event group chat is a Premium feature. Upgrade to access attendee chat.',
+        );
+      }
 
       final creatorIsPremium = await _isPremiumSubscriber(
         tx: tx,
-        userId: event.creatorId,
+        userId: latestEvent.creatorId,
       );
-      final joiningUserIsPremium = await _isPremiumSubscriber(
-        tx: tx,
+
+      final chatId = _resolveEventChatId(latestEvent);
+
+      final participantIds = _premiumEventChatParticipants(
+        creatorIsPremium: creatorIsPremium,
+        creatorId: latestEvent.creatorId,
+        userIsPremium: userIsPremium,
         userId: userId,
       );
 
-      final chatId = _resolveEventChatId(event);
       final chatRef = _firestore
           .collection(AppConstants.chatsCollection)
           .doc(chatId);
+
       final chatSnap = await tx.get(chatRef);
-
-      // ── ALL WRITES AFTER ─────────────────────────────────────────────
-      final participants = List<String>.from(event.participantIds);
-      final alreadyJoined = participants.contains(userId);
-
-      if (!alreadyJoined) {
-        final maxParticipants = event.maxParticipants;
-        if (maxParticipants > 0 && participants.length >= maxParticipants) {
-          throw Exception('Event is full.');
-        }
-
-        tx.update(docRef, {
-          'participantIds': FieldValue.arrayUnion([userId]),
-          'updatedAt': now,
-        });
-      }
-
-      final chatParticipants = _premiumEventChatParticipants(
-        creatorIsPremium: creatorIsPremium,
-        creatorId: event.creatorId,
-        userIsPremium: joiningUserIsPremium,
-        userId: userId,
-      );
 
       if (chatSnap.exists) {
         tx.set(
           chatRef,
-          _eventChatMergePayload(
-            participantIds: chatParticipants,
-          ),
+          _eventChatMergePayload(participantIds: participantIds),
           SetOptions(merge: true),
         );
-      } else if (chatParticipants.isNotEmpty) {
+      } else {
         tx.set(
           chatRef,
           _eventChatCreatePayload(
             chatId: chatId,
-            event: event,
-            participantIds: chatParticipants,
+            event: latestEvent,
+            participantIds: participantIds,
             now: now,
           ),
         );
       }
+
+      return chatId;
     });
   }
 
@@ -261,30 +291,22 @@ class EventRepository {
     final now = DateTime.now();
 
     await _firestore.runTransaction((tx) async {
-      // ── ALL READS FIRST ──────────────────────────────────────────────
       final snap = await tx.get(docRef);
-      if (!snap.exists) throw Exception('Event not found.');
+      if (!snap.exists) {
+        throw Exception('Event not found.');
+      }
 
       final event = snap.data()!;
+      final participants = List<String>.from(event.participantIds);
 
-      final chatId = _resolveEventChatId(event);
-      final chatRef = _firestore
-          .collection(AppConstants.chatsCollection)
-          .doc(chatId);
-      final chatSnap = await tx.get(chatRef);
+      if (!participants.contains(userId)) {
+        return;
+      }
 
-      // ── ALL WRITES AFTER ─────────────────────────────────────────────
       tx.update(docRef, {
         'participantIds': FieldValue.arrayRemove([userId]),
         'updatedAt': now,
       });
-
-      if (chatSnap.exists) {
-        tx.set(chatRef, {
-          'participantIds': FieldValue.arrayRemove([userId]),
-          'updatedAt': now,
-        }, SetOptions(merge: true));
-      }
     });
   }
 
@@ -418,73 +440,6 @@ class EventRepository {
     await _eventsCollection.doc(eventId).update({
       'chatGroupId': chatGroupId,
       'updatedAt': DateTime.now(),
-    });
-  }
-
-  Future<String> ensureEventGroupChat({
-    required EventModel event,
-    required String userId,
-  }) async {
-    final now = DateTime.now();
-    final eventRef = _eventsCollection.doc(event.id);
-
-    return _firestore.runTransaction((tx) async {
-      final eventSnap = await tx.get(eventRef);
-      final latestEvent = eventSnap.exists ? eventSnap.data()! : event;
-
-      final isParticipant =
-          latestEvent.participantIds.contains(userId) ||
-          latestEvent.creatorId == userId;
-      if (!isParticipant) {
-        throw Exception('Join the event before opening the group chat.');
-      }
-
-      final userIsPremium = await _isPremiumSubscriber(tx: tx, userId: userId);
-      if (!userIsPremium) {
-        throw Exception(
-          'Event group chat is a Premium feature. Upgrade to access attendee chat.',
-        );
-      }
-
-      final creatorIsPremium = await _isPremiumSubscriber(
-        tx: tx,
-        userId: latestEvent.creatorId,
-      );
-
-      final chatId = _resolveEventChatId(latestEvent);
-      final participantIds = _premiumEventChatParticipants(
-        creatorIsPremium: creatorIsPremium,
-        creatorId: latestEvent.creatorId,
-        userIsPremium: userIsPremium,
-        userId: userId,
-      );
-
-      final chatRef = _firestore
-          .collection(AppConstants.chatsCollection)
-          .doc(chatId);
-      final chatSnap = await tx.get(chatRef);
-
-      if (chatSnap.exists) {
-        tx.set(
-          chatRef,
-          _eventChatMergePayload(
-            participantIds: participantIds,
-          ),
-          SetOptions(merge: true),
-        );
-      } else {
-        tx.set(
-          chatRef,
-          _eventChatCreatePayload(
-            chatId: chatId,
-            event: latestEvent,
-            participantIds: participantIds,
-            now: now,
-          ),
-        );
-      }
-
-      return chatId;
     });
   }
 

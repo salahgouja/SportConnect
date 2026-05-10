@@ -3080,7 +3080,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get direct => 'Direct';
 
   @override
-  String get groups => 'Groups';
+  String get groups => 'Events';
 
   @override
   String get all => 'All';

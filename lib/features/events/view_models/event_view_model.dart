@@ -1125,21 +1125,28 @@ class EventDetailViewModel extends _$EventDetailViewModel {
       clearError: true,
       clearSuccess: true,
     );
+
     try {
       await ref.read(eventRepositoryProvider).joinEvent(eventId, userId);
+
       if (!ref.mounted) return false;
+
       state = state.copyWith(
         isJoining: false,
         successMessage: 'You joined the event!',
       );
+
       return true;
     } on Exception catch (e, st) {
       TalkerService.error('joinEvent failed', e, st);
+
       if (!ref.mounted) return false;
+
       state = state.copyWith(
         isJoining: false,
-        error: 'Unable to join event. Please try again.',
+        error: 'Unable to join event: $e',
       );
+
       return false;
     }
   }

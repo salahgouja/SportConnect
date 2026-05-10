@@ -3433,9 +3433,9 @@
   "@direct": {
     "description": "Tab label for direct/private chats"
   },
-  "groups": "Groupes",
+  "groups": "Evenements",
   "@groups": {
-    "description": "Tab label for group chats"
+    "description": "Tab label for Evenements chats"
   },
   "all": "Tout",
   "@all": {

@@ -3144,7 +3144,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get direct => 'Direct';
 
   @override
-  String get groups => 'Groupes';
+  String get groups => 'Evenements';
 
   @override
   String get all => 'Tout';

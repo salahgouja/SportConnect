@@ -78,7 +78,7 @@ class AboutScreen extends ConsumerWidget {
             SizedBox(height: 4.h),
 
             Text(
-              'Version 1.1.15',
+              'Version 1.1.16',
               style: TextStyle(fontSize: 14.sp, color: AppColors.textTertiary),
             ).animate().fadeIn(delay: 150.ms),
 
@@ -177,7 +177,7 @@ class AboutScreen extends ConsumerWidget {
               onTap: () => showLicensePage(
                 context: context,
                 applicationName: l10n.appTitle,
-                applicationVersion: '1.1.15',
+                applicationVersion: '1.1.16',
               ),
             ).animate().fadeIn(delay: 600.ms).slideX(begin: 0.05),
 

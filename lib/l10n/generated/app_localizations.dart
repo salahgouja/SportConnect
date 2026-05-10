@@ -5660,10 +5660,10 @@ abstract class AppLocalizations {
   /// **'Direct'**
   String get direct;
 
-  /// Tab label for group chats
+  /// Tab label for Event chats
   ///
   /// In en, this message translates to:
-  /// **'Groups'**
+  /// **'Events'**
   String get groups;
 
   /// Tab label for all notifications
