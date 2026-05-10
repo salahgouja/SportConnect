@@ -50,7 +50,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         (value) => value.value?.role == UserRole.driver,
       ),
     );
-    final hasAdminAccess = ref.watch(adminAccessProvider).valueOrNull ?? false;
+    final hasAdminAccess = ref.watch(adminAccessProvider).value ?? false;
     final premiumMeta = ref.watch(premiumMetadataProvider);
 
     return AdaptiveScaffold(
