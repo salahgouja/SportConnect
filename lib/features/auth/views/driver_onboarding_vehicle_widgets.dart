@@ -33,7 +33,7 @@ String _fuelTypeLabel(BuildContext context, FuelType fuel) {
     FuelType.hybrid => l10n.hybrid,
     FuelType.pluginHybrid => l10n.plugin_hybrid,
     FuelType.hydrogen => l10n.hydrogen,
-    FuelType.other => l10n.other_color,
+    FuelType.other => l10n.other,
   };
 }
 

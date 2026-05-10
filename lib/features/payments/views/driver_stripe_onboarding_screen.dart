@@ -524,19 +524,6 @@ class _DriverStripeOnboardingScreenState
                   onPressed: isBusy ? null : _startOnboarding,
                 ),
                 SizedBox(height: 12.h),
-                TextButton(
-                  onPressed: isBusy
-                      ? null
-                      : () => setState(() => _page = _PayoutSetupPage.intro),
-                  child: Text(
-                    l10n.maybe_later,
-                    style: TextStyle(
-                      color: _primaryGreen,
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
               ],
             ),
           ),
