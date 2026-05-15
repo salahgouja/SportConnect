@@ -10,7 +10,6 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:sport_connect/core/animations/feedback_animations.dart';
@@ -21,6 +20,7 @@ import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
+import 'package:sport_connect/core/utils/locale_formatters.dart';
 import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/core/widgets/app_map_tile_layer.dart';
 import 'package:sport_connect/core/widgets/driver_info_widget.dart';
@@ -951,16 +951,17 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
             RideDetailInfoRow(
               icon: Icons.calendar_today_rounded,
               label: AppLocalizations.of(context).departure2,
-              value: DateFormat(
-                'EEE, MMM d • h:mm a',
-              ).format(ride.departureTime),
+              value: AppLocaleFormatters.formatShortWeekdayDateTime(
+                context,
+                ride.departureTime,
+              ),
             ),
             if (arrivalTime != null) ...[
               SizedBox(height: 12.h),
               RideDetailInfoRow(
                 icon: Icons.flag_rounded,
                 label: AppLocalizations.of(context).estimatedArrival,
-                value: DateFormat('h:mm a').format(arrivalTime),
+                value: AppLocaleFormatters.formatTime(context, arrivalTime),
               ),
             ],
             if (ride.route.distanceKm != null) ...[
@@ -2037,7 +2038,10 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                   child: Column(
                     children: [
                       Text(
-                        DateFormat('HH:mm').format(ride.departureTime),
+                        AppLocaleFormatters.formatTime(
+                          context,
+                          ride.departureTime,
+                        ),
                         style: TextStyle(
                           fontSize: 16.sp,
                           fontWeight: FontWeight.w700,
@@ -2045,7 +2049,10 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                         ),
                       ),
                       Text(
-                        DateFormat('MMM d').format(ride.departureTime),
+                        AppLocaleFormatters.formatMonthDay(
+                          context,
+                          ride.departureTime,
+                        ),
                         style: TextStyle(
                           fontSize: 11.sp,
                           color: AppColors.textSecondary,
@@ -2323,7 +2330,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
     return AppLocalizations.of(context).rideShareText(
       ride.origin.city ?? ride.origin.address,
       ride.destination.city ?? ride.destination.address,
-      DateFormat('MMM d, h:mm a').format(ride.departureTime),
+      AppLocaleFormatters.formatMonthDayTime(context, ride.departureTime),
       (ride.pricePerSeatInCents / 100.0).toStringAsFixed(2),
       ride.remainingSeats,
       link,
@@ -2460,7 +2467,10 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
           context,
           rideInfo:
               '${ride.origin.city ?? ride.origin.address} → ${ride.destination.city ?? ride.destination.address}',
-          dateTime: DateFormat('MMM d, HH:mm').format(ride.departureTime),
+          dateTime: AppLocaleFormatters.formatMonthDayTime(
+            context,
+            ride.departureTime,
+          ),
         );
         if (!mounted) return;
         context.push(

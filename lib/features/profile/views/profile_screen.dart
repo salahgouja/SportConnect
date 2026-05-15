@@ -9,11 +9,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:intl/intl.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/utils/locale_formatters.dart';
 import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/core/widgets/custom_button.dart';
 import 'package:sport_connect/core/widgets/gamification_widgets.dart';
@@ -129,7 +129,7 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-Widget _buildContent(
+  Widget _buildContent(
     BuildContext context,
     WidgetRef ref,
     UserModel? user,
@@ -139,9 +139,13 @@ Widget _buildContent(
       return _buildUserNotFoundState(context, ref);
     }
 
-    // On tablet landscape, show profile info on left and content on right
-    if (context.isTablet && context.isLandscape) {
-      return _buildTabletLandscapeLayout(context, ref, user, totalEarningsInCents);
+    if (context.isTabletOrLarger && context.isLandscape) {
+      return _buildTabletLandscapeLayout(
+        context,
+        ref,
+        user,
+        totalEarningsInCents,
+      );
     }
 
     return _buildPhoneLayout(context, ref, user, totalEarningsInCents);
@@ -159,7 +163,13 @@ Widget _buildContent(
         children: [
           // Left panel: profile header + stats
           SizedBox(
-            width: 380,
+            width: responsiveValue<double>(
+              context,
+              compact: 380,
+              medium: 380,
+              expanded: 420,
+              large: 460,
+            ),
             child: SingleChildScrollView(
               padding: adaptiveScreenPadding(context),
               child: Column(
@@ -172,9 +182,9 @@ Widget _buildContent(
                   SizedBox(height: 24.h),
                   if (_isOwnProfile)
                     ProfileCompletionBar(
-                      completedFields: _calculateCompletionFields(user),
-                      totalFields: 6,
-                    )
+                          completedFields: _calculateCompletionFields(user),
+                          totalFields: 6,
+                        )
                         .animate()
                         .fadeIn(duration: 400.ms, delay: 80.ms)
                         .slideY(begin: 0.1, curve: Curves.easeOutCubic),
@@ -323,16 +333,16 @@ Widget _buildContent(
         if (_isOwnProfile)
           SliverToBoxAdapter(
             child:
-                  Padding(
-                        padding: adaptiveScreenPadding(context),
-                        child: ProfileCompletionBar(
-                          completedFields: _calculateCompletionFields(user),
-                          totalFields: 6,
-                        ),
-                      )
-                      .animate()
-                      .fadeIn(duration: 400.ms, delay: 80.ms)
-                      .slideY(begin: 0.1, curve: Curves.easeOutCubic),
+                Padding(
+                      padding: adaptiveScreenPadding(context),
+                      child: ProfileCompletionBar(
+                        completedFields: _calculateCompletionFields(user),
+                        totalFields: 6,
+                      ),
+                    )
+                    .animate()
+                    .fadeIn(duration: 400.ms, delay: 80.ms)
+                    .slideY(begin: 0.1, curve: Curves.easeOutCubic),
           ),
 
         if (_isOwnProfile) SliverToBoxAdapter(child: SizedBox(height: 16.h)),
@@ -395,7 +405,7 @@ Widget _buildContent(
 
     final rating = user.asDriver?.rating ?? const RatingBreakdown();
 
-return Padding(
+    return Padding(
       padding: EdgeInsets.symmetric(horizontal: 20.w),
       child: DriveHistoryCard(
         totalRides: user.gamification.totalRides,
@@ -492,7 +502,7 @@ return Padding(
                     unawaited(HapticFeedback.lightImpact());
                     await _changeProfilePhoto(context, ref, user);
                   },
-      child: Container(
+                  child: Container(
                     padding: EdgeInsets.all(8.w),
                     decoration: BoxDecoration(
                       color: AppColors.primary,
@@ -648,7 +658,7 @@ return Padding(
   }
 
   String _formatDate(BuildContext context, DateTime date) {
-    return '${DateFormat.MMM(Localizations.localeOf(context).toLanguageTag()).format(date)} ${date.year}';
+    return AppLocaleFormatters.formatMonthYear(context, date);
   }
 
   Widget _buildRideStats(
@@ -677,8 +687,9 @@ return Padding(
         currentStreak = 0;
     }
 
-    final moneyStatValue =
-        '€${(totalEarningsInCents / 100).toStringAsFixed(0)}';
+    final moneyStatValue = AppLocalizations.of(
+      context,
+    ).value5((totalEarningsInCents / 100).toStringAsFixed(0));
     final moneyStatLabel = AppLocalizations.of(context).earned2;
     const moneyStatIcon = Icons.euro_rounded;
 
@@ -727,7 +738,9 @@ return Padding(
                 Expanded(
                   child: _buildStatCard(
                     icon: Icons.route_rounded,
-                    value: '${totalDistance.toStringAsFixed(0)} km',
+                    value: AppLocalizations.of(
+                      context,
+                    ).distanceKmValue(totalDistance.toStringAsFixed(0)),
                     label: AppLocalizations.of(context).distance,
                     color: AppColors.success,
                   ),

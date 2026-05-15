@@ -9,7 +9,6 @@ import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:sport_connect/core/animations/feedback_animations.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
@@ -19,6 +18,7 @@ import 'package:sport_connect/core/models/user/user_enums.dart';
 import 'package:sport_connect/core/models/user/user_model.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/utils/locale_formatters.dart';
 import 'package:sport_connect/core/widgets/app_map_tile_layer.dart';
 import 'package:sport_connect/core/widgets/map_location_picker.dart';
 import 'package:sport_connect/core/widgets/ride_feature_widgets.dart';
@@ -32,7 +32,6 @@ import 'package:sport_connect/features/rides/views/driver/driver_offer_ride_widg
 import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
 import 'package:sport_connect/features/vehicles/view_models/vehicle_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
-import 'package:sport_connect/core/utils/responsive_utils.dart';
 
 class DriverOfferRideScreen extends ConsumerStatefulWidget {
   const DriverOfferRideScreen({
@@ -215,13 +214,11 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
 
           return vehiclesAsync.when(
             data: (vehicles) => _buildMainContent(context, vehicles),
-            loading: () =>
-                const SkeletonLoader(),
+            loading: () => const SkeletonLoader(),
             error: (err, stack) => _buildErrorState(context, err.toString()),
           );
         },
-        loading: () =>
-            const SkeletonLoader(),
+        loading: () => const SkeletonLoader(),
         error: (err, stack) => _buildErrorState(context, err.toString()),
       ),
     );
@@ -408,16 +405,26 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
     final l10n = AppLocalizations.of(context);
     return Row(
       children: [
-        OfferStepItem(step: 0, label: l10n.routeStep, currentStep: _currentStep),
+        OfferStepItem(
+          step: 0,
+          label: l10n.routeStep,
+          currentStep: _currentStep,
+        ),
         OfferStepConnector(step: 0, currentStep: _currentStep),
-        OfferStepItem(step: 1, label: l10n.detailsStep, currentStep: _currentStep),
+        OfferStepItem(
+          step: 1,
+          label: l10n.detailsStep,
+          currentStep: _currentStep,
+        ),
         OfferStepConnector(step: 1, currentStep: _currentStep),
-        OfferStepItem(step: 2, label: l10n.preferencesStep, currentStep: _currentStep),
+        OfferStepItem(
+          step: 2,
+          label: l10n.preferencesStep,
+          currentStep: _currentStep,
+        ),
       ],
     );
   }
-
-
 
   // --- Step 1: Route ---
   Widget _buildRouteStep() {
@@ -784,7 +791,10 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                 child: _buildTimeInput(
                   label: AppLocalizations.of(context).dateLabel,
                   value: _departureDate != null
-                      ? DateFormat('dd/MM/yyyy').format(_departureDate!)
+                      ? AppLocaleFormatters.formatMediumDate(
+                          context,
+                          _departureDate!,
+                        )
                       : AppLocalizations.of(context).selectDatePlaceholder,
                   icon: Icons.calendar_today_rounded,
                   onTap: _selectDate,
@@ -1000,8 +1010,8 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
                       SizedBox(width: 8.w),
                       Text(
                         _formState.recurringEndDate != null
-                            ? 'Ends ${DateFormat('MMM d, yyyy').format(_formState.recurringEndDate!)}'
-                            : 'Set end date',
+                            ? '${l10n.endsLabel} ${AppLocaleFormatters.formatMediumDate(context, _formState.recurringEndDate!)}'
+                            : l10n.setEndDate,
                         style: TextStyle(
                           fontSize: 14.sp,
                           fontWeight: FontWeight.w500,
@@ -1701,7 +1711,9 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
           OfferSummaryRow(
             icon: Icons.my_location_rounded,
             label: l10n.fromLabel,
-            value: _fromAddress.isNotEmpty ? _fromAddress : l10n.notSetPlaceholder,
+            value: _fromAddress.isNotEmpty
+                ? _fromAddress
+                : l10n.notSetPlaceholder,
           ),
           SizedBox(height: 8.h),
           OfferSummaryRow(
@@ -1722,7 +1734,10 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
             icon: Icons.schedule_rounded,
             label: l10n.departureSummaryLabel,
             value: departure != null
-                ? DateFormat('EEE, MMM d \u2022 HH:mm').format(departure)
+                ? AppLocaleFormatters.formatShortWeekdayDateTime(
+                    context,
+                    departure,
+                  )
                 : l10n.notSetPlaceholder,
           ),
           SizedBox(height: 8.h),
@@ -1778,8 +1793,11 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
               SizedBox(height: 8.h),
               OfferSummaryRow(
                 icon: Icons.event_rounded,
-                label: 'Ends',
-                value: DateFormat('MMM d, yyyy').format(_formState.recurringEndDate!),
+                label: l10n.endsLabel,
+                value: AppLocaleFormatters.formatMediumDate(
+                  context,
+                  _formState.recurringEndDate!,
+                ),
               ),
             ],
           ],
@@ -1848,7 +1866,6 @@ class _DriverOfferRideScreenState extends ConsumerState<DriverOfferRideScreen> {
       ),
     ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1, end: 0);
   }
-
 
   Widget _buildBottomBar(List<VehicleModel> vehicles) {
     final isLastStep = _currentStep == 2;

@@ -280,8 +280,8 @@ class AppModalSheet {
     if (title == null) return const SizedBox.shrink();
     return Text(
       title,
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
+      maxLines: 2,
+      textAlign: TextAlign.start,
       style: TextStyle(
         fontSize: 16.sp,
         fontWeight: FontWeight.w700,
@@ -323,10 +323,10 @@ class AppModalSheet {
 
   static WoltModalType _modalTypeBuilder(BuildContext context) {
     final width = MediaQuery.sizeOf(context).width;
-    if (width < 523) {
+    if (width < Breakpoints.compact) {
       return WoltModalType.bottomSheet();
     }
-    if (width < 800) {
+    if (width < Breakpoints.medium) {
       return WoltModalType.dialog();
     }
     return WoltModalType.sideSheet();

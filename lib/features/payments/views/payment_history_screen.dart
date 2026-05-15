@@ -8,10 +8,10 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:sliver_tools/sliver_tools.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/utils/locale_formatters.dart';
 import 'package:sport_connect/core/utils/payment_error_handler.dart';
 import 'package:sport_connect/core/widgets/analytics_payment_widgets.dart';
 import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
@@ -121,7 +121,10 @@ class PaymentHistoryScreen extends ConsumerWidget {
                         return MultiSliver(
                           children: [
                             SliverToBoxAdapter(
-                              child: _buildSpendingSummary(context, payments),
+                              child: _buildOverviewSection(
+                                context,
+                                payments,
+                              ),
                             ),
                             SliverList(
                               delegate: SliverChildBuilderDelegate(
@@ -237,40 +240,80 @@ class PaymentHistoryScreen extends ConsumerWidget {
     WidgetRef? ref,
     String selectedFilter,
   ) {
-    return Container(
-      padding: EdgeInsets.symmetric(vertical: 16.h),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        padding: EdgeInsets.symmetric(horizontal: 16.w),
-        child: Row(
-          children: _filterKeys.map((key) {
-            final isSelected = selectedFilter == key;
-            return Padding(
-              padding: EdgeInsets.only(right: 8.w),
-              child: FilterChip(
-                label: Text(_filterLabel(context, key)),
-                selected: isSelected,
-                onSelected: ref == null
-                    ? null
-                    : (_) => ref
-                          .read(paymentHistoryFilterViewModelProvider.notifier)
-                          .setFilter(key),
-                backgroundColor: AppColors.surface,
-                selectedColor: AppColors.primary.withValues(alpha: 0.2),
-                labelStyle: TextStyle(
-                  color: isSelected
-                      ? AppColors.primary
-                      : AppColors.textSecondary,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                ),
-                checkmarkColor: AppColors.primary,
-                side: BorderSide(
-                  color: isSelected ? AppColors.primary : Colors.transparent,
-                ),
-              ),
-            );
-          }).toList(),
+    final padding = adaptiveScreenPadding(context);
+    final chips = _filterKeys.map((key) {
+      final isSelected = selectedFilter == key;
+      return FilterChip(
+        label: Text(
+          _filterLabel(context, key),
+          textAlign: TextAlign.center,
+          softWrap: true,
         ),
+        selected: isSelected,
+        onSelected: ref == null
+            ? null
+            : (_) => ref
+                  .read(paymentHistoryFilterViewModelProvider.notifier)
+                  .setFilter(key),
+        backgroundColor: AppColors.surface,
+        selectedColor: AppColors.primary.withValues(alpha: 0.2),
+        labelStyle: TextStyle(
+          color: isSelected ? AppColors.primary : AppColors.textSecondary,
+          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+        ),
+        checkmarkColor: AppColors.primary,
+        side: BorderSide(
+          color: isSelected ? AppColors.primary : Colors.transparent,
+        ),
+      );
+    }).toList();
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(padding.left, 16.h, padding.right, 4.h),
+      child: context.isExpandedOrLarger
+          ? Align(
+              alignment: Alignment.centerLeft,
+              child: Wrap(
+                spacing: 8.w,
+                runSpacing: 8.h,
+                children: chips,
+              ),
+            )
+          : SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  for (var i = 0; i < chips.length; i++) ...[
+                    if (i > 0) SizedBox(width: 8.w),
+                    chips[i],
+                  ],
+                ],
+              ),
+            ),
+    );
+  }
+
+  Widget _buildOverviewSection(
+    BuildContext context,
+    List<PaymentTransaction> payments,
+  ) {
+    final summary = _buildSpendingSummary(context, payments);
+    if (!context.isExpandedOrLarger) {
+      return summary;
+    }
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(20.w, 4.h, 20.w, 8.h),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(flex: 6, child: summary),
+          SizedBox(width: 16.w),
+          Expanded(
+            flex: 5,
+            child: _buildStatusOverviewCard(context, payments),
+          ),
+        ],
       ),
     );
   }
@@ -290,7 +333,6 @@ class PaymentHistoryScreen extends ConsumerWidget {
     );
 
     return Container(
-      margin: EdgeInsets.fromLTRB(16.w, 4.h, 16.w, 8.h),
       padding: adaptiveScreenPadding(context).copyWith(bottom: 16.h, top: 16.h),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
@@ -314,7 +356,7 @@ class PaymentHistoryScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Total Spent',
+                  AppLocalizations.of(context).totalSpent,
                   style: TextStyle(
                     fontSize: 12.sp,
                     color: Colors.white.withValues(alpha: 0.75),
@@ -322,7 +364,10 @@ class PaymentHistoryScreen extends ConsumerWidget {
                 ),
                 SizedBox(height: 4.h),
                 Text(
-                  '€${(totalInCents / 100).toStringAsFixed(2)}',
+                  AppLocaleFormatters.formatCurrencyFromCents(
+                    context,
+                    totalInCents,
+                  ),
                   style: TextStyle(
                     fontSize: 26.sp,
                     fontWeight: FontWeight.w800,
@@ -343,7 +388,7 @@ class PaymentHistoryScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                'Rides',
+                AppLocalizations.of(context).rides,
                 style: TextStyle(
                   fontSize: 12.sp,
                   color: Colors.white.withValues(alpha: 0.75),
@@ -363,6 +408,120 @@ class PaymentHistoryScreen extends ConsumerWidget {
         ],
       ),
     ).animate().fadeIn(duration: 300.ms).slideY(begin: 0.05);
+  }
+
+  Widget _buildStatusOverviewCard(
+    BuildContext context,
+    List<PaymentTransaction> payments,
+  ) {
+    final pendingCount = payments
+        .where(
+          (payment) =>
+              payment.status == PaymentStatus.pending ||
+              payment.status == PaymentStatus.processing ||
+              payment.status == PaymentStatus.refunding,
+        )
+        .length;
+    final refundedCount = payments
+        .where(
+          (payment) =>
+              payment.status == PaymentStatus.refunded ||
+              payment.status == PaymentStatus.partiallyRefunded,
+        )
+        .length;
+
+    return Container(
+      padding: EdgeInsets.all(18.w),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            AppLocalizations.of(context).paymentHistory,
+            style: TextStyle(
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          SizedBox(height: 6.h),
+          Text(
+            AppLocalizations.of(context).yourTransactions,
+            style: TextStyle(
+              fontSize: 13.sp,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          SizedBox(height: 16.h),
+          Row(
+            children: [
+              Expanded(
+                child: _buildOverviewMetric(
+                  context,
+                  label: AppLocalizations.of(context).filterAll,
+                  value: payments.length.toString(),
+                ),
+              ),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: _buildOverviewMetric(
+                  context,
+                  label: AppLocalizations.of(context).statusPending,
+                  value: pendingCount.toString(),
+                ),
+              ),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: _buildOverviewMetric(
+                  context,
+                  label: AppLocalizations.of(context).statusRefunded,
+                  value: refundedCount.toString(),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    ).animate().fadeIn(delay: 80.ms, duration: 300.ms).slideY(begin: 0.05);
+  }
+
+  Widget _buildOverviewMetric(
+    BuildContext context, {
+    required String label,
+    required String value,
+  }) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceVariant,
+        borderRadius: BorderRadius.circular(12.r),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 18.sp,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          SizedBox(height: 4.h),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12.sp,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildEmptyState(BuildContext context) {
@@ -450,8 +609,6 @@ class PaymentHistoryScreen extends ConsumerWidget {
     PaymentTransaction payment,
     int index,
   ) {
-    final dateFormat = DateFormat('MMM dd, yyyy • HH:mm');
-
     final card = Dismissible(
       key: ValueKey('payment_${payment.id}_$index'),
       direction: DismissDirection.endToStart,
@@ -540,7 +697,10 @@ class PaymentHistoryScreen extends ConsumerWidget {
                       SizedBox(height: 4.h),
                       Text(
                         payment.createdAt != null
-                            ? dateFormat.format(payment.createdAt!)
+                            ? AppLocaleFormatters.formatMediumDateTime(
+                                context,
+                                payment.createdAt!,
+                              )
                             : AppLocalizations.of(context).unknownDate,
                         style: TextStyle(
                           fontSize: 12.sp,
@@ -577,11 +737,9 @@ class PaymentHistoryScreen extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      AppLocalizations.of(context).valueValue4(
-                        (payment.amountInCents / 100).toStringAsFixed(
-                          2,
-                        ),
-                        '€',
+                      AppLocaleFormatters.formatCurrencyFromCents(
+                        context,
+                        payment.amountInCents,
                       ),
                       style: TextStyle(
                         fontSize: 18.sp,
@@ -592,10 +750,9 @@ class PaymentHistoryScreen extends ConsumerWidget {
                     if (payment.seatsBooked != null) ...[
                       SizedBox(height: 4.h),
                       Text(
-                        AppLocalizations.of(context).valueSeatValue(
-                          payment.seatsBooked!,
-                          payment.seatsBooked! > 1 ? 's' : '',
-                        ),
+                        AppLocalizations.of(
+                          context,
+                        ).seatsCount(payment.seatsBooked!),
                         style: TextStyle(
                           fontSize: 12.sp,
                           color: AppColors.textSecondary,
@@ -695,33 +852,47 @@ class PaymentHistoryScreen extends ConsumerWidget {
             SizedBox(height: 24.h),
 
             // ── Payment breakdown ────────────────────────────────────
-            _buildSectionLabel('PAYMENT BREAKDOWN'),
+            _buildSectionLabel(AppLocalizations.of(context).paymentBreakdown),
             SizedBox(height: 10.h),
             _buildGroupCard([
               _buildDetailRow(
-                'Base fare',
-                '€${((payment.amountInCents - payment.platformFeeInCents - payment.stripeFeeInCents) / 100).toStringAsFixed(2)}',
+                AppLocalizations.of(context).baseFare,
+                AppLocaleFormatters.formatCurrencyFromCents(
+                  context,
+                  payment.amountInCents -
+                      payment.platformFeeInCents -
+                      payment.stripeFeeInCents,
+                ),
               ),
               _buildDetailRow(
                 AppLocalizations.of(context).platformFee,
-                '€${(payment.platformFeeInCents / 100).toStringAsFixed(2)}',
+                AppLocaleFormatters.formatCurrencyFromCents(
+                  context,
+                  payment.platformFeeInCents,
+                ),
               ),
               if (payment.stripeFeeInCents > 0)
                 _buildDetailRow(
-                  'Processing fee',
-                  '€${(payment.stripeFeeInCents / 100).toStringAsFixed(2)}',
+                  AppLocalizations.of(context).processingFee,
+                  AppLocaleFormatters.formatCurrencyFromCents(
+                    context,
+                    payment.stripeFeeInCents,
+                  ),
                 ),
               _buildDivider(),
               _buildDetailRow(
-                'Total paid',
-                '€${(payment.amountInCents / 100).toStringAsFixed(2)}',
+                AppLocalizations.of(context).totalPaid,
+                AppLocaleFormatters.formatCurrencyFromCents(
+                  context,
+                  payment.amountInCents,
+                ),
                 bold: true,
               ),
             ]),
             SizedBox(height: 20.h),
 
             // ── Trip details ─────────────────────────────────────────
-            _buildSectionLabel('TRIP DETAILS'),
+            _buildSectionLabel(AppLocalizations.of(context).tripDetails),
             SizedBox(height: 10.h),
             _buildGroupCard([
               _buildDetailRow(
@@ -736,7 +907,10 @@ class PaymentHistoryScreen extends ConsumerWidget {
               if (payment.createdAt != null)
                 _buildDetailRow(
                   AppLocalizations.of(context).date,
-                  DateFormat('MMM dd, yyyy · HH:mm').format(payment.createdAt!),
+                  AppLocaleFormatters.formatMediumDateTime(
+                    context,
+                    payment.createdAt!,
+                  ),
                 ),
               if (payment.paymentMethodLast4 != null)
                 _buildDetailRow(
@@ -753,14 +927,14 @@ class PaymentHistoryScreen extends ConsumerWidget {
               if (payment.failureReason != null &&
                   payment.failureReason!.isNotEmpty)
                 _buildDetailRow(
-                  'Failure reason',
+                  AppLocalizations.of(context).failureReason,
                   payment.failureReason!,
                   valueColor: AppColors.error,
                 ),
               if (payment.refundReason != null &&
                   payment.refundReason!.isNotEmpty)
                 _buildDetailRow(
-                  'Refund reason',
+                  AppLocalizations.of(context).refundReason,
                   payment.refundReason!,
                   valueColor: AppColors.info,
                 ),
@@ -775,7 +949,9 @@ class PaymentHistoryScreen extends ConsumerWidget {
                   onPressed: () => PaymentReceiptGenerator.showReceipt(
                     context,
                     receiptId: payment.id,
-                    riderName: 'Rider',
+                    riderName: payment.riderName.isNotEmpty
+                        ? payment.riderName
+                        : AppLocalizations.of(context).rider,
                     driverName: payment.driverName,
                     origin: payment.rideId,
                     destination: '',
@@ -865,7 +1041,10 @@ class PaymentHistoryScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '€${(payment.amountInCents / 100).toStringAsFixed(2)}',
+                  AppLocaleFormatters.formatCurrencyFromCents(
+                    context,
+                    payment.amountInCents,
+                  ),
                   style: TextStyle(
                     fontSize: 32.sp,
                     fontWeight: FontWeight.w800,
@@ -908,7 +1087,10 @@ class PaymentHistoryScreen extends ConsumerWidget {
           ),
           if (payment.createdAt != null)
             Text(
-              DateFormat('MMM dd\nyyyy').format(payment.createdAt!),
+              AppLocaleFormatters.formatMediumDate(
+                context,
+                payment.createdAt!,
+              ).replaceFirst(', ', '\n'),
               textAlign: TextAlign.right,
               style: TextStyle(
                 fontSize: 12.sp,

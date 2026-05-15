@@ -8726,6 +8726,12 @@ abstract class AppLocalizations {
   /// **'Message'**
   String get messageButton;
 
+  /// No description provided for @passengerRequestCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 passenger request} other{{count} passenger requests}}'**
+  String passengerRequestCount(num count);
+
   /// No description provided for @callButton.
   ///
   /// In en, this message translates to:
@@ -13828,6 +13834,18 @@ abstract class AppLocalizations {
   /// **'Publish a ride and start receiving passenger requests.'**
   String get publish_a_ride_and_start_receiving_passenger_requests;
 
+  /// Accessibility label for generic map control buttons
+  ///
+  /// In en, this message translates to:
+  /// **'Map control'**
+  String get mapControlLabel;
+
+  /// No description provided for @rideFilterSemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'{filterLabel} filter, {count, plural, =0{0 rides} =1{1 ride} other{{count} rides}}'**
+  String rideFilterSemantics(String filterLabel, num count);
+
   /// No description provided for @last_updated_february_23_2026.
   ///
   /// In en, this message translates to:
@@ -18390,6 +18408,258 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Keep going!'**
   String get challengeKeepGoing;
+
+  /// No description provided for @phoneNumberHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your phone number'**
+  String get phoneNumberHint;
+
+  /// No description provided for @phoneNumberSupportNoLeadingZero.
+  ///
+  /// In en, this message translates to:
+  /// **'After +33, enter the number without the leading 0.'**
+  String get phoneNumberSupportNoLeadingZero;
+
+  /// No description provided for @phoneNumberDigitsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{current} of {total} digits after +33'**
+  String phoneNumberDigitsCount(int current, int total);
+
+  /// No description provided for @phoneNumberSupportPrivacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Used only for ride coordination and safety.'**
+  String get phoneNumberSupportPrivacy;
+
+  /// No description provided for @profilePhotoCameraPermission.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera access is needed to take a new profile photo.'**
+  String get profilePhotoCameraPermission;
+
+  /// No description provided for @profilePhotoLibraryPermission.
+  ///
+  /// In en, this message translates to:
+  /// **'Access to your photo library is needed to update your profile picture.'**
+  String get profilePhotoLibraryPermission;
+
+  /// No description provided for @preferNotToSay.
+  ///
+  /// In en, this message translates to:
+  /// **'Prefer not to say'**
+  String get preferNotToSay;
+
+  /// No description provided for @addressSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Address selected'**
+  String get addressSelected;
+
+  /// No description provided for @noPointSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'No point selected'**
+  String get noPointSelected;
+
+  /// No description provided for @tapMapToChoosePoint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the map to choose a point'**
+  String get tapMapToChoosePoint;
+
+  /// No description provided for @locationPreviewReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Location preview is ready below'**
+  String get locationPreviewReady;
+
+  /// No description provided for @totalSpent.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Spent'**
+  String get totalSpent;
+
+  /// No description provided for @paymentBreakdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment Breakdown'**
+  String get paymentBreakdown;
+
+  /// No description provided for @baseFare.
+  ///
+  /// In en, this message translates to:
+  /// **'Base Fare'**
+  String get baseFare;
+
+  /// No description provided for @processingFee.
+  ///
+  /// In en, this message translates to:
+  /// **'Processing Fee'**
+  String get processingFee;
+
+  /// No description provided for @totalPaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Paid'**
+  String get totalPaid;
+
+  /// No description provided for @refundReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Refund Reason'**
+  String get refundReason;
+
+  /// No description provided for @distanceKmValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} km'**
+  String distanceKmValue(String value);
+
+  /// No description provided for @withdrawableBalanceInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Withdrawable Now is the part of your Stripe instant-available balance backed by completed rides.\n\nPaid rides that are not completed yet stay blocked for withdrawal.\n\nProcessing is money that has reached Stripe but is not yet eligible for instant withdrawal.'**
+  String get withdrawableBalanceInfo;
+
+  /// No description provided for @withdrawableNowLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Withdrawable now'**
+  String get withdrawableNowLabel;
+
+  /// No description provided for @completedRideEarningsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed ride earnings'**
+  String get completedRideEarningsLabel;
+
+  /// No description provided for @payoutsAlreadyRequestedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Payouts already requested'**
+  String get payoutsAlreadyRequestedLabel;
+
+  /// No description provided for @paidRidesAwaitingCompletionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid rides awaiting completion'**
+  String get paidRidesAwaitingCompletionLabel;
+
+  /// No description provided for @stripeInstantAvailableLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Stripe instant available'**
+  String get stripeInstantAvailableLabel;
+
+  /// No description provided for @stripeBalanceTotalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Stripe balance total'**
+  String get stripeBalanceTotalLabel;
+
+  /// No description provided for @tripEarningsRecordedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip earnings recorded'**
+  String get tripEarningsRecordedLabel;
+
+  /// No description provided for @withdrawableNowFootnote.
+  ///
+  /// In en, this message translates to:
+  /// **'Withdrawable Now only includes completed rides. Paid rides still in progress unlock after the driver completes the ride.'**
+  String get withdrawableNowFootnote;
+
+  /// No description provided for @rideCompletionPendingAmount.
+  ///
+  /// In en, this message translates to:
+  /// **' €{amount} is waiting for ride completion.'**
+  String rideCompletionPendingAmount(String amount);
+
+  /// No description provided for @processingBalancePendingAmount.
+  ///
+  /// In en, this message translates to:
+  /// **' €{amount} is still processing.'**
+  String processingBalancePendingAmount(String amount);
+
+  /// No description provided for @noCompletedRideBalanceAvailableYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No completed ride balance available yet.'**
+  String get noCompletedRideBalanceAvailableYet;
+
+  /// No description provided for @receiptNumberLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Receipt #'**
+  String get receiptNumberLabel;
+
+  /// No description provided for @routeDeviationDetected.
+  ///
+  /// In en, this message translates to:
+  /// **'Route Deviation Detected'**
+  String get routeDeviationDetected;
+
+  /// No description provided for @driverOffRouteEta.
+  ///
+  /// In en, this message translates to:
+  /// **'Driver is {distance} off route — new ETA ~{minutes} min'**
+  String driverOffRouteEta(Object distance, int minutes);
+
+  /// No description provided for @driverOffPlannedRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'Driver is {distance} off the planned route'**
+  String driverOffPlannedRoute(Object distance);
+
+  /// No description provided for @relativeMinutesShort.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes, plural, one {{minutes} min} other {{minutes} min}}'**
+  String relativeMinutesShort(int minutes);
+
+  /// No description provided for @relativeHoursShort.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours, plural, one {{hours}h} other {{hours}h}}'**
+  String relativeHoursShort(int hours);
+
+  /// No description provided for @relativeDaysShort.
+  ///
+  /// In en, this message translates to:
+  /// **'{days, plural, one {{days}d} other {{days}d}}'**
+  String relativeDaysShort(int days);
+
+  /// No description provided for @refundReviewLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Refund review'**
+  String get refundReviewLabel;
+
+  /// No description provided for @refundIfEligibleLineOne.
+  ///
+  /// In en, this message translates to:
+  /// **'If'**
+  String get refundIfEligibleLineOne;
+
+  /// No description provided for @refundIfEligibleLineTwo.
+  ///
+  /// In en, this message translates to:
+  /// **'eligible'**
+  String get refundIfEligibleLineTwo;
+
+  /// No description provided for @endsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Ends'**
+  String get endsLabel;
+
+  /// No description provided for @setEndDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Set end date'**
+  String get setEndDate;
 }
 
 class _AppLocalizationsDelegate

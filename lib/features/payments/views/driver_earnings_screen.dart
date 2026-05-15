@@ -6,14 +6,15 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:sliver_tools/sliver_tools.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
 import 'package:sport_connect/core/theme/platform_adaptive.dart';
+import 'package:sport_connect/core/utils/locale_formatters.dart';
 import 'package:sport_connect/core/utils/payment_error_handler.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/core/widgets/analytics_payment_widgets.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/core/widgets/skeleton_loader.dart';
@@ -23,7 +24,6 @@ import 'package:sport_connect/features/payments/view_models/payment_view_model.d
 import 'package:sport_connect/features/rides/models/driver_stats.dart';
 import 'package:sport_connect/features/rides/repositories/driver_stats_repository.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
-import 'package:sport_connect/core/utils/responsive_utils.dart';
 
 /// Driver Earnings Screen  - View earnings with real Firestore data
 ///
@@ -77,8 +77,7 @@ class DriverEarningsScreen extends ConsumerWidget {
     }
 
     final l10n = AppLocalizations.of(context);
-    final dateFormat = DateFormat('MMM dd, yyyy HH:mm');
-    final now = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    final now = AppLocaleFormatters.formatMediumDate(context, DateTime.now());
     final buffer = StringBuffer()
       ..writeln('SportConnect - ${l10n.exportEarningsReport}')
       ..writeln('${l10n.exportGenerated}: $now')
@@ -86,22 +85,22 @@ class DriverEarningsScreen extends ConsumerWidget {
       ..writeln()
       ..writeln(l10n.exportEarningsSummary)
       ..writeln(
-        '  ${l10n.periodToday}:      €${(stats.earningsTodayInCents / 100).toStringAsFixed(2)}',
+        '  ${l10n.periodToday}:      ${AppLocaleFormatters.formatCurrencyFromCents(context, stats.earningsTodayInCents)}',
       )
       ..writeln(
-        '  ${l10n.periodThisWeek}:  €${(stats.earningsThisWeekInCents / 100).toStringAsFixed(2)}',
+        '  ${l10n.periodThisWeek}:  ${AppLocaleFormatters.formatCurrencyFromCents(context, stats.earningsThisWeekInCents)}',
       )
       ..writeln(
-        '  ${l10n.periodThisMonth}: €${(stats.earningsThisMonthInCents / 100).toStringAsFixed(2)}',
+        '  ${l10n.periodThisMonth}: ${AppLocaleFormatters.formatCurrencyFromCents(context, stats.earningsThisMonthInCents)}',
       )
       ..writeln(
-        '  ${l10n.periodAllTime}:      €${(stats.totalEarningsInCents / 100).toStringAsFixed(2)}',
+        '  ${l10n.periodAllTime}:      ${AppLocaleFormatters.formatCurrencyFromCents(context, stats.totalEarningsInCents)}',
       )
       ..writeln()
       ..writeln(l10n.exportRideStatistics)
       ..writeln('  ${l10n.statRides}: ${stats.totalRides}')
       ..writeln(
-        '  ${l10n.distance}: ${stats.totalDistance.toStringAsFixed(1)} km',
+        '  ${l10n.distance}: ${l10n.distanceKmValue(stats.totalDistance.toStringAsFixed(1))}',
       )
       ..writeln();
 
@@ -110,9 +109,12 @@ class DriverEarningsScreen extends ConsumerWidget {
         ..writeln(l10n.exportRecentTransactions)
         ..writeln('--------------------------------');
       for (final tx in txList.take(20)) {
-        final date = dateFormat.format(tx.createdAt);
+        final date = AppLocaleFormatters.formatShortDateTime(
+          context,
+          tx.createdAt,
+        );
         buffer.writeln(
-          '  $date | €${(tx.amountInCents / 100).toStringAsFixed(2)} | ${tx.description}',
+          '  $date | ${AppLocaleFormatters.formatCurrencyFromCents(context, tx.amountInCents)} | ${tx.description}',
         );
       }
     }
@@ -211,7 +213,10 @@ class DriverEarningsScreen extends ConsumerWidget {
                         totalSpent: stats.totalSpentInCents / 100,
                         totalEarned: stats.totalEarningsInCents / 100,
                         totalDistance: stats.totalDistance,
-                        month: DateFormat('MMMM yyyy').format(DateTime.now()),
+                        month: AppLocaleFormatters.formatMonthYear(
+                          context,
+                          DateTime.now(),
+                        ),
                       ),
                     ),
                     loading: () => const SizedBox.shrink(),
@@ -391,57 +396,65 @@ class DriverEarningsScreen extends ConsumerWidget {
     WidgetRef ref,
     String selectedPeriod,
   ) {
-    return SizedBox(
-      height: 56.h,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
-        itemCount: _periodKeys.length,
-        separatorBuilder: (_, _) => SizedBox(width: 8.w),
-        itemBuilder: (context, index) {
-          final period = _periodKeys[index];
-          final isSelected = selectedPeriod == period;
-
-          return Material(
-            color: Colors.transparent,
-            child: InkWell(
+    final chips = _periodKeys.map((period) {
+      final isSelected = selectedPeriod == period;
+      return Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(999.r),
+          onTap: () => ref
+              .read(driverEarningsPeriodViewModelProvider.notifier)
+              .setPeriod(period),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            padding: EdgeInsets.symmetric(
+              horizontal: 18.w,
+              vertical: 8.h,
+            ),
+            constraints: BoxConstraints(minHeight: 40.h, minWidth: 96.w),
+            decoration: BoxDecoration(
+              color: isSelected ? AppColors.primary : AppColors.surface,
               borderRadius: BorderRadius.circular(999.r),
-              onTap: () => ref
-                  .read(driverEarningsPeriodViewModelProvider.notifier)
-                  .setPeriod(period),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
-                padding: EdgeInsets.symmetric(
-                  horizontal: 18.w,
-                  vertical: 8.h,
-                ),
-                decoration: BoxDecoration(
-                  color: isSelected ? AppColors.primary : AppColors.surface,
-                  borderRadius: BorderRadius.circular(999.r),
-                  border: Border.all(
-                    color: isSelected ? AppColors.primary : AppColors.border,
-                  ),
-                  boxShadow: isSelected ? AppSpacing.shadowSm : null,
-                ),
-                child: Center(
-                  child: Text(
-                    _periodLabel(context, period),
-                    maxLines: 1,
-                    softWrap: false,
-                    style: TextStyle(
-                      fontSize: 13.sp,
-                      fontWeight: FontWeight.w700,
-                      color: isSelected
-                          ? Colors.white
-                          : AppColors.textSecondary,
-                    ),
-                  ),
+              border: Border.all(
+                color: isSelected ? AppColors.primary : AppColors.border,
+              ),
+              boxShadow: isSelected ? AppSpacing.shadowSm : null,
+            ),
+            child: Center(
+              child: Text(
+                _periodLabel(context, period),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                softWrap: true,
+                style: TextStyle(
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.w700,
+                  color: isSelected ? Colors.white : AppColors.textSecondary,
                 ),
               ),
             ),
-          );
-        },
-      ),
+          ),
+        ),
+      );
+    }).toList();
+
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
+      child: context.isExpandedOrLarger
+          ? Wrap(
+              spacing: 8.w,
+              runSpacing: 8.h,
+              children: chips,
+            )
+          : SizedBox(
+              height: 56.h,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: chips.length,
+                separatorBuilder: (_, _) => SizedBox(width: 8.w),
+                itemBuilder: (context, index) => chips[index],
+              ),
+            ),
     );
   }
 
@@ -472,82 +485,73 @@ class DriverEarningsScreen extends ConsumerWidget {
         }
 
         final avgPerRide = displayRides > 0
-            ? '€${(displayEarnings / displayRides).toStringAsFixed(0)}'
+            ? AppLocaleFormatters.formatCurrency(
+                context,
+                displayEarnings / displayRides,
+                decimalDigits: 0,
+              )
             : '—';
+
+        final cards = [
+          _StatCard(
+            icon: Icons.directions_car_rounded,
+            iconColor: AppColors.primary,
+            title: AppLocalizations.of(context).statRides,
+            value: displayRides.toString(),
+          ),
+          _StatCard(
+            icon: Icons.euro_rounded,
+            iconColor: AppColors.success,
+            title: AppLocalizations.of(context).statEarnings,
+            value: AppLocaleFormatters.formatCurrency(
+              context,
+              displayEarnings,
+              decimalDigits: 0,
+            ),
+          ),
+          _StatCard(
+            icon: Icons.star_rounded,
+            iconColor: AppColors.starFilled,
+            title: AppLocalizations.of(context).statAvgRating,
+            value: stats.rating > 0 ? stats.rating.toStringAsFixed(2) : '—',
+          ),
+          _StatCard(
+            icon: Icons.trending_up_rounded,
+            iconColor: AppColors.secondary,
+            title: AppLocalizations.of(context).avgPerRide,
+            value: avgPerRide,
+          ),
+        ];
 
         return Padding(
           padding: EdgeInsets.symmetric(horizontal: 20.w),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: _StatCard(
-                      icon: Icons.directions_car_rounded,
-                      iconColor: AppColors.primary,
-                      title: AppLocalizations.of(context).statRides,
-                      value: displayRides.toString(),
-                    ),
-                  ),
-                  SizedBox(width: 12.w),
-                  Expanded(
-                    child: _StatCard(
-                      icon: Icons.euro_rounded,
-                      iconColor: AppColors.success,
-                      title: AppLocalizations.of(context).statEarnings,
-                      value: '€${displayEarnings.toStringAsFixed(0)}',
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 12.h),
-              Row(
-                children: [
-                  Expanded(
-                    child: _StatCard(
-                      icon: Icons.star_rounded,
-                      iconColor: AppColors.starFilled,
-                      title: AppLocalizations.of(context).statAvgRating,
-                      value: stats.rating > 0
-                          ? stats.rating.toStringAsFixed(2)
-                          : '—',
-                    ),
-                  ),
-                  SizedBox(width: 12.w),
-                  Expanded(
-                    child: _StatCard(
-                      icon: Icons.trending_up_rounded,
-                      iconColor: AppColors.secondary,
-                      title: AppLocalizations.of(context).avgPerRide,
-                      value: avgPerRide,
-                    ),
-                  ),
-                ],
-              ),
-            ],
+          child: GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: cards.length,
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: context.isExpandedOrLarger ? 4 : 2,
+              crossAxisSpacing: 12.w,
+              mainAxisSpacing: 12.h,
+              childAspectRatio: context.isTabletOrLarger ? 1.75 : 2.2,
+            ),
+            itemBuilder: (_, index) => cards[index],
           ),
         ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1);
       },
       loading: () => Padding(
         padding: EdgeInsets.symmetric(horizontal: 20.w),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Expanded(child: _buildLoadingStatCard()),
-                SizedBox(width: 12.w),
-                Expanded(child: _buildLoadingStatCard()),
-              ],
-            ),
-            SizedBox(height: 12.h),
-            Row(
-              children: [
-                Expanded(child: _buildLoadingStatCard()),
-                SizedBox(width: 12.w),
-                Expanded(child: _buildLoadingStatCard()),
-              ],
-            ),
-          ],
+        child: GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: 4,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: context.isExpandedOrLarger ? 4 : 2,
+            crossAxisSpacing: 12.w,
+            mainAxisSpacing: 12.h,
+            childAspectRatio: context.isTabletOrLarger ? 1.75 : 2.2,
+          ),
+          itemBuilder: (_, _) => _buildLoadingStatCard(),
         ),
       ),
       error: (_, _) => _buildErrorPlaceholder(context),
@@ -653,7 +657,9 @@ class DriverEarningsScreen extends ConsumerWidget {
                           ),
                         ),
                         Text(
-                          '${stats.totalDistance.toStringAsFixed(1)} km',
+                          AppLocalizations.of(context).distanceKmValue(
+                            stats.totalDistance.toStringAsFixed(1),
+                          ),
                           style: TextStyle(
                             fontSize: 12.sp,
                             color: AppColors.success,
@@ -717,7 +723,12 @@ class DriverEarningsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildStripeBalanceLine(String label, int amountInCents, Color color) {
+  Widget _buildStripeBalanceLine(
+    BuildContext context,
+    String label,
+    int amountInCents,
+    Color color,
+  ) {
     return Row(
       children: [
         Container(
@@ -735,7 +746,7 @@ class DriverEarningsScreen extends ConsumerWidget {
           ),
         ),
         Text(
-          '€${(amountInCents / 100).toStringAsFixed(2)}',
+          AppLocaleFormatters.formatCurrencyFromCents(context, amountInCents),
           style: TextStyle(
             fontSize: 12.sp,
             fontWeight: FontWeight.w700,
@@ -1008,10 +1019,10 @@ class DriverEarningsScreen extends ConsumerWidget {
                                           context,
                                         ).availableBalance,
                                       ),
-                                      content: const Text(
-                                        'Withdrawable Now is the part of your Stripe instant-available balance backed by completed rides.\n\n'
-                                        'Paid rides that are not completed yet stay blocked for withdrawal.\n\n'
-                                        'Processing is money that has reached Stripe but is not yet eligible for instant withdrawal.',
+                                      content: Text(
+                                        AppLocalizations.of(
+                                          context,
+                                        ).withdrawableBalanceInfo,
                                       ),
                                       actions: [
                                         TextButton(
@@ -1073,55 +1084,65 @@ class DriverEarningsScreen extends ConsumerWidget {
                   ),
                   SizedBox(height: 14.h),
                   _buildStripeBalanceLine(
-                    'Withdrawable now',
+                    context,
+                    AppLocalizations.of(context).withdrawableNowLabel,
                     withdrawableBalanceInCents,
                     AppColors.success,
                   ),
                   SizedBox(height: 8.h),
                   _buildStripeBalanceLine(
-                    'Completed ride earnings',
+                    context,
+                    AppLocalizations.of(context).completedRideEarningsLabel,
                     completedEarningsInCents,
                     AppColors.primary,
                   ),
                   SizedBox(height: 8.h),
                   _buildStripeBalanceLine(
-                    'Payouts already requested',
+                    context,
+                    AppLocalizations.of(context).payoutsAlreadyRequestedLabel,
                     activePayoutsInCents,
                     AppColors.textSecondary,
                   ),
                   SizedBox(height: 8.h),
                   _buildStripeBalanceLine(
-                    'Paid rides awaiting completion',
+                    context,
+                    AppLocalizations.of(
+                      context,
+                    ).paidRidesAwaitingCompletionLabel,
                     blockedPendingRideEarningsInCents,
                     AppColors.warning,
                   ),
                   SizedBox(height: 8.h),
                   _buildStripeBalanceLine(
-                    'Stripe instant available',
+                    context,
+                    AppLocalizations.of(context).stripeInstantAvailableLabel,
                     rawStripeAvailableBalanceInCents,
                     AppColors.success,
                   ),
                   SizedBox(height: 8.h),
                   _buildStripeBalanceLine(
-                    'Processing',
+                    context,
+                    AppLocalizations.of(context).statusProcessing,
                     pendingBalanceInCents,
                     AppColors.warning,
                   ),
                   SizedBox(height: 8.h),
                   _buildStripeBalanceLine(
-                    'Stripe balance total',
+                    context,
+                    AppLocalizations.of(context).stripeBalanceTotalLabel,
                     totalStripeBalanceInCents,
                     AppColors.textSecondary,
                   ),
                   SizedBox(height: 8.h),
                   _buildStripeBalanceLine(
-                    'Trip earnings recorded',
+                    context,
+                    AppLocalizations.of(context).tripEarningsRecordedLabel,
                     tripEarningsInCents,
                     AppColors.textSecondary,
                   ),
                   SizedBox(height: 12.h),
                   Text(
-                    'Withdrawable Now only includes completed rides. Paid rides still in progress unlock after the driver completes the ride.',
+                    AppLocalizations.of(context).withdrawableNowFootnote,
                     style: TextStyle(
                       fontSize: 11.sp,
                       color: AppColors.textSecondary,
@@ -1283,8 +1304,9 @@ class DriverEarningsScreen extends ConsumerWidget {
     if (stripeAccountId == null || stripeAccountId.isEmpty) {
       AdaptiveSnackBar.show(
         context,
-        message:
-            'Your Stripe account ID is missing. Please reconnect your payout account.',
+        message: AppLocalizations.of(
+          context,
+        ).your_stripe_account_id_is_missing_please_reconnect_your_payout_account,
         type: AdaptiveSnackBarType.error,
       );
       return;
@@ -1292,13 +1314,19 @@ class DriverEarningsScreen extends ConsumerWidget {
 
     if (availableBalanceInCents <= 0) {
       final pendingText = blockedPendingRideEarningsInCents > 0
-          ? ' €${(blockedPendingRideEarningsInCents / 100).toStringAsFixed(2)} is waiting for ride completion.'
+          ? AppLocalizations.of(context).rideCompletionPendingAmount(
+              (blockedPendingRideEarningsInCents / 100).toStringAsFixed(2),
+            )
           : pendingBalanceInCents > 0
-          ? ' €${(pendingBalanceInCents / 100).toStringAsFixed(2)} is still processing.'
+          ? AppLocalizations.of(context).processingBalancePendingAmount(
+              (pendingBalanceInCents / 100).toStringAsFixed(2),
+            )
           : '';
       AdaptiveSnackBar.show(
         context,
-        message: 'No completed ride balance available yet.$pendingText',
+        message:
+            AppLocalizations.of(context).noCompletedRideBalanceAvailableYet +
+            pendingText,
         type: AdaptiveSnackBarType.error,
       );
       return;
@@ -1361,9 +1389,10 @@ class DriverEarningsScreen extends ConsumerWidget {
                   description: transaction.description,
                   amountInCents: transaction.amountInCents,
                   type: transaction.type,
-                  date: DateFormat(
-                    'MMM d, h:mm a',
-                  ).format(transaction.createdAt),
+                  date: AppLocaleFormatters.formatShortDateTime(
+                    context,
+                    transaction.createdAt,
+                  ),
                   onTap: transaction.type == EarningsTransactionType.payout
                       ? () => context.push(
                           AppRoutes.payoutDetail.path.replaceFirst(
@@ -1575,7 +1604,7 @@ class _TransactionItem extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  '${amountInCents >= 0 ? '+' : ''}€${(amountInCents / 100).toStringAsFixed(2)}',
+                  '${amountInCents >= 0 ? '+' : '-'}${AppLocaleFormatters.formatCurrencyFromCents(context, amountInCents.abs())}',
                   style: TextStyle(
                     fontSize: 16.sp,
                     fontWeight: FontWeight.w700,

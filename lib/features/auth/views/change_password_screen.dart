@@ -15,6 +15,10 @@ import 'package:sport_connect/features/auth/view_models/change_password_view_mod
 import 'package:sport_connect/features/auth/views/reauth_dialog.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
+const _passwordUppercaseError = 'password_uppercase';
+const _passwordLowercaseError = 'password_lowercase';
+const _passwordNumberError = 'password_number';
+
 /// Change Password screen for authenticated users.
 ///
 /// Allows users to update their password with validation.
@@ -38,13 +42,13 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
             final value = control.value as String?;
             if (value == null || value.isEmpty) return null;
             if (!RegExp('[A-Z]').hasMatch(value)) {
-              return {'password': 'Include at least one uppercase letter'};
+              return {'password': _passwordUppercaseError};
             }
             if (!RegExp('[a-z]').hasMatch(value)) {
-              return {'password': 'Include at least one lowercase letter'};
+              return {'password': _passwordLowercaseError};
             }
             if (!RegExp('[0-9]').hasMatch(value)) {
-              return {'password': 'Include at least one number'};
+              return {'password': _passwordNumberError};
             }
             return null;
           }),
@@ -111,72 +115,142 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
         ),
         title: l10n.changePasswordTitle,
       ),
-      body: MaxWidthContainer(
-        maxWidth: kMaxWidthFormNarrow,
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: adaptiveScreenPadding(context),
-            child: Column(
-              children: [
-                if (vmState.isSuccess)
-                  _buildSuccessState()
-                else
-                  _buildFormState(l10n, vmState),
-              ],
-            ),
+      body: SafeArea(
+        child: ResponsiveLayoutBuilder(
+          phone: (_) => MaxWidthContainer(
+            maxWidth: kMaxWidthFormNarrow,
+            child: _buildScrollableState(context, l10n, vmState),
+          ),
+          tablet: (_) => MaxWidthContainer(
+            maxWidth: kMaxWidthWide,
+            child: _buildWideState(context, l10n, vmState),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildFormState(AppLocalizations l10n, ChangePasswordState vmState) {
+  Widget _buildScrollableState(
+    BuildContext context,
+    AppLocalizations l10n,
+    ChangePasswordState vmState,
+  ) {
+    return SingleChildScrollView(
+      padding: adaptiveScreenPadding(context),
+      child: Column(
+        children: [
+          if (vmState.isSuccess)
+            _buildSuccessState()
+          else
+            _buildFormState(l10n, vmState),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWideState(
+    BuildContext context,
+    AppLocalizations l10n,
+    ChangePasswordState vmState,
+  ) {
+    return SingleChildScrollView(
+      padding: adaptiveScreenPadding(context).copyWith(top: 24.h, bottom: 32.h),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 5,
+            child: _SecurityPanel(isSuccess: vmState.isSuccess),
+          ),
+          SizedBox(width: 24.w),
+          Expanded(
+            flex: 6,
+            child: Container(
+              padding: EdgeInsets.all(24.w),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(24.r),
+                border: Border.all(
+                  color: AppColors.border.withValues(alpha: 0.5),
+                ),
+                boxShadow: AppSpacing.shadowSm,
+              ),
+              child: vmState.isSuccess
+                  ? _buildSuccessState()
+                  : _buildFormState(l10n, vmState, showHeader: false),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFormState(
+    AppLocalizations l10n,
+    ChangePasswordState vmState, {
+    bool showHeader = true,
+  }) {
     return ReactiveForm(
       formGroup: _form,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(height: 24.h),
-
-          // Icon
-          GlassPanel(
-                padding: EdgeInsets.all(20.w),
-                color: AppColors.surface.withValues(alpha: 0.62),
-                borderColor: AppColors.primary.withValues(alpha: 0.2),
-                child: Icon(
-                  Icons.lock_outline_rounded,
-                  size: 48.sp,
-                  color: AppColors.primary,
-                ),
-              )
-              .animate()
-              .fadeIn(duration: 400.ms)
-              .scale(begin: const Offset(0.8, 0.8)),
-
-          SizedBox(height: 28.h),
-
-          Text(
-            l10n.changePasswordHeading,
-            style: TextStyle(
-              fontSize: 28.sp,
-              fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
-              letterSpacing: -0.5,
+          if (showHeader) ...[
+            SizedBox(height: 24.h),
+            GlassPanel(
+                  padding: EdgeInsets.all(20.w),
+                  color: AppColors.surface.withValues(alpha: 0.62),
+                  borderColor: AppColors.primary.withValues(alpha: 0.2),
+                  child: Icon(
+                    Icons.lock_outline_rounded,
+                    size: 48.sp,
+                    color: AppColors.primary,
+                  ),
+                )
+                .animate()
+                .fadeIn(duration: 400.ms)
+                .scale(begin: const Offset(0.8, 0.8)),
+            SizedBox(height: 28.h),
+            Text(
+              l10n.changePasswordHeading,
+              style: TextStyle(
+                fontSize: 28.sp,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary,
+                letterSpacing: -0.5,
+              ),
+            ).animate().fadeIn(delay: 100.ms).slideX(begin: -0.1),
+            SizedBox(height: 12.h),
+            Text(
+              l10n.changePasswordDesc,
+              style: TextStyle(
+                fontSize: 15.sp,
+                color: AppColors.textSecondary,
+                height: 1.5,
+              ),
+            ).animate().fadeIn(delay: 200.ms).slideX(begin: -0.1),
+            SizedBox(height: 36.h),
+          ] else ...[
+            Text(
+              l10n.changePasswordHeading,
+              style: TextStyle(
+                fontSize: 24.sp,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary,
+                letterSpacing: -0.4,
+              ),
             ),
-          ).animate().fadeIn(delay: 100.ms).slideX(begin: -0.1),
-
-          SizedBox(height: 12.h),
-
-          Text(
-            l10n.changePasswordDesc,
-            style: TextStyle(
-              fontSize: 15.sp,
-              color: AppColors.textSecondary,
-              height: 1.5,
+            SizedBox(height: 10.h),
+            Text(
+              l10n.changePasswordDesc,
+              style: TextStyle(
+                fontSize: 14.sp,
+                color: AppColors.textSecondary,
+                height: 1.5,
+              ),
             ),
-          ).animate().fadeIn(delay: 200.ms).slideX(begin: -0.1),
-
-          SizedBox(height: 36.h),
+            SizedBox(height: 28.h),
+          ],
 
           AdaptiveReactiveTextField(
             formControlName: 'new_password',
@@ -202,12 +276,11 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
               ValidationMessage.required: (_) => l10n.password_is_required,
               ValidationMessage.minLength: (_) => l10n.passwordMinLengthError,
               'password': (error) => switch (error as String) {
-                'Include at least one uppercase letter' =>
+                _passwordUppercaseError =>
                   l10n.include_at_least_one_uppercase_letter,
-                'Include at least one lowercase letter' =>
+                _passwordLowercaseError =>
                   l10n.include_at_least_one_lowercase_letter,
-                'Include at least one number' =>
-                  l10n.include_at_least_one_number,
+                _passwordNumberError => l10n.include_at_least_one_number,
                 _ => error,
               },
             },
@@ -316,6 +389,125 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
         ).animate().fadeIn(delay: 400.ms),
 
         SizedBox(height: 32.h),
+      ],
+    );
+  }
+}
+
+class _SecurityPanel extends StatelessWidget {
+  const _SecurityPanel({required this.isSuccess});
+
+  final bool isSuccess;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
+    return Container(
+      padding: EdgeInsets.all(24.w),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.primary.withValues(alpha: 0.08),
+            AppColors.secondary.withValues(alpha: 0.05),
+            AppColors.surface,
+          ],
+        ),
+        borderRadius: BorderRadius.circular(28.r),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.14)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          GlassPanel(
+            padding: EdgeInsets.all(18.w),
+            color: Colors.white.withValues(alpha: 0.72),
+            borderColor: AppColors.primary.withValues(alpha: 0.18),
+            child: Icon(
+              isSuccess
+                  ? Icons.verified_user_rounded
+                  : Icons.lock_outline_rounded,
+              size: 40.sp,
+              color: isSuccess ? AppColors.success : AppColors.primary,
+            ),
+          ),
+          SizedBox(height: 22.h),
+          Text(
+            l10n.changePasswordHeading,
+            style: TextStyle(
+              fontSize: 28.sp,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+              letterSpacing: -0.4,
+            ),
+          ),
+          SizedBox(height: 10.h),
+          Text(
+            isSuccess
+                ? l10n.changePasswordSuccessDesc
+                : l10n.changePasswordDesc,
+            style: TextStyle(
+              fontSize: 14.sp,
+              color: AppColors.textSecondary,
+              height: 1.6,
+            ),
+          ),
+          SizedBox(height: 24.h),
+          _SecurityBullet(
+            icon: Icons.password_rounded,
+            label: l10n.passwordMinLengthError,
+          ),
+          SizedBox(height: 10.h),
+          _SecurityBullet(
+            icon: Icons.keyboard_capslock_rounded,
+            label: l10n.include_at_least_one_uppercase_letter,
+          ),
+          SizedBox(height: 10.h),
+          _SecurityBullet(
+            icon: Icons.pin_rounded,
+            label: l10n.include_at_least_one_number,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SecurityBullet extends StatelessWidget {
+  const _SecurityBullet({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: EdgeInsets.all(8.w),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(12.r),
+          ),
+          child: Icon(icon, size: 18.sp, color: AppColors.primary),
+        ),
+        SizedBox(width: 12.w),
+        Expanded(
+          child: Padding(
+            padding: EdgeInsets.only(top: 6.h),
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 13.sp,
+                color: AppColors.textPrimary,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ),
       ],
     );
   }

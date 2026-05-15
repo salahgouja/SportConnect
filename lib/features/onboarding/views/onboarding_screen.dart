@@ -2367,7 +2367,7 @@ class _PrimaryCtaButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(16.r),
           onTap: onPressed,
           child: Ink(
-            height: _clamped(56.h, 50, 58),
+            height: _clamped(62.h, 54, 68),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: disabled
@@ -2397,8 +2397,8 @@ class _PrimaryCtaButton extends StatelessWidget {
                   Flexible(
                     child: Text(
                       label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      maxLines: 2,
+                      textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: _clamped(16.sp, 14, 17),

@@ -1,7 +1,5 @@
 import 'dart:async';
 
-
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -254,6 +252,7 @@ class NightSafetyBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Container(
       margin: adaptiveScreenPadding(context).copyWith(bottom: 8.h, top: 8.h),
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
@@ -279,7 +278,7 @@ class NightSafetyBanner extends StatelessWidget {
           SizedBox(width: 12.w),
           Expanded(
             child: Text(
-              'Night ride — stay alert and share your trip with someone you trust',
+              l10n.night_ride_stay_alert_and_share_your_trip_with_someone_you_trust,
               style: TextStyle(
                 fontSize: 12.sp,
                 fontWeight: FontWeight.w500,
@@ -306,6 +305,10 @@ class RouteDeviationAlert extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final deviationDistance = l10n.distanceKmValue(
+      (rideState.routeDeviationMeters / 1000).toStringAsFixed(1),
+    );
     return Container(
       margin: adaptiveScreenPadding(context).copyWith(bottom: 8.h, top: 8.h),
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
@@ -327,7 +330,7 @@ class RouteDeviationAlert extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Route Deviation Detected',
+                  l10n.routeDeviationDetected,
                   style: TextStyle(
                     fontSize: 13.sp,
                     fontWeight: FontWeight.w700,
@@ -337,8 +340,11 @@ class RouteDeviationAlert extends StatelessWidget {
                 SizedBox(height: 2.h),
                 Text(
                   rideState.remainingEtaMinutes != null
-                      ? 'Driver is ${(rideState.routeDeviationMeters / 1000).toStringAsFixed(1)} km off route — new ETA ~${rideState.remainingEtaMinutes} min'
-                      : 'Driver is ${(rideState.routeDeviationMeters / 1000).toStringAsFixed(1)} km off the planned route',
+                      ? l10n.driverOffRouteEta(
+                          deviationDistance,
+                          rideState.remainingEtaMinutes!,
+                        )
+                      : l10n.driverOffPlannedRoute(deviationDistance),
                   style: TextStyle(
                     fontSize: 11.sp,
                     color: AppColors.textSecondary,

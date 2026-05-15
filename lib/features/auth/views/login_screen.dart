@@ -539,7 +539,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         case 'google-sign-in-failed':
           return error.message; // contains the raw code name for visibility
         case 'account-disabled':
-          return 'Your account has been suspended. Please contact support.';
+          return l10n.your_account_has_been_suspended_please_contact_support;
         case 'user-not-found':
           return l10n.loginErrorUserNotFound;
         case 'wrong-password' || 'invalid-credential':

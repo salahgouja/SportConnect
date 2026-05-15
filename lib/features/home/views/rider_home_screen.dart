@@ -15,6 +15,7 @@ import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/utils/locale_formatters.dart';
 import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/core/widgets/app_map_tile_layer.dart';
 import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
@@ -182,39 +183,35 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
             phone: (_) => vmState.showMapView
                 ? _buildMapHome(vmState)
                 : _buildFeedHome(vmState),
-            tablet: (_) => Row(
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: vmState.showMapView
-                      ? _buildMapHome(vmState)
-                      : _buildFeedHome(vmState),
-                ),
-                Expanded(
-                  flex: 1,
-                  child: _buildFeedHome(vmState),
-                ),
-              ],
-            ),
-            desktop: (_) => Row(
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: vmState.showMapView
-                      ? _buildMapHome(vmState)
-                      : _buildFeedHome(vmState),
-                ),
-                Expanded(
-                  flex: 1,
-                  child: _buildFeedHome(vmState),
-                ),
-              ],
-            ),
+            tablet: (context) => _buildLargeScreenHome(context, vmState),
+            desktop: (context) => _buildLargeScreenHome(context, vmState),
           ),
         LocationPermissionState.deniedSoft => _buildDeniedSoftState(),
         LocationPermissionState.deniedHard => _buildDeniedHardState(),
         LocationPermissionState.serviceDisabled => _buildServiceDisabledState(),
       },
+    );
+  }
+
+  Widget _buildLargeScreenHome(BuildContext context, RiderHomeState vmState) {
+    final shouldSplitPane =
+        context.isLandscape || context.screenWidth >= Breakpoints.medium;
+    if (!vmState.showMapView || !shouldSplitPane) {
+      return _buildFeedHome(vmState);
+    }
+
+    return Row(
+      children: [
+        Expanded(flex: 3, child: _buildMapHome(vmState)),
+        Container(width: 1, color: AppColors.border.withValues(alpha: 0.35)),
+        Expanded(
+          flex: 2,
+          child: ColoredBox(
+            color: AppColors.surface,
+            child: _buildFeedHome(vmState),
+          ),
+        ),
+      ],
     );
   }
 
@@ -1165,7 +1162,9 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
               child: Semantics(
                 selected: isSelected,
                 button: true,
-                label: '${f['label']} filter, $count rides',
+                label: AppLocalizations.of(
+                  context,
+                ).rideFilterSemantics(f['label']! as String, count),
                 child: GestureDetector(
                   onTap: () {
                     unawaited(HapticFeedback.selectionClick());
@@ -1310,7 +1309,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
   }) {
     return Semantics(
       button: true,
-      label: tooltip ?? 'Map control',
+      label: tooltip ?? AppLocalizations.of(context).mapControlLabel,
       child: GestureDetector(
         onTap: onTap,
         child: Container(
@@ -2720,9 +2719,8 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
     if (d == t.add(const Duration(days: 1))) {
       return l10n.tomorrow;
     }
-    return '${date.day}/${date.month}';
+    return AppLocaleFormatters.formatMonthDay(context, date);
   }
 
-  String _formatTime(DateTime dt) =>
-      '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+  String _formatTime(DateTime dt) => AppLocaleFormatters.formatTime(context, dt);
 }

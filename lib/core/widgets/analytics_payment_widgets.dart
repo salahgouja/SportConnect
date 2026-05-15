@@ -3,11 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/utils/locale_formatters.dart';
 import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
@@ -29,6 +29,7 @@ class MonthlyRideSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
@@ -63,7 +64,7 @@ class MonthlyRideSummary extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12.r),
                 ),
                 child: Text(
-                  '$totalRides rides',
+                  '$totalRides ${l10n.rides}',
                   style: TextStyle(
                     fontSize: 13.sp,
                     fontWeight: FontWeight.w600,
@@ -77,14 +78,14 @@ class MonthlyRideSummary extends StatelessWidget {
           Row(
             children: [
               _summaryTile(
-                'Spent',
-                '€${totalSpent.toStringAsFixed(2)}',
+                l10n.totalSpent,
+                l10n.value5(totalSpent.toStringAsFixed(2)),
                 Icons.arrow_upward_rounded,
               ),
               SizedBox(width: 8.w),
               _summaryTile(
-                'Earned',
-                '€${totalEarned.toStringAsFixed(2)}',
+                l10n.earned,
+                l10n.value5(totalEarned.toStringAsFixed(2)),
                 Icons.arrow_downward_rounded,
               ),
             ],
@@ -102,7 +103,7 @@ class MonthlyRideSummary extends StatelessWidget {
                 Icon(Icons.route_rounded, size: 16.sp, color: Colors.white),
                 SizedBox(width: 6.w),
                 Text(
-                  '${totalDistance.toStringAsFixed(1)} km covered',
+                  l10n.distanceKmValue(totalDistance.toStringAsFixed(1)),
                   style: TextStyle(
                     fontSize: 13.sp,
                     fontWeight: FontWeight.w500,
@@ -162,6 +163,7 @@ class MonthlyCost {
 /// Payment receipt PDF generator (#99)
 class PaymentReceiptGenerator {
   static Future<Uint8List> generate({
+    required BuildContext context,
     required String receiptId,
     required String riderName,
     required String driverName,
@@ -172,8 +174,12 @@ class PaymentReceiptGenerator {
     required int serviceFeeInCents,
     required int totalInCents,
   }) async {
+    final l10n = AppLocalizations.of(context);
     final pdf = pw.Document();
-    final dateStr = DateFormat('MMM dd, yyyy - hh:mm a').format(rideDate);
+    final dateStr = AppLocaleFormatters.formatShortWeekdayDateTime(
+      context,
+      rideDate,
+    );
 
     pdf.addPage(
       pw.Page(
@@ -193,7 +199,7 @@ class PaymentReceiptGenerator {
                     ),
                   ),
                   pw.Text(
-                    'Payment Receipt',
+                    l10n.payment_receipt,
                     style: const pw.TextStyle(
                       fontSize: 16,
                       color: PdfColors.grey700,
@@ -203,7 +209,7 @@ class PaymentReceiptGenerator {
               ),
               pw.SizedBox(height: 8),
               pw.Text(
-                'Receipt #$receiptId',
+                '${l10n.receiptNumberLabel} $receiptId',
                 style: const pw.TextStyle(
                   fontSize: 12,
                   color: PdfColors.grey600,
@@ -211,22 +217,22 @@ class PaymentReceiptGenerator {
               ),
               pw.Divider(),
               pw.SizedBox(height: 12),
-              _pdfRow('Date', dateStr),
-              _pdfRow('Rider', riderName),
-              _pdfRow('Driver', driverName),
+              _pdfRow(l10n.dateLabel, dateStr),
+              _pdfRow(l10n.rider, riderName),
+              _pdfRow(l10n.driver, driverName),
               pw.SizedBox(height: 12),
-              _pdfRow('From', origin),
-              _pdfRow('To', destination),
+              _pdfRow(l10n.fromLabel, origin),
+              _pdfRow(l10n.toLabel, destination),
               pw.SizedBox(height: 12),
               pw.Divider(),
               pw.SizedBox(height: 8),
               _pdfRow(
-                'Base Fare',
-                '€${(baseFare / 100).toStringAsFixed(2)}',
+                l10n.receiptBaseFare,
+                l10n.value5((baseFare / 100).toStringAsFixed(2)),
               ),
               _pdfRow(
-                'Service Fee',
-                '€${(serviceFeeInCents / 100).toStringAsFixed(2)}',
+                l10n.receiptServiceFee,
+                l10n.value5((serviceFeeInCents / 100).toStringAsFixed(2)),
               ),
               pw.SizedBox(height: 8),
               pw.Divider(),
@@ -235,14 +241,14 @@ class PaymentReceiptGenerator {
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
                   pw.Text(
-                    'Total',
+                    l10n.totalPaid,
                     style: pw.TextStyle(
                       fontSize: 16,
                       fontWeight: pw.FontWeight.bold,
                     ),
                   ),
                   pw.Text(
-                    '€${(totalInCents / 100).toStringAsFixed(2)}',
+                    l10n.value5((totalInCents / 100).toStringAsFixed(2)),
                     style: pw.TextStyle(
                       fontSize: 16,
                       fontWeight: pw.FontWeight.bold,
@@ -252,7 +258,7 @@ class PaymentReceiptGenerator {
               ),
               pw.SizedBox(height: 32),
               pw.Text(
-                'Thank you for riding with SportConnect!',
+                l10n.thank_you_for_riding_with_sportconnect,
                 style: pw.TextStyle(
                   fontSize: 12,
                   color: PdfColors.grey600,
@@ -304,6 +310,7 @@ class PaymentReceiptGenerator {
     required int totalInCents,
   }) async {
     final bytes = await generate(
+      context: context,
       receiptId: receiptId,
       riderName: riderName,
       driverName: driverName,
@@ -390,15 +397,21 @@ class _RefundRequestSheetState extends State<RefundRequestSheet> {
       if (!mounted) return;
       setState(() {
         _isSubmitting = false;
-        _errorMessage = 'Could not submit refund. Please try again.';
+        _errorMessage = AppLocalizations.of(
+          context,
+        ).could_not_submit_refund_please_try_again;
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final amountText = '€${(widget.paidAmount / 100).toStringAsFixed(2)}';
+    final amountText = AppLocaleFormatters.formatCurrencyFromCents(
+      context,
+      widget.paidAmount,
+    );
 
     return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 32.h),
@@ -438,7 +451,7 @@ class _RefundRequestSheetState extends State<RefundRequestSheet> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Refund check',
+                        l10n.refundReviewLabel,
                         style: TextStyle(
                           fontSize: 11.sp,
                           color: AppColors.textSecondary,
@@ -467,14 +480,14 @@ class _RefundRequestSheetState extends State<RefundRequestSheet> {
                     ),
                     SizedBox(height: 2.h),
                     Text(
-                      'If',
+                      l10n.refundIfEligibleLineOne,
                       style: TextStyle(
                         fontSize: 10.sp,
                         color: AppColors.textTertiary,
                       ),
                     ),
                     Text(
-                      'eligible',
+                      l10n.refundIfEligibleLineTwo,
                       style: TextStyle(
                         fontSize: 10.sp,
                         color: AppColors.textTertiary,

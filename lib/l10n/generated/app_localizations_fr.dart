@@ -4844,6 +4844,17 @@ class AppLocalizationsFr extends AppLocalizations {
   String get messageButton => 'Message';
 
   @override
+  String passengerRequestCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count demandes de passagers',
+      one: '1 demande de passager',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get callButton => 'Appeler';
 
   @override
@@ -6817,66 +6828,66 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get tap_the_map_to_set_the_exact_point =>
-      'Tap the map to set the exact point';
+      'Touchez la carte pour définir le point exact';
 
   @override
-  String get finding_address => 'Finding address...';
+  String get finding_address => 'Recherche de l\'adresse...';
 
   @override
   String get suggestions => 'SUGGESTIONS';
 
   @override
-  String get selected_address => 'Selected address';
+  String get selected_address => 'Adresse sélectionnée';
 
   @override
-  String get use_this_address => 'Use this address';
+  String get use_this_address => 'Utiliser cette adresse';
 
   @override
-  String get selected => 'Selected';
+  String get selected => 'Sélectionnée';
 
   @override
-  String get search_unavailable => 'Search unavailable';
+  String get search_unavailable => 'Recherche indisponible';
 
   @override
-  String get no_address_found => 'No address found';
+  String get no_address_found => 'Aucune adresse trouvée';
 
   @override
   String get try_another_street_or_choose_the_exact_point_on_map =>
-      'Try another street or choose the exact point on map.';
+      'Essayez une autre rue ou choisissez le point exact sur la carte.';
 
   @override
   String get unable_to_search_addresses_try_again =>
-      'Unable to search addresses. Try again.';
+      'Impossible de rechercher des adresses. Réessayez.';
 
   @override
   String get unable_to_read_a_valid_current_location =>
-      'Unable to read a valid current location.';
+      'Impossible de lire une position actuelle valide.';
 
   @override
   String get your_current_location_appears_to_be_outside_france =>
-      'Your current location appears to be outside France.';
+      'Votre position actuelle semble se trouver en dehors de la France.';
 
   @override
   String get invalid_address_location_please_choose_another_result =>
-      'Invalid address location. Please choose another result.';
+      'Position d\'adresse invalide. Veuillez choisir un autre résultat.';
 
   @override
   String get invalid_map_position_please_choose_another_point =>
-      'Invalid map position. Please choose another point.';
+      'Position sur la carte invalide. Veuillez choisir un autre point.';
 
   @override
   String get please_select_a_location_in_france =>
-      'Please select a location in France.';
+      'Veuillez sélectionner une position en France.';
 
   @override
-  String get selected_location => 'Selected location';
+  String get selected_location => 'Position sélectionnée';
 
   @override
-  String get please_select_an_address => 'Please select an address.';
+  String get please_select_an_address => 'Veuillez sélectionner une adresse.';
 
   @override
   String get invalid_selected_location_please_choose_another_point =>
-      'Invalid selected location. Please choose another point.';
+      'Position sélectionnée invalide. Veuillez choisir un autre point.';
 
   @override
   String get payment_receipt => 'Payment Receipt';
@@ -6954,22 +6965,22 @@ class AppLocalizationsFr extends AppLocalizations {
   String get select_your_expertise_level => 'Select your expertise level';
 
   @override
-  String get male => 'Male';
+  String get male => 'Homme';
 
   @override
-  String get female => 'Female';
+  String get female => 'Femme';
 
   @override
   String get enter_a_valid_french_phone_number =>
-      'Enter a valid French phone number.';
+      'Saisissez un numéro de téléphone français valide.';
 
   @override
   String get after_33_enter_the_number_without_the_leading_0 =>
-      'After +33, enter the number without the leading 0.';
+      'Après +33, saisissez le numéro sans le 0 initial.';
 
   @override
   String get used_only_for_ride_coordination_and_safety =>
-      'Used only for ride coordination and safety.';
+      'Utilisé uniquement pour la coordination et la sécurité des trajets.';
 
   @override
   String get no_map_apps_are_available_on_this_device =>
@@ -7664,6 +7675,21 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get publish_a_ride_and_start_receiving_passenger_requests =>
       'Publish a ride and start receiving passenger requests.';
+
+  @override
+  String get mapControlLabel => 'Contrôle de la carte';
+
+  @override
+  String rideFilterSemantics(String filterLabel, num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count trajets',
+      one: '1 trajet',
+      zero: '0 trajets',
+    );
+    return 'Filtre $filterLabel, $_temp0';
+  }
 
   @override
   String get last_updated_february_23_2026 => 'Last updated: February 23, 2026';
@@ -8507,7 +8533,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get upload_feature_coming_soon => 'Upload feature coming soon';
 
   @override
-  String get phone_number => 'Phone Number';
+  String get phone_number => 'Numéro de téléphone';
 
   @override
   String get try_different_keywords_or_contact_support =>
@@ -9252,19 +9278,19 @@ class AppLocalizationsFr extends AppLocalizations {
   String get changeAppleAccount => 'Changer de compte Apple';
 
   @override
-  String get discardChangesTitle => 'Discard changes?';
+  String get discardChangesTitle => 'Ignorer les modifications ?';
 
   @override
-  String get keepEditing => 'Keep editing';
+  String get keepEditing => 'Continuer l\'édition';
 
   @override
-  String get clearAddress => 'Clear address';
+  String get clearAddress => 'Effacer l\'adresse';
 
   @override
-  String get clearPhoneNumber => 'Clear phone number';
+  String get clearPhoneNumber => 'Effacer le numéro';
 
   @override
-  String get openInMaps => 'Open in maps';
+  String get openInMaps => 'Ouvrir dans Maps';
 
   @override
   String get appTitle => 'SportConnect';
@@ -10249,4 +10275,176 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get challengeKeepGoing => 'Continuez !';
+
+  @override
+  String get phoneNumberHint => 'Saisissez votre numéro de téléphone';
+
+  @override
+  String get phoneNumberSupportNoLeadingZero =>
+      'Après +33, saisissez le numéro sans le 0 initial.';
+
+  @override
+  String phoneNumberDigitsCount(int current, int total) {
+    return '$current sur $total chiffres après +33';
+  }
+
+  @override
+  String get phoneNumberSupportPrivacy =>
+      'Utilisé uniquement pour la coordination et la sécurité des trajets.';
+
+  @override
+  String get profilePhotoCameraPermission =>
+      'L\'accès à l\'appareil photo est nécessaire pour prendre une nouvelle photo de profil.';
+
+  @override
+  String get profilePhotoLibraryPermission =>
+      'L\'accès à votre photothèque est nécessaire pour mettre à jour votre photo de profil.';
+
+  @override
+  String get preferNotToSay => 'Je préfère ne pas répondre';
+
+  @override
+  String get addressSelected => 'Adresse sélectionnée';
+
+  @override
+  String get noPointSelected => 'Aucun point sélectionné';
+
+  @override
+  String get tapMapToChoosePoint => 'Touchez la carte pour choisir un point';
+
+  @override
+  String get locationPreviewReady =>
+      'L\'aperçu de la position est prêt ci-dessous';
+
+  @override
+  String get totalSpent => 'Total dépensé';
+
+  @override
+  String get paymentBreakdown => 'Détail du paiement';
+
+  @override
+  String get baseFare => 'Tarif de base';
+
+  @override
+  String get processingFee => 'Frais de traitement';
+
+  @override
+  String get totalPaid => 'Total payé';
+
+  @override
+  String get refundReason => 'Motif du remboursement';
+
+  @override
+  String distanceKmValue(String value) {
+    return '$value km';
+  }
+
+  @override
+  String get withdrawableBalanceInfo =>
+      'Retirable maintenant correspond à la partie de votre solde Stripe disponible immédiatement qui est adossée à des trajets terminés.\n\nLes trajets payés mais non terminés restent bloqués pour le retrait.\n\nEn traitement correspond à l\'argent déjà arrivé sur Stripe mais pas encore éligible à un retrait instantané.';
+
+  @override
+  String get withdrawableNowLabel => 'Retirable maintenant';
+
+  @override
+  String get completedRideEarningsLabel => 'Gains des trajets terminés';
+
+  @override
+  String get payoutsAlreadyRequestedLabel => 'Virements déjà demandés';
+
+  @override
+  String get paidRidesAwaitingCompletionLabel =>
+      'Trajets payés en attente de fin';
+
+  @override
+  String get stripeInstantAvailableLabel =>
+      'Disponible instantanément sur Stripe';
+
+  @override
+  String get stripeBalanceTotalLabel => 'Solde Stripe total';
+
+  @override
+  String get tripEarningsRecordedLabel => 'Gains de trajets enregistrés';
+
+  @override
+  String get withdrawableNowFootnote =>
+      'Retirable maintenant inclut uniquement les trajets terminés. Les trajets payés encore en cours seront débloqués une fois le trajet terminé par le conducteur.';
+
+  @override
+  String rideCompletionPendingAmount(String amount) {
+    return ' $amount € attend la fin du trajet.';
+  }
+
+  @override
+  String processingBalancePendingAmount(String amount) {
+    return ' $amount € est encore en traitement.';
+  }
+
+  @override
+  String get noCompletedRideBalanceAvailableYet =>
+      'Aucun solde de trajet terminé n\'est encore disponible.';
+
+  @override
+  String get receiptNumberLabel => 'Reçu n°';
+
+  @override
+  String get routeDeviationDetected => 'Écart d\'itinéraire détecté';
+
+  @override
+  String driverOffRouteEta(Object distance, int minutes) {
+    return 'Le conducteur est à $distance de l\'itinéraire — arrivée estimée ~$minutes min';
+  }
+
+  @override
+  String driverOffPlannedRoute(Object distance) {
+    return 'Le conducteur est à $distance de l\'itinéraire prévu';
+  }
+
+  @override
+  String relativeMinutesShort(int minutes) {
+    String _temp0 = intl.Intl.pluralLogic(
+      minutes,
+      locale: localeName,
+      other: '$minutes min',
+      one: '$minutes min',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String relativeHoursShort(int hours) {
+    String _temp0 = intl.Intl.pluralLogic(
+      hours,
+      locale: localeName,
+      other: '$hours h',
+      one: '$hours h',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String relativeDaysShort(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days j',
+      one: '$days j',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get refundReviewLabel => 'Vérification du remboursement';
+
+  @override
+  String get refundIfEligibleLineOne => 'Si';
+
+  @override
+  String get refundIfEligibleLineTwo => 'éligible';
+
+  @override
+  String get endsLabel => 'Fin';
+
+  @override
+  String get setEndDate => 'Définir une date de fin';
 }

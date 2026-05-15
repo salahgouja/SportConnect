@@ -282,8 +282,9 @@ class _PremiumButtonState extends State<PremiumButton>
         Flexible(
           child: Text(
             widget.text,
-            overflow: TextOverflow.ellipsis,
-            maxLines: 1,
+            maxLines: 2,
+            softWrap: true,
+            textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: _fontSize,
               fontWeight: FontWeight.w700,

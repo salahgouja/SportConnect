@@ -212,7 +212,7 @@ class IntlPhoneInputState extends State<IntlPhoneInput> {
     if (customError != null) return customError;
 
     if (!_isPhoneValid && _hasDigits) {
-      return 'Enter a valid French phone number.';
+      return AppLocalizations.of(context).enter_a_valid_french_phone_number;
     }
 
     return null;
@@ -243,23 +243,29 @@ class IntlPhoneInputState extends State<IntlPhoneInput> {
     widget.onChanged?.call(phoneNumber);
   }
 
-  String _supportText({
+  String _supportText(
+    BuildContext context, {
     required bool hasError,
     required bool showValid,
   }) {
+    final l10n = AppLocalizations.of(context);
+
     if (hasError) return _errorText!;
 
     if (showValid) return phoneNumber.fullNumber;
 
     if (_isOnlyLeadingZero) {
-      return 'After +33, enter the number without the leading 0.';
+      return l10n.phoneNumberSupportNoLeadingZero;
     }
 
     if (_hasDigits) {
-      return '${_normalizedDigits.length.clamp(0, france.maxLength)} of ${france.maxLength} digits after +33';
+      return l10n.phoneNumberDigitsCount(
+        _normalizedDigits.length.clamp(0, france.maxLength),
+        france.maxLength,
+      );
     }
 
-    return 'Used only for ride coordination and safety.';
+    return l10n.phoneNumberSupportPrivacy;
   }
 
   Color _supportColor({
@@ -285,6 +291,7 @@ class IntlPhoneInputState extends State<IntlPhoneInput> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final accent = widget.accentColor ?? AppColors.primary;
     final fill = widget.fillColor ?? AppColors.surface;
 
@@ -293,7 +300,7 @@ class IntlPhoneInputState extends State<IntlPhoneInput> {
     final showValid = _hasDigits && _isPhoneValid && !hasError;
     final showClear = widget.enabled && _hasDigits && isFocused && !showValid;
 
-    final title = widget.label ?? 'Phone number';
+    final title = widget.label ?? l10n.phone_number;
 
     final fieldBackground = !widget.enabled
         ? AppColors.textSecondary.withValues(alpha: 0.05)
@@ -387,7 +394,7 @@ class IntlPhoneInputState extends State<IntlPhoneInput> {
                       letterSpacing: 0.1,
                     ),
                     decoration: InputDecoration(
-                      hintText: widget.hint ?? 'Phone number',
+                      hintText: widget.hint ?? l10n.phoneNumberHint,
                       hintStyle: TextStyle(
                         fontSize: 14.5.sp,
                         fontWeight: FontWeight.w500,
@@ -459,6 +466,7 @@ class IntlPhoneInputState extends State<IntlPhoneInput> {
           child: Row(
             key: ValueKey(
               '${_supportText(
+                context,
                 hasError: hasError,
                 showValid: showValid,
               )}-$supportColor',
@@ -477,6 +485,7 @@ class IntlPhoneInputState extends State<IntlPhoneInput> {
               Expanded(
                 child: Text(
                   _supportText(
+                    context,
                     hasError: hasError,
                     showValid: showValid,
                   ),

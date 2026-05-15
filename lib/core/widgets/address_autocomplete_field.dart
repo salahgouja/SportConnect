@@ -347,7 +347,9 @@ class AddressAutocompleteFieldState
       setState(() {
         _suggestions = const [];
         _isSearching = false;
-        _searchError = 'Unable to search addresses. Try again.';
+        _searchError = AppLocalizations.of(
+          context,
+        ).unable_to_search_addresses_try_again;
       });
 
       _ensureFieldVisible(delay: const Duration(milliseconds: 80));
@@ -365,7 +367,9 @@ class AddressAutocompleteFieldState
 
     if (!serviceEnabled) {
       await Geolocator.openLocationSettings();
-      throw Exception('Please enable location services and try again.');
+      throw Exception(
+        AppLocalizations.of(context).pleaseEnableLocationServices,
+      );
     }
 
     var permission = await Geolocator.checkPermission();
@@ -382,14 +386,14 @@ class AddressAutocompleteFieldState
       }
 
       if (permission == LocationPermission.denied) {
-        throw Exception('Location permission was denied.');
+        throw Exception(AppLocalizations.of(context).errorPermissionDenied);
       }
     }
 
     if (permission == LocationPermission.deniedForever) {
       await Geolocator.openAppSettings();
       throw Exception(
-        'Location permission is permanently denied. Enable it in app settings.',
+        AppLocalizations.of(context).locationPermissionBlockedDescription,
       );
     }
 
@@ -426,14 +430,18 @@ class AddressAutocompleteFieldState
       final location = await _getCurrentLatLng();
       if (!_isFiniteLatLng(location)) {
         setState(() {
-          _errorText = 'Unable to read a valid current location.';
+          _errorText = AppLocalizations.of(
+            context,
+          ).unable_to_read_a_valid_current_location;
         });
         return;
       }
 
       if (!_isLocationInFrance(location)) {
         setState(() {
-          _errorText = 'Your current location appears to be outside France.';
+          _errorText = AppLocalizations.of(
+            context,
+          ).your_current_location_appears_to_be_outside_france;
         });
         return;
       }
@@ -444,7 +452,8 @@ class AddressAutocompleteFieldState
 
       if (!mounted) return;
 
-      final fullAddress = result?.displayName ?? 'Current location';
+      final fullAddress =
+          result?.displayName ?? AppLocalizations.of(context).selectedLocation;
       final draft = AddressResult(
         address: _shortAddress(fullAddress),
         fullAddress: fullAddress,
@@ -490,7 +499,9 @@ class AddressAutocompleteFieldState
     if (!_isFiniteLatLng(result.location) ||
         !_isLocationInFrance(result.location)) {
       setState(() {
-        _errorText = 'Invalid address location. Please choose another result.';
+        _errorText = AppLocalizations.of(
+          context,
+        ).invalid_address_location_please_choose_another_result;
         _searchError = null;
       });
       return;
@@ -705,7 +716,7 @@ class AddressAutocompleteFieldState
                     ? _SmallStatusPill(
                         key: const ValueKey('selected-address'),
                         accent: accent,
-                        text: 'Selected',
+                        text: AppLocalizations.of(context).selected,
                       )
                     : const SizedBox.shrink(
                         key: ValueKey('no-selected-address'),
@@ -717,8 +728,10 @@ class AddressAutocompleteFieldState
         ],
         Semantics(
           button: true,
-          label: widget.label ?? 'Address',
-          hint: hasValue ? 'Selected address' : 'Tap to search address',
+          label: widget.label ?? AppLocalizations.of(context).address,
+          hint: hasValue
+              ? AppLocalizations.of(context).selected_address
+              : AppLocalizations.of(context).searchAddressCityOrPlace,
           child: GestureDetector(
             onTap: _togglePanel,
             child: AnimatedContainer(
@@ -758,8 +771,8 @@ class AddressAutocompleteFieldState
                         if (widget.label != null)
                           Text(
                             hasSelectedLocation
-                                ? 'Address selected'
-                                : 'Address',
+                                ? AppLocalizations.of(context).addressSelected
+                                : AppLocalizations.of(context).address,
                             style: TextStyle(
                               fontSize: 11.sp,
                               fontWeight: FontWeight.w600,
@@ -772,7 +785,10 @@ class AddressAutocompleteFieldState
                         Text(
                           hasValue
                               ? _shortAddress(_controller.text)
-                              : widget.hint ?? 'Search your address',
+                              : widget.hint ??
+                                    AppLocalizations.of(
+                                      context,
+                                    ).searchAddressCityOrPlace,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
@@ -850,7 +866,9 @@ class AddressAutocompleteFieldState
                   _InlineSearchBox(
                     controller: _controller,
                     focusNode: _searchFocusNode,
-                    hint: widget.hint ?? 'Search address',
+                    hint:
+                        widget.hint ??
+                        AppLocalizations.of(context).searchAddressCityOrPlace,
                     accent: accent,
                     enabled: widget.enabled,
                     isLoading: _isSearching,
@@ -934,7 +952,9 @@ class AddressAutocompleteFieldState
                       ),
                     ),
                     child: Text(
-                      _draftAddress == null ? 'Cancel' : 'Not now',
+                      _draftAddress == null
+                          ? AppLocalizations.of(context).actionCancel
+                          : AppLocalizations.of(context).notNow,
                       style: TextStyle(
                         fontSize: 14.sp,
                         fontWeight: FontWeight.w700,
@@ -1481,7 +1501,7 @@ class _InlineMapExpansion extends StatelessWidget {
                               ),
                               SizedBox(width: 8.w),
                               Text(
-                                'Finding address...',
+                                AppLocalizations.of(context).finding_address,
                                 style: TextStyle(
                                   fontSize: 12.5.sp,
                                   fontWeight: FontWeight.w600,
@@ -1496,9 +1516,14 @@ class _InlineMapExpansion extends StatelessWidget {
                             children: [
                               Text(
                                 selected == null
-                                    ? 'No point selected'
+                                    ? AppLocalizations.of(
+                                        context,
+                                      ).noPointSelected
                                     : _shortAddress(
-                                        selectedAddress ?? 'Selected location',
+                                        selectedAddress ??
+                                            AppLocalizations.of(
+                                              context,
+                                            ).selected_location,
                                       ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -1511,8 +1536,12 @@ class _InlineMapExpansion extends StatelessWidget {
                               SizedBox(height: 2.h),
                               Text(
                                 selected == null
-                                    ? 'Tap the map to choose a point'
-                                    : 'Location preview is ready below',
+                                    ? AppLocalizations.of(
+                                        context,
+                                      ).tapMapToChoosePoint
+                                    : AppLocalizations.of(
+                                        context,
+                                      ).locationPreviewReady,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
@@ -1839,7 +1868,7 @@ class _SelectedAddressPreview extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Selected address',
+                      AppLocalizations.of(context).selected_address,
                       style: TextStyle(
                         fontSize: 11.sp,
                         fontWeight: FontWeight.w700,
@@ -1892,7 +1921,7 @@ class _SelectedAddressPreview extends StatelessWidget {
                 size: 18.sp,
               ),
               label: Text(
-                'Use this address',
+                AppLocalizations.of(context).use_this_address,
                 style: TextStyle(
                   fontSize: 13.5.sp,
                   fontWeight: FontWeight.w800,

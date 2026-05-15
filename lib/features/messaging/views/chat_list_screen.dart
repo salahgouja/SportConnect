@@ -11,6 +11,7 @@ import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/utils/locale_formatters.dart';
 import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/core/widgets/premium_text_field.dart';
@@ -157,7 +158,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
       child: Padding(
         padding: EdgeInsets.fromLTRB(20.w, 24.h, 20.w, 8.h),
         child: Text(
-          'Chats',
+          AppLocalizations.of(context).messages,
           style: TextStyle(
             fontSize: 32.sp,
             fontWeight: FontWeight.w800,
@@ -1042,6 +1043,6 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
     if (diff.inMinutes < 60) return '${diff.inMinutes}m';
     if (diff.inHours < 24) return '${diff.inHours}h';
     if (diff.inDays < 7) return '${diff.inDays}d';
-    return '${local.day}/${local.month}';
+    return AppLocaleFormatters.formatMonthDay(context, local);
   }
 }

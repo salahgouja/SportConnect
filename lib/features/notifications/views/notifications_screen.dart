@@ -4,11 +4,11 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/models/user/user_model.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
+import 'package:sport_connect/core/utils/locale_formatters.dart';
 import 'package:sport_connect/core/theme/platform_adaptive.dart';
 import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
@@ -732,7 +732,7 @@ class _NotificationTile extends StatelessWidget {
                     ),
                     SizedBox(height: 8.h),
                     Text(
-                      _formatTime(notification.createdAt),
+                      _formatTime(context, notification.createdAt),
                       style: TextStyle(
                         fontSize: 12.sp,
                         color: AppColors.textSecondary.withValues(alpha: 0.7),
@@ -800,22 +800,7 @@ class _NotificationTile extends StatelessWidget {
     );
   }
 
-  String _formatTime(DateTime? dateTime) {
-    if (dateTime == null) return '';
-
-    final now = DateTime.now();
-    final difference = now.difference(dateTime);
-
-    if (difference.inMinutes < 1) {
-      return 'now';
-    } else if (difference.inMinutes < 60) {
-      return '${difference.inMinutes} min';
-    } else if (difference.inHours < 24) {
-      return '${difference.inHours}h';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays}d';
-    } else {
-      return DateFormat.MMMd().format(dateTime);
-    }
+  String _formatTime(BuildContext context, DateTime? dateTime) {
+    return AppLocaleFormatters.formatRelativeTime(context, dateTime);
   }
 }

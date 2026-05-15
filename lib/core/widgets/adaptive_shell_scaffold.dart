@@ -2,6 +2,7 @@ import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/utils/responsive_utils.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 class AdaptiveShellDestination {
   const AdaptiveShellDestination({
@@ -31,8 +32,9 @@ class AdaptiveShellScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final useRail = context.screenWidth >= Breakpoints.compact;
+    final useRail = useNavigationRailLayout(context);
     final useExtendedRail = context.screenWidth >= Breakpoints.medium;
+    final l10n = AppLocalizations.of(context);
 
     if (!useRail) {
       return AdaptiveScaffold(
@@ -82,11 +84,26 @@ class AdaptiveShellScaffold extends StatelessWidget {
                 context,
               ).textTheme.labelLarge?.copyWith(color: AppColors.textSecondary),
               leading: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                child: Icon(
-                  Icons.directions_car_rounded,
-                  color: AppColors.primaryLight,
-                  size: 28,
+                padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.directions_car_rounded,
+                      color: AppColors.primaryLight,
+                      size: 28,
+                    ),
+                    if (useExtendedRail) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        l10n.appTitle,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
               destinations: [

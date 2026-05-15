@@ -7,13 +7,13 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/core/providers/admin_access_provider.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/platform_adaptive.dart';
+import 'package:sport_connect/core/utils/locale_formatters.dart';
 import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/core/widgets/skeleton_loader.dart';
@@ -966,7 +966,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       _ => l10n.premium,
     };
     final dateLabel = meta.updatedAt != null
-        ? DateFormat('MMM d, yyyy').format(meta.updatedAt!)
+        ? AppLocaleFormatters.formatMediumDate(context, meta.updatedAt!)
         : null;
 
     return Container(

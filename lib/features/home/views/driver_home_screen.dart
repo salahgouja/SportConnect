@@ -7,7 +7,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/models/user/models.dart';
@@ -15,6 +14,7 @@ import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/services/location_service.dart';
 import 'package:sport_connect/core/services/push_notification_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/utils/locale_formatters.dart';
 import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
@@ -263,70 +263,150 @@ class _DriverDashboard extends ConsumerWidget {
         ]);
       },
       child: MaxWidthContainer(
-        maxWidth: kMaxWidthWide,
+        maxWidth: responsiveValue<double>(
+          context,
+          compact: kMaxWidthWide,
+          medium: 1120,
+          expanded: 1440,
+          large: 1520,
+          extraLarge: 1600,
+        ),
         child: LayoutBuilder(
           builder: (context, constraints) {
             final isSmall = constraints.maxWidth < 360;
             final hPad = isSmall ? 14.0 : 20.0;
+            final isWideDashboard =
+                constraints.maxWidth >= Breakpoints.medium ||
+                (context.isTabletOrLarger && context.isLandscape);
 
-          return CustomScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            slivers: [
-              SliverToBoxAdapter(
-                child: _buildHeader(context, user, l10n, hPad),
-              ),
-              if (!locationGranted && !isLoadingLocation)
+            return CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
                 SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.fromLTRB(hPad, 4.h, hPad, 12.h),
-                    child: _buildLocationBanner(l10n),
+                  child: _buildHeader(context, user, l10n, hPad),
+                ),
+                if (!locationGranted && !isLoadingLocation)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(hPad, 4.h, hPad, 12.h),
+                      child: _buildLocationBanner(l10n),
+                    ),
+                  ),
+                if (isWideDashboard)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(hPad, 8.h, hPad, 0),
+                      child: _buildWideDashboardBody(
+                        context: context,
+                        ref: ref,
+                        l10n: l10n,
+                        activeRide: activeRide,
+                        pendingRequests: pendingRequests,
+                        upcomingRides: upcomingRides,
+                        driverStats: driverStats,
+                      ),
+                    ),
+                  )
+                else ...[
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(hPad, 8.h, hPad, 0),
+                      child: _buildDriverCommandCenter(
+                        context: context,
+                        l10n: l10n,
+                        activeRide: activeRide,
+                        pendingRequests: pendingRequests,
+                        upcomingRides: upcomingRides,
+                      ),
+                    ),
+                  ),
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(hPad, 18.h, hPad, 0),
+                      child: _buildTodaySnapshot(l10n, driverStats),
+                    ),
+                  ),
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(hPad, 22.h, hPad, 0),
+                      child: _buildPendingRequests(
+                        context,
+                        ref,
+                        l10n,
+                        pendingRequests,
+                      ),
+                    ),
+                  ),
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(hPad, 22.h, hPad, 0),
+                      child: _buildUpcomingRides(context, l10n, upcomingRides),
+                    ),
+                  ),
+                ],
+                SliverToBoxAdapter(
+                  child: SizedBox(
+                    height: 32.h + MediaQuery.paddingOf(context).bottom,
                   ),
                 ),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(hPad, 8.h, hPad, 0),
-                  child: _buildDriverCommandCenter(
-                    context: context,
-                    l10n: l10n,
-                    activeRide: activeRide,
-                    pendingRequests: pendingRequests,
-                    upcomingRides: upcomingRides,
-                  ),
-                ),
-              ),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(hPad, 18.h, hPad, 0),
-                  child: _buildTodaySnapshot(l10n, driverStats),
-                ),
-              ),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(hPad, 22.h, hPad, 0),
-                  child: _buildPendingRequests(
-                    context,
-                    ref,
-                    l10n,
-                    pendingRequests,
-                  ),
-                ),
-              ),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(hPad, 22.h, hPad, 0),
-                  child: _buildUpcomingRides(context, l10n, upcomingRides),
-                ),
-              ),
-              SliverToBoxAdapter(
-                child: SizedBox(
-                  height: 32.h + MediaQuery.paddingOf(context).bottom,
-                ),
-              ),
-            ],
-          );
-        },
+              ],
+            );
+          },
+        ),
       ),
-      ),
+    );
+  }
+
+  Widget _buildWideDashboardBody({
+    required BuildContext context,
+    required WidgetRef ref,
+    required AppLocalizations l10n,
+    required RideModel? activeRide,
+    required AsyncValue<List<RideBooking>> pendingRequests,
+    required AsyncValue<List<RideModel>> upcomingRides,
+    required AsyncValue<DriverStats> driverStats,
+  }) {
+    return Column(
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              flex: 7,
+              child: _buildDriverCommandCenter(
+                context: context,
+                l10n: l10n,
+                activeRide: activeRide,
+                pendingRequests: pendingRequests,
+                upcomingRides: upcomingRides,
+              ),
+            ),
+            SizedBox(width: 20.w),
+            Expanded(
+              flex: 5,
+              child: _buildTodaySnapshot(l10n, driverStats),
+            ),
+          ],
+        ),
+        SizedBox(height: 22.h),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: _buildPendingRequests(
+                context,
+                ref,
+                l10n,
+                pendingRequests,
+              ),
+            ),
+            SizedBox(width: 20.w),
+            Expanded(
+              child: _buildUpcomingRides(context, l10n, upcomingRides),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -508,9 +588,7 @@ class _DriverDashboard extends ConsumerWidget {
         if (requests.isNotEmpty) {
           return _MainActionCard(
             icon: Icons.person_add_alt_1_rounded,
-            title: requests.length == 1
-                ? '1 passenger request'
-                : '${requests.length} passenger requests',
+            title: l10n.passengerRequestCount(requests.length),
             subtitle:
                 l10n.review_and_respond_before_passengers_choose_another_ride,
             actionLabel: l10n.viewAll,
@@ -979,7 +1057,7 @@ class _ActiveRideCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Ride in progress',
+                  AppLocalizations.of(context).rideInProgress,
                   style: TextStyle(
                     fontSize: 20.sp,
                     fontWeight: FontWeight.w900,
@@ -1071,7 +1149,7 @@ class _NextRideCard extends StatelessWidget {
                   children: [
                     if (isHero) ...[
                       Text(
-                        'Next ride',
+                        AppLocalizations.of(context).next_ride,
                         style: TextStyle(
                           fontSize: 12.sp,
                           fontWeight: FontWeight.w700,
@@ -1103,7 +1181,7 @@ class _NextRideCard extends StatelessWidget {
                         ),
                         SizedBox(width: 4.w),
                         Text(
-                          DateFormat('h:mm a').format(departure),
+                          AppLocaleFormatters.formatTime(context, departure),
                           style: TextStyle(
                             fontSize: 12.sp,
                             color: AppColors.textSecondary,
@@ -1303,7 +1381,8 @@ class _RequestCard extends ConsumerWidget {
               SizedBox(width: 5.w),
               Expanded(
                 child: Text(
-                  DateFormat('EEE, MMM d • h:mm a').format(
+                  AppLocaleFormatters.formatMediumDateTime(
+                    context,
                     request.createdAt ?? DateTime.now(),
                   ),
                   style: TextStyle(
@@ -1327,7 +1406,7 @@ class _RequestCard extends ConsumerWidget {
                       : () => _openMessageChat(context, ref, profile),
                   icon: Icon(Icons.chat_bubble_outline_rounded, size: 15.sp),
                   label: Text(
-                    'Message',
+                    AppLocalizations.of(context).messageButton,
                     style: TextStyle(
                       fontSize: 12.sp,
                       fontWeight: FontWeight.w700,
@@ -1566,7 +1645,7 @@ class _DateTile extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            DateFormat('MMM').format(date).toUpperCase(),
+            AppLocaleFormatters.formatMonthLabel(context, date),
             style: TextStyle(
               fontSize: 11.sp,
               fontWeight: FontWeight.w800,
@@ -1575,7 +1654,7 @@ class _DateTile extends StatelessWidget {
           ),
           SizedBox(height: 1.h),
           Text(
-            DateFormat('d').format(date),
+            AppLocaleFormatters.formatDayNumber(context, date),
             style: TextStyle(
               fontSize: isLarge ? 21.sp : 18.sp,
               fontWeight: FontWeight.w900,

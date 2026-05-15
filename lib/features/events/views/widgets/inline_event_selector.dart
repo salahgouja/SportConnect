@@ -6,9 +6,9 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/utils/locale_formatters.dart';
 import 'package:sport_connect/features/events/models/event_model.dart';
 import 'package:sport_connect/features/events/repositories/event_repository.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
@@ -145,9 +145,10 @@ class _InlineEventSelectorState extends ConsumerState<InlineEventSelector> {
                                   overflow: TextOverflow.ellipsis,
                                 ),
                                 Text(
-                                  DateFormat(
-                                    'EEE d MMM - HH:mm',
-                                  ).format(widget.selected!.startsAt),
+                                  AppLocaleFormatters.formatShortWeekdayDateTime(
+                                    context,
+                                    widget.selected!.startsAt,
+                                  ),
                                   style: TextStyle(
                                     fontSize: 12.sp,
                                     color: AppColors.textSecondary,
@@ -427,7 +428,10 @@ class _InlineEventSelectorState extends ConsumerState<InlineEventSelector> {
                       ),
                       SizedBox(height: 3.h),
                       Text(
-                        DateFormat('EEE d MMM - HH:mm').format(event.startsAt),
+                        AppLocaleFormatters.formatShortWeekdayDateTime(
+                          context,
+                          event.startsAt,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(

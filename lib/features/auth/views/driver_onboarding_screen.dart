@@ -23,6 +23,7 @@ import 'package:sport_connect/core/widgets/expertise_picker.dart';
 import 'package:sport_connect/core/widgets/gender_segmented_field.dart';
 import 'package:sport_connect/core/widgets/glass_panel.dart';
 import 'package:sport_connect/core/widgets/intl_phone_input.dart';
+import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/core/widgets/reactive_adaptive_text_field.dart';
 import 'package:sport_connect/features/auth/models/auth_exception.dart';
@@ -47,6 +48,8 @@ DateTime _adultCutoffDate({int years = 18}) {
   final today = DateTime.now();
   return DateTime(today.year - years, today.month, today.day);
 }
+
+const _kDriverOnboardingWideMaxWidth = 1180.0;
 
 bool _isAtLeastAge(DateTime value, {int years = 18}) {
   final birthDate = _dateOnly(value);
@@ -622,50 +625,133 @@ class _DriverOnboardingScreenState
             ),
           ],
         ),
-        body: MaxWidthContainer(
-          maxWidth: kMaxWidthForm,
-          child: SafeArea(
-            top: false,
-            child: Column(
+        body: SafeArea(
+          top: false,
+          child: ResponsiveLayoutBuilder(
+            phone: (_) => MaxWidthContainer(
+              maxWidth: kMaxWidthForm,
+              child: _buildCompactBody(
+                vmState,
+                currentUser,
+                skipProfileStep: skipProfileStep,
+                effectiveStep: effectiveStep,
+              ),
+            ),
+            tablet: (_) => MaxWidthContainer(
+              maxWidth: _kDriverOnboardingWideMaxWidth,
+              child: _buildWideBody(
+                vmState,
+                currentUser,
+                skipProfileStep: skipProfileStep,
+                effectiveStep: effectiveStep,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCompactBody(
+    OnboardingState vmState,
+    UserModel? currentUser, {
+    required bool skipProfileStep,
+    required int effectiveStep,
+  }) {
+    return Column(
+      children: [
+        _buildProgressIndicator(
+          vmState,
+          skipProfileStep: skipProfileStep,
+          effectiveStep: effectiveStep,
+        ),
+        Expanded(
+          child: _buildAnimatedStepContent(vmState, currentUser, effectiveStep),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildWideBody(
+    OnboardingState vmState,
+    UserModel? currentUser, {
+    required bool skipProfileStep,
+    required int effectiveStep,
+  }) {
+    return Padding(
+      padding: adaptiveScreenPadding(context).copyWith(top: 12.h, bottom: 24.h),
+      child: Column(
+        children: [
+          _buildProgressIndicator(
+            vmState,
+            skipProfileStep: skipProfileStep,
+            effectiveStep: effectiveStep,
+          ),
+          SizedBox(height: 18.h),
+          Expanded(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildProgressIndicator(
-                  vmState,
-                  skipProfileStep: skipProfileStep,
-                  effectiveStep: effectiveStep,
-                ),
                 Expanded(
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 300),
-                    transitionBuilder: (child, animation) => FadeTransition(
-                      opacity: animation,
-                      child: SlideTransition(
-                        position:
-                            Tween<Offset>(
-                              begin: const Offset(0.04, 0),
-                              end: Offset.zero,
-                            ).animate(
-                              CurvedAnimation(
-                                parent: animation,
-                                curve: Curves.easeOut,
-                              ),
-                            ),
-                        child: child,
+                  flex: 8,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(28.r),
+                    child: ColoredBox(
+                      color: AppColors.surface.withValues(alpha: 0.28),
+                      child: _buildAnimatedStepContent(
+                        vmState,
+                        currentUser,
+                        effectiveStep,
                       ),
                     ),
-                    child: KeyedSubtree(
-                      key: ValueKey(effectiveStep),
-                      child: switch (effectiveStep) {
-                        0 => _buildProfileStep(vmState, currentUser),
-                        1 => _buildVehicleStep(vmState),
-                        _ => _buildStripeStep(vmState),
-                      },
-                    ),
+                  ),
+                ),
+                SizedBox(width: 24.w),
+                SizedBox(
+                  width: 320.w,
+                  child: _DriverOnboardingAside(
+                    currentUser: currentUser,
+                    effectiveStep: effectiveStep,
                   ),
                 ),
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAnimatedStepContent(
+    OnboardingState vmState,
+    UserModel? currentUser,
+    int effectiveStep,
+  ) {
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 300),
+      transitionBuilder: (child, animation) => FadeTransition(
+        opacity: animation,
+        child: SlideTransition(
+          position:
+              Tween<Offset>(
+                begin: const Offset(0.04, 0),
+                end: Offset.zero,
+              ).animate(
+                CurvedAnimation(
+                  parent: animation,
+                  curve: Curves.easeOut,
+                ),
+              ),
+          child: child,
         ),
+      ),
+      child: KeyedSubtree(
+        key: ValueKey(effectiveStep),
+        child: switch (effectiveStep) {
+          0 => _buildProfileStep(vmState, currentUser),
+          1 => _buildVehicleStep(vmState),
+          _ => _buildStripeStep(vmState),
+        },
       ),
     );
   }
@@ -1718,6 +1804,226 @@ class _DriverOnboardingScreenState
           ),
         ],
       ),
+    );
+  }
+}
+
+class _DriverOnboardingAside extends StatelessWidget {
+  const _DriverOnboardingAside({
+    required this.currentUser,
+    required this.effectiveStep,
+  });
+
+  final UserModel? currentUser;
+  final int effectiveStep;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final name = (currentUser?.username ?? '').trim();
+    final photoUrl = currentUser?.photoUrl;
+
+    final title = switch (effectiveStep) {
+      0 => l10n.driverProfileTitle,
+      1 => l10n.addYourVehicle,
+      _ => l10n.setupPayouts,
+    };
+
+    final subtitle = switch (effectiveStep) {
+      0 => l10n.driverProfileSubtitle,
+      1 => l10n.help_riders_recognize_your_car_at_pickup,
+      _ => l10n.driverStripeStepSubtitle,
+    };
+
+    final highlights = switch (effectiveStep) {
+      0 => [
+        l10n.contactAndAddress,
+        l10n.drivingDetails,
+        l10n.terms_conditions,
+      ],
+      1 => [
+        l10n.carIdentity,
+        l10n.vehicle_details,
+        l10n.seatsCapacity,
+      ],
+      _ => [
+        l10n.securePayments,
+        l10n.fastTransfers,
+        l10n.easyTracking,
+      ],
+    };
+
+    return Container(
+      padding: EdgeInsets.all(24.w),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.primary.withValues(alpha: 0.08),
+            AppColors.secondary.withValues(alpha: 0.05),
+            AppColors.surface,
+          ],
+        ),
+        borderRadius: BorderRadius.circular(28.r),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.14)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (name.isNotEmpty) ...[
+            Row(
+              children: [
+                if (photoUrl != null && photoUrl.isNotEmpty)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(26.r),
+                    child: CachedNetworkImage(
+                      imageUrl: photoUrl,
+                      width: 52.w,
+                      height: 52.w,
+                      fit: BoxFit.cover,
+                      errorWidget: (_, _, _) => PremiumAvatar(
+                        name: name,
+                        size: 52,
+                      ),
+                    ),
+                  )
+                else
+                  PremiumAvatar(
+                    name: name,
+                    size: 52,
+                  ),
+                SizedBox(width: 12.w),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 17.sp,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      SizedBox(height: 4.h),
+                      Text(
+                        l10n.driverSetup,
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 22.h),
+          ],
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(999.r),
+            ),
+            child: Text(
+              l10n.stepOf(effectiveStep + 1, 3),
+              style: TextStyle(
+                fontSize: 12.sp,
+                fontWeight: FontWeight.w700,
+                color: AppColors.primary,
+              ),
+            ),
+          ),
+          SizedBox(height: 18.h),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 24.sp,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+              letterSpacing: -0.4,
+            ),
+          ),
+          SizedBox(height: 10.h),
+          Text(
+            subtitle,
+            style: TextStyle(
+              fontSize: 13.sp,
+              color: AppColors.textSecondary,
+              height: 1.55,
+            ),
+          ),
+          SizedBox(height: 24.h),
+          for (final item in highlights) ...[
+            _AsideBullet(label: item),
+            SizedBox(height: 10.h),
+          ],
+          const Spacer(),
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.all(18.w),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.72),
+              borderRadius: BorderRadius.circular(20.r),
+              border: Border.all(
+                color: AppColors.primary.withValues(alpha: 0.1),
+              ),
+            ),
+            child: Text(
+              switch (effectiveStep) {
+                0 => l10n.completeDriverProfileMessage,
+                1 => l10n.color_and_plate_are_the_details_riders_use_at_pickup,
+                _ => l10n.youCanStillOfferRides,
+              },
+              style: TextStyle(
+                fontSize: 12.5.sp,
+                color: AppColors.textSecondary,
+                height: 1.5,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AsideBullet extends StatelessWidget {
+  const _AsideBullet({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          margin: EdgeInsets.only(top: 2.h),
+          width: 10.w,
+          height: 10.w,
+          decoration: const BoxDecoration(
+            color: AppColors.primary,
+            shape: BoxShape.circle,
+          ),
+        ),
+        SizedBox(width: 10.w),
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 13.sp,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+              height: 1.4,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

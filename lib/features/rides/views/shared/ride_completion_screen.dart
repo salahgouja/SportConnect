@@ -8,12 +8,12 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/utils/locale_formatters.dart';
 import 'package:sport_connect/core/widgets/app_map_tile_layer.dart';
 import 'package:sport_connect/core/widgets/driver_info_widget.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
@@ -157,9 +157,6 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
     List<RideBooking> bookings,
     RideCompletionUiState uiState,
   ) {
-    final localeName = Localizations.localeOf(context).toLanguageTag();
-    final dateFormat = DateFormat.yMMMd(localeName);
-    final timeFormat = DateFormat.jm(localeName);
     final useTabletLayout = context.screenWidth >= Breakpoints.medium;
 
     Widget routeMapSection() {
@@ -185,8 +182,6 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
     final summaryCard = _buildTripSummaryCard(
       context,
       ride,
-      dateFormat,
-      timeFormat,
       l10n,
       bookings,
     ).animate().fadeIn(delay: 250.ms).slideY(begin: 0.05);
@@ -756,8 +751,6 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
   Widget _buildTripSummaryCard(
     BuildContext context,
     RideModel ride,
-    DateFormat dateFormat,
-    DateFormat timeFormat,
     AppLocalizations l10n,
     List<RideBooking> bookings,
   ) {
@@ -810,13 +803,16 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
             children: [
               _buildStatItem(
                 Icons.calendar_today_rounded,
-                dateFormat.format(ride.departureTime),
+                AppLocaleFormatters.formatMediumDate(
+                  context,
+                  ride.departureTime,
+                ),
                 l10n.date,
               ),
               _buildStatDivider(),
               _buildStatItem(
                 Icons.access_time_rounded,
-                timeFormat.format(ride.departureTime),
+                AppLocaleFormatters.formatTime(context, ride.departureTime),
                 l10n.timeLabel,
               ),
               _buildStatDivider(),
@@ -998,20 +994,20 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
                 : seatsBooked > 1
                 ? l10n.baseFareSeatsByPrice(
                     seatsBooked,
-                    '€${pricePerSeat.toStringAsFixed(2)}',
+                    AppLocaleFormatters.formatCurrency(context, pricePerSeat),
                   )
                 : l10n.receiptBaseFare,
-            '€${(baseFare / 100).toStringAsFixed(2)}',
+            AppLocaleFormatters.formatCurrencyFromCents(context, baseFare),
           ),
           SizedBox(height: 8.h),
           _buildFareRow(
             l10n.serviceFeeWithRate('10%'),
-            '€${(serviceFee / 100).toStringAsFixed(2)}',
+            AppLocaleFormatters.formatCurrency(context, serviceFee / 100),
           ),
           Divider(height: 24.h),
           _buildFareRow(
             l10n.total,
-            '€${(total / 100).toStringAsFixed(2)}',
+            AppLocaleFormatters.formatCurrency(context, total / 100),
             isBold: true,
           ),
         ],

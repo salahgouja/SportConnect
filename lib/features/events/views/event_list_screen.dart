@@ -8,10 +8,10 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
+import 'package:sport_connect/core/utils/locale_formatters.dart';
 import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
@@ -594,10 +594,12 @@ class _EventCard extends ConsumerWidget {
   const _EventCard({required this.event});
   final EventModel event;
 
-  static final _fmt = DateFormat('EEE, MMM d · h:mm a', 'en');
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final dateLabel = AppLocaleFormatters.formatMediumDateTime(
+      context,
+      event.startsAt.toLocal(),
+    );
     return PremiumCard(
       onTap: () => context.pushNamed(
         AppRoutes.eventDetail.name,
@@ -711,7 +713,7 @@ class _EventCard extends ConsumerWidget {
                 SizedBox(height: 6.h),
                 _iconRow(
                   Icons.calendar_today_rounded,
-                  _fmt.format(event.startsAt.toLocal()),
+                  dateLabel,
                 ),
                 if (event.organizerName != null &&
                     event.organizerName!.isNotEmpty) ...[

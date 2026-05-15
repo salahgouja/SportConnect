@@ -6,12 +6,12 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/models/models.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
+import 'package:sport_connect/core/utils/locale_formatters.dart';
 import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/core/widgets/premium_card.dart';
@@ -148,8 +148,6 @@ class _EventListView extends StatelessWidget {
   const _EventListView({required this.events});
   final List<EventModel> events;
 
-  static final _fmt = DateFormat('EEE, MMM d · h:mm a');
-
   @override
   Widget build(BuildContext context) {
     return ListView.separated(
@@ -163,7 +161,13 @@ class _EventListView extends StatelessWidget {
       separatorBuilder: (_, _) => SizedBox(height: 12.h),
       itemBuilder: (context, index) {
         final event = events[index];
-        return _MyEventCard(event: event, dateFmt: _fmt)
+        return _MyEventCard(
+          event: event,
+          dateLabel: AppLocaleFormatters.formatMediumDateTime(
+            context,
+            event.startsAt.toLocal(),
+          ),
+        )
             .animate()
             .fadeIn(
               delay: Duration(milliseconds: 40 * index.clamp(0, 12)),
@@ -179,9 +183,9 @@ class _EventListView extends StatelessWidget {
 // Event card
 // =============================================================================
 class _MyEventCard extends StatelessWidget {
-  const _MyEventCard({required this.event, required this.dateFmt});
+  const _MyEventCard({required this.event, required this.dateLabel});
   final EventModel event;
-  final DateFormat dateFmt;
+  final String dateLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -221,7 +225,7 @@ class _MyEventCard extends StatelessWidget {
                 ),
                 SizedBox(height: 4.h),
                 Text(
-                  dateFmt.format(event.startsAt),
+                  dateLabel,
                   style: TextStyle(
                     fontSize: 12.sp,
                     color: AppColors.textSecondary,

@@ -100,7 +100,14 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
 
     return AdaptiveScaffold(
       body: MaxWidthContainer(
-        maxWidth: kMaxWidthWide,
+        maxWidth: responsiveValue<double>(
+          context,
+          compact: kMaxWidthWide,
+          medium: 1120,
+          expanded: 1320,
+          large: 1440,
+          extraLarge: 1520,
+        ),
         child: RefreshIndicator.adaptive(
         onRefresh: _handlePullToRefresh,
         child: CustomScrollView(
@@ -201,138 +208,193 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
   }
 
   Widget _buildSearchCard() {
+    final screenPadding = adaptiveScreenPadding(context);
+    final l10n = AppLocalizations.of(context);
+
+    Widget buildRouteSection() {
+      return IntrinsicHeight(
+        child: Row(
+          children: [
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 12.w,
+                  height: 12.w,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primary.withValues(alpha: 0.3),
+                        blurRadius: 4,
+                        spreadRadius: 1,
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  width: 2.w,
+                  height: 28.h,
+                  margin: EdgeInsets.symmetric(vertical: 2.h),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [AppColors.primary, AppColors.error],
+                    ),
+                    borderRadius: BorderRadius.circular(1.r),
+                  ),
+                ),
+                Icon(
+                  Icons.location_on,
+                  color: AppColors.error,
+                  size: 16.sp,
+                ),
+              ],
+            ),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildCompactInputField(
+                    hint: l10n.pickupLocation,
+                    icon: Icons.my_location_rounded,
+                    isFrom: true,
+                  ),
+                  Divider(
+                    height: 16.h,
+                    thickness: 1,
+                    color: AppColors.border.withValues(alpha: 0.5),
+                  ),
+                  _buildCompactInputField(
+                    hint: l10n.whereTo,
+                    icon: Icons.search_rounded,
+                    isFrom: false,
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(width: 8.w),
+            GestureDetector(
+              onTap: _swapLocations,
+              child: Container(
+                padding: EdgeInsets.all(8.w),
+                decoration: const BoxDecoration(
+                  color: AppColors.primarySurface,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.swap_vert_rounded,
+                  color: AppColors.primary,
+                  size: 20.sp,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    Widget buildControlsSection({
+      required bool fullWidthButton,
+      required bool stacked,
+    }) {
+      if (stacked) {
+        return Column(
+          children: [
+            Row(
+              children: [
+                Expanded(child: _buildCompactDateSelector()),
+                SizedBox(width: 8.w),
+                _buildCompactSeatSelector(),
+              ],
+            ),
+            SizedBox(height: 8.h),
+            SizedBox(
+              width: double.infinity,
+              child: _buildSearchButton(expanded: true),
+            ),
+          ],
+        );
+      }
+
+      if (fullWidthButton) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Expanded(child: _buildCompactDateSelector()),
+                SizedBox(width: 8.w),
+                _buildCompactSeatSelector(),
+              ],
+            ),
+            SizedBox(height: 12.h),
+            _buildSearchButton(expanded: true),
+          ],
+        );
+      }
+
+      return Row(
+        children: [
+          Expanded(child: _buildCompactDateSelector()),
+          SizedBox(width: 8.w),
+          _buildCompactSeatSelector(),
+          SizedBox(width: 8.w),
+          _buildSearchButton(),
+        ],
+      );
+    }
+
     return Container(
-      margin: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 8.h),
+      margin: EdgeInsets.fromLTRB(
+        screenPadding.left,
+        12.h,
+        screenPadding.right,
+        8.h,
+      ),
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
         color: AppColors.cardBg,
         borderRadius: BorderRadius.circular(20.r),
         boxShadow: AppSpacing.shadowMd,
       ),
-      child: Column(
-        children: [
-          IntrinsicHeight(
-            child: Row(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = constraints.maxWidth < 340.w;
+          final isWideLayout = constraints.maxWidth >= Breakpoints.medium;
+
+          if (isWideLayout) {
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 12.w,
-                      height: 12.w,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primary.withValues(alpha: 0.3),
-                            blurRadius: 4,
-                            spreadRadius: 1,
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      width: 2.w,
-                      height: 28.h,
-                      margin: EdgeInsets.symmetric(vertical: 2.h),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [AppColors.primary, AppColors.error],
-                        ),
-                        borderRadius: BorderRadius.circular(1.r),
-                      ),
-                    ),
-                    Icon(
-                      Icons.location_on,
-                      color: AppColors.error,
-                      size: 16.sp,
-                    ),
-                  ],
-                ),
-                SizedBox(width: 12.w),
+                Expanded(flex: 7, child: buildRouteSection()),
+                SizedBox(width: 16.w),
                 Expanded(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _buildCompactInputField(
-                        hint: 'Pickup location',
-                        icon: Icons.my_location_rounded,
-                        isFrom: true,
-                      ),
-                      Divider(
-                        height: 16.h,
-                        thickness: 1,
-                        color: AppColors.border.withValues(alpha: 0.5),
-                      ),
-                      _buildCompactInputField(
-                        hint: 'Where to?',
-                        icon: Icons.search_rounded,
-                        isFrom: false,
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(width: 8.w),
-                GestureDetector(
-                  onTap: _swapLocations,
-                  child: Container(
-                    padding: EdgeInsets.all(8.w),
-                    decoration: const BoxDecoration(
-                      color: AppColors.primarySurface,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.swap_vert_rounded,
-                      color: AppColors.primary,
-                      size: 20.sp,
-                    ),
+                  flex: 5,
+                  child: buildControlsSection(
+                    fullWidthButton: true,
+                    stacked: false,
                   ),
                 ),
               ],
-            ),
-          ),
+            );
+          }
 
-          SizedBox(height: 12.h),
-
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final compact = constraints.maxWidth < 340.w;
-
-              if (compact) {
-                return Column(
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(child: _buildCompactDateSelector()),
-                        SizedBox(width: 8.w),
-                        _buildCompactSeatSelector(),
-                      ],
-                    ),
-                    SizedBox(height: 8.h),
-                    SizedBox(
-                      width: double.infinity,
-                      child: _buildSearchButton(expanded: true),
-                    ),
-                  ],
-                );
-              }
-
-              return Row(
-                children: [
-                  Expanded(child: _buildCompactDateSelector()),
-                  SizedBox(width: 8.w),
-                  _buildCompactSeatSelector(),
-                  SizedBox(width: 8.w),
-                  _buildSearchButton(),
-                ],
-              );
-            },
-          ),
-        ],
+          return Column(
+            children: [
+              buildRouteSection(),
+              SizedBox(height: 12.h),
+              buildControlsSection(
+                fullWidthButton: false,
+                stacked: compact,
+              ),
+            ],
+          );
+        },
       ),
     ).animate().fadeIn(duration: 300.ms).slideY(begin: -0.1);
   }
@@ -594,8 +656,8 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
                       Flexible(
                         child: Text(
                           AppLocalizations.of(context).findARide,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                          maxLines: 2,
+                          textAlign: TextAlign.center,
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 14.sp,
@@ -1080,8 +1142,14 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
   }
 
   Widget _buildResultsHeader() {
+    final screenPadding = adaptiveScreenPadding(context);
     return Container(
-      padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 8.h),
+      padding: EdgeInsets.fromLTRB(
+        screenPadding.left,
+        16.h,
+        screenPadding.right,
+        8.h,
+      ),
       child: Row(
         children: [
           Expanded(
@@ -1665,7 +1733,9 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
     }
 
     return SliverPadding(
-      padding: EdgeInsets.symmetric(horizontal: 16.w),
+      padding: EdgeInsets.symmetric(
+        horizontal: adaptiveScreenPadding(context).left,
+      ),
       sliver: SliverList(
         delegate: SliverChildBuilderDelegate(
           (context, index) {
@@ -1984,7 +2054,14 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
     return Opacity(
       opacity: isFull ? 0.45 : 1.0,
       child: Container(
-        constraints: BoxConstraints(maxWidth: 96.w),
+        constraints: BoxConstraints(
+          maxWidth: responsiveValue<double>(
+            context,
+            compact: 96,
+            medium: 126,
+            expanded: 136,
+          ).w,
+        ),
         padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
         decoration: BoxDecoration(
           color: isFull ? AppColors.textSecondary : AppColors.primary,
@@ -1994,8 +2071,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
           isFull
               ? AppLocalizations.of(context).fullyBooked
               : AppLocalizations.of(context).book,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
+          maxLines: 2,
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 12.sp,

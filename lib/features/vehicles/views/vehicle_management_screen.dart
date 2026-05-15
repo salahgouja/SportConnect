@@ -99,6 +99,7 @@ class _VehicleListView extends ConsumerWidget {
     return Stack(
       children: [
         MaxWidthContainer(
+          maxWidth: context.isTablet ? kMaxWidthWide : kMaxWidthContent,
           child: ListView(
             physics: const BouncingScrollPhysics(),
             padding: adaptiveScreenPadding(context).copyWith(bottom: 120.h),
@@ -113,50 +114,70 @@ class _VehicleListView extends ConsumerWidget {
                   .fadeIn(duration: 320.ms)
                   .slideY(begin: 0.05, end: 0),
               SizedBox(height: 20.h),
-              ...sorted.asMap().entries.map((entry) {
-                final i = entry.key;
-                final v = entry.value;
-                final card =
-                    _VehicleCard(
-                          vehicle: v,
-                          onSetActive: v.isActive
-                              ? null
-                              : () => ref
-                                    .read(vehicleViewModelProvider.notifier)
-                                    .setActiveVehicle(v.id),
-                          onEdit: () => _openEditSheet(context, ref, v),
-                          onDelete: () => _confirmDelete(context, ref, v),
-                          onTap: () => _openDetailsSheet(context, ref, v),
-                        )
-                        .animate(delay: Duration(milliseconds: 120 + i * 80))
-                        .fadeIn(duration: 320.ms)
-                        .slideY(begin: 0.06, end: 0);
-                // On tablet, show vehicles in a 2-column grid
-                if (context.isTablet) {
+              if (context.isTablet)
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: sorted.length,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: context.isExpandedOrLarger ? 3 : 2,
+                    mainAxisSpacing: 16.h,
+                    crossAxisSpacing: 16.w,
+                    childAspectRatio: context.isExpandedOrLarger ? 1.18 : 0.96,
+                  ),
+                  itemBuilder: (context, index) {
+                    final vehicle = sorted[index];
+                    return _VehicleCard(
+                      vehicle: vehicle,
+                      onSetActive: vehicle.isActive
+                          ? null
+                          : () => ref
+                                .read(vehicleViewModelProvider.notifier)
+                                .setActiveVehicle(vehicle.id),
+                      onEdit: () => _openEditSheet(context, ref, vehicle),
+                      onDelete: () => _confirmDelete(context, ref, vehicle),
+                      onTap: () => _openDetailsSheet(context, ref, vehicle),
+                    ).animate(
+                      delay: Duration(milliseconds: 120 + index * 60),
+                    ).fadeIn(duration: 320.ms).slideY(begin: 0.06, end: 0);
+                  },
+                )
+              else
+                ...sorted.asMap().entries.map((entry) {
+                  final i = entry.key;
+                  final v = entry.value;
                   return Padding(
                     padding: EdgeInsets.only(bottom: 16.h),
-                    child: card,
+                    child: _VehicleCard(
+                      vehicle: v,
+                      onSetActive: v.isActive
+                          ? null
+                          : () => ref
+                                .read(vehicleViewModelProvider.notifier)
+                                .setActiveVehicle(v.id),
+                      onEdit: () => _openEditSheet(context, ref, v),
+                      onDelete: () => _confirmDelete(context, ref, v),
+                      onTap: () => _openDetailsSheet(context, ref, v),
+                    ).animate(
+                      delay: Duration(milliseconds: 120 + i * 80),
+                    ).fadeIn(duration: 320.ms).slideY(begin: 0.06, end: 0),
                   );
-                }
-                return Padding(
-                  padding: EdgeInsets.only(bottom: 16.h),
-                  child: card,
-                );
-              }),
+                }),
             ],
           ),
         ),
-        Positioned(
-          left: 20.w,
-          right: 20.w,
-          bottom: 24.h,
-          child: SafeArea(
-            top: false,
-            child: _FloatingAddButton(
-              onPressed: () => _openAddSheet(context, ref),
-            ).animate(delay: 200.ms).fadeIn().slideY(begin: 0.3, end: 0),
+        if (!context.isTablet)
+          Positioned(
+            left: 20.w,
+            right: 20.w,
+            bottom: 24.h,
+            child: SafeArea(
+              top: false,
+              child: _FloatingAddButton(
+                onPressed: () => _openAddSheet(context, ref),
+              ).animate(delay: 200.ms).fadeIn().slideY(begin: 0.3, end: 0),
+            ),
           ),
-        ),
       ],
     );
   }

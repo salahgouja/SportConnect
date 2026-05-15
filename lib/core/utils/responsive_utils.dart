@@ -36,9 +36,9 @@ class Breakpoints {
   /// Rich information architecture.
   static const double large = 1600;
 
-  /// Extra large: large monitors (1600dp+).
+  /// Extra large: large monitors (1920dp+).
   /// Expansive multi-column arrangements.
-  static const double extraLarge = 1600;
+  static const double extraLarge = 1920;
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -296,6 +296,15 @@ EdgeInsets adaptiveScreenPadding(BuildContext context) {
     large: 48,
   );
   return EdgeInsets.symmetric(horizontal: padding);
+}
+
+/// Whether the current viewport should promote shell navigation to a rail.
+///
+/// Width drives the promotion while a minimum height prevents cramped rails
+/// on short landscape phones.
+bool useNavigationRailLayout(BuildContext context) {
+  final viewport = MediaQuery.sizeOf(context);
+  return viewport.width >= Breakpoints.compact && viewport.height >= 500;
 }
 
 /// Adaptive padding for all edges.

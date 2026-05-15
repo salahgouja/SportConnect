@@ -4743,6 +4743,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get messageButton => 'Message';
 
   @override
+  String passengerRequestCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count passenger requests',
+      one: '1 passenger request',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get callButton => 'Call';
 
   @override
@@ -7523,6 +7534,21 @@ class AppLocalizationsEn extends AppLocalizations {
       'Publish a ride and start receiving passenger requests.';
 
   @override
+  String get mapControlLabel => 'Map control';
+
+  @override
+  String rideFilterSemantics(String filterLabel, num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count rides',
+      one: '1 ride',
+      zero: '0 rides',
+    );
+    return '$filterLabel filter, $_temp0';
+  }
+
+  @override
   String get last_updated_february_23_2026 => 'Last updated: February 23, 2026';
 
   @override
@@ -10078,4 +10104,174 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get challengeKeepGoing => 'Keep going!';
+
+  @override
+  String get phoneNumberHint => 'Enter your phone number';
+
+  @override
+  String get phoneNumberSupportNoLeadingZero =>
+      'After +33, enter the number without the leading 0.';
+
+  @override
+  String phoneNumberDigitsCount(int current, int total) {
+    return '$current of $total digits after +33';
+  }
+
+  @override
+  String get phoneNumberSupportPrivacy =>
+      'Used only for ride coordination and safety.';
+
+  @override
+  String get profilePhotoCameraPermission =>
+      'Camera access is needed to take a new profile photo.';
+
+  @override
+  String get profilePhotoLibraryPermission =>
+      'Access to your photo library is needed to update your profile picture.';
+
+  @override
+  String get preferNotToSay => 'Prefer not to say';
+
+  @override
+  String get addressSelected => 'Address selected';
+
+  @override
+  String get noPointSelected => 'No point selected';
+
+  @override
+  String get tapMapToChoosePoint => 'Tap the map to choose a point';
+
+  @override
+  String get locationPreviewReady => 'Location preview is ready below';
+
+  @override
+  String get totalSpent => 'Total Spent';
+
+  @override
+  String get paymentBreakdown => 'Payment Breakdown';
+
+  @override
+  String get baseFare => 'Base Fare';
+
+  @override
+  String get processingFee => 'Processing Fee';
+
+  @override
+  String get totalPaid => 'Total Paid';
+
+  @override
+  String get refundReason => 'Refund Reason';
+
+  @override
+  String distanceKmValue(String value) {
+    return '$value km';
+  }
+
+  @override
+  String get withdrawableBalanceInfo =>
+      'Withdrawable Now is the part of your Stripe instant-available balance backed by completed rides.\n\nPaid rides that are not completed yet stay blocked for withdrawal.\n\nProcessing is money that has reached Stripe but is not yet eligible for instant withdrawal.';
+
+  @override
+  String get withdrawableNowLabel => 'Withdrawable now';
+
+  @override
+  String get completedRideEarningsLabel => 'Completed ride earnings';
+
+  @override
+  String get payoutsAlreadyRequestedLabel => 'Payouts already requested';
+
+  @override
+  String get paidRidesAwaitingCompletionLabel =>
+      'Paid rides awaiting completion';
+
+  @override
+  String get stripeInstantAvailableLabel => 'Stripe instant available';
+
+  @override
+  String get stripeBalanceTotalLabel => 'Stripe balance total';
+
+  @override
+  String get tripEarningsRecordedLabel => 'Trip earnings recorded';
+
+  @override
+  String get withdrawableNowFootnote =>
+      'Withdrawable Now only includes completed rides. Paid rides still in progress unlock after the driver completes the ride.';
+
+  @override
+  String rideCompletionPendingAmount(String amount) {
+    return ' €$amount is waiting for ride completion.';
+  }
+
+  @override
+  String processingBalancePendingAmount(String amount) {
+    return ' €$amount is still processing.';
+  }
+
+  @override
+  String get noCompletedRideBalanceAvailableYet =>
+      'No completed ride balance available yet.';
+
+  @override
+  String get receiptNumberLabel => 'Receipt #';
+
+  @override
+  String get routeDeviationDetected => 'Route Deviation Detected';
+
+  @override
+  String driverOffRouteEta(Object distance, int minutes) {
+    return 'Driver is $distance off route — new ETA ~$minutes min';
+  }
+
+  @override
+  String driverOffPlannedRoute(Object distance) {
+    return 'Driver is $distance off the planned route';
+  }
+
+  @override
+  String relativeMinutesShort(int minutes) {
+    String _temp0 = intl.Intl.pluralLogic(
+      minutes,
+      locale: localeName,
+      other: '$minutes min',
+      one: '$minutes min',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String relativeHoursShort(int hours) {
+    String _temp0 = intl.Intl.pluralLogic(
+      hours,
+      locale: localeName,
+      other: '${hours}h',
+      one: '${hours}h',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String relativeDaysShort(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '${days}d',
+      one: '${days}d',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get refundReviewLabel => 'Refund review';
+
+  @override
+  String get refundIfEligibleLineOne => 'If';
+
+  @override
+  String get refundIfEligibleLineTwo => 'eligible';
+
+  @override
+  String get endsLabel => 'Ends';
+
+  @override
+  String get setEndDate => 'Set end date';
 }

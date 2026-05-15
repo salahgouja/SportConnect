@@ -101,6 +101,9 @@ class PremiumButton extends StatelessWidget {
   Widget _buildContent() {
     final textWidget = Text(
       text,
+      maxLines: 2,
+      softWrap: true,
+      textAlign: TextAlign.center,
       style: TextStyle(
         fontSize: switch (size) {
           ButtonSize.small => 14.sp,
@@ -125,9 +128,18 @@ class PremiumButton extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: iconRight
-          ? [textWidget, SizedBox(width: 8.w), iconWidget]
-          : [iconWidget, SizedBox(width: 8.w), textWidget],
+          ? [
+              Flexible(child: textWidget),
+              SizedBox(width: 8.w),
+              iconWidget,
+            ]
+          : [
+              iconWidget,
+              SizedBox(width: 8.w),
+              Flexible(child: textWidget),
+            ],
     );
   }
 }
@@ -183,7 +195,14 @@ class PremiumFAB extends StatelessWidget {
               children: [
                 Icon(icon),
                 SizedBox(width: 8.w),
-                Text(label!),
+                Flexible(
+                  child: Text(
+                    label!,
+                    maxLines: 2,
+                    softWrap: true,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
               ],
             ),
     );

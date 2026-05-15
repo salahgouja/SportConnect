@@ -8,11 +8,11 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:sliver_tools/sliver_tools.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/utils/locale_formatters.dart';
 import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/features/rides/models/booking/ride_booking.dart';
@@ -22,7 +22,6 @@ import 'package:sport_connect/features/rides/services/ride_request_service.dart'
 import 'package:sport_connect/features/rides/view_models/driver_requests_view_model.dart';
 import 'package:sport_connect/features/rides/view_models/driver_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
-import 'package:sport_connect/core/utils/responsive_utils.dart';
 
 // ─────────────────────────────────────────────────────────────────
 // SCREEN ENTRY POINT
@@ -110,7 +109,7 @@ class _DriverSliverAppBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final now = DateTime.now();
-    final dateStr = DateFormat('EEEE, d MMM').format(now);
+    final dateStr = AppLocaleFormatters.formatWeekdayDayMonth(context, now);
 
     return SliverAppBar(
       expandedHeight: 120.h,
@@ -175,6 +174,7 @@ class _ActiveRideBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 0),
       child: GestureDetector(
@@ -207,7 +207,7 @@ class _ActiveRideBanner extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'RIDE IN PROGRESS',
+                      l10n.rideInProgress,
                       style: TextStyle(
                         fontSize: 10.sp,
                         fontWeight: FontWeight.w700,
@@ -228,8 +228,8 @@ class _ActiveRideBanner extends StatelessWidget {
                     ),
                     SizedBox(height: 4.h),
                     Text(
-                      '${ride.bookedSeats}/${ride.capacity.available} passengers · '
-                      '${AppLocalizations.of(context).value5((ride.pricePerSeatInCents / 100).toStringAsFixed(2))} per seat',
+                      '${l10n.valueValuePassengers(ride.bookedSeats, ride.capacity.available)} · '
+                      '${l10n.value5((ride.pricePerSeatInCents / 100).toStringAsFixed(2))} ${l10n.perSeat2}',
                       style: TextStyle(
                         fontSize: 11.sp,
                         color: Colors.white.withValues(alpha: 0.85),
@@ -245,7 +245,7 @@ class _ActiveRideBanner extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10.r),
                 ),
                 child: Text(
-                  'View',
+                  l10n.view,
                   style: TextStyle(
                     fontSize: 12.sp,
                     fontWeight: FontWeight.w700,
@@ -408,7 +408,7 @@ class _PendingRequestCard extends ConsumerWidget {
               CircleAvatar(
                 radius: 20.r,
                 backgroundImage: passengerPhoto != null
-                        ? CachedNetworkImageProvider(passengerPhoto)
+                    ? CachedNetworkImageProvider(passengerPhoto)
                     : null,
                 backgroundColor: AppColors.primarySurface,
                 child: passengerPhoto == null
@@ -823,7 +823,10 @@ class _HistoryRideCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final isCancelled = ride.status == RideStatus.cancelled;
-    final date = DateFormat('d MMM · HH:mm').format(ride.departureTime);
+    final date = AppLocaleFormatters.formatMonthDayTime(
+      context,
+      ride.departureTime,
+    );
     final earnings = ride.pricing.pricePerSeatInCents * ride.capacity.booked;
 
     return GestureDetector(
@@ -950,8 +953,8 @@ class _TimelineRideCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final dt = ride.departureTime;
-    final time = DateFormat('HH:mm').format(dt);
-    final date = DateFormat('d MMM').format(dt);
+    final time = AppLocaleFormatters.formatTime(context, dt);
+    final date = AppLocaleFormatters.formatShortDateLabel(context, dt);
     final seatsText = '${ride.bookedSeats}/${ride.capacity.available}';
 
     return GestureDetector(

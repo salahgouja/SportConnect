@@ -4229,6 +4229,14 @@
   "rideStartedMessage": "Ride has started!",
   "routeLabel": "Route",
   "messageButton": "Message",
+  "passengerRequestCount": "{count, plural, =1{1 passenger request} other{{count} passenger requests}}",
+  "@passengerRequestCount": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
   "callButton": "Call",
   "failedOpenChatError": "Failed to open chat. Please try again.",
   "driverPhoneUnavailableError": "Driver phone number not available.",
@@ -5318,6 +5326,21 @@
   "review_and_respond_before_passengers_choose_another_ride": "Review and respond before passengers choose another ride.",
   "ready_for_your_next_trip": "Ready for your next trip?",
   "publish_a_ride_and_start_receiving_passenger_requests": "Publish a ride and start receiving passenger requests.",
+  "mapControlLabel": "Map control",
+  "@mapControlLabel": {
+    "description": "Accessibility label for generic map control buttons"
+  },
+  "rideFilterSemantics": "{filterLabel} filter, {count, plural, =0{0 rides} =1{1 ride} other{{count} rides}}",
+  "@rideFilterSemantics": {
+    "placeholders": {
+      "filterLabel": {
+        "type": "String"
+      },
+      "count": {
+        "type": "num"
+      }
+    }
+  },
   "last_updated_february_23_2026": "Last updated: February 23, 2026",
   "en": "en",
   "utf8": "UTF-8",
@@ -6547,5 +6570,113 @@
   "challengeKeepGoing": "Keep going!",
   "@challengeKeepGoing": {
     "description": "Challenge encouragement label in achievements_screen.dart"
-  }
+  },
+  "nameMinLengthError": "Name must be at least 2 characters",
+  "phoneNumberHint": "Enter your phone number",
+  "phoneNumberSupportNoLeadingZero": "After +33, enter the number without the leading 0.",
+  "phoneNumberDigitsCount": "{current} of {total} digits after +33",
+  "@phoneNumberDigitsCount": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "phoneNumberSupportPrivacy": "Used only for ride coordination and safety.",
+  "profilePhotoCameraPermission": "Camera access is needed to take a new profile photo.",
+  "profilePhotoLibraryPermission": "Access to your photo library is needed to update your profile picture.",
+  "preferNotToSay": "Prefer not to say",
+  "addressSelected": "Address selected",
+  "noPointSelected": "No point selected",
+  "tapMapToChoosePoint": "Tap the map to choose a point",
+  "locationPreviewReady": "Location preview is ready below",
+  "totalSpent": "Total Spent",
+  "paymentBreakdown": "Payment Breakdown",
+  "baseFare": "Base Fare",
+  "processingFee": "Processing Fee",
+  "totalPaid": "Total Paid",
+  "refundReason": "Refund Reason",
+  "distanceKmValue": "{value} km",
+  "@distanceKmValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "withdrawableBalanceInfo": "Withdrawable Now is the part of your Stripe instant-available balance backed by completed rides.\n\nPaid rides that are not completed yet stay blocked for withdrawal.\n\nProcessing is money that has reached Stripe but is not yet eligible for instant withdrawal.",
+  "withdrawableNowLabel": "Withdrawable now",
+  "completedRideEarningsLabel": "Completed ride earnings",
+  "payoutsAlreadyRequestedLabel": "Payouts already requested",
+  "paidRidesAwaitingCompletionLabel": "Paid rides awaiting completion",
+  "stripeInstantAvailableLabel": "Stripe instant available",
+  "stripeBalanceTotalLabel": "Stripe balance total",
+  "tripEarningsRecordedLabel": "Trip earnings recorded",
+  "withdrawableNowFootnote": "Withdrawable Now only includes completed rides. Paid rides still in progress unlock after the driver completes the ride.",
+  "rideCompletionPendingAmount": " €{amount} is waiting for ride completion.",
+  "@rideCompletionPendingAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "processingBalancePendingAmount": " €{amount} is still processing.",
+  "@processingBalancePendingAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "noCompletedRideBalanceAvailableYet": "No completed ride balance available yet.",
+  "receiptNumberLabel": "Receipt #",
+  "routeDeviationDetected": "Route Deviation Detected",
+  "driverOffRouteEta": "Driver is {distance} off route — new ETA ~{minutes} min",
+  "@driverOffRouteEta": {
+    "placeholders": {
+      "distance": {},
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "driverOffPlannedRoute": "Driver is {distance} off the planned route",
+  "@driverOffPlannedRoute": {
+    "placeholders": {
+      "distance": {}
+    }
+  },
+  "relativeMinutesShort": "{minutes, plural, one {{minutes} min} other {{minutes} min}}",
+  "@relativeMinutesShort": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "relativeHoursShort": "{hours, plural, one {{hours}h} other {{hours}h}}",
+  "@relativeHoursShort": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "relativeDaysShort": "{days, plural, one {{days}d} other {{days}d}}",
+  "@relativeDaysShort": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "refundReviewLabel": "Refund review",
+  "refundIfEligibleLineOne": "If",
+  "refundIfEligibleLineTwo": "eligible",
+  "endsLabel": "Ends",
+  "setEndDate": "Set end date"
 }

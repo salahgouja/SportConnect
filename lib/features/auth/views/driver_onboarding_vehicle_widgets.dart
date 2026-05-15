@@ -51,9 +51,7 @@ String? _reactiveErrorText(
 
   if (builder != null) return builder((error ?? key) as Object);
   if (error is String) return error;
-  return context == null
-      ? 'Invalid value'
-      : AppLocalizations.of(context).invalidValue;
+  return context == null ? null : AppLocalizations.of(context).invalidValue;
 }
 
 class _VehicleColorOption {

@@ -215,11 +215,19 @@ class _PremiumSubscribeScreenState
         systemNavigationBarColor: Colors.white,
         systemNavigationBarIconBrightness: Brightness.dark,
       ),
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        body: isTabletLayout
-            ? _buildTabletLayout(l10n, checkoutState, isProcessing)
-            : _buildMobileLayout(l10n, checkoutState, isProcessing, bottomPad),
+      child: AdaptiveScaffold(
+        body: ColoredBox(
+          color: Colors.white,
+          child: isTabletLayout
+              || (context.isLandscape && context.screenHeight < 500)
+              ? _buildTabletLayout(l10n, checkoutState, isProcessing)
+              : _buildMobileLayout(
+                  l10n,
+                  checkoutState,
+                  isProcessing,
+                  bottomPad,
+                ),
+        ),
       ),
     );
   }
@@ -1102,74 +1110,76 @@ class _AlreadyPremiumScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 32.w),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 72.w,
-                height: 72.w,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF40916C), Color(0xFF2D6A4F)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+    return AdaptiveScaffold(
+      body: ColoredBox(
+        color: Colors.white,
+        child: SafeArea(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 32.w),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 72.w,
+                  height: 72.w,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF40916C), Color(0xFF2D6A4F)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(22.r),
                   ),
-                  borderRadius: BorderRadius.circular(22.r),
+                  child: Icon(
+                    Icons.workspace_premium_rounded,
+                    color: Colors.white,
+                    size: 36.sp,
+                  ),
                 ),
-                child: Icon(
-                  Icons.workspace_premium_rounded,
-                  color: Colors.white,
-                  size: 36.sp,
+                SizedBox(height: 24.h),
+                Text(
+                  l10n.alreadyPremiumTitle,
+                  style: TextStyle(
+                    fontSize: 22.sp,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-              ),
-              SizedBox(height: 24.h),
-              Text(
-                l10n.alreadyPremiumTitle,
-                style: TextStyle(
-                  fontSize: 22.sp,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
+                SizedBox(height: 10.h),
+                Text(
+                  l10n.alreadyPremiumSubtitle,
+                  style: TextStyle(
+                    fontSize: 15.sp,
+                    color: AppColors.textSecondary,
+                    height: 1.5,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 10.h),
-              Text(
-                l10n.alreadyPremiumSubtitle,
-                style: TextStyle(
-                  fontSize: 15.sp,
-                  color: AppColors.textSecondary,
-                  height: 1.5,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 32.h),
-              SizedBox(
-                width: double.infinity,
-                height: 52.h,
-                child: ElevatedButton(
-                  onPressed: () => context.pop(),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16.r),
+                SizedBox(height: 32.h),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52.h,
+                  child: ElevatedButton(
+                    onPressed: () => context.pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16.r),
+                      ),
+                    ),
+                    child: Text(
+                      l10n.backToApp,
+                      style: TextStyle(
+                        fontSize: 15.sp,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
-                  child: Text(
-                    l10n.backToApp,
-                    style: TextStyle(
-                      fontSize: 15.sp,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

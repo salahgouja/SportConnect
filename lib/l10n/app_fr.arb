@@ -4223,6 +4223,14 @@
   "rideStartedMessage": "Le trajet a commencé !",
   "routeLabel": "Itinéraire",
   "messageButton": "Message",
+  "passengerRequestCount": "{count, plural, =1{1 demande de passager} other{{count} demandes de passagers}}",
+  "@passengerRequestCount": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
   "callButton": "Appeler",
   "failedOpenChatError": "Impossible d'ouvrir le chat. Veuillez réessayer.",
   "driverPhoneUnavailableError": "Numéro de téléphone du conducteur non disponible.",
@@ -5033,24 +5041,24 @@
   "something_went_wrong_please_try_again": "Something went wrong. Please try again.",
   "fastest_way_to_set_your_pickup_point": "Fastest way to set your pickup point",
   "expand_map_for_exact_pickup_point": "Expand map for exact pickup point",
-  "tap_the_map_to_set_the_exact_point": "Tap the map to set the exact point",
-  "finding_address": "Finding address...",
+  "tap_the_map_to_set_the_exact_point": "Touchez la carte pour définir le point exact",
+  "finding_address": "Recherche de l'adresse...",
   "suggestions": "SUGGESTIONS",
-  "selected_address": "Selected address",
-  "use_this_address": "Use this address",
-  "selected": "Selected",
-  "search_unavailable": "Search unavailable",
-  "no_address_found": "No address found",
-  "try_another_street_or_choose_the_exact_point_on_map": "Try another street or choose the exact point on map.",
-  "unable_to_search_addresses_try_again": "Unable to search addresses. Try again.",
-  "unable_to_read_a_valid_current_location": "Unable to read a valid current location.",
-  "your_current_location_appears_to_be_outside_france": "Your current location appears to be outside France.",
-  "invalid_address_location_please_choose_another_result": "Invalid address location. Please choose another result.",
-  "invalid_map_position_please_choose_another_point": "Invalid map position. Please choose another point.",
-  "please_select_a_location_in_france": "Please select a location in France.",
-  "selected_location": "Selected location",
-  "please_select_an_address": "Please select an address.",
-  "invalid_selected_location_please_choose_another_point": "Invalid selected location. Please choose another point.",
+  "selected_address": "Adresse sélectionnée",
+  "use_this_address": "Utiliser cette adresse",
+  "selected": "Sélectionnée",
+  "search_unavailable": "Recherche indisponible",
+  "no_address_found": "Aucune adresse trouvée",
+  "try_another_street_or_choose_the_exact_point_on_map": "Essayez une autre rue ou choisissez le point exact sur la carte.",
+  "unable_to_search_addresses_try_again": "Impossible de rechercher des adresses. Réessayez.",
+  "unable_to_read_a_valid_current_location": "Impossible de lire une position actuelle valide.",
+  "your_current_location_appears_to_be_outside_france": "Votre position actuelle semble se trouver en dehors de la France.",
+  "invalid_address_location_please_choose_another_result": "Position d'adresse invalide. Veuillez choisir un autre résultat.",
+  "invalid_map_position_please_choose_another_point": "Position sur la carte invalide. Veuillez choisir un autre point.",
+  "please_select_a_location_in_france": "Veuillez sélectionner une position en France.",
+  "selected_location": "Position sélectionnée",
+  "please_select_an_address": "Veuillez sélectionner une adresse.",
+  "invalid_selected_location_please_choose_another_point": "Position sélectionnée invalide. Veuillez choisir un autre point.",
   "payment_receipt": "Payment Receipt",
   "thank_you_for_riding_with_sportconnect": "Thank you for riding with SportConnect!",
   "refund_amount": "Refund amount",
@@ -5073,11 +5081,11 @@
   "try_different_search_terms_or_filters": "Try different search terms or filters",
   "please_try_again": "Please try again",
   "select_your_expertise_level": "Select your expertise level",
-  "male": "Male",
-  "female": "Female",
-  "enter_a_valid_french_phone_number": "Enter a valid French phone number.",
-  "after_33_enter_the_number_without_the_leading_0": "After +33, enter the number without the leading 0.",
-  "used_only_for_ride_coordination_and_safety": "Used only for ride coordination and safety.",
+  "male": "Homme",
+  "female": "Femme",
+  "enter_a_valid_french_phone_number": "Saisissez un numéro de téléphone français valide.",
+  "after_33_enter_the_number_without_the_leading_0": "Après +33, saisissez le numéro sans le 0 initial.",
+  "used_only_for_ride_coordination_and_safety": "Utilisé uniquement pour la coordination et la sécurité des trajets.",
   "no_map_apps_are_available_on_this_device": "No map apps are available on this device.",
   "unable_to_open_maps_right_now": "Unable to open maps right now.",
   "select_location": "Select Location",
@@ -5311,6 +5319,21 @@
   "review_and_respond_before_passengers_choose_another_ride": "Review and respond before passengers choose another ride.",
   "ready_for_your_next_trip": "Ready for your next trip?",
   "publish_a_ride_and_start_receiving_passenger_requests": "Publish a ride and start receiving passenger requests.",
+  "mapControlLabel": "Contrôle de la carte",
+  "@mapControlLabel": {
+    "description": "Libellé d'accessibilité pour les boutons génériques de contrôle de carte"
+  },
+  "rideFilterSemantics": "Filtre {filterLabel}, {count, plural, =0{0 trajets} =1{1 trajet} other{{count} trajets}}",
+  "@rideFilterSemantics": {
+    "placeholders": {
+      "filterLabel": {
+        "type": "String"
+      },
+      "count": {
+        "type": "num"
+      }
+    }
+  },
   "last_updated_february_23_2026": "Last updated: February 23, 2026",
   "en": "en",
   "utf8": "UTF-8",
@@ -5573,7 +5596,7 @@
   "vehicle_registration": "Vehicle Registration",
   "vehicle_insurance": "Vehicle Insurance",
   "upload_feature_coming_soon": "Upload feature coming soon",
-  "phone_number": "Phone Number",
+  "phone_number": "Numéro de téléphone",
   "try_different_keywords_or_contact_support": "Essayez d'autres mots-clés ou contactez l'assistance",
   "getting_started": "Premiers pas",
   "rides_booking": "Trajets et réservation",
@@ -5816,11 +5839,11 @@
   "changeSignInAccount": "Changer de compte de connexion",
   "changeGoogleAccount": "Changer de compte Google",
   "changeAppleAccount": "Changer de compte Apple",
-  "discardChangesTitle": "Discard changes?",
-  "keepEditing": "Keep editing",
-  "clearAddress": "Clear address",
-  "clearPhoneNumber": "Clear phone number",
-  "openInMaps": "Open in maps",
+  "discardChangesTitle": "Ignorer les modifications ?",
+  "keepEditing": "Continuer l'édition",
+  "clearAddress": "Effacer l'adresse",
+  "clearPhoneNumber": "Effacer le numéro",
+  "openInMaps": "Ouvrir dans Maps",
   "appTitle": "SportConnect",
   "onboardingRunningEvents": "Événements de course",
   "onboardingDriveEarn": "Conduire et gagner",
@@ -6547,5 +6570,113 @@
   "challengeKeepGoing": "Continuez !",
   "@challengeKeepGoing": {
     "description": "Challenge encouragement label in achievements_screen.dart"
-  }
+  },
+  "nameMinLengthError": "Le nom doit contenir au moins 2 caractères",
+  "phoneNumberHint": "Saisissez votre numéro de téléphone",
+  "phoneNumberSupportNoLeadingZero": "Après +33, saisissez le numéro sans le 0 initial.",
+  "phoneNumberDigitsCount": "{current} sur {total} chiffres après +33",
+  "@phoneNumberDigitsCount": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "phoneNumberSupportPrivacy": "Utilisé uniquement pour la coordination et la sécurité des trajets.",
+  "profilePhotoCameraPermission": "L'accès à l'appareil photo est nécessaire pour prendre une nouvelle photo de profil.",
+  "profilePhotoLibraryPermission": "L'accès à votre photothèque est nécessaire pour mettre à jour votre photo de profil.",
+  "preferNotToSay": "Je préfère ne pas répondre",
+  "addressSelected": "Adresse sélectionnée",
+  "noPointSelected": "Aucun point sélectionné",
+  "tapMapToChoosePoint": "Touchez la carte pour choisir un point",
+  "locationPreviewReady": "L'aperçu de la position est prêt ci-dessous",
+  "totalSpent": "Total dépensé",
+  "paymentBreakdown": "Détail du paiement",
+  "baseFare": "Tarif de base",
+  "processingFee": "Frais de traitement",
+  "totalPaid": "Total payé",
+  "refundReason": "Motif du remboursement",
+  "distanceKmValue": "{value} km",
+  "@distanceKmValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "withdrawableBalanceInfo": "Retirable maintenant correspond à la partie de votre solde Stripe disponible immédiatement qui est adossée à des trajets terminés.\n\nLes trajets payés mais non terminés restent bloqués pour le retrait.\n\nEn traitement correspond à l'argent déjà arrivé sur Stripe mais pas encore éligible à un retrait instantané.",
+  "withdrawableNowLabel": "Retirable maintenant",
+  "completedRideEarningsLabel": "Gains des trajets terminés",
+  "payoutsAlreadyRequestedLabel": "Virements déjà demandés",
+  "paidRidesAwaitingCompletionLabel": "Trajets payés en attente de fin",
+  "stripeInstantAvailableLabel": "Disponible instantanément sur Stripe",
+  "stripeBalanceTotalLabel": "Solde Stripe total",
+  "tripEarningsRecordedLabel": "Gains de trajets enregistrés",
+  "withdrawableNowFootnote": "Retirable maintenant inclut uniquement les trajets terminés. Les trajets payés encore en cours seront débloqués une fois le trajet terminé par le conducteur.",
+  "rideCompletionPendingAmount": " {amount} € attend la fin du trajet.",
+  "@rideCompletionPendingAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "processingBalancePendingAmount": " {amount} € est encore en traitement.",
+  "@processingBalancePendingAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "noCompletedRideBalanceAvailableYet": "Aucun solde de trajet terminé n'est encore disponible.",
+  "receiptNumberLabel": "Reçu n°",
+  "routeDeviationDetected": "Écart d'itinéraire détecté",
+  "driverOffRouteEta": "Le conducteur est à {distance} de l'itinéraire — arrivée estimée ~{minutes} min",
+  "@driverOffRouteEta": {
+    "placeholders": {
+      "distance": {},
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "driverOffPlannedRoute": "Le conducteur est à {distance} de l'itinéraire prévu",
+  "@driverOffPlannedRoute": {
+    "placeholders": {
+      "distance": {}
+    }
+  },
+  "relativeMinutesShort": "{minutes, plural, one {{minutes} min} other {{minutes} min}}",
+  "@relativeMinutesShort": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "relativeHoursShort": "{hours, plural, one {{hours} h} other {{hours} h}}",
+  "@relativeHoursShort": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "relativeDaysShort": "{days, plural, one {{days} j} other {{days} j}}",
+  "@relativeDaysShort": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "refundReviewLabel": "Vérification du remboursement",
+  "refundIfEligibleLineOne": "Si",
+  "refundIfEligibleLineTwo": "éligible",
+  "endsLabel": "Fin",
+  "setEndDate": "Définir une date de fin"
 }

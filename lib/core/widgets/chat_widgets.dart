@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Unread badge count (#57)
 class UnreadBadge extends StatelessWidget {
@@ -44,6 +45,7 @@ class LocationPinBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     return GestureDetector(
       onTap: onTap,
@@ -96,7 +98,7 @@ class LocationPinBubble extends StatelessWidget {
                 SizedBox(width: 4.w),
                 Expanded(
                   child: Text(
-                    label ?? 'Shared Location',
+                    label ?? l10n.sharedLocation,
                     style: TextStyle(
                       fontSize: 13.sp,
                       fontWeight: FontWeight.w600,
