@@ -32,6 +32,7 @@ import 'package:sport_connect/features/rides/views/driver/driver_offer_ride_widg
 import 'package:sport_connect/features/vehicles/models/vehicle_model.dart';
 import 'package:sport_connect/features/vehicles/view_models/vehicle_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 
 class DriverOfferRideScreen extends ConsumerStatefulWidget {
   const DriverOfferRideScreen({

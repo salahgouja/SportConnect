@@ -19,6 +19,7 @@ import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/features/payments/models/payment_model.dart';
 import 'package:sport_connect/features/payments/view_models/payment_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 
 /// Payment History Screen - View all payment transactions for a rider
 class PaymentHistoryScreen extends ConsumerWidget {
@@ -290,7 +291,7 @@ class PaymentHistoryScreen extends ConsumerWidget {
 
     return Container(
       margin: EdgeInsets.fromLTRB(16.w, 4.h, 16.w, 8.h),
-      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+      padding: adaptiveScreenPadding(context).copyWith(bottom: 16.h, top: 16.h),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [AppColors.primary, AppColors.primaryDark],

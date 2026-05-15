@@ -16,6 +16,7 @@ import 'package:sport_connect/features/messaging/view_models/chat_view_model.dar
 import 'package:sport_connect/features/notifications/models/notification_model.dart';
 import 'package:sport_connect/features/notifications/view_models/notification_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 
 /// Notifications Screen with Firestore real-time updates
 class NotificationsScreen extends ConsumerStatefulWidget {
@@ -120,24 +121,26 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     if (vmState.userId == null) {
       return AdaptiveScaffold(
         appBar: _buildAppBar(0),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.lock_outline,
-                size: 64.sp,
-                color: AppColors.textSecondary,
-              ),
-              SizedBox(height: 16.h),
-              Text(
-                AppLocalizations.of(context).pleaseSignInToView,
-                style: TextStyle(
-                  fontSize: 16.sp,
+        body: MaxWidthContainer(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.lock_outline,
+                  size: 64.sp,
                   color: AppColors.textSecondary,
                 ),
-              ),
-            ],
+                SizedBox(height: 16.h),
+                Text(
+                  AppLocalizations.of(context).pleaseSignInToView,
+                  style: TextStyle(
+                    fontSize: 16.sp,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       );
@@ -148,13 +151,17 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       data: (notifications) => _buildContent(notifications, userId),
       loading: () => AdaptiveScaffold(
         appBar: _buildAppBar(0),
-        body: _buildLoadingState(),
+        body: MaxWidthContainer(
+          child: _buildLoadingState(),
+        ),
       ),
       error: (e, _) => AdaptiveScaffold(
         appBar: _buildAppBar(0),
-        body: _buildErrorState(
-          onRetry: () =>
-              ref.read(notificationViewModelProvider.notifier).refresh(),
+        body: MaxWidthContainer(
+          child: _buildErrorState(
+            onRetry: () =>
+                ref.read(notificationViewModelProvider.notifier).refresh(),
+          ),
         ),
       ),
     );
@@ -283,67 +290,70 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
 
     return AdaptiveScaffold(
       appBar: _buildAppBar(unreadCount),
-      body: Column(
-        children: [
-          // Search
-          Padding(
-            padding: EdgeInsets.fromLTRB(
-              AppSpacing.md,
-              0,
-              AppSpacing.md,
-              AppSpacing.sm,
-            ),
-            child: TextField(
-              controller: _searchController,
-              textInputAction: TextInputAction.search,
-              onChanged: (value) {
-                setState(() {
-                  _searchQuery = value;
-                });
-              },
-              decoration: InputDecoration(
-                labelText: AppLocalizations.of(context).searchConversations,
-                hintText: AppLocalizations.of(context).searchConversations,
-                prefixIcon: const Icon(Icons.search_rounded),
-                suffixIcon: _searchQuery.isEmpty
-                    ? null
-                    : IconButton(
-                        icon: const Icon(Icons.close_rounded),
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() {
-                            _searchQuery = '';
-                          });
-                        },
-                      ),
-                filled: true,
-                fillColor: AppColors.surface,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12.r),
-                  borderSide: BorderSide.none,
+      body: MaxWidthContainer(
+        child: Column(
+          children: [
+            // Search
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                0,
+                AppSpacing.md,
+                AppSpacing.sm,
+              ),
+              child: TextField(
+                controller: _searchController,
+                textInputAction: TextInputAction.search,
+                onChanged: (value) {
+                  setState(() {
+                    _searchQuery = value;
+                  });
+                },
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context).searchConversations,
+                  hintText: AppLocalizations.of(context).searchConversations,
+                  prefixIcon: const Icon(Icons.search_rounded),
+                  suffixIcon: _searchQuery.isEmpty
+                      ? null
+                      : IconButton(
+                          icon: const Icon(Icons.close_rounded),
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() {
+                              _searchQuery = '';
+                            });
+                          },
+                        ),
+                  filled: true,
+                  fillColor: AppColors.surface,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                    borderSide: BorderSide.none,
+                  ),
                 ),
               ),
             ),
-          ),
 
-          // Notifications list
-          Expanded(
-            child: AdaptiveTabBarView(
-              tabs: [
-                unreadCount > 0
-                    ? '${AppLocalizations.of(context).unread} ($unreadCount)'
-                    : AppLocalizations.of(context).unread,
-                AppLocalizations.of(context).all,
-              ],
-              selectedColor: Colors.white,
-              backgroundColor: AppColors.primary,
-              children: [
-                _buildNotificationsList(unreadNotifications, userId),
-                _buildNotificationsList(allNotifications, userId),
-              ],
+            // Notifications list
+            Expanded(
+              child: AdaptiveTabBarView(
+                tabs: [
+                  if (unreadCount > 0)
+                    '${AppLocalizations.of(context).unread} ($unreadCount)'
+                  else
+                    AppLocalizations.of(context).unread,
+                  AppLocalizations.of(context).all,
+                ],
+                selectedColor: Colors.white,
+                backgroundColor: AppColors.primary,
+                children: [
+                  _buildNotificationsList(unreadNotifications, userId),
+                  _buildNotificationsList(allNotifications, userId),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -393,9 +403,9 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
               ),
             ],
             onSelected: (index, entry) {
-              if (entry.value == 'mark_read')
+              if (entry.value == 'mark_read') {
                 _markAllAsRead();
-              else if (entry.value == 'clear')
+              } else if (entry.value == 'clear')
                 _clearAll();
             },
           ),
@@ -405,7 +415,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
         AdaptiveAppBarAction(
           iosSymbol: 'ellipsis.circle',
           icon: Icons.adaptive.more,
-          onPressed: () => _showOptionsSheet(),
+          onPressed: _showOptionsSheet,
         ),
       ],
     );

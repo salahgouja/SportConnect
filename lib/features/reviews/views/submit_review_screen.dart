@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/features/reviews/models/review_model.dart';
@@ -52,8 +53,10 @@ class _SubmitReviewScreenState extends ConsumerState<SubmitReviewScreen> {
       ),
       body: state.isSubmitting
           ? const Center(child: CircularProgressIndicator.adaptive())
-          : SingleChildScrollView(
-              padding: EdgeInsets.all(16.r),
+          : MaxWidthContainer(
+              maxWidth: kMaxWidthFormNarrow,
+              child: SingleChildScrollView(
+                padding: EdgeInsets.all(16.r),
               child: Column(
                 children: [
                   // User being reviewed
@@ -183,6 +186,7 @@ class _SubmitReviewScreenState extends ConsumerState<SubmitReviewScreen> {
                 ],
               ),
             ),
+          ),
     );
   }
 

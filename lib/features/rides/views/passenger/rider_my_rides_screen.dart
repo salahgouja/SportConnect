@@ -14,6 +14,7 @@ import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 
 // ─────────────────────────────────────────────────────────────────
 // SCREEN ENTRY POINT
@@ -181,7 +182,7 @@ class _SliverHeader extends StatelessWidget {
             fontSize: 17.sp,
             fontWeight: FontWeight.w700,
             color: Colors.white,
-            height: 1.0,
+            height: 1,
           ),
         ),
         background: Container(

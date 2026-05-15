@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart' as emoji_picker;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -17,6 +18,7 @@ import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/services/location_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/platform_adaptive.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
@@ -315,7 +317,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
         return;
       }
       _scrollToBottom();
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
       _showStatusSnackBar(
@@ -741,7 +743,10 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   Widget build(BuildContext context) {
     if (currentUser == null) {
       return const AdaptiveScaffold(
-        body: Center(child: CircularProgressIndicator.adaptive()),
+        body: MaxWidthContainer(
+          maxWidth: kMaxWidthWide,
+          child: Center(child: CircularProgressIndicator.adaptive()),
+        ),
       );
     }
 
@@ -783,69 +788,73 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
 
     return AdaptiveScaffold(
       appBar: _buildAppBar(chatState, isReceiverBlocked),
-      body: Stack(
-        children: [
-          Column(
-            children: [
-              if (isReceiverBlocked) _buildBlockedBanner(),
-              Expanded(
-                child: GestureDetector(
-                  onTap: () {
-                    _focusNode.unfocus();
-                    ref
-                        .read(
-                          chatDetailViewModelProvider(
-                            _chatId,
-                            currentUser!.uid,
-                          ).notifier,
-                        )
-                        .setEmojiPickerVisible(false);
-                  },
-                  child: chatState.isLoading
-                      ? const SkeletonLoader(
-                          type: SkeletonType.chatTile,
-                          itemCount: 6,
-                        )
-                      : chatState.messages.isEmpty
-                      ? _buildEmptyState()
-                      : _buildMessagesList(chatState),
+      body: MaxWidthContainer(
+        maxWidth: kMaxWidthWide,
+        child: Stack(
+          children: [
+            Column(
+              children: [
+                if (isReceiverBlocked) _buildBlockedBanner(),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      _focusNode.unfocus();
+                      ref
+                          .read(
+                            chatDetailViewModelProvider(
+                              _chatId,
+                              currentUser!.uid,
+                            ).notifier,
+                          )
+                          .setEmojiPickerVisible(false);
+                    },
+                    child: chatState.isLoading
+                        ? const SkeletonLoader(
+                            type: SkeletonType.chatTile,
+                            itemCount: 6,
+                          )
+                        : chatState.messages.isEmpty
+                        ? _buildEmptyState()
+                        : _buildMessagesList(chatState),
+                  ),
                 ),
-              ),
-              if (chatState.typingUsers.isNotEmpty) _buildTypingIndicator(),
-              if (chatState.replyToMessage != null)
-                _buildReplyPreview(chatState.replyToMessage!),
-              if (!isReceiverBlocked) _buildInputArea(),
-              if (!isReceiverBlocked && chatState.showEmojiPicker)
-                SizedBox(
-                  height: 280.h,
-                  child: emoji_picker.EmojiPicker(
-                    textEditingController: _messageController,
-                    config: emoji_picker.Config(
-                      height: 280.h,
-                      emojiViewConfig: const emoji_picker.EmojiViewConfig(
-                        backgroundColor: AppColors.cardBg,
-                        columns: 8,
-                      ),
-                      categoryViewConfig: const emoji_picker.CategoryViewConfig(
-                        backgroundColor: AppColors.cardBg,
-                        indicatorColor: AppColors.primary,
-                        iconColor: AppColors.textTertiary,
-                        iconColorSelected: AppColors.primary,
-                      ),
-                      bottomActionBarConfig:
-                          const emoji_picker.BottomActionBarConfig(
-                            enabled: false,
-                          ),
-                      searchViewConfig: const emoji_picker.SearchViewConfig(
-                        backgroundColor: AppColors.cardBg,
-                        buttonIconColor: AppColors.textSecondary,
+                if (chatState.typingUsers.isNotEmpty) _buildTypingIndicator(),
+                if (chatState.replyToMessage != null)
+                  _buildReplyPreview(chatState.replyToMessage!),
+                if (!isReceiverBlocked) _buildInputArea(),
+                if (!isReceiverBlocked && chatState.showEmojiPicker)
+                  SizedBox(
+                    height: 280.h,
+                    child: emoji_picker.EmojiPicker(
+                      textEditingController: _messageController,
+                      config: emoji_picker.Config(
+                        height: 280.h,
+                        emojiViewConfig: const emoji_picker.EmojiViewConfig(
+                          backgroundColor: AppColors.cardBg,
+                          columns: 8,
+                        ),
+                        categoryViewConfig:
+                            const emoji_picker.CategoryViewConfig(
+                              backgroundColor: AppColors.cardBg,
+                              indicatorColor: AppColors.primary,
+                              iconColor: AppColors.textTertiary,
+                              iconColorSelected: AppColors.primary,
+                            ),
+                        bottomActionBarConfig:
+                            const emoji_picker.BottomActionBarConfig(
+                              enabled: false,
+                            ),
+                        searchViewConfig: const emoji_picker.SearchViewConfig(
+                          backgroundColor: AppColors.cardBg,
+                          buttonIconColor: AppColors.textSecondary,
+                        ),
                       ),
                     ),
-                  ),
-                ).animate().fadeIn(duration: 200.ms).slideY(begin: 0.2),
-            ],
-          ),
-        ],
+                  ).animate().fadeIn(duration: 200.ms).slideY(begin: 0.2),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -947,7 +956,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
         if (_receiver.photoUrl != null)
           CircleAvatar(
             radius: 20.r,
-            backgroundImage: NetworkImage(_receiver.photoUrl!),
+            backgroundImage: CachedNetworkImageProvider(_receiver.photoUrl!),
           )
         else
           PremiumAvatar(name: _receiver.username, size: 40),
@@ -1730,7 +1739,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
           duration: const Duration(seconds: 2),
         );
       }
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       if (!mounted) return;
       Navigator.of(context).pop();
       _showLocationError(l10n.failedToGetLocationValue(e.toString()));
@@ -1801,7 +1810,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
           duration: const Duration(seconds: 2),
         );
       }
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       if (!mounted) return;
       _showStatusSnackBar(
         AppLocalizations.of(context).couldNotOpenMapsValue(e),

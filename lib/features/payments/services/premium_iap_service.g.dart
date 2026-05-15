@@ -41,7 +41,7 @@ final class PremiumIapServiceProvider
   }
 }
 
-String _$premiumIapServiceHash() => r'8bcc2afa2986fe5f2d31049d5977163d40c361a4';
+String _$premiumIapServiceHash() => r'eeb8c3afe6df0925557e8d38718f3d0ecf2340f2';
 
 abstract class _$PremiumIapService extends $Notifier<void> {
   void build();

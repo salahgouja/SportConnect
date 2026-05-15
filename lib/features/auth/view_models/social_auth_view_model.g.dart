@@ -42,7 +42,7 @@ final class SocialAuthViewModelProvider
 }
 
 String _$socialAuthViewModelHash() =>
-    r'243da9215e7912bcb29038d638590e5e044f6974';
+    r'87ee0d1f141ac65543e8aae5f2935f36408f9e8f';
 
 abstract class _$SocialAuthViewModel extends $Notifier<SocialAuthState> {
   SocialAuthState build();

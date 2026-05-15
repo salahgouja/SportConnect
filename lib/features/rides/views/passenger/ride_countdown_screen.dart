@@ -28,6 +28,7 @@ import 'package:sport_connect/features/rides/view_models/ride_countdown_view_mod
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 
 class RideCountdownScreen extends ConsumerStatefulWidget {
   const RideCountdownScreen({required this.bookingId, super.key});
@@ -223,9 +224,11 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
       appBar: AdaptiveAppBar(
         title: AppLocalizations.of(context).yourRide,
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 32.h),
-        child: Column(
+      body: MaxWidthContainer(
+        maxWidth: kMaxWidthForm,
+        child: SingleChildScrollView(
+          padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 32.h),
+          child: Column(
           children: [
             // Booking confirmed badge
             _buildStatusBadge().animate().fadeIn(delay: 100.ms),
@@ -326,7 +329,8 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
           ],
         ),
       ),
-    );
+    ),
+  );
   }
 
   void _fitMapToBounds(List<LatLng> routePoints) {
@@ -515,7 +519,7 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
 
   Widget _buildStatusBadge() {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
+      padding: adaptiveScreenPadding(context).copyWith(bottom: 10.h, top: 10.h),
       decoration: BoxDecoration(
         color: AppColors.success.withAlpha(30),
         borderRadius: BorderRadius.circular(40.r),
@@ -664,7 +668,7 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
         pathParameters: {'id': chat.id},
         extra: driverUser,
       );
-    } on Exception catch (e, st) {
+    } on Exception {
       if (!mounted) return;
       AdaptiveSnackBar.show(
         context,
@@ -691,7 +695,7 @@ class _RideCountdownScreenState extends ConsumerState<RideCountdownScreen> {
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri);
       }
-    } on Exception catch (e, st) {
+    } on Exception {
       if (!mounted) return;
       AdaptiveSnackBar.show(
         context,

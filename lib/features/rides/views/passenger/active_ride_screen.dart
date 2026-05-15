@@ -4,6 +4,7 @@ import 'dart:async';
 
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -17,6 +18,7 @@ import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/services/location_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/core/widgets/app_map_tile_layer.dart';
 import 'package:sport_connect/core/widgets/custom_button.dart';
 import 'package:sport_connect/core/widgets/misc_feature_widgets.dart';
@@ -99,7 +101,7 @@ class _PassengerActiveRideScreenState
           ),
         );
       }
-    } on Exception catch (e, st) {
+    } on Exception {
       // Location not available — pin simply won't show
     }
   }
@@ -294,7 +296,9 @@ class _PassengerActiveRideScreenState
     );
 
     return AdaptiveScaffold(
-      body: rideAsync.when(
+      body: MaxWidthContainer(
+        maxWidth: kMaxWidthWide,
+        child: rideAsync.when(
         data: (ride) => ride == null
             ? _buildRideNotFound()
             : _buildActiveRideContent(context, ride),
@@ -320,6 +324,7 @@ class _PassengerActiveRideScreenState
             ],
           ),
         ),
+      ),
       ),
     );
   }
@@ -1528,7 +1533,7 @@ class _PassengerActiveRideScreenState
                   CircleAvatar(
                     radius: 24.r,
                     backgroundImage: driver.photoUrl != null
-                        ? NetworkImage(driver.photoUrl!)
+                                ? CachedNetworkImageProvider(driver.photoUrl!)
                         : null,
                     child: driver.photoUrl == null
                         ? Text(
@@ -2265,7 +2270,7 @@ class _PassengerActiveRideScreenState
           CircleAvatar(
             radius: 28.r,
             backgroundImage: driver.photoUrl != null
-                ? NetworkImage(driver.photoUrl!)
+                                                ? CachedNetworkImageProvider(driver.photoUrl!)
                 : null,
             child: driver.photoUrl == null
                 ? Text(
@@ -2749,7 +2754,7 @@ class _PassengerActiveRideScreenState
               CircleAvatar(
                 radius: 20.r,
                 backgroundImage: passenger.photoUrl != null
-                    ? NetworkImage(passenger.photoUrl!)
+                                      ? CachedNetworkImageProvider(passenger.photoUrl!)
                     : null,
                 child: passenger.photoUrl == null
                     ? Text(passenger.username[0].toUpperCase())
@@ -2983,7 +2988,7 @@ class _PassengerActiveRideScreenState
         );
         context.pop();
       }
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       if (mounted) {
         AdaptiveSnackBar.show(
           context,

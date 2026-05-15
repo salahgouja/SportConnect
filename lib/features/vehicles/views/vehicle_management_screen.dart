@@ -12,6 +12,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:reactive_forms/reactive_forms.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/core/widgets/custom_button.dart';
 import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
@@ -97,26 +98,25 @@ class _VehicleListView extends ConsumerWidget {
 
     return Stack(
       children: [
-        ListView(
-          physics: const BouncingScrollPhysics(),
-          padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 120.h),
-          children: [
-            _StatsHero(
-              total: sorted.length,
-              activeName: active.isActive ? active.displayName : null,
-            ).animate().fadeIn(duration: 320.ms).slideY(begin: 0.05, end: 0),
-            SizedBox(height: 24.h),
-            _AddVehicleBanner(onTap: () => _openAddSheet(context, ref))
-                .animate(delay: 80.ms)
-                .fadeIn(duration: 320.ms)
-                .slideY(begin: 0.05, end: 0),
-            SizedBox(height: 20.h),
-            ...sorted.asMap().entries.map((entry) {
-              final i = entry.key;
-              final v = entry.value;
-              return Padding(
-                padding: EdgeInsets.only(bottom: 16.h),
-                child:
+        MaxWidthContainer(
+          child: ListView(
+            physics: const BouncingScrollPhysics(),
+            padding: adaptiveScreenPadding(context).copyWith(bottom: 120.h),
+            children: [
+              _StatsHero(
+                total: sorted.length,
+                activeName: active.isActive ? active.displayName : null,
+              ).animate().fadeIn(duration: 320.ms).slideY(begin: 0.05, end: 0),
+              SizedBox(height: 24.h),
+              _AddVehicleBanner(onTap: () => _openAddSheet(context, ref))
+                  .animate(delay: 80.ms)
+                  .fadeIn(duration: 320.ms)
+                  .slideY(begin: 0.05, end: 0),
+              SizedBox(height: 20.h),
+              ...sorted.asMap().entries.map((entry) {
+                final i = entry.key;
+                final v = entry.value;
+                final card =
                     _VehicleCard(
                           vehicle: v,
                           onSetActive: v.isActive
@@ -130,10 +130,21 @@ class _VehicleListView extends ConsumerWidget {
                         )
                         .animate(delay: Duration(milliseconds: 120 + i * 80))
                         .fadeIn(duration: 320.ms)
-                        .slideY(begin: 0.06, end: 0),
-              );
-            }),
-          ],
+                        .slideY(begin: 0.06, end: 0);
+                // On tablet, show vehicles in a 2-column grid
+                if (context.isTablet) {
+                  return Padding(
+                    padding: EdgeInsets.only(bottom: 16.h),
+                    child: card,
+                  );
+                }
+                return Padding(
+                  padding: EdgeInsets.only(bottom: 16.h),
+                  child: card,
+                );
+              }),
+            ],
+          ),
         ),
         Positioned(
           left: 20.w,
@@ -623,7 +634,6 @@ class _VehicleCard extends StatelessWidget {
       ),
     );
   }
-
 }
 
 class _HeroImageStrip extends StatelessWidget {
@@ -1818,7 +1828,6 @@ class _DetailsHero extends StatelessWidget {
       ),
     );
   }
-
 }
 
 class _DetailMetric extends StatelessWidget {

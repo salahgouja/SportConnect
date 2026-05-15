@@ -639,8 +639,9 @@ class EditEventFormState {
 
   String? get submissionBlockReason {
     if (isLoading) return 'Event is still loading.';
-    if (isSubmitting)
+    if (isSubmitting) {
       return 'Please wait for the current submission to finish.';
+    }
     return titleError ??
         locationError ??
         startsAtError ??
@@ -1582,7 +1583,7 @@ class EventListViewModel extends _$EventListViewModel {
       } else {
         clearRadiusFilter();
       }
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       TalkerService.error('Failed to get location for radius filter', e);
       if (!ref.mounted) return;
       clearRadiusFilter();

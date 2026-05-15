@@ -66,7 +66,7 @@ class CustomerSheetViewModel extends _$CustomerSheetViewModel {
         isLoading: false,
         errorMessage: e.message,
       );
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       TalkerService.error('Customer sheet error: $e');
       if (!ref.mounted) return;
       state = state.copyWith(

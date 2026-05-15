@@ -1,9 +1,8 @@
 import 'dart:async';
 
-
-
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -21,6 +20,7 @@ import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/features/rides/views/shared/ride_completion_screen.dart'
     show RideCompletionScreen;
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 
 /// Post-ride screen where a driver rates their passenger(s).
 ///
@@ -102,8 +102,11 @@ class _DriverRatePassengerScreenState
       data: (ride) {
         if (ride == null) {
           return _buildAdaptiveScaffold(
-            body: Center(
-              child: Text(AppLocalizations.of(context).rideNotFound),
+            body: MaxWidthContainer(
+              maxWidth: kMaxWidthFormNarrow,
+              child: Center(
+                child: Text(AppLocalizations.of(context).rideNotFound),
+              ),
             ),
           );
         }
@@ -116,7 +119,12 @@ class _DriverRatePassengerScreenState
         ),
       ),
       error: (e, _) => _buildAdaptiveScaffold(
-        body: Center(child: Text(AppLocalizations.of(context).errorValue(e))),
+        body: MaxWidthContainer(
+          maxWidth: kMaxWidthFormNarrow,
+          child: Center(
+            child: Text(AppLocalizations.of(context).errorValue(e)),
+          ),
+        ),
       ),
     );
   }
@@ -139,220 +147,232 @@ class _DriverRatePassengerScreenState
       appBar: AdaptiveAppBar(
         title: AppLocalizations.of(context).ratePassenger,
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 24.h),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header
-            Text(
-              'How was your passenger?',
-              style: TextStyle(
-                fontSize: 22.sp,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-            ).animate().fadeIn(),
-            SizedBox(height: 6.h),
-            Text(
-              'Your honest feedback helps build a safer, more reliable community.',
-              style: TextStyle(
-                fontSize: 13.sp,
-                color: AppColors.textSecondary,
-                height: 1.5,
-              ),
-            ).animate().fadeIn(delay: 100.ms),
-
-            SizedBox(height: 28.h),
-
-            if (bookings.isEmpty)
-              Center(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 32.h),
-                  child: Text(
-                    'No accepted passengers to rate for this ride.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 14.sp,
-                    ),
-                  ),
+      body: MaxWidthContainer(
+        maxWidth: kMaxWidthFormNarrow,
+        child: SingleChildScrollView(
+          padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 24.h),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Text(
+                AppLocalizations.of(context).how_was_your_passenger,
+                style: TextStyle(
+                  fontSize: 22.sp,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
                 ),
-              )
-            else ...[
-              // Passenger list (always shown, single-select)
-              if (bookings.length > 1) ...[
-                Text(
-                  'Select passenger to rate',
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textSecondary,
-                    letterSpacing: 0.3,
-                  ),
+              ).animate().fadeIn(),
+              SizedBox(height: 6.h),
+              Text(
+                AppLocalizations.of(
+                  context,
+                ).your_honest_feedback_helps_build_a_safer_more_reliable_community,
+                style: TextStyle(
+                  fontSize: 13.sp,
+                  color: AppColors.textSecondary,
+                  height: 1.5,
                 ),
-                SizedBox(height: 10.h),
-              ],
-              ...bookings.asMap().entries.map(
-                (entry) => _buildPassengerTile(
-                  entry.value,
-                  isSelected: formState.selectedBookingId == entry.value.id,
-                ).animate().slideY(delay: (entry.key * 80).ms),
-              ),
+              ).animate().fadeIn(delay: 100.ms),
 
               SizedBox(height: 28.h),
 
-              // Star rating
-              Text(
-                'Rating',
-                style: TextStyle(
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              SizedBox(height: 12.h),
-              Center(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: List.generate(5, (index) {
-                    final starValue = (index + 1).toDouble();
-                    return GestureDetector(
-                      onTap: () {
-                        unawaited(HapticFeedback.selectionClick());
-                        ref
-                            .read(
-                              driverPassengerRatingViewModelProvider(
-                                widget.rideId,
-                              ).notifier,
-                            )
-                            .setRating(starValue);
-                      },
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 5.w),
-                        child:
-                            Icon(
-                                  formState.rating >= starValue
-                                      ? Icons.star_rounded
-                                      : Icons.star_outline_rounded,
-                                  color: formState.rating >= starValue
-                                      ? AppColors.warning
-                                      : AppColors.divider,
-                                  size: 44.sp,
-                                )
-                                .animate(
-                                  target: formState.rating >= starValue ? 1 : 0,
-                                )
-                                .scale(
-                                  begin: const Offset(0.85, 0.85),
-                                  end: const Offset(1, 1),
-                                  duration: 200.ms,
-                                  curve: Curves.easeOut,
-                                ),
-                      ),
-                    );
-                  }),
-                ),
-              ),
-
-              if (formState.rating > 0) ...[
-                SizedBox(height: 8.h),
+              if (bookings.isEmpty)
                 Center(
-                  child: Text(
-                    _getRatingLabel(formState.rating),
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 32.h),
+                    child: Text(
+                      AppLocalizations.of(
+                        context,
+                      ).no_accepted_passengers_to_rate_for_this_ride,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 14.sp,
+                      ),
+                    ),
+                  ),
+                )
+              else ...[
+                // Passenger list (always shown, single-select)
+                if (bookings.length > 1) ...[
+                  Text(
+                    AppLocalizations.of(context).select_passenger_to_rate,
                     style: TextStyle(
                       fontSize: 14.sp,
-                      color: AppColors.warning,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textSecondary,
+                      letterSpacing: 0.3,
                     ),
-                  ).animate().fadeIn(duration: 200.ms),
-                ),
-              ],
-
-              SizedBox(height: 24.h),
-
-              // Comment field
-              Text(
-                'Comment (optional)',
-                style: TextStyle(
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              SizedBox(height: 8.h),
-              TextField(
-                onChanged: (v) => ref
-                    .read(
-                      driverPassengerRatingViewModelProvider(
-                        widget.rideId,
-                      ).notifier,
-                    )
-                    .setComment(v),
-                controller: TextEditingController(text: formState.comment)
-                  ..selection = TextSelection.collapsed(
-                    offset: formState.comment.length,
                   ),
-                maxLines: 4,
-                maxLength: 300,
-                style: TextStyle(fontSize: 14.sp, color: AppColors.textPrimary),
-                decoration: InputDecoration(
-                  hintText: AppLocalizations.of(
-                    context,
-                  ).ratePassengerCommentHint,
-                  hintStyle: TextStyle(
-                    color: AppColors.textSecondary,
+                  SizedBox(height: 10.h),
+                ],
+                ...bookings.asMap().entries.map(
+                  (entry) => _buildPassengerTile(
+                    entry.value,
+                    isSelected: formState.selectedBookingId == entry.value.id,
+                  ).animate().slideY(delay: (entry.key * 80).ms),
+                ),
+
+                SizedBox(height: 28.h),
+
+                // Star rating
+                Text(
+                  AppLocalizations.of(context).ratePassengerTitle,
+                  style: TextStyle(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                SizedBox(height: 12.h),
+                Center(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: List.generate(5, (index) {
+                      final starValue = (index + 1).toDouble();
+                      return GestureDetector(
+                        onTap: () {
+                          unawaited(HapticFeedback.selectionClick());
+                          ref
+                              .read(
+                                driverPassengerRatingViewModelProvider(
+                                  widget.rideId,
+                                ).notifier,
+                              )
+                              .setRating(starValue);
+                        },
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 5.w),
+                          child:
+                              Icon(
+                                    formState.rating >= starValue
+                                        ? Icons.star_rounded
+                                        : Icons.star_outline_rounded,
+                                    color: formState.rating >= starValue
+                                        ? AppColors.warning
+                                        : AppColors.divider,
+                                    size: 44.sp,
+                                  )
+                                  .animate(
+                                    target: formState.rating >= starValue
+                                        ? 1
+                                        : 0,
+                                  )
+                                  .scale(
+                                    begin: const Offset(0.85, 0.85),
+                                    end: const Offset(1, 1),
+                                    duration: 200.ms,
+                                    curve: Curves.easeOut,
+                                  ),
+                        ),
+                      );
+                    }),
+                  ),
+                ),
+
+                if (formState.rating > 0) ...[
+                  SizedBox(height: 8.h),
+                  Center(
+                    child: Text(
+                      _getRatingLabel(formState.rating),
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        color: AppColors.warning,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ).animate().fadeIn(duration: 200.ms),
+                  ),
+                ],
+
+                SizedBox(height: 24.h),
+
+                // Comment field
+                Text(
+                  AppLocalizations.of(context).additional_comments_optional,
+                  style: TextStyle(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                SizedBox(height: 8.h),
+                TextField(
+                  onChanged: (v) => ref
+                      .read(
+                        driverPassengerRatingViewModelProvider(
+                          widget.rideId,
+                        ).notifier,
+                      )
+                      .setComment(v),
+                  controller: TextEditingController(text: formState.comment)
+                    ..selection = TextSelection.collapsed(
+                      offset: formState.comment.length,
+                    ),
+                  maxLines: 4,
+                  maxLength: 300,
+                  style: TextStyle(
                     fontSize: 14.sp,
+                    color: AppColors.textPrimary,
                   ),
-                  filled: true,
-                  fillColor: AppColors.surface,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.r),
-                    borderSide: BorderSide.none,
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.r),
-                    borderSide: const BorderSide(color: AppColors.divider),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.r),
-                    borderSide: const BorderSide(
-                      color: AppColors.primary,
-                      width: 1.5,
-                    ),
-                  ),
-                  counterStyle: TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 11.sp,
-                  ),
-                ),
-              ),
-
-              SizedBox(height: 32.h),
-
-              // Submit button
-              PremiumButton(
-                text: AppLocalizations.of(context).submitRating,
-                isLoading: formState.isSubmitting,
-                isDisabled: !formState.canSubmit,
-                onPressed: formState.canSubmit ? _submitRating : null,
-              ),
-              SizedBox(height: 12.h),
-              Center(
-                child: TextButton(
-                  onPressed: () => context.go(AppRoutes.driverRides.path),
-                  child: Text(
-                    'Skip for now',
-                    style: TextStyle(
+                  decoration: InputDecoration(
+                    hintText: AppLocalizations.of(
+                      context,
+                    ).ratePassengerCommentHint,
+                    hintStyle: TextStyle(
                       color: AppColors.textSecondary,
                       fontSize: 14.sp,
                     ),
+                    filled: true,
+                    fillColor: AppColors.surface,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12.r),
+                      borderSide: BorderSide.none,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12.r),
+                      borderSide: const BorderSide(color: AppColors.divider),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12.r),
+                      borderSide: const BorderSide(
+                        color: AppColors.primary,
+                        width: 1.5,
+                      ),
+                    ),
+                    counterStyle: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 11.sp,
+                    ),
                   ),
                 ),
-              ),
-              SizedBox(height: 24.h),
+
+                SizedBox(height: 32.h),
+
+                // Submit button
+                PremiumButton(
+                  text: AppLocalizations.of(context).submitRating,
+                  isLoading: formState.isSubmitting,
+                  isDisabled: !formState.canSubmit,
+                  onPressed: formState.canSubmit ? _submitRating : null,
+                ),
+                SizedBox(height: 12.h),
+                Center(
+                  child: TextButton(
+                    onPressed: () => context.go(AppRoutes.driverRides.path),
+                    child: Text(
+                      AppLocalizations.of(context).skipForNow,
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 14.sp,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 24.h),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -391,7 +411,7 @@ class _DriverRatePassengerScreenState
                 radius: 22.r,
                 backgroundColor: AppColors.primary.withAlpha(30),
                 backgroundImage: profile?.photoUrl != null
-                    ? NetworkImage(profile!.photoUrl!)
+                    ? CachedNetworkImageProvider(profile!.photoUrl!)
                     : null,
                 child: profile?.photoUrl == null
                     ? Icon(
@@ -431,7 +451,8 @@ class _DriverRatePassengerScreenState
                 children: [
                   passengerAsync.when(
                     data: (profile) => Text(
-                      profile?.username ?? 'Passenger',
+                      profile?.username ??
+                          AppLocalizations.of(context).passenger,
                       style: TextStyle(
                         fontSize: 14.sp,
                         fontWeight: FontWeight.w600,
@@ -447,7 +468,7 @@ class _DriverRatePassengerScreenState
                       ),
                     ),
                     error: (_, _) => Text(
-                      'Passenger',
+                      AppLocalizations.of(context).passenger,
                       style: TextStyle(
                         fontSize: 14.sp,
                         color: AppColors.textPrimary,
@@ -503,10 +524,12 @@ class _DriverRatePassengerScreenState
       await ref
           .read(driverPassengerRatingViewModelProvider(widget.rideId).notifier)
           .submit(
-            revieweeName: passengerProfile?.username ?? 'Passenger',
+            revieweeName:
+                passengerProfile?.username ??
+                AppLocalizations.of(context).passenger,
             revieweePhotoUrl: passengerProfile?.photoUrl,
           );
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       if (mounted) {
         AdaptiveSnackBar.show(
           context,

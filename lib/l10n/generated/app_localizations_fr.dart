@@ -9742,4 +9742,511 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get helpCenterRidesCancelQuestion =>
       'Trad_Help Center Rides Cancel Question';
+
+  @override
+  String get adminDashboard => 'Tableau de bord administrateur';
+
+  @override
+  String get adminAccessRequired => 'Accès administrateur requis';
+
+  @override
+  String adminAccessCheckFailed(String error) {
+    return 'Échec de vérification d\'accès: $error';
+  }
+
+  @override
+  String get noRefundRequests => 'Aucune demande de remboursement';
+
+  @override
+  String get noDisputes => 'Aucun litige';
+
+  @override
+  String get noSupportTickets => 'Aucun ticket de support';
+
+  @override
+  String get refundsTab => 'Remboursements';
+
+  @override
+  String get disputesTab => 'Litiges';
+
+  @override
+  String get supportTab => 'Support';
+
+  @override
+  String get stripeEurBalance => 'Solde EUR';
+
+  @override
+  String get badgeFirstRide => 'Premier trajet';
+
+  @override
+  String get badgeFirstRideDesc => 'Effectuez votre premier trajet';
+
+  @override
+  String get badgeRoadWarrior => 'Guerrier de la route';
+
+  @override
+  String get badgeRoadWarriorDesc => 'Effectuez 10 trajets';
+
+  @override
+  String get badgeEcoHero => 'Héro écologique';
+
+  @override
+  String get badgeEcoHeroDesc => 'Économisez 50 kg de CO₂';
+
+  @override
+  String get badgeSocialButterfly => 'Papillon social';
+
+  @override
+  String get badgeSocialButterflyDesc => 'Connectez-vous avec 10 passagers';
+
+  @override
+  String get badgeRoadTripper => 'Routard';
+
+  @override
+  String get badgeRoadTripperDesc => 'Parcourez 50 km au total';
+
+  @override
+  String get badgeSpeedDemon => 'Démon de vitesse';
+
+  @override
+  String get badgeSpeedDemonDesc => 'Maintenez une série de 7 jours';
+
+  @override
+  String adminCouldNotLoadIssues(String error) {
+    return 'Impossible de charger les problèmes : $error';
+  }
+
+  @override
+  String get adminDashboardSettingsSubtitle =>
+      'Examiner les remboursements, litiges et tickets d’assistance';
+
+  @override
+  String get adminApproveRefund => 'Approuver le remboursement';
+
+  @override
+  String get adminReject => 'Rejeter';
+
+  @override
+  String get adminRefund => 'Rembourser';
+
+  @override
+  String get adminResolve => 'Résoudre';
+
+  @override
+  String get actionUpdated => 'Mis à jour';
+
+  @override
+  String get yearlyMonthlyEstimate => '≈ 4,17 € / mois';
+
+  @override
+  String get premiumSubscribeHeroSubtitle =>
+      'Tout ce qu’il vous faut pour voyager plus intelligemment, ensemble.';
+
+  @override
+  String get alreadyPremiumTitle => 'Vous êtes déjà membre';
+
+  @override
+  String get alreadyPremiumSubtitle =>
+      'Votre abonnement SportConnect Premium est actif. Profitez de toutes les fonctionnalités premium.';
+
+  @override
+  String get backToApp => 'Retour à l’app';
+
+  @override
+  String get chatChipImAtPickup => 'Je suis au point de ramassage';
+
+  @override
+  String get chatChipRunningLate => 'Je suis en retard';
+
+  @override
+  String get pleaseTryAgainLater => 'Veuillez réessayer plus tard.';
+
+  @override
+  String get routeDistanceFallback => 'Distance du trajet';
+
+  @override
+  String estimatedMinutes(int minutes) {
+    return '$minutes min estimées';
+  }
+
+  @override
+  String seatsLeftCount(int count) {
+    return '$count places restantes';
+  }
+
+  @override
+  String get bookingInProgress => 'Réservation...';
+
+  @override
+  String get sendRequest => 'Envoyer la demande';
+
+  @override
+  String rideSharedDistanceSummary(String distance) {
+    return '$distance km partagés ensemble';
+  }
+
+  @override
+  String rideCarpooledWithCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Covoituré avec $count personnes',
+      one: 'Covoituré avec 1 personne',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get avgSpeedLabel => 'Vitesse moy.';
+
+  @override
+  String avgSpeedKmhValue(String value) {
+    return '$value km/h';
+  }
+
+  @override
+  String baseFareSeatCount(int count) {
+    return 'Tarif de base ($count places)';
+  }
+
+  @override
+  String baseFareSeatsByPrice(int count, String price) {
+    return 'Tarif de base ($count places × $price)';
+  }
+
+  @override
+  String serviceFeeWithRate(String rate) {
+    return 'Frais de service ($rate)';
+  }
+
+  @override
+  String rideCompletionDriverRating(String value) {
+    return 'Note $value';
+  }
+
+  @override
+  String get billingPeriodMonthShort => '/mois';
+
+  @override
+  String get billingPeriodYearShort => '/an';
+
+  @override
+  String get fallbackMonthlyPrice => '4,99 €';
+
+  @override
+  String get fallbackYearlyPrice => '49,99 €';
+
+  @override
+  String yearlyMonthlyAtPrice(String price) {
+    return '≈ $price/mois';
+  }
+
+  @override
+  String get premiumRenewsUntilCancelled =>
+      'L’abonnement se renouvelle automatiquement jusqu’à résiliation. Annulez à tout moment dans les réglages de l’App Store.';
+
+  @override
+  String premiumRenewsEachPeriodAtPrice(String period, String price) {
+    return 'Renouvellement automatique chaque $period à $price jusqu’à résiliation. Annulez à tout moment dans les réglages de l’App Store.';
+  }
+
+  @override
+  String get cancellationReasonBannerMessage =>
+      'Dites-nous pourquoi vous annulez afin que nous puissions améliorer notre service.';
+
+  @override
+  String get cancelReasonChangeOfPlansTitle => 'Changement de programme';
+
+  @override
+  String get cancelReasonChangeOfPlansDescription =>
+      'Mon emploi du temps a changé et je ne peux plus faire ce trajet.';
+
+  @override
+  String get cancelReasonFoundAnotherRideTitle => 'Autre trajet trouvé';
+
+  @override
+  String get cancelReasonFoundAnotherRideDescription =>
+      'J’ai trouvé une option de trajet plus pratique.';
+
+  @override
+  String get cancelReasonPriceTooHighTitle => 'Prix trop élevé';
+
+  @override
+  String get cancelReasonPriceTooHighDescription =>
+      'Le coût du trajet est plus élevé que prévu.';
+
+  @override
+  String get cancelReasonSafetyConcernTitle => 'Problème de sécurité';
+
+  @override
+  String get cancelReasonSafetyConcernDescription =>
+      'J’ai des inquiétudes concernant la sécurité de ce trajet.';
+
+  @override
+  String get cancelReasonDriverNotRespondingTitle => 'Conducteur injoignable';
+
+  @override
+  String get cancelReasonDriverNotRespondingDescription =>
+      'Le conducteur ne répond pas aux messages.';
+
+  @override
+  String get cancelReasonIncorrectDetailsTitle => 'Détails incorrects';
+
+  @override
+  String get cancelReasonIncorrectDetailsDescription =>
+      'Les détails du trajet sont incorrects ou ont changé.';
+
+  @override
+  String get cancelReasonEmergencyTitle => 'Urgence';
+
+  @override
+  String get cancelReasonEmergencyDescription => 'J’ai une urgence imprévue.';
+
+  @override
+  String get cancelReasonOtherTitle => 'Autre';
+
+  @override
+  String get cancelReasonOtherDescription =>
+      'Une autre raison non listée ci-dessus.';
+
+  @override
+  String get cancelReasonVehicleIssueTitle => 'Problème de véhicule';
+
+  @override
+  String get cancelReasonVehicleIssueDescription =>
+      'Mon véhicule a un problème mécanique ou n’est pas disponible.';
+
+  @override
+  String get cancelReasonPassengerNotAtPickupTitle =>
+      'Passager absent au point de prise en charge';
+
+  @override
+  String get cancelReasonPassengerNotAtPickupDescription =>
+      'Le passager n’était pas au lieu de prise en charge convenu.';
+
+  @override
+  String get cancelReasonPassengerNotRespondingTitle => 'Passager injoignable';
+
+  @override
+  String get cancelReasonPassengerNotRespondingDescription =>
+      'Le passager ne répond pas aux messages.';
+
+  @override
+  String get cancelReasonRouteIssueTitle => 'Problème d’itinéraire';
+
+  @override
+  String get cancelReasonRouteIssueDescription =>
+      'Il y a une route fermée ou un problème d’itinéraire.';
+
+  @override
+  String pleaseFixFields(String fields) {
+    return 'Veuillez corriger : $fields';
+  }
+
+  @override
+  String get nameTooLongError => 'Le nom est trop long';
+
+  @override
+  String get ridingDetails => 'Détails du trajet';
+
+  @override
+  String get riderOnboardingFormLabel => 'Formulaire d’intégration passager';
+
+  @override
+  String get payoutStepInitiated => 'Lancé';
+
+  @override
+  String get payoutStepCouldNotComplete => 'Impossible de finaliser';
+
+  @override
+  String get payoutStepPreparingTransfer => 'Stripe prépare votre transfert';
+
+  @override
+  String payoutStepExpected(String date) {
+    return 'Prévu $date';
+  }
+
+  @override
+  String get payoutStepOnItsWayToYourBank => 'En route vers votre banque';
+
+  @override
+  String get payoutStepWaitingForProcessing =>
+      'En attente de la fin du traitement';
+
+  @override
+  String get payoutStepDepositedToYourAccount => 'Déposé sur votre compte';
+
+  @override
+  String get payoutMethodInstantDescription =>
+      'Instantané (généralement quelques minutes)';
+
+  @override
+  String get payoutMethodStandardDescription => 'Standard (1 à 3 jours ouvrés)';
+
+  @override
+  String get payoutDestinationLabel => 'Destination';
+
+  @override
+  String onboardingStepCount(int current, int total) {
+    return 'Étape $current sur $total';
+  }
+
+  @override
+  String get onboardingCreateAccountPrompt =>
+      'Créez votre compte gratuit pour trouver un trajet vers votre prochain événement sportif.';
+
+  @override
+  String get onboardingRunningEventLabel => 'ÉVÉNEMENT COURSE';
+
+  @override
+  String get onboardingRideBadgeOpen => 'OUVERT';
+
+  @override
+  String get onboardingRideBadgeSet => 'PRÊT';
+
+  @override
+  String get onboardingSharedLabel => 'Partagé';
+
+  @override
+  String get onboardingDriverRouteLabel => 'Trajet conducteur';
+
+  @override
+  String get onboardingSharedArrivalLabel => 'Arrivée partagée';
+
+  @override
+  String get onboardingEventLabel => 'Événement';
+
+  @override
+  String get identityAndRoleStep => 'Identité et rôle';
+
+  @override
+  String get dayLabel => 'Jour';
+
+  @override
+  String get monthLabel => 'Mois';
+
+  @override
+  String get passwordMinLengthError =>
+      'Le mot de passe doit comporter au moins 8 caractères';
+
+  @override
+  String get passwordStrengthWeak => 'Faible';
+
+  @override
+  String get passwordStrengthFair => 'Moyen';
+
+  @override
+  String get passwordStrengthGood => 'Bon';
+
+  @override
+  String get passwordStrengthStrong => 'Fort';
+
+  @override
+  String get invalidValue => 'Valeur invalide';
+
+  @override
+  String get supportSubjectRequired => 'Veuillez saisir un objet';
+
+  @override
+  String get supportSubjectMinLength =>
+      'L\'objet doit contenir au moins 3 caractères';
+
+  @override
+  String get supportMessageRequired => 'Veuillez décrire votre problème';
+
+  @override
+  String get supportMessageMinLength =>
+      'Veuillez fournir au moins 10 caractères';
+
+  @override
+  String get thisWeekend => 'Ce week-end';
+
+  @override
+  String get highestPrice => 'Prix décroissant';
+
+  @override
+  String get badgePerfectScore => 'Score parfait';
+
+  @override
+  String get badgePerfectScoreDesc => 'Maintenez une note de 5 étoiles';
+
+  @override
+  String get badgeRoadMaster => 'Maître de la route';
+
+  @override
+  String get badgeRoadMasterDesc => 'Effectuez 100 trajets';
+
+  @override
+  String get badgeNightOwl => 'Oiseau de nuit';
+
+  @override
+  String get badgeNightOwlDesc => 'Effectuez 20 trajets de nuit';
+
+  @override
+  String get badgeEarlyBird => 'Lève-tôt';
+
+  @override
+  String get badgeEarlyBirdDesc => 'Effectuez 20 trajets le matin';
+
+  @override
+  String get badgeMarathonDriver => 'Marathonien';
+
+  @override
+  String get badgeMarathonDriverDesc => 'Parcourez 1000 km au total';
+
+  @override
+  String get badgeVerifiedPro => 'Pro vérifié';
+
+  @override
+  String get badgeVerifiedProDesc => 'Faites vérifier votre identité';
+
+  @override
+  String get challengeDailyCommuter => 'Navetteur quotidien';
+
+  @override
+  String get challengeDailyCommuterDesc => 'Effectuez 1 trajet aujourd\'hui';
+
+  @override
+  String get challengeWeekWarrior => 'Guerrier de la semaine';
+
+  @override
+  String get challengeWeekWarriorDesc => 'Effectuez 5 trajets cette semaine';
+
+  @override
+  String get challengeStreakKeeper => 'Gardien de série';
+
+  @override
+  String get challengeStreakKeeperDesc => 'Maintenez une série de 3 jours';
+
+  @override
+  String get challengeExplorer => 'Explorateur';
+
+  @override
+  String get challengeExplorerDesc =>
+      'Essayez 3 nouveaux itinéraires ce mois-ci';
+
+  @override
+  String get challengeSocialRider => 'Passager social';
+
+  @override
+  String get challengeSocialRiderDesc => 'Notez 5 conducteurs cette semaine';
+
+  @override
+  String get challengeEcoWarrior => 'Guerrier écolo';
+
+  @override
+  String get challengeEcoWarriorDesc => 'Partagez 3 trajets aujourd\'hui';
+
+  @override
+  String challengeResetsInHours(String value) {
+    return 'Réinitialisation dans $value h';
+  }
+
+  @override
+  String challengeResetsInDays(String value) {
+    return 'Réinitialisation dans $value j';
+  }
+
+  @override
+  String get challengeKeepGoing => 'Continuez !';
 }

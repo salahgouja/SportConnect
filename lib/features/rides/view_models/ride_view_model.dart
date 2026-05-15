@@ -153,7 +153,7 @@ class RideDetailUiViewModel extends _$RideDetailUiViewModel {
       if (!ref.mounted) return null;
       state = state.copyWith(routeInfo: route, isLoadingRoute: false);
       return route;
-    } on Exception catch (e, st) {
+    } on Exception {
       if (!ref.mounted) return null;
       state = state.copyWith(isLoadingRoute: false);
       return null;
@@ -445,7 +445,7 @@ class CancellationReasonViewModel extends _$CancellationReasonViewModel {
           .cancelRide(_rideId, reason);
       if (!ref.mounted) return;
       state = state.copyWith(isSubmitting: false, isSubmitted: true);
-    } on Exception catch (e, st) {
+    } on Exception {
       if (!ref.mounted) return;
       state = state.copyWith(
         isSubmitting: false,
@@ -621,7 +621,7 @@ class DisputeFormViewModel extends _$DisputeFormViewModel {
           );
       if (!ref.mounted) return;
       state = state.copyWith(isSubmitting: false, isSubmitted: true);
-    } on Exception catch (e, st) {
+    } on Exception {
       if (!ref.mounted) return;
       state = state.copyWith(
         isSubmitting: false,
@@ -708,7 +708,7 @@ class RideFormViewModel extends _$RideFormViewModel {
       if (!ref.mounted) return null;
       state = state.copyWith(isLoading: false);
       return rideId;
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       if (!ref.mounted) return null;
       state = state.copyWith(isLoading: false, error: e.toString());
       return null;
@@ -726,7 +726,7 @@ class RideFormViewModel extends _$RideFormViewModel {
       if (!ref.mounted) return rideId;
       state = state.copyWith(isLoading: false);
       return rideId;
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       if (!ref.mounted) return null;
       state = state.copyWith(isLoading: false, error: e.toString());
       return null;
@@ -1571,7 +1571,7 @@ class RideDetailViewModel extends _$RideDetailViewModel {
             rideId: ride.id,
             rideName: '$origin → $dest',
           );
-        } on Exception catch (e, st) {
+        } on Exception {
           // Notification failure is non-fatal.
         }
 
@@ -1580,7 +1580,7 @@ class RideDetailViewModel extends _$RideDetailViewModel {
         try {
           final profileRepo = ref.read(profileRepositoryProvider);
           await profileRepo.addXP(booking.passengerId, 10);
-        } on Exception catch (e, st) {
+        } on Exception {
           // XP failure is non-fatal
         }
       }
@@ -1588,7 +1588,7 @@ class RideDetailViewModel extends _$RideDetailViewModel {
       if (!ref.mounted) return true;
       state = state.copyWith(isActing: false, actionError: null);
       return true;
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       if (!ref.mounted) return false;
       state = state.copyWith(isActing: false, actionError: e.toString());
       return false;
@@ -1611,7 +1611,7 @@ class RideDetailViewModel extends _$RideDetailViewModel {
       if (!ref.mounted) return true;
       state = state.copyWith(isActing: false, actionError: null);
       return true;
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       if (!ref.mounted) return false;
       state = state.copyWith(isActing: false, actionError: e.toString());
       return false;
@@ -1627,7 +1627,7 @@ class RideDetailViewModel extends _$RideDetailViewModel {
       if (!ref.mounted) return true;
       state = state.copyWith(isActing: false, actionError: null);
       return true;
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       if (!ref.mounted) return false;
       state = state.copyWith(isActing: false, actionError: e.toString());
       return false;
@@ -1643,7 +1643,7 @@ class RideDetailViewModel extends _$RideDetailViewModel {
       if (!ref.mounted) return true;
       state = state.copyWith(isActing: false, actionError: null);
       return true;
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       if (!ref.mounted) return false;
       state = state.copyWith(isActing: false, actionError: e.toString());
       return false;
@@ -1659,7 +1659,7 @@ class RideDetailViewModel extends _$RideDetailViewModel {
       if (!ref.mounted) return true;
       state = state.copyWith(isActing: false, actionError: null);
       return true;
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       if (!ref.mounted) return false;
       state = state.copyWith(isActing: false, actionError: e.toString());
       return false;
@@ -2327,7 +2327,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
       _notifyPassengersDriverArrived(ride);
 
       return true;
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       if (!ref.mounted) return false;
       state = state.copyWith(isProcessing: false, actionError: e.toString());
       return false;
@@ -2400,7 +2400,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
         phase: ActiveRidePhase.completed,
       );
       return true;
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       if (!ref.mounted) return false;
       state = state.copyWith(isProcessing: false, actionError: e.toString());
       return false;
@@ -2418,7 +2418,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
 
       state = state.copyWith(isProcessing: false, actionError: null);
       return true;
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       if (!ref.mounted) return false;
       state = state.copyWith(isProcessing: false, actionError: e.toString());
       return false;
@@ -2568,7 +2568,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
             passengerId: passengerId,
           );
       return true;
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       if (!ref.mounted) return false;
       state = state.copyWith(actionError: e.toString());
       return false;
@@ -2608,7 +2608,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
         pickedUpPassengerIds: nextPickedUp,
       );
       return true;
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       if (!ref.mounted) return false;
       state = state.copyWith(isProcessing: false, actionError: e.toString());
       return false;
@@ -2636,7 +2636,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
           createdAt: DateTime.now(),
         ),
       );
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       TalkerService.error('Failed to send quick message: $e');
     }
   }
@@ -2689,7 +2689,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
       await ref
           .read(rideRepositoryProvider)
           .recordActualDistance(ride.id, state.actualDistanceKm);
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       TalkerService.error('Failed to record actual distance: $e');
     }
   }
@@ -2733,7 +2733,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
 
       state = state.copyWith(isProcessing: false);
       return returnRideId;
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       if (!ref.mounted) return null;
       state = state.copyWith(isProcessing: false, actionError: e.toString());
       return null;
@@ -2824,7 +2824,7 @@ class ActiveRideViewModel extends _$ActiveRideViewModel {
           .read(rideRepositoryProvider)
           .updateLiveLocation(rideId, lat, lng);
       await _clearPersistedLocation();
-    } on Exception catch (e, st) {
+    } on Exception {
       // Will retry on next GPS update
     }
   }

@@ -1,5 +1,6 @@
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -7,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/features/profile/models/leaderboard_entry.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
@@ -75,7 +77,7 @@ class _AchievementsContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final levelName = _levelName(stats.level);
+    final levelName = _levelName(l10n, stats.level);
 
     return AdaptiveScaffold(
       body: NestedScrollView(
@@ -100,12 +102,12 @@ class _AchievementsContent extends StatelessWidget {
     );
   }
 
-  static String _levelName(int level) {
-    if (level >= 20) return 'Diamond';
-    if (level >= 15) return 'Platinum';
-    if (level >= 10) return 'Gold';
-    if (level >= 5) return 'Silver';
-    return 'Bronze';
+  static String _levelName(AppLocalizations l10n, int level) {
+    if (level >= 20) return l10n.diamond;
+    if (level >= 15) return l10n.platinum;
+    if (level >= 10) return l10n.gold;
+    if (level >= 5) return l10n.silver;
+    return l10n.bronze;
   }
 }
 
@@ -130,9 +132,30 @@ class _AchievementsSliverHeader extends StatelessWidget {
         ? (stats.currentLevelXP / stats.xpToNextLevel).clamp(0.0, 1.0)
         : 1.0;
     final isMaxLevel = stats.level >= 25;
+    final expandedHeight = responsiveValue<double>(
+      context,
+      compact: 280,
+      medium: 320,
+      expanded: 340,
+      large: 360,
+    );
+    final horizontalPadding = responsiveValue<double>(
+      context,
+      compact: 20,
+      medium: 28,
+      expanded: 36,
+      large: 48,
+    );
+    final tabletStatWidth = responsiveValue<double>(
+      context,
+      compact: 140,
+      medium: 150,
+      expanded: 170,
+      large: 185,
+    );
 
     return SliverAppBar(
-      expandedHeight: 280.h,
+      expandedHeight: expandedHeight.h,
       pinned: true,
       backgroundColor: AppColors.primary,
       foregroundColor: Colors.white,
@@ -153,96 +176,132 @@ class _AchievementsSliverHeader extends StatelessWidget {
           ),
           child: SafeArea(
             child: Padding(
-              padding: EdgeInsets.fromLTRB(20.w, 56.h, 20.w, 56.h),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Level badge + XP
-                  Row(
-                    children: [
-                      _LevelBadge(level: stats.level, name: levelName),
-                      SizedBox(width: 14.w),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              l10n.levelValueValue(stats.level, levelName),
-                              style: TextStyle(
-                                fontSize: 15.sp,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                              ),
-                            ),
-                            SizedBox(height: 4.h),
-                            if (!isMaxLevel) ...[
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(4.r),
-                                child: LinearProgressIndicator(
-                                  value: xpProgress,
-                                  backgroundColor: Colors.white.withValues(
-                                    alpha: 0.25,
+              padding: EdgeInsets.fromLTRB(
+                horizontalPadding.w,
+                56.h,
+                horizontalPadding.w,
+                40.h,
+              ),
+              child: ResponsiveLayoutBuilder(
+                phone: (context) => Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Row(
+                      children: [
+                        _LevelBadge(level: stats.level),
+                        SizedBox(width: 14.w),
+                        Expanded(
+                          child: _HeaderSummary(
+                            title: l10n.levelValueValue(stats.level, levelName),
+                            subtitle: l10n.viewYourBadgesAndRewards,
+                            xpProgress: xpProgress,
+                            progressLabel: isMaxLevel
+                                ? l10n.maxLevel
+                                : l10n.valueXpToLevelValue(
+                                    stats.xpToNextLevel - stats.currentLevelXP,
+                                    stats.level + 1,
                                   ),
-                                  color: Colors.white,
-                                  minHeight: 6.h,
-                                ),
-                              ),
-                              SizedBox(height: 4.h),
-                              Text(
-                                l10n.valueXpToLevelValue(
-                                  stats.xpToNextLevel - stats.currentLevelXP,
-                                  stats.level + 1,
-                                ),
-                                style: TextStyle(
-                                  fontSize: 11.sp,
-                                  color: Colors.white.withValues(alpha: 0.8),
-                                ),
-                              ),
-                            ] else
-                              Text(
-                                l10n.maxLevel,
-                                style: TextStyle(
-                                  fontSize: 12.sp,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.accentLight,
-                                ),
-                              ),
-                          ],
+                            isMaxLevel: isMaxLevel,
+                          ),
                         ),
+                      ],
+                    ),
+                    SizedBox(height: 16.h),
+                    Row(
+                      children: [
+                        _StatItem(
+                          icon: Icons.bolt_rounded,
+                          value: l10n.valueXp2(stats.totalXP),
+                          label: l10n.total_xp,
+                        ),
+                        const _StatDivider(),
+                        _StatItem(
+                          icon: Icons.directions_car_rounded,
+                          value: '${stats.totalRides}',
+                          label: l10n.navRides,
+                        ),
+                        const _StatDivider(),
+                        _StatItem(
+                          icon: Icons.local_fire_department_rounded,
+                          value: '${stats.currentStreak}',
+                          label: l10n.streak,
+                        ),
+                        const _StatDivider(),
+                        _StatItem(
+                          icon: Icons.emoji_events_rounded,
+                          value: '${stats.unlockedBadges.length}',
+                          label: l10n.badges,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                tablet: (context) => Row(
+                  children: [
+                    Expanded(
+                      flex: 11,
+                      child: Row(
+                        children: [
+                          _LevelBadge(level: stats.level),
+                          SizedBox(width: 16.w),
+                          Expanded(
+                            child: _HeaderSummary(
+                              title: l10n.levelValueValue(
+                                stats.level,
+                                levelName,
+                              ),
+                              subtitle: l10n.viewYourBadgesAndRewards,
+                              xpProgress: xpProgress,
+                              progressLabel: isMaxLevel
+                                  ? l10n.maxLevel
+                                  : l10n.valueXpToLevelValue(
+                                      stats.xpToNextLevel -
+                                          stats.currentLevelXP,
+                                      stats.level + 1,
+                                    ),
+                              isMaxLevel: isMaxLevel,
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  SizedBox(height: 16.h),
-                  // Stats row
-                  Row(
-                    children: [
-                      _StatItem(
-                        icon: Icons.bolt_rounded,
-                        value: l10n.valueXp2(stats.totalXP),
-                        label: 'Total XP',
+                    ),
+                    SizedBox(width: 18.w),
+                    Expanded(
+                      flex: 9,
+                      child: Wrap(
+                        spacing: 12.w,
+                        runSpacing: 12.h,
+                        children: [
+                          _HeaderStatCard(
+                            width: tabletStatWidth,
+                            icon: Icons.bolt_rounded,
+                            value: l10n.valueXp2(stats.totalXP),
+                            label: l10n.total_xp,
+                          ),
+                          _HeaderStatCard(
+                            width: tabletStatWidth,
+                            icon: Icons.directions_car_rounded,
+                            value: '${stats.totalRides}',
+                            label: l10n.navRides,
+                          ),
+                          _HeaderStatCard(
+                            width: tabletStatWidth,
+                            icon: Icons.local_fire_department_rounded,
+                            value: '${stats.currentStreak}',
+                            label: l10n.streak,
+                          ),
+                          _HeaderStatCard(
+                            width: tabletStatWidth,
+                            icon: Icons.emoji_events_rounded,
+                            value: '${stats.unlockedBadges.length}',
+                            label: l10n.badges,
+                          ),
+                        ],
                       ),
-                      const _StatDivider(),
-                      _StatItem(
-                        icon: Icons.directions_car_rounded,
-                        value: '${stats.totalRides}',
-                        label: l10n.navRides,
-                      ),
-                      const _StatDivider(),
-                      _StatItem(
-                        icon: Icons.local_fire_department_rounded,
-                        value: '${stats.currentStreak}',
-                        label: 'Streak',
-                      ),
-                      const _StatDivider(),
-                      _StatItem(
-                        icon: Icons.emoji_events_rounded,
-                        value: '${stats.unlockedBadges.length}',
-                        label: l10n.badges,
-                      ),
-                    ],
-                  ),
-                ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -257,30 +316,22 @@ class _AchievementsSliverHeader extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────
 
 class _LevelBadge extends StatelessWidget {
-  const _LevelBadge({required this.level, required this.name});
+  const _LevelBadge({required this.level});
   final int level;
-  final String name;
 
   @override
   Widget build(BuildContext context) {
     Color badgeColor;
-    Color shadowColor;
-    switch (name) {
-      case 'Diamond':
-        badgeColor = AppColors.info;
-        shadowColor = AppColors.info;
-      case 'Platinum':
-        badgeColor = AppColors.levelPlatinum;
-        shadowColor = AppColors.levelPlatinum;
-      case 'Gold':
-        badgeColor = AppColors.levelGold;
-        shadowColor = AppColors.levelGold;
-      case 'Silver':
-        badgeColor = AppColors.levelSilver;
-        shadowColor = AppColors.levelSilver;
-      default: // Bronze
-        badgeColor = AppColors.levelBronze;
-        shadowColor = AppColors.levelBronze;
+    if (level >= 20) {
+      badgeColor = AppColors.info;
+    } else if (level >= 15) {
+      badgeColor = AppColors.levelPlatinum;
+    } else if (level >= 10) {
+      badgeColor = AppColors.levelGold;
+    } else if (level >= 5) {
+      badgeColor = AppColors.levelSilver;
+    } else {
+      badgeColor = AppColors.levelBronze;
     }
 
     return Container(
@@ -332,75 +383,69 @@ class _BadgesTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final badges = _getBadgeDefinitions(stats);
+    final badges = _getBadgeDefinitions(stats, l10n);
     final unlocked = badges.where((b) => b.unlocked).length;
     final total = badges.length;
     final progress = total > 0 ? unlocked / total : 0.0;
 
-    return ListView(
-      padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 24.h),
-      children: [
-        // Progress header
-        Container(
-          padding: EdgeInsets.all(14.w),
-          margin: EdgeInsets.only(bottom: 16.h),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(14.r),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.military_tech_rounded,
-                    size: 18.sp,
-                    color: AppColors.accent,
-                  ),
-                  SizedBox(width: 8.w),
-                  Text(
-                    '$unlocked / $total ${l10n.badges} ${l10n.unlocked.toLowerCase()}',
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 8.h),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(4.r),
-                child: LinearProgressIndicator(
-                  value: progress,
-                  backgroundColor: AppColors.border,
-                  color: AppColors.accent,
-                  minHeight: 8.h,
-                ),
-              ),
-            ],
-          ),
-        ).animate().fadeIn(duration: 300.ms),
-        // Grid
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
-            crossAxisSpacing: 10.w,
-            mainAxisSpacing: 10.h,
-            childAspectRatio: 0.8,
-          ),
-          itemCount: badges.length,
-          itemBuilder: (context, i) => _BadgeCard(data: badges[i], index: i),
+    final padding = adaptiveScreenPadding(context);
+    return ResponsiveLayoutBuilder(
+      phone: (context) => ListView(
+        padding: EdgeInsets.fromLTRB(
+          padding.left,
+          16.h,
+          padding.right,
+          24.h,
         ),
-      ],
+        children: [
+          _BadgesOverviewCard(
+            l10n: l10n,
+            unlocked: unlocked,
+            total: total,
+            progress: progress,
+          ),
+          _BadgeGrid(badges: badges, l10n: l10n),
+        ],
+      ),
+      tablet: (context) => SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(
+          padding.left,
+          20.h,
+          padding.right,
+          28.h,
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: responsiveValue<double>(
+                context,
+                compact: 240,
+                medium: 260,
+                expanded: 280,
+                large: 300,
+              ).w,
+              child: _BadgesOverviewCard(
+                l10n: l10n,
+                unlocked: unlocked,
+                total: total,
+                progress: progress,
+              ),
+            ),
+            SizedBox(width: 20.w),
+            Expanded(
+              child: _BadgeGrid(badges: badges, l10n: l10n),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
-  List<_BadgeData> _getBadgeDefinitions(GamificationStats stats) {
+  List<_BadgeData> _getBadgeDefinitions(
+    GamificationStats stats,
+    AppLocalizations l10n,
+  ) {
     final unlockedBadges = stats.unlockedBadges;
     final totalRides = stats.totalRides;
     final totalDistance = stats.totalDistance;
@@ -408,92 +453,92 @@ class _BadgesTab extends StatelessWidget {
 
     return [
       _BadgeData(
-        'First Ride',
-        'Complete your first ride',
+        l10n.badgeFirstRide,
+        l10n.badgeFirstRideDesc,
         Icons.directions_car_rounded,
         totalRides >= 1 || unlockedBadges.contains('first_ride'),
         'bronze',
       ),
       _BadgeData(
-        'Road Warrior',
-        'Complete 10 rides',
+        l10n.badgeRoadWarrior,
+        l10n.badgeRoadWarriorDesc,
         Icons.emoji_transportation_rounded,
         totalRides >= 10 || unlockedBadges.contains('road_warrior'),
         'silver',
         totalRides < 10 ? totalRides / 10 : null,
       ),
       _BadgeData(
-        'Eco Hero',
-        'Save 50 kg of CO₂',
+        l10n.badgeEcoHero,
+        l10n.badgeEcoHeroDesc,
         Icons.eco_rounded,
         unlockedBadges.contains('eco_hero'),
         'gold',
         0.6,
       ),
       _BadgeData(
-        'Social Butterfly',
-        'Connect with 10 riders',
+        l10n.badgeSocialButterfly,
+        l10n.badgeSocialButterflyDesc,
         Icons.people_rounded,
         unlockedBadges.contains('social_butterfly'),
         'silver',
       ),
       _BadgeData(
-        'Road Tripper',
-        'Travel 50 km total',
+        l10n.badgeRoadTripper,
+        l10n.badgeRoadTripperDesc,
         Icons.map_rounded,
         totalDistance >= 50 || unlockedBadges.contains('road_tripper'),
         'gold',
         totalDistance < 50 ? totalDistance / 50 : null,
       ),
       _BadgeData(
-        'Speed Demon',
-        'Maintain a 7-day streak',
+        l10n.badgeSpeedDemon,
+        l10n.badgeSpeedDemonDesc,
         Icons.speed_rounded,
         longestStreak >= 7 || unlockedBadges.contains('speed_demon'),
         'gold',
       ),
       _BadgeData(
-        'Perfect Score',
-        'Maintain 5-star rating',
+        l10n.badgePerfectScore,
+        l10n.badgePerfectScoreDesc,
         Icons.star_rounded,
         unlockedBadges.contains('perfect_score'),
         'platinum',
       ),
       _BadgeData(
-        'Road Master',
-        'Complete 100 rides',
+        l10n.badgeRoadMaster,
+        l10n.badgeRoadMasterDesc,
         Icons.route_rounded,
         totalRides >= 100 || unlockedBadges.contains('road_master'),
         'gold',
         totalRides < 100 ? totalRides / 100 : null,
       ),
       _BadgeData(
-        'Night Owl',
-        'Complete 20 night rides',
+        l10n.badgeNightOwl,
+        l10n.badgeNightOwlDesc,
         Icons.nightlight_rounded,
         unlockedBadges.contains('night_owl'),
         'silver',
         0.3,
       ),
       _BadgeData(
-        'Early Bird',
-        'Complete 20 morning rides',
+        l10n.badgeEarlyBird,
+        l10n.badgeEarlyBirdDesc,
         Icons.wb_sunny_rounded,
         unlockedBadges.contains('early_bird'),
         'bronze',
         0.45,
       ),
       _BadgeData(
-        'Marathon Driver',
-        'Travel 1000 km total',
+        l10n.badgeMarathonDriver,
+        l10n.badgeMarathonDriverDesc,
         Icons.straighten_rounded,
         totalDistance >= 1000 || unlockedBadges.contains('marathon_driver'),
         'diamond',
         totalDistance < 1000 ? totalDistance / 1000 : null,
       ),
       _BadgeData(
-        'Verified Pro',
-        'Get identity verified',
+        l10n.badgeVerifiedPro,
+        l10n.badgeVerifiedProDesc,
         Icons.verified_rounded,
         unlockedBadges.contains('verified_pro'),
         'silver',
@@ -502,14 +547,136 @@ class _BadgesTab extends StatelessWidget {
   }
 }
 
+class _BadgesOverviewCard extends StatelessWidget {
+  const _BadgesOverviewCard({
+    required this.l10n,
+    required this.unlocked,
+    required this.total,
+    required this.progress,
+  });
+
+  final AppLocalizations l10n;
+  final int unlocked;
+  final int total;
+  final double progress;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(16.w),
+      margin: EdgeInsets.only(bottom: 16.h),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(18.r),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(10.w),
+                decoration: BoxDecoration(
+                  color: AppColors.accent.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+                child: Icon(
+                  Icons.military_tech_rounded,
+                  size: 20.sp,
+                  color: AppColors.accent,
+                ),
+              ),
+              SizedBox(width: 10.w),
+              Expanded(
+                child: Text(
+                  '$unlocked / $total ${l10n.badges} ${l10n.unlocked.toLowerCase()}',
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 14.h),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4.r),
+            child: LinearProgressIndicator(
+              value: progress,
+              backgroundColor: AppColors.border,
+              color: AppColors.accent,
+              minHeight: 8.h,
+            ),
+          ),
+          SizedBox(height: 10.h),
+          Text(
+            l10n.view_your_badges_rewards,
+            style: TextStyle(
+              fontSize: 12.sp,
+              color: AppColors.textSecondary,
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
+    ).animate().fadeIn(duration: 300.ms);
+  }
+}
+
+class _BadgeGrid extends StatelessWidget {
+  const _BadgeGrid({
+    required this.badges,
+    required this.l10n,
+  });
+
+  final List<_BadgeData> badges;
+  final AppLocalizations l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: responsiveValue(
+          context,
+          compact: 3,
+          medium: 4,
+          expanded: 5,
+          large: 6,
+        ),
+        crossAxisSpacing: 10.w,
+        mainAxisSpacing: 10.h,
+        childAspectRatio: responsiveValue(
+          context,
+          compact: 0.82,
+          medium: 0.9,
+          expanded: 0.96,
+          large: 1.02,
+        ),
+      ),
+      itemCount: badges.length,
+      itemBuilder: (context, i) =>
+          _BadgeCard(data: badges[i], index: i, l10n: l10n),
+    );
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────
 // BADGE CARD
 // ─────────────────────────────────────────────────────────────────
 
 class _BadgeCard extends StatelessWidget {
-  const _BadgeCard({required this.data, required this.index});
+  const _BadgeCard({
+    required this.data,
+    required this.index,
+    required this.l10n,
+  });
   final _BadgeData data;
   final int index;
+  final AppLocalizations l10n;
 
   @override
   Widget build(BuildContext context) {
@@ -565,6 +732,22 @@ class _BadgeCard extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
+          if (context.isTabletOrLarger) ...[
+            SizedBox(height: 4.h),
+            Text(
+              data.description,
+              style: TextStyle(
+                fontSize: 9.sp,
+                color: locked
+                    ? AppColors.textTertiary
+                    : AppColors.textSecondary,
+                height: 1.3,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
           if (!locked)
             Padding(
               padding: EdgeInsets.only(top: 4.h),
@@ -575,7 +758,7 @@ class _BadgeCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(6.r),
                 ),
                 child: Text(
-                  data.tier.toUpperCase(),
+                  _tierLabel(l10n, data.tier).toUpperCase(),
                   style: TextStyle(
                     fontSize: 8.sp,
                     fontWeight: FontWeight.w800,
@@ -617,6 +800,21 @@ class _BadgeCard extends StatelessWidget {
         return AppColors.levelBronze;
     }
   }
+
+  String _tierLabel(AppLocalizations l10n, String tier) {
+    switch (tier) {
+      case 'diamond':
+        return l10n.diamond;
+      case 'platinum':
+        return l10n.platinum;
+      case 'gold':
+        return l10n.gold;
+      case 'silver':
+        return l10n.silver;
+      default:
+        return l10n.bronze;
+    }
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -632,69 +830,96 @@ class _ChallengesTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final challenges = _getChallenges(stats);
 
-    return ListView.builder(
-      padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 24.h),
-      itemCount: challenges.length,
-      itemBuilder: (context, i) =>
-          _ChallengeCard(data: challenges[i], index: i, l10n: l10n),
+    return SingleChildScrollView(
+      padding: EdgeInsets.fromLTRB(
+        adaptiveScreenPadding(context).left,
+        16.h,
+        adaptiveScreenPadding(context).right,
+        24.h,
+      ),
+      child: GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: responsiveValue(
+            context,
+            compact: 1,
+            medium: 2,
+            expanded: 2,
+            large: 3,
+          ),
+          crossAxisSpacing: 12.w,
+          mainAxisSpacing: 12.h,
+          childAspectRatio: responsiveValue(
+            context,
+            compact: 2.55,
+            medium: 2.1,
+            expanded: 2.25,
+            large: 2.35,
+          ),
+        ),
+        itemCount: challenges.length,
+        itemBuilder: (context, i) =>
+            _ChallengeCard(data: challenges[i], index: i, l10n: l10n),
+      ),
     );
   }
 
   List<_ChallengeData> _getChallenges(GamificationStats stats) {
     return [
-      const _ChallengeData(
-        'Daily Commuter',
-        'Complete 1 ride today',
+      _ChallengeData(
+        l10n.challengeDailyCommuter,
+        l10n.challengeDailyCommuterDesc,
         '0/1',
         0,
         50,
         Icons.today_rounded,
-        'Resets in 12h',
+        l10n.challengeResetsInHours('12'),
       ),
       _ChallengeData(
-        'Week Warrior',
-        'Complete 5 rides this week',
+        l10n.challengeWeekWarrior,
+        l10n.challengeWeekWarriorDesc,
         '${stats.totalRides.clamp(0, 5)}/5',
         stats.totalRides.clamp(0, 5) / 5,
         200,
         Icons.calendar_view_week_rounded,
-        'Resets in 3d',
+        l10n.challengeResetsInDays('3'),
       ),
       _ChallengeData(
-        'Streak Keeper',
-        'Maintain a 3-day streak',
+        l10n.challengeStreakKeeper,
+        l10n.challengeStreakKeeperDesc,
         '${stats.currentStreak.clamp(0, 3)}/3',
         stats.currentStreak.clamp(0, 3) / 3,
         150,
         Icons.local_fire_department_rounded,
-        'Keep going!',
+        l10n.challengeKeepGoing,
       ),
-      const _ChallengeData(
-        'Explorer',
-        'Try 3 new routes this month',
+      _ChallengeData(
+        l10n.challengeExplorer,
+        l10n.challengeExplorerDesc,
         '0/3',
         0.1,
         300,
         Icons.explore_rounded,
-        'Resets in 23d',
+        l10n.challengeResetsInDays('23'),
       ),
-      const _ChallengeData(
-        'Social Rider',
-        'Rate 5 drivers this week',
+      _ChallengeData(
+        l10n.challengeSocialRider,
+        l10n.challengeSocialRiderDesc,
         '0/5',
         0,
         100,
         Icons.star_half_rounded,
-        'Resets in 3d',
+        l10n.challengeResetsInDays('3'),
       ),
-      const _ChallengeData(
-        'Eco Warrior',
-        'Share 3 rides today',
+      _ChallengeData(
+        l10n.challengeEcoWarrior,
+        l10n.challengeEcoWarriorDesc,
         '0/3',
         0,
         75,
         Icons.eco_rounded,
-        'Resets in 12h',
+        l10n.challengeResetsInHours('12'),
       ),
     ];
   }
@@ -900,18 +1125,58 @@ class _LeaderboardTab extends ConsumerWidget {
         }
         final top3 = entries.take(3).toList();
         final rest = entries.skip(3).toList();
+        final padding = adaptiveScreenPadding(context);
 
-        return ListView(
-          padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 24.h),
-          children: [
-            // Podium
-            _Podium(top3: top3, l10n: l10n),
-            SizedBox(height: 16.h),
-            // Rest of leaderboard
-            ...rest.asMap().entries.map(
-              (e) => _LeaderboardRow(entry: e.value, index: e.key, l10n: l10n),
+        return ResponsiveLayoutBuilder(
+          phone: (context) => ListView(
+            padding: EdgeInsets.fromLTRB(
+              padding.left,
+              16.h,
+              padding.right,
+              24.h,
             ),
-          ],
+            children: [
+              _Podium(top3: top3, l10n: l10n),
+              SizedBox(height: 16.h),
+              ...rest.asMap().entries.map(
+                (e) =>
+                    _LeaderboardRow(entry: e.value, index: e.key, l10n: l10n),
+              ),
+            ],
+          ),
+          tablet: (context) => SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(
+              padding.left,
+              20.h,
+              padding.right,
+              28.h,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: 300.w,
+                  child: _Podium(top3: top3, l10n: l10n),
+                ),
+                SizedBox(width: 20.w),
+                Expanded(
+                  child: Column(
+                    children: rest
+                        .asMap()
+                        .entries
+                        .map(
+                          (e) => _LeaderboardRow(
+                            entry: e.value,
+                            index: e.key,
+                            l10n: l10n,
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ),
+              ],
+            ),
+          ),
         );
       },
     );
@@ -955,18 +1220,21 @@ class _Podium extends StatelessWidget {
               entry: second,
               height: 80.h,
               medal: AppColors.levelSilver,
+              l10n: l10n,
             ),
           _PodiumSpot(
             entry: first,
             height: 110.h,
             medal: AppColors.levelGold,
             isCrown: true,
+            l10n: l10n,
           ),
           if (third != null)
             _PodiumSpot(
               entry: third,
               height: 60.h,
               medal: AppColors.levelBronze,
+              l10n: l10n,
             ),
         ],
       ),
@@ -979,11 +1247,13 @@ class _PodiumSpot extends StatelessWidget {
     required this.entry,
     required this.height,
     required this.medal,
+    required this.l10n,
     this.isCrown = false,
   });
   final LeaderboardEntry entry;
   final double height;
   final Color medal;
+  final AppLocalizations l10n;
   final bool isCrown;
 
   @override
@@ -1000,7 +1270,7 @@ class _PodiumSpot extends StatelessWidget {
         CircleAvatar(
           radius: isCrown ? 24.r : 20.r,
           backgroundImage: entry.photoUrl != null
-              ? NetworkImage(entry.photoUrl!)
+              ? CachedNetworkImageProvider(entry.photoUrl!)
               : null,
           backgroundColor: medal.withValues(alpha: 0.2),
           child: entry.photoUrl == null
@@ -1032,7 +1302,7 @@ class _PodiumSpot extends StatelessWidget {
           ),
         ),
         Text(
-          _formatNumber(entry.totalXP),
+          l10n.valueXp(_formatNumber(entry.totalXP)),
           style: TextStyle(fontSize: 10.sp, color: AppColors.textSecondary),
         ),
         SizedBox(height: 4.h),
@@ -1063,8 +1333,8 @@ class _PodiumSpot extends StatelessWidget {
   }
 
   String _formatNumber(int n) {
-    if (n >= 1000) return '${(n / 1000).toStringAsFixed(1)}k XP';
-    return '$n XP';
+    if (n >= 1000) return '${(n / 1000).toStringAsFixed(1)}k';
+    return '$n';
   }
 }
 
@@ -1132,7 +1402,7 @@ class _LeaderboardRow extends StatelessWidget {
           CircleAvatar(
             radius: 16.r,
             backgroundImage: entry.photoUrl != null
-                ? NetworkImage(entry.photoUrl!)
+                ? CachedNetworkImageProvider(entry.photoUrl!)
                 : null,
             backgroundColor: AppColors.primarySurface,
             child: entry.photoUrl == null
@@ -1165,7 +1435,7 @@ class _LeaderboardRow extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
-                  'Lvl ${entry.level}',
+                  l10n.levelValue(entry.level),
                   style: TextStyle(
                     fontSize: 10.sp,
                     color: AppColors.textTertiary,
@@ -1187,7 +1457,7 @@ class _LeaderboardRow extends StatelessWidget {
                 ),
               ),
               Text(
-                '${entry.ridesThisMonth} rides',
+                l10n.valueRides(entry.ridesThisMonth),
                 style: TextStyle(
                   fontSize: 10.sp,
                   color: AppColors.textTertiary,
@@ -1259,6 +1529,125 @@ class _StatDivider extends StatelessWidget {
       width: 1,
       height: 36.h,
       color: Colors.white.withValues(alpha: 0.25),
+    );
+  }
+}
+
+class _HeaderSummary extends StatelessWidget {
+  const _HeaderSummary({
+    required this.title,
+    required this.subtitle,
+    required this.xpProgress,
+    required this.progressLabel,
+    required this.isMaxLevel,
+  });
+
+  final String title;
+  final String subtitle;
+  final double xpProgress;
+  final String progressLabel;
+  final bool isMaxLevel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: responsiveValue<double>(
+              context,
+              compact: 15,
+              medium: 17,
+              expanded: 18,
+            ).sp,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
+        ),
+        SizedBox(height: 6.h),
+        Text(
+          subtitle,
+          style: TextStyle(
+            fontSize: 12.sp,
+            color: Colors.white.withValues(alpha: 0.78),
+          ),
+        ),
+        SizedBox(height: 10.h),
+        if (!isMaxLevel) ...[
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4.r),
+            child: LinearProgressIndicator(
+              value: xpProgress,
+              backgroundColor: Colors.white.withValues(alpha: 0.25),
+              color: Colors.white,
+              minHeight: 6.h,
+            ),
+          ),
+          SizedBox(height: 6.h),
+        ],
+        Text(
+          progressLabel,
+          style: TextStyle(
+            fontSize: 11.sp,
+            fontWeight: isMaxLevel ? FontWeight.w600 : FontWeight.w400,
+            color: isMaxLevel
+                ? AppColors.accentLight
+                : Colors.white.withValues(alpha: 0.8),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _HeaderStatCard extends StatelessWidget {
+  const _HeaderStatCard({
+    required this.width,
+    required this.icon,
+    required this.value,
+    required this.label,
+  });
+
+  final double width;
+  final IconData icon;
+  final String value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: width.w,
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 14.h),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(18.r),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18.sp, color: Colors.white),
+          SizedBox(height: 12.h),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+            ),
+          ),
+          SizedBox(height: 4.h),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11.sp,
+              color: Colors.white.withValues(alpha: 0.76),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

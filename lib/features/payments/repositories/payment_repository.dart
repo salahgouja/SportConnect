@@ -154,8 +154,9 @@ class PaymentRepository {
         : <String, dynamic>{};
 
     if (data['currentlyDue'] is! List) data['currentlyDue'] = const <String>[];
-    if (data['eventuallyDue'] is! List)
+    if (data['eventuallyDue'] is! List) {
       data['eventuallyDue'] = const <String>[];
+    }
     if (data['pastDue'] is! List) data['pastDue'] = const <String>[];
     if (data['pendingVerification'] is! List) {
       data['pendingVerification'] = const <String>[];
@@ -249,7 +250,7 @@ class PaymentRepository {
       if (!doc.exists) return null;
 
       return doc.data();
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       TalkerService.error('Error refreshing connected account: $e');
       rethrow;
     }
@@ -269,7 +270,7 @@ class PaymentRepository {
       await docRef.set(paymentWithId);
       TalkerService.info('Payment transaction created: ${docRef.id}');
       return docRef.id;
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       TalkerService.error('Error creating payment transaction: $e');
       rethrow;
     }
@@ -311,14 +312,14 @@ class PaymentRepository {
       await _paymentsCollection.doc(paymentId).update({
         'status': status.name,
         'updatedAt': DateTime.now(),
-        if (failureReason != null) 'failureReason': failureReason,
+        'failureReason': ?failureReason,
         if (completedAt != null) 'completedAt': Timestamp.fromDate(completedAt),
       });
 
       TalkerService.info(
         'Payment status updated: $paymentId -> ${status.name}',
       );
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       TalkerService.error('Error updating payment status: $e');
       rethrow;
     }
@@ -352,7 +353,7 @@ class PaymentRepository {
         return stripeSnapshot.docs.first.data();
       }
       return snapshot.docs.first.data();
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       TalkerService.error('Error getting payment: $e');
       rethrow;
     }
@@ -369,7 +370,7 @@ class PaymentRepository {
           .get();
 
       return snapshot.docs.map((doc) => doc.data()).toList();
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       TalkerService.error('Error getting payments by ride: $e');
       rethrow;
     }
@@ -389,7 +390,7 @@ class PaymentRepository {
           .get();
 
       return snapshot.docs.map((doc) => doc.data()).toList();
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       TalkerService.error('Error getting rider payment history: $e');
       rethrow;
     }
@@ -443,7 +444,7 @@ class PaymentRepository {
       return _filterCompletedRidePayments(
         snapshot.docs.map((doc) => doc.data()).toList(),
       );
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       TalkerService.error('Error getting driver earnings: $e');
       rethrow;
     }
@@ -637,7 +638,7 @@ class PaymentRepository {
         lastUpdated: DateTime.now(),
         lastPayoutDate: lastPayoutDate,
       );
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       TalkerService.error('Error calculating earnings summary: $e');
       rethrow;
     }
@@ -656,7 +657,7 @@ class PaymentRepository {
       await docRef.set(payoutWithId);
       TalkerService.info('Payout created: ${docRef.id}');
       return docRef.id;
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       TalkerService.error('Error creating payout: $e');
       rethrow;
     }
@@ -674,12 +675,12 @@ class PaymentRepository {
       await _payoutsCollection.doc(payoutId).update({
         'status': status.name,
         'updatedAt': DateTime.now(),
-        if (failureReason != null) 'failureReason': failureReason,
+        'failureReason': ?failureReason,
         if (arrivedAt != null) 'arrivedAt': Timestamp.fromDate(arrivedAt),
       });
 
       TalkerService.info('Payout status updated: $payoutId -> ${status.name}');
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       TalkerService.error('Error updating payout status: $e');
       rethrow;
     }
@@ -699,7 +700,7 @@ class PaymentRepository {
           .get();
 
       return snapshot.docs.map((doc) => doc.data()).toList();
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       TalkerService.error('Error getting driver payouts: $e');
       rethrow;
     }
@@ -716,7 +717,7 @@ class PaymentRepository {
       TalkerService.info(
         'Connected account refresh requested: ${account.driverId}',
       );
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       TalkerService.error('Error refreshing connected account: $e');
       rethrow;
     }
@@ -730,7 +731,7 @@ class PaymentRepository {
       if (!doc.exists) return null;
 
       return doc.data();
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       TalkerService.error('Error getting connected account: $e');
       rethrow;
     }
@@ -760,7 +761,7 @@ class PaymentRepository {
       TalkerService.info(
         'Connected account server refresh requested: $driverId',
       );
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       TalkerService.error('Error refreshing connected account status: $e');
       rethrow;
     }
@@ -800,7 +801,7 @@ class PaymentRepository {
       final doc = await _payoutsCollection.doc(payoutId).get();
       if (!doc.exists) return null;
       return doc.data();
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       TalkerService.error('Error getting payout: $e');
       rethrow;
     }
@@ -842,7 +843,7 @@ class PaymentRepository {
         account: account,
         onboardingUrl: result['onboardingUrl'] as String?,
       );
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       TalkerService.error('Error creating connected account: $e');
       rethrow;
     }

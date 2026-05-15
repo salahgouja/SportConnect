@@ -15,6 +15,7 @@ import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/core/utils/user_facing_error.dart';
 import 'package:sport_connect/core/widgets/address_autocomplete_field.dart';
 import 'package:sport_connect/core/widgets/dob_picker.dart';
@@ -621,45 +622,48 @@ class _DriverOnboardingScreenState
             ),
           ],
         ),
-        body: SafeArea(
-          top: false,
-          child: Column(
-            children: [
-              _buildProgressIndicator(
-                vmState,
-                skipProfileStep: skipProfileStep,
-                effectiveStep: effectiveStep,
-              ),
-              Expanded(
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 300),
-                  transitionBuilder: (child, animation) => FadeTransition(
-                    opacity: animation,
-                    child: SlideTransition(
-                      position:
-                          Tween<Offset>(
-                            begin: const Offset(0.04, 0),
-                            end: Offset.zero,
-                          ).animate(
-                            CurvedAnimation(
-                              parent: animation,
-                              curve: Curves.easeOut,
+        body: MaxWidthContainer(
+          maxWidth: kMaxWidthForm,
+          child: SafeArea(
+            top: false,
+            child: Column(
+              children: [
+                _buildProgressIndicator(
+                  vmState,
+                  skipProfileStep: skipProfileStep,
+                  effectiveStep: effectiveStep,
+                ),
+                Expanded(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    transitionBuilder: (child, animation) => FadeTransition(
+                      opacity: animation,
+                      child: SlideTransition(
+                        position:
+                            Tween<Offset>(
+                              begin: const Offset(0.04, 0),
+                              end: Offset.zero,
+                            ).animate(
+                              CurvedAnimation(
+                                parent: animation,
+                                curve: Curves.easeOut,
+                              ),
                             ),
-                          ),
-                      child: child,
+                        child: child,
+                      ),
+                    ),
+                    child: KeyedSubtree(
+                      key: ValueKey(effectiveStep),
+                      child: switch (effectiveStep) {
+                        0 => _buildProfileStep(vmState, currentUser),
+                        1 => _buildVehicleStep(vmState),
+                        _ => _buildStripeStep(vmState),
+                      },
                     ),
                   ),
-                  child: KeyedSubtree(
-                    key: ValueKey(effectiveStep),
-                    child: switch (effectiveStep) {
-                      0 => _buildProfileStep(vmState, currentUser),
-                      1 => _buildVehicleStep(vmState),
-                      _ => _buildStripeStep(vmState),
-                    },
-                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -705,7 +709,7 @@ class _DriverOnboardingScreenState
           ];
 
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+      padding: adaptiveScreenPadding(context).copyWith(bottom: 0),
       child: Column(
         children: [
           Row(

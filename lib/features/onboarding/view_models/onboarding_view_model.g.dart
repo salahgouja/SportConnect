@@ -45,7 +45,7 @@ final class OnboardingViewModelProvider
 }
 
 String _$onboardingViewModelHash() =>
-    r'38276ad80c091e0a788b8ef175d193eae48cbecb';
+    r'6a6bf112ec4efec497ef97be9a5a42674497774c';
 
 /// ViewModel for the onboarding screen
 

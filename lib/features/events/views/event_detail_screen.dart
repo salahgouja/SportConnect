@@ -17,6 +17,7 @@ import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/core/widgets/map_location_picker.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
@@ -158,6 +159,37 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
     final isOwner = _isCreator(event, userId);
     final isJoined = _isParticipant(event, userId);
 
+    return ResponsiveLayoutBuilder(
+      phone: (context) => _buildSingleColumnBody(
+        event,
+        userId,
+        detailState,
+        isPremiumSubscriber,
+        isDriver,
+        isOwner,
+        isJoined,
+      ),
+      tablet: (context) => _buildTabletBody(
+        event,
+        userId,
+        detailState,
+        isPremiumSubscriber,
+        isDriver,
+        isOwner,
+        isJoined,
+      ),
+    );
+  }
+
+  Widget _buildSingleColumnBody(
+    EventModel event,
+    String userId,
+    EventDetailState detailState,
+    bool isPremiumSubscriber,
+    bool isDriver,
+    bool isOwner,
+    bool isJoined,
+  ) {
     return CustomScrollView(
       physics: const BouncingScrollPhysics(),
       slivers: [
@@ -185,7 +217,9 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                   icon: Icons.calendar_today_rounded,
                   label: _dateFormatter.format(event.startsAt),
                   sublabel: event.endsAt != null
-                      ? 'Until ${_dateFormatter.format(event.endsAt!)}'
+                      ? AppLocalizations.of(
+                          context,
+                        ).eventUntilDate(_dateFormatter.format(event.endsAt!))
                       : null,
                 ).animate().fadeIn(delay: 100.ms, duration: 350.ms),
 
@@ -264,7 +298,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                       pathParameters: {'id': event.id},
                     ),
                     child: Text(
-                      'View all attendees →',
+                      AppLocalizations.of(context).view_all_attendees,
                       style: TextStyle(
                         fontSize: 12.sp,
                         color: AppColors.primary,
@@ -438,6 +472,145 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
 
                 // Bottom safe-area padding
                 SizedBox(height: MediaQuery.paddingOf(context).bottom + 32.h),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ------------------------------------------------------------------
+  // Tablet body — two-column: event info left, map/attendees right
+  // ------------------------------------------------------------------
+  Widget _buildTabletBody(
+    EventModel event,
+    String userId,
+    EventDetailState detailState,
+    bool isPremiumSubscriber,
+    bool isDriver,
+    bool isOwner,
+    bool isJoined,
+  ) {
+    final screenPad = adaptiveScreenPadding(context);
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Left column — event info (60%)
+        Expanded(
+          flex: 3,
+          child: _buildSingleColumnBody(
+            event,
+            userId,
+            detailState,
+            isPremiumSubscriber,
+            isDriver,
+            isOwner,
+            isJoined,
+          ),
+        ),
+        // Right column — location & attendees (40%)
+        Expanded(
+          flex: 2,
+          child: Container(
+            margin: EdgeInsets.only(
+              top: MediaQuery.paddingOf(context).top + 16.h,
+              right: screenPad.right,
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: ListView(
+              padding: EdgeInsets.all(AppSpacing.lg),
+              children: [
+                // Location section
+                if (event.location.address.isNotEmpty) ...[
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.location_on_rounded,
+                        color: AppColors.primary,
+                        size: 20.sp,
+                      ),
+                      SizedBox(width: 8.w),
+                      Expanded(
+                        child: Text(
+                          AppLocalizations.of(context).eventLocationTitle,
+                          style: TextStyle(
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 8.h),
+                  Container(
+                    padding: EdgeInsets.all(AppSpacing.md),
+                    decoration: BoxDecoration(
+                      color: AppColors.primarySurface,
+                      borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.place_rounded,
+                          color: AppColors.primary,
+                          size: 18.sp,
+                        ),
+                        SizedBox(width: 8.w),
+                        Expanded(
+                          child: Text(
+                            event.location.address,
+                            style: TextStyle(
+                              fontSize: 13.sp,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 16.h),
+                ],
+                // Attendees section
+                if (event.participantIds.isNotEmpty) ...[
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.people_rounded,
+                        color: AppColors.primary,
+                        size: 20.sp,
+                      ),
+                      SizedBox(width: 8.w),
+                      Text(
+                        AppLocalizations.of(context).eventParticipantsCount(
+                          event.participantIds.length,
+                        ),
+                        style: TextStyle(
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 8.h),
+                  GestureDetector(
+                    onTap: () => context.pushNamed(
+                      AppRoutes.eventAttendees.name,
+                      pathParameters: {'id': event.id},
+                    ),
+                    child: _ParticipantAvatars(
+                      participantIds: event.participantIds,
+                    ).animate().fadeIn(delay: 200.ms, duration: 350.ms),
+                  ),
+                ],
+                SizedBox(height: 24.h),
               ],
             ),
           ),
@@ -873,7 +1046,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
           );
         }
       }
-    } on Exception catch (e, st) {
+    } on Exception {
       if (mounted) {
         AdaptiveSnackBar.show(
           context,
@@ -982,7 +1155,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
           if (mounted) context.pop();
         });
       }
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       if (mounted) {
         AdaptiveSnackBar.show(
           context,
@@ -1214,7 +1387,7 @@ class _OrganizerRow extends ConsumerWidget {
             radius: 18.r,
             backgroundColor: AppColors.primarySurface,
             backgroundImage: organizer?.photoUrl != null
-                ? NetworkImage(organizer!.photoUrl!)
+                ? CachedNetworkImageProvider(organizer!.photoUrl!)
                 : null,
             child: organizer?.photoUrl == null
                 ? Icon(
@@ -1343,7 +1516,9 @@ class _ParticipantAvatar extends ConsumerWidget {
       child: CircleAvatar(
         radius: 18.r,
         backgroundColor: AppColors.primarySurface,
-        backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
+        backgroundImage: photoUrl != null
+            ? CachedNetworkImageProvider(photoUrl)
+            : null,
         child: photoUrl == null
             ? Icon(
                 Icons.person_rounded,
@@ -1973,7 +2148,7 @@ class _EventChatPremiumLockedCard extends StatelessWidget {
               SizedBox(width: 8.w),
               Expanded(
                 child: Text(
-                  'Premium event chat',
+                  AppLocalizations.of(context).premium_event_chat,
                   style: TextStyle(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w700,
@@ -1985,7 +2160,9 @@ class _EventChatPremiumLockedCard extends StatelessWidget {
           ),
           SizedBox(height: 8.h),
           Text(
-            'Subscribe to Premium to join attendee group chats for events.',
+            AppLocalizations.of(
+              context,
+            ).subscribe_to_premium_to_join_attendee_group_chats_for_events,
             style: TextStyle(
               fontSize: 12.sp,
               color: AppColors.textSecondary,
@@ -1994,7 +2171,7 @@ class _EventChatPremiumLockedCard extends StatelessWidget {
           ),
           SizedBox(height: 12.h),
           PremiumButton(
-            text: 'Upgrade to Premium',
+            text: AppLocalizations.of(context).upgrade_to_premium,
             icon: Icons.workspace_premium_rounded,
             style: PremiumButtonStyle.ghost,
             size: PremiumButtonSize.small,

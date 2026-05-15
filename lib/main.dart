@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
+import 'package:device_preview/device_preview.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
@@ -9,6 +10,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:responsive_framework/responsive_framework.dart';
 import 'package:riverpod_devtools_tracker/riverpod_devtools_tracker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 // Config & Services
@@ -151,7 +153,9 @@ void _runApp(SharedPreferences prefs) {
           ),
         ],
       ],
-      child: const SportConnectApp(),
+      child: DevicePreview(
+        builder: (context) => const SportConnectApp(), // Wrap your app
+      ),
     ),
   );
 }
@@ -272,39 +276,47 @@ class _SportConnectAppState extends ConsumerState<SportConnectApp> {
       minTextAdapt: true,
       splitScreenMode: true,
       builder: (context, child) {
-        return AdaptiveApp.router(
-          onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
-          locale: locale,
-          localizationsDelegates: const [
-            AppLocalizations.delegate,
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
+        return ResponsiveBreakpoints.builder(
+          child: AdaptiveApp.router(
+            onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
+            locale: locale,
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: AppLocalizations.supportedLocales,
+            themeMode: ThemeMode.light,
+            materialLightTheme: AppMaterialTheme.lightTheme,
+            materialDarkTheme: AppMaterialTheme.lightTheme,
+            cupertinoLightTheme: AppCupertinoTheme.lightTheme,
+            cupertinoDarkTheme: AppCupertinoTheme.lightTheme,
+            routerConfig: router,
+            builder: (context, child) {
+              final appChild = child ?? const SizedBox.shrink();
+
+              var wrappedChild = appChild;
+
+              if (_isFirebaseInitialized && _showUpgradeAlert) {
+                wrappedChild = UpgradeAlert(
+                  navigatorKey: rootNavigatorKey,
+                  dialogStyle: UpgradeDialogStyle.cupertino,
+                  showIgnore: false,
+                  showReleaseNotes: false,
+                  child: appChild,
+                );
+              }
+
+              return _DismissKeyboardOnTap(child: wrappedChild);
+            },
+          ),
+          breakpoints: [
+            const Breakpoint(start: 0, end: 600, name: MOBILE),
+            const Breakpoint(start: 601, end: 900, name: TABLET),
+            const Breakpoint(start: 901, end: 1200, name: DESKTOP),
+            const Breakpoint(start: 1201, end: double.infinity, name: '4K'),
           ],
-          supportedLocales: AppLocalizations.supportedLocales,
-          themeMode: ThemeMode.light,
-          materialLightTheme: AppMaterialTheme.lightTheme,
-          materialDarkTheme: AppMaterialTheme.lightTheme,
-          cupertinoLightTheme: AppCupertinoTheme.lightTheme,
-          cupertinoDarkTheme: AppCupertinoTheme.lightTheme,
-          routerConfig: router,
-          builder: (context, child) {
-            final appChild = child ?? const SizedBox.shrink();
-
-            var wrappedChild = appChild;
-
-            if (_isFirebaseInitialized && _showUpgradeAlert) {
-              wrappedChild = UpgradeAlert(
-                navigatorKey: rootNavigatorKey,
-                dialogStyle: UpgradeDialogStyle.cupertino,
-                showIgnore: false,
-                showReleaseNotes: false,
-                child: appChild,
-              );
-            }
-
-            return _DismissKeyboardOnTap(child: wrappedChild);
-          },
         );
       },
     );

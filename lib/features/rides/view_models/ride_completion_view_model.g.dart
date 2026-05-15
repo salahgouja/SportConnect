@@ -61,7 +61,7 @@ final class RideCompletionUiViewModelProvider
 }
 
 String _$rideCompletionUiViewModelHash() =>
-    r'62019d584fafa17129dc7df54391458d36018256';
+    r'b330ecbb820487f0e2f350c626f20e86ba0a0d25';
 
 final class RideCompletionUiViewModelFamily extends $Family
     with

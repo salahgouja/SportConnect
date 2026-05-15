@@ -11,6 +11,7 @@ import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/core/widgets/premium_text_field.dart';
 import 'package:sport_connect/core/widgets/skeleton_loader.dart';
@@ -81,34 +82,39 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return AdaptiveScaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildHeader(),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
-              child: PremiumSearchField(
-                hint: l10n.searchChatsOrPeople,
-                onChanged: (value) => ref
-                    .read(chatListUiViewModelProvider.notifier)
-                    .setSearchQuery(value),
+      body: MaxWidthContainer(
+        maxWidth: kMaxWidthForm,
+        child: SafeArea(
+          child: Column(
+            children: [
+              _buildHeader(),
+              Padding(
+                padding: adaptiveScreenPadding(
+                  context,
+                ).copyWith(bottom: 12.h, top: 12.h),
+                child: PremiumSearchField(
+                  hint: l10n.searchChatsOrPeople,
+                  onChanged: (value) => ref
+                      .read(chatListUiViewModelProvider.notifier)
+                      .setSearchQuery(value),
+                ),
               ),
-            ),
-            // FIX: searchQuery no longer passed as param — all tabs read from
-            // provider internally, making them consistent with _buildDirectChats.
-            Expanded(
-              child: AdaptiveTabBarView(
-                tabs: [l10n.direct, l10n.groups, l10n.rides],
-                selectedColor: Colors.white,
-                backgroundColor: AppColors.primary,
-                children: [
-                  _buildDirectChats(),
-                  _buildGroupChats(),
-                  _buildRideChats(),
-                ],
+              // FIX: searchQuery no longer passed as param — all tabs read from
+              // provider internally, making them consistent with _buildDirectChats.
+              Expanded(
+                child: AdaptiveTabBarView(
+                  tabs: [l10n.direct, l10n.groups, l10n.rides],
+                  selectedColor: Colors.white,
+                  backgroundColor: AppColors.primary,
+                  children: [
+                    _buildDirectChats(),
+                    _buildGroupChats(),
+                    _buildRideChats(),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -925,7 +931,9 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
         );
       },
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
+        padding: adaptiveScreenPadding(
+          context,
+        ).copyWith(bottom: 12.h, top: 12.h),
         child: Row(
           children: [
             // FIX: Removed unnecessary single-child Stack wrapper.

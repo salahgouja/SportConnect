@@ -13,6 +13,7 @@ import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
@@ -85,7 +86,7 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
 
     final picked = await _imagePicker.pickImage(
       source: source,
-      maxWidth: 1920,
+      maxWidth: double.infinity,
       maxHeight: 1920,
       imageQuality: 80,
     );
@@ -143,12 +144,15 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
           onPressed: () => context.pop(),
         ),
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.symmetric(horizontal: 24.w),
-          child: formState.isSubmitted
-              ? _buildSuccessState()
-              : _buildFormState(formState),
+      body: MaxWidthContainer(
+        maxWidth: kMaxWidthFormNarrow,
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: adaptiveScreenPadding(context),
+            child: formState.isSubmitted
+                ? _buildSuccessState()
+                : _buildFormState(formState),
+          ),
         ),
       ),
     );

@@ -95,7 +95,7 @@ class RideCompletionUiViewModel extends _$RideCompletionUiViewModel {
         osrmRoutePoints: routeInfo?.coordinates,
         isLoadingOsrmRoute: false,
       );
-    } on Exception catch (e, st) {
+    } on Exception {
       if (!ref.mounted) return;
       state = state.copyWith(isLoadingOsrmRoute: false);
     }
@@ -156,7 +156,7 @@ class RideCompletionUiViewModel extends _$RideCompletionUiViewModel {
       );
       if (!ref.mounted) return;
       state = state.copyWith(isGeneratingPdf: false);
-    } on Exception catch (e, st) {
+    } on Exception {
       try {
         final driverProfile = await ref.read(
           userProfileProvider(ride.driverId).future,
@@ -186,7 +186,7 @@ $rideIdLabel: ${ride.id}'''
         await SharePlus.instance.share(ShareParams(text: receipt));
         if (!ref.mounted) return;
         state = state.copyWith(isGeneratingPdf: false);
-      } on Exception catch (e, st) {
+      } on Exception catch (e) {
         if (!ref.mounted) return;
         state = state.copyWith(
           isGeneratingPdf: false,

@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/features/legal/view_models/legal_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 
 enum LegalDocumentType { terms, privacy }
 
@@ -51,7 +52,9 @@ class LegalScreen extends ConsumerWidget {
           ),
           title: title,
         ),
-        body: Stack(
+        body: MaxWidthContainer(
+          maxWidth: kMaxWidthWide,
+          child: Stack(
           children: [
             InAppWebView(
               initialData: InAppWebViewInitialData(
@@ -106,6 +109,7 @@ class LegalScreen extends ConsumerWidget {
               ),
           ],
         ),
+      ),
       ),
     );
   }

@@ -13,6 +13,7 @@ import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
 import 'package:sport_connect/core/theme/platform_adaptive.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/core/widgets/skeleton_loader.dart';
@@ -48,19 +49,25 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen> {
       appBar: AdaptiveAppBar(
         title: AppLocalizations.of(context).rideRequests,
       ),
-      body: AdaptiveTabBarView(
-        tabs: [
-          if (pendingCount > 0) '${AppLocalizations.of(context).pending} ($pendingCount)' else AppLocalizations.of(context).pending,
-          AppLocalizations.of(context).accepted,
-          AppLocalizations.of(context).declined,
-        ],
-        selectedColor: Colors.white,
-        backgroundColor: AppColors.primary,
-        children: [
-          _buildPendingBookings(),
-          _buildAcceptedBookings(),
-          _buildDeclinedBookings(),
-        ],
+      body: MaxWidthContainer(
+        maxWidth: kMaxWidthForm,
+        child: AdaptiveTabBarView(
+          tabs: [
+            if (pendingCount > 0)
+              '${AppLocalizations.of(context).pending} ($pendingCount)'
+            else
+              AppLocalizations.of(context).pending,
+            AppLocalizations.of(context).accepted,
+            AppLocalizations.of(context).declined,
+          ],
+          selectedColor: Colors.white,
+          backgroundColor: AppColors.primary,
+          children: [
+            _buildPendingBookings(),
+            _buildAcceptedBookings(),
+            _buildDeclinedBookings(),
+          ],
+        ),
       ),
     );
   }
@@ -183,8 +190,7 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen> {
           },
         );
       },
-      loading: () =>
-          const SkeletonLoader(),
+      loading: () => const SkeletonLoader(),
       error: (_, _) => Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -259,8 +265,7 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen> {
           },
         );
       },
-      loading: () =>
-          const SkeletonLoader(),
+      loading: () => const SkeletonLoader(),
       error: (_, _) => Center(
         child: Icon(Icons.error_outline, size: 64.sp, color: AppColors.error),
       ),
@@ -309,8 +314,7 @@ class _DriverRequestsScreenState extends ConsumerState<DriverRequestsScreen> {
               _DeclinedBookingCard(booking: bookings[index]),
         );
       },
-      loading: () =>
-          const SkeletonLoader(),
+      loading: () => const SkeletonLoader(),
       error: (_, _) => Center(
         child: Icon(Icons.error_outline, size: 64.sp, color: AppColors.error),
       ),

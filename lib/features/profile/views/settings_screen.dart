@@ -3,8 +3,7 @@ import 'dart:async';
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_animate/flutter_animate.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -15,6 +14,7 @@ import 'package:sport_connect/core/providers/admin_access_provider.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/platform_adaptive.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/features/auth/models/auth_exception.dart';
@@ -62,216 +62,228 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
         title: l10n.settingsTitle,
       ),
-      body: ListView(
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-        children: [
-          SizedBox(height: 32.h),
-          _buildSectionHeader(
-            l10n.premium,
-            Icons.workspace_premium_rounded,
-            color: AppColors.warning,
-          ),
-          SizedBox(height: 12.h),
-          premiumMeta.when(
-            loading: () => const SizedBox.shrink(),
-            error: (_, _) => const SizedBox.shrink(),
-            data: (meta) => meta.isPremium
-                ? _buildActivePremiumCard(l10n, meta)
-                : _buildCard([
-                    _buildNavTile(
-                      title: l10n.premium,
-                      subtitle: l10n.unlock_smart_matching_priority_rides_more,
-                      icon: Icons.workspace_premium_rounded,
-                      onTap: () =>
-                          context.push(AppRoutes.premiumSubscribe.path),
-                      color: AppColors.warning,
-                    ),
-                  ]),
-          ),
-
-          SizedBox(height: 32.h),
-          _buildSectionHeader(l10n.settingsAppearance, Icons.palette_outlined),
-          SizedBox(height: 12.h),
-          _buildCard([
-            _buildLanguageTile(
-              l10n: l10n,
-              currentLocale: currentLocale,
-              onChanged: (code) async {
-                if (code == null) return;
-
-                await settingsViewModel.setLanguage(code);
-              },
-            ),
-          ]),
-
-          SizedBox(height: 32.h),
-          _buildSectionHeader(
-            l10n.settingsPrivacySafety,
-            Icons.shield_outlined,
-          ),
-          SizedBox(height: 12.h),
-          _buildCard([
-            _buildNavTile(
-              title: l10n.settingsBlockedUsers,
-              subtitle: l10n.settingsBlockedUsersDesc,
-              icon: Icons.block_outlined,
-              onTap: _openBlockedUsersScreen,
-            ),
-            _buildDivider(),
-            _buildNavTile(
-              title: l10n.data_processing_notice,
-              subtitle: l10n.how_we_collect_use_and_protect_your_data,
-              icon: Icons.info_outline_rounded,
-              onTap: _showDataProcessingNotice,
-            ),
-            _buildDivider(),
-            _buildNavTile(
-              title: l10n.withdraw_consent,
-              subtitle: l10n.manage_or_withdraw_your_data_consent,
-              icon: Icons.remove_circle_outline,
-              onTap: _showWithdrawConsentDialog,
-            ),
-          ]),
-
-          SizedBox(height: 32.h),
-          _buildSectionHeader(
-            l10n.settingsAccount,
-            Icons.account_circle_outlined,
-          ),
-          SizedBox(height: 12.h),
-          _buildCard([
-            _buildNavTile(
-              title: l10n.settingsEditProfile,
-              subtitle: l10n.settingsEditProfileDesc,
-              icon: Icons.edit_outlined,
-              onTap: () => context.push(AppRoutes.editProfile.path),
-            ),
-            if (isDriver) ...[
-              _buildDivider(),
-              _buildNavTile(
-                title: l10n.vehicles,
-                subtitle: l10n.manage_your_vehicles,
-                icon: Icons.directions_car_outlined,
-                onTap: () => context.push(AppRoutes.driverVehicles.path),
-              ),
-            ],
-            _buildDivider(),
-            _buildNavTile(
-              title: l10n.settingsPaymentMethods,
-              subtitle: l10n.settingsPaymentMethodsDesc,
-              icon: Icons.payment_outlined,
-              onTap: () => context.push(AppRoutes.managePaymentMethods.path),
-            ),
-            _buildDivider(),
-            _buildNavTile(
-              title: l10n.paymentHistory,
-              subtitle: l10n.view_your_past_rides_and_charges,
-              icon: Icons.receipt_long_rounded,
-              onTap: () => context.push(AppRoutes.paymentHistory.path),
-            ),
-            if (hasAdminAccess) ...[
-              _buildDivider(),
-              _buildNavTile(
-                title: 'Admin Dashboard',
-                subtitle: 'Review refunds, disputes, and support tickets',
-                icon: Icons.admin_panel_settings_outlined,
-                onTap: () => context.push(AppRoutes.adminDashboard.path),
-              ),
-            ],
-            _buildDivider(),
-            _buildNavTile(
-              title: l10n.changePassword,
-              subtitle: l10n.update_your_account_password,
-              icon: Icons.lock_outline_rounded,
-              onTap: () => context.push(AppRoutes.changePassword.path),
-            ),
-          ]),
-
-          SizedBox(height: 32.h),
-          _buildSectionHeader(l10n.settingsSupport, Icons.help_outline_rounded),
-          SizedBox(height: 12.h),
-          _buildCard([
-            _buildNavTile(
-              title: l10n.settingsHelpCenter,
-              subtitle: l10n.settingsHelpCenterDesc,
-              icon: Icons.help_center_outlined,
-              onTap: () => context.push(AppRoutes.helpCenter.path),
-            ),
-            _buildDivider(),
-            _buildNavTile(
-              title: l10n.contactSupport,
-              subtitle: l10n.get_help_from_our_team,
-              icon: Icons.support_agent_outlined,
-              onTap: () => context.push(AppRoutes.contactSupport.path),
-            ),
-            _buildDivider(),
-            _buildNavTile(
-              title: l10n.settingsReportProblem,
-              subtitle: l10n.settingsReportProblemDesc,
-              icon: Icons.bug_report_outlined,
-              onTap: () => context.push(AppRoutes.reportIssue.path),
-            ),
-            _buildDivider(),
-            _buildNavTile(
-              title: l10n.settingsTermsConditions,
-              icon: Icons.description_outlined,
-              onTap: () => context.push(AppRoutes.terms.path),
-            ),
-            _buildDivider(),
-            _buildNavTile(
-              title: l10n.settingsPrivacyPolicy,
-              icon: Icons.privacy_tip_outlined,
-              onTap: () => context.push(AppRoutes.privacy.path),
-            ),
-            _buildDivider(),
-            _buildNavTile(
-              title: l10n.settingsAbout,
-              subtitle: l10n.settingsAboutDesc,
-              icon: Icons.article_outlined,
-              onTap: () => context.push(AppRoutes.about.path),
-            ),
-          ]),
-
-          SizedBox(height: 32.h),
-          _buildSectionHeader(
-            l10n.accountActions,
-            Icons.warning_amber_rounded,
-            color: AppColors.error,
-          ),
-          SizedBox(height: 12.h),
-          _buildDangerCard([
-            _buildNavTile(
-              title: l10n.signOut,
-              subtitle: l10n.logOutOfYourAccount,
-              icon: Icons.logout_rounded,
-              onTap: _showLogoutDialog,
+      body: MaxWidthContainer(
+        maxWidth: kMaxWidthContent,
+        child: ListView(
+          padding: adaptiveScreenPadding(
+            context,
+          ).copyWith(top: 8.h, bottom: 32.h),
+          children: [
+            SizedBox(height: 32.h),
+            _buildSectionHeader(
+              l10n.premium,
+              Icons.workspace_premium_rounded,
               color: AppColors.warning,
             ),
-            Padding(
-              padding: EdgeInsets.only(top: 8.h),
-              child: Container(
-                decoration: BoxDecoration(
-                  border: Border(
-                    top: BorderSide(
-                      color: AppColors.error.withValues(alpha: 0.25),
+            SizedBox(height: 12.h),
+            premiumMeta.when(
+              loading: () => const SizedBox.shrink(),
+              error: (_, _) => const SizedBox.shrink(),
+              data: (meta) => meta.isPremium
+                  ? _buildActivePremiumCard(l10n, meta)
+                  : _buildCard([
+                      _buildNavTile(
+                        title: l10n.premium,
+                        subtitle:
+                            l10n.unlock_smart_matching_priority_rides_more,
+                        icon: Icons.workspace_premium_rounded,
+                        onTap: () =>
+                            context.push(AppRoutes.premiumSubscribe.path),
+                        color: AppColors.warning,
+                      ),
+                    ]),
+            ),
+
+            SizedBox(height: 32.h),
+            _buildSectionHeader(
+              l10n.settingsAppearance,
+              Icons.palette_outlined,
+            ),
+            SizedBox(height: 12.h),
+            _buildCard([
+              _buildLanguageTile(
+                l10n: l10n,
+                currentLocale: currentLocale,
+                onChanged: (code) async {
+                  if (code == null) return;
+
+                  await settingsViewModel.setLanguage(code);
+                },
+              ),
+            ]),
+
+            SizedBox(height: 32.h),
+            _buildSectionHeader(
+              l10n.settingsPrivacySafety,
+              Icons.shield_outlined,
+            ),
+            SizedBox(height: 12.h),
+            _buildCard([
+              _buildNavTile(
+                title: l10n.settingsBlockedUsers,
+                subtitle: l10n.settingsBlockedUsersDesc,
+                icon: Icons.block_outlined,
+                onTap: _openBlockedUsersScreen,
+              ),
+              _buildDivider(),
+              _buildNavTile(
+                title: l10n.data_processing_notice,
+                subtitle: l10n.how_we_collect_use_and_protect_your_data,
+                icon: Icons.info_outline_rounded,
+                onTap: _showDataProcessingNotice,
+              ),
+              _buildDivider(),
+              _buildNavTile(
+                title: l10n.withdraw_consent,
+                subtitle: l10n.manage_or_withdraw_your_data_consent,
+                icon: Icons.remove_circle_outline,
+                onTap: _showWithdrawConsentDialog,
+              ),
+            ]),
+
+            SizedBox(height: 32.h),
+            _buildSectionHeader(
+              l10n.settingsAccount,
+              Icons.account_circle_outlined,
+            ),
+            SizedBox(height: 12.h),
+            _buildCard([
+              _buildNavTile(
+                title: l10n.settingsEditProfile,
+                subtitle: l10n.settingsEditProfileDesc,
+                icon: Icons.edit_outlined,
+                onTap: () => context.push(AppRoutes.editProfile.path),
+              ),
+              if (isDriver) ...[
+                _buildDivider(),
+                _buildNavTile(
+                  title: l10n.vehicles,
+                  subtitle: l10n.manage_your_vehicles,
+                  icon: Icons.directions_car_outlined,
+                  onTap: () => context.push(AppRoutes.driverVehicles.path),
+                ),
+              ],
+              _buildDivider(),
+              _buildNavTile(
+                title: l10n.settingsPaymentMethods,
+                subtitle: l10n.settingsPaymentMethodsDesc,
+                icon: Icons.payment_outlined,
+                onTap: () => context.push(AppRoutes.managePaymentMethods.path),
+              ),
+              _buildDivider(),
+              _buildNavTile(
+                title: l10n.paymentHistory,
+                subtitle: l10n.view_your_past_rides_and_charges,
+                icon: Icons.receipt_long_rounded,
+                onTap: () => context.push(AppRoutes.paymentHistory.path),
+              ),
+              if (hasAdminAccess) ...[
+                _buildDivider(),
+                _buildNavTile(
+                  title: l10n.adminDashboard,
+                  subtitle: l10n.adminDashboardSettingsSubtitle,
+                  icon: Icons.admin_panel_settings_outlined,
+                  onTap: () => context.push(AppRoutes.adminDashboard.path),
+                ),
+              ],
+              _buildDivider(),
+              _buildNavTile(
+                title: l10n.changePassword,
+                subtitle: l10n.update_your_account_password,
+                icon: Icons.lock_outline_rounded,
+                onTap: () => context.push(AppRoutes.changePassword.path),
+              ),
+            ]),
+
+            SizedBox(height: 32.h),
+            _buildSectionHeader(
+              l10n.settingsSupport,
+              Icons.help_outline_rounded,
+            ),
+            SizedBox(height: 12.h),
+            _buildCard([
+              _buildNavTile(
+                title: l10n.settingsHelpCenter,
+                subtitle: l10n.settingsHelpCenterDesc,
+                icon: Icons.help_center_outlined,
+                onTap: () => context.push(AppRoutes.helpCenter.path),
+              ),
+              _buildDivider(),
+              _buildNavTile(
+                title: l10n.contactSupport,
+                subtitle: l10n.get_help_from_our_team,
+                icon: Icons.support_agent_outlined,
+                onTap: () => context.push(AppRoutes.contactSupport.path),
+              ),
+              _buildDivider(),
+              _buildNavTile(
+                title: l10n.settingsReportProblem,
+                subtitle: l10n.settingsReportProblemDesc,
+                icon: Icons.bug_report_outlined,
+                onTap: () => context.push(AppRoutes.reportIssue.path),
+              ),
+              _buildDivider(),
+              _buildNavTile(
+                title: l10n.settingsTermsConditions,
+                icon: Icons.description_outlined,
+                onTap: () => context.push(AppRoutes.terms.path),
+              ),
+              _buildDivider(),
+              _buildNavTile(
+                title: l10n.settingsPrivacyPolicy,
+                icon: Icons.privacy_tip_outlined,
+                onTap: () => context.push(AppRoutes.privacy.path),
+              ),
+              _buildDivider(),
+              _buildNavTile(
+                title: l10n.settingsAbout,
+                subtitle: l10n.settingsAboutDesc,
+                icon: Icons.article_outlined,
+                onTap: () => context.push(AppRoutes.about.path),
+              ),
+            ]),
+
+            SizedBox(height: 32.h),
+            _buildSectionHeader(
+              l10n.accountActions,
+              Icons.warning_amber_rounded,
+              color: AppColors.error,
+            ),
+            SizedBox(height: 12.h),
+            _buildDangerCard([
+              _buildNavTile(
+                title: l10n.signOut,
+                subtitle: l10n.logOutOfYourAccount,
+                icon: Icons.logout_rounded,
+                onTap: _showLogoutDialog,
+                color: AppColors.warning,
+              ),
+              Padding(
+                padding: EdgeInsets.only(top: 8.h),
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border(
+                      top: BorderSide(
+                        color: AppColors.error.withValues(alpha: 0.25),
+                      ),
                     ),
                   ),
-                ),
-                child: _buildNavTile(
-                  title: l10n.settingsDeleteAccount,
-                  subtitle: l10n.permanentlyRemoveYourDriverProfile,
-                  icon: Icons.delete_forever_rounded,
-                  onTap: _showDeleteAccountDialog,
-                  color: AppColors.error,
+                  child: _buildNavTile(
+                    title: l10n.settingsDeleteAccount,
+                    subtitle: l10n.permanentlyRemoveYourDriverProfile,
+                    icon: Icons.delete_forever_rounded,
+                    onTap: _showDeleteAccountDialog,
+                    color: AppColors.error,
+                  ),
                 ),
               ),
-            ),
-          ]),
+            ]),
 
-          SizedBox(height: 48.h),
-          _buildFooter(l10n),
-          SizedBox(height: 32.h),
-        ],
+            SizedBox(height: 48.h),
+            _buildFooter(l10n),
+            SizedBox(height: 32.h),
+          ],
+        ),
       ),
     );
   }
@@ -596,7 +608,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     String description,
     IconData icon,
   ) {
-    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: EdgeInsets.only(bottom: 16.h),
       child: Row(
@@ -1262,9 +1273,10 @@ class _BlockedUsersScreenState extends ConsumerState<_BlockedUsersScreen> {
                                   if (user.photoUrl != null)
                                     CircleAvatar(
                                       radius: 20.r,
-                                      backgroundImage: NetworkImage(
-                                        user.photoUrl!,
-                                      ),
+                                      backgroundImage:
+                                          CachedNetworkImageProvider(
+                                            user.photoUrl!,
+                                          ),
                                     )
                                   else
                                     CircleAvatar(

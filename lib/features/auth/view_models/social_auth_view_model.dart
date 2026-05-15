@@ -48,7 +48,7 @@ class SocialAuthViewModel extends _$SocialAuthViewModel {
       await ref.read(authActionsViewModelProvider.notifier).signInWithGoogle();
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, completedProvider: 'google');
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, error: e);
     }
@@ -67,7 +67,7 @@ class SocialAuthViewModel extends _$SocialAuthViewModel {
       await ref.read(authActionsViewModelProvider.notifier).signInWithApple();
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, completedProvider: 'apple');
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, error: e);
     }

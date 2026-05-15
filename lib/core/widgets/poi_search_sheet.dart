@@ -33,14 +33,14 @@ class POISearchSheet extends ConsumerStatefulWidget {
     this.initialRadius = 2000, // 2km default
   });
   final LatLng currentLocation;
-  final Function(PointOfInterest poi) onPOISelected;
+  final void Function(PointOfInterest poi) onPOISelected;
   final double initialRadius;
 
   /// Show POI search bottom sheet
   static Future<void> show(
     BuildContext context, {
     required LatLng currentLocation,
-    required Function(PointOfInterest poi) onPOISelected,
+    required void Function(PointOfInterest poi) onPOISelected,
     double initialRadius = 2000,
   }) {
     return AppModalSheet.show<void>(
@@ -65,57 +65,6 @@ class _POISearchSheetState extends ConsumerState<POISearchSheet> {
   List<PointOfInterest> _results = [];
   bool _isLoading = false;
   double _searchRadius = 2000;
-
-  final List<_POICategory> _categories = [
-    const _POICategory(
-      type: POIType.gasStation,
-      label: 'Gas Stations',
-      icon: Icons.local_gas_station_rounded,
-      color: Color(0xFFFF6B6B),
-    ),
-    const _POICategory(
-      type: POIType.parking,
-      label: 'Parking',
-      icon: Icons.local_parking_rounded,
-      color: Color(0xFF4ECDC4),
-    ),
-    const _POICategory(
-      type: POIType.restaurant,
-      label: 'Restaurants',
-      icon: Icons.restaurant_rounded,
-      color: Color(0xFFFFBE0B),
-    ),
-    const _POICategory(
-      type: POIType.sportsCenter,
-      label: 'Sports',
-      icon: Icons.sports_soccer_rounded,
-      color: AppColors.primary,
-    ),
-    const _POICategory(
-      type: POIType.university,
-      label: 'Universities',
-      icon: Icons.school_rounded,
-      color: Color(0xFF9B59B6),
-    ),
-    const _POICategory(
-      type: POIType.hospital,
-      label: 'Hospitals',
-      icon: Icons.local_hospital_rounded,
-      color: Color(0xFFE74C3C),
-    ),
-    const _POICategory(
-      type: POIType.publicTransport,
-      label: 'Transport',
-      icon: Icons.directions_bus_rounded,
-      color: Color(0xFF3498DB),
-    ),
-    const _POICategory(
-      type: POIType.cafe,
-      label: 'Cafés',
-      icon: Icons.local_cafe_rounded,
-      color: Color(0xFF8B4513),
-    ),
-  ];
 
   @override
   void initState() {
@@ -153,23 +102,76 @@ class _POISearchSheetState extends ConsumerState<POISearchSheet> {
     }
   }
 
+  List<_POICategory> _buildCategories(AppLocalizations l10n) => [
+    _POICategory(
+      type: POIType.gasStation,
+      label: l10n.gas_stations,
+      icon: Icons.local_gas_station_rounded,
+      color: const Color(0xFFFF6B6B),
+    ),
+    _POICategory(
+      type: POIType.parking,
+      label: l10n.parking,
+      icon: Icons.local_parking_rounded,
+      color: const Color(0xFF4ECDC4),
+    ),
+    _POICategory(
+      type: POIType.restaurant,
+      label: l10n.restaurants,
+      icon: Icons.restaurant_rounded,
+      color: const Color(0xFFFFBE0B),
+    ),
+    _POICategory(
+      type: POIType.sportsCenter,
+      label: l10n.sports,
+      icon: Icons.sports_soccer_rounded,
+      color: AppColors.primary,
+    ),
+    _POICategory(
+      type: POIType.university,
+      label: l10n.universities,
+      icon: Icons.school_rounded,
+      color: const Color(0xFF9B59B6),
+    ),
+    _POICategory(
+      type: POIType.hospital,
+      label: l10n.hospitals,
+      icon: Icons.local_hospital_rounded,
+      color: const Color(0xFFE74C3C),
+    ),
+    _POICategory(
+      type: POIType.publicTransport,
+      label: l10n.transport,
+      icon: Icons.directions_bus_rounded,
+      color: const Color(0xFF3498DB),
+    ),
+    _POICategory(
+      type: POIType.cafe,
+      label: l10n.cafe,
+      icon: Icons.local_cafe_rounded,
+      color: const Color(0xFF8B4513),
+    ),
+  ];
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final categories = _buildCategories(l10n);
     return ColoredBox(
       color: AppColors.background,
       child: Column(
         children: [
-          _buildIntro(),
+          _buildIntro(l10n),
           _buildRadiusSlider(),
-          _buildCategories(),
+          _buildCategoryList(categories),
           const Divider(height: 1),
-          Expanded(child: _buildResults()),
+          Expanded(child: _buildResults(categories, l10n)),
         ],
       ),
     );
   }
 
-  Widget _buildIntro() {
+  Widget _buildIntro(AppLocalizations l10n) {
     return Padding(
       padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 8.h),
       child: Container(
@@ -207,7 +209,7 @@ class _POISearchSheetState extends ConsumerState<POISearchSheet> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Explore nearby stops',
+                    l10n.explore_nearby_stops,
                     style: TextStyle(
                       fontSize: 18.sp,
                       fontWeight: FontWeight.w700,
@@ -285,7 +287,7 @@ class _POISearchSheetState extends ConsumerState<POISearchSheet> {
               },
               onChangeEnd: (value) {
                 if (_selectedType != null) {
-                  _searchPOI(_selectedType!);
+                  unawaited(_searchPOI(_selectedType!));
                 }
               },
             ),
@@ -295,22 +297,22 @@ class _POISearchSheetState extends ConsumerState<POISearchSheet> {
     ).animate().fadeIn(delay: 100.ms, duration: 300.ms);
   }
 
-  Widget _buildCategories() {
+  Widget _buildCategoryList(List<_POICategory> categories) {
     return SizedBox(
       height: 100.h,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-        itemCount: _categories.length,
+        itemCount: categories.length,
         separatorBuilder: (_, _) => SizedBox(width: 12.w),
         itemBuilder: (context, index) {
-          final category = _categories[index];
+          final category = categories[index];
           final isSelected = _selectedType == category.type;
 
           return GestureDetector(
                 onTap: () {
                   unawaited(HapticFeedback.selectionClick());
-                  _searchPOI(category.type);
+                  unawaited(_searchPOI(category.type));
                 },
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
@@ -367,7 +369,10 @@ class _POISearchSheetState extends ConsumerState<POISearchSheet> {
     );
   }
 
-  Widget _buildResults() {
+  Widget _buildResults(
+    List<_POICategory> categories,
+    AppLocalizations l10n,
+  ) {
     if (_isLoading) {
       return ListView.separated(
         padding: EdgeInsets.all(16.w),
@@ -467,15 +472,20 @@ class _POISearchSheetState extends ConsumerState<POISearchSheet> {
       separatorBuilder: (_, _) => SizedBox(height: 12.h),
       itemBuilder: (context, index) {
         final poi = _results[index];
-        return _buildPOICard(poi, index);
+        return _buildPOICard(poi, index, categories, l10n);
       },
     );
   }
 
-  Widget _buildPOICard(PointOfInterest poi, int index) {
-    final category = _categories.firstWhere(
+  Widget _buildPOICard(
+    PointOfInterest poi,
+    int index,
+    List<_POICategory> categories,
+    AppLocalizations l10n,
+  ) {
+    final category = categories.firstWhere(
       (c) => c.type == _selectedType,
-      orElse: () => _categories.first,
+      orElse: () => categories.first,
     );
 
     // Calculate distance from current location
@@ -526,7 +536,7 @@ class _POISearchSheetState extends ConsumerState<POISearchSheet> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    poi.name ?? 'Unknown',
+                    poi.name ?? l10n.unknown,
                     style: TextStyle(
                       fontSize: 15.sp,
                       fontWeight: FontWeight.w600,

@@ -1,7 +1,5 @@
 import 'dart:async';
 
-
-
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -16,6 +14,7 @@ import 'package:sport_connect/core/animations/feedback_animations.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/core/widgets/app_map_tile_layer.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
@@ -69,6 +68,7 @@ class _RideBookingReviewScreenState
 
   Future<void> _confirmBooking(RideModel ride) async {
     final l10n = AppLocalizations.of(context);
+    final localeName = Localizations.localeOf(context).toLanguageTag();
     final user = ref.read(currentUserProvider).value;
     final uiState = ref.read(rideDetailUiViewModelProvider(widget.rideId));
 
@@ -109,7 +109,9 @@ class _RideBookingReviewScreenState
         rideInfo:
             '${_placeTitle(ride.origin.address, ride.origin.city)} → '
             '${_placeTitle(ride.destination.address, ride.destination.city)}',
-        dateTime: DateFormat('MMM d, HH:mm').format(ride.departureTime),
+        dateTime: DateFormat.MMMd(
+          localeName,
+        ).add_jm().format(ride.departureTime),
       );
 
       if (!mounted) return;
@@ -134,22 +136,30 @@ class _RideBookingReviewScreenState
     final rideAsync = ref
         .watch(rideDetailViewModelProvider(widget.rideId))
         .ride;
+    final maxWidth = context.screenWidth >= Breakpoints.medium
+        ? 1440.0
+        : kMaxWidthForm;
 
     return AdaptiveScaffold(
-      body: rideAsync.when(
-        loading: _buildLoadingState,
-        error: (error, _) => _buildErrorState(error.toString()),
-        data: (ride) {
-          if (ride == null) {
-            return _buildErrorState(AppLocalizations.of(context).rideNotFound);
-          }
+      body: MaxWidthContainer(
+        maxWidth: maxWidth,
+        child: rideAsync.when(
+          loading: _buildLoadingState,
+          error: (error, _) => _buildErrorState(error.toString()),
+          data: (ride) {
+            if (ride == null) {
+              return _buildErrorState(
+                AppLocalizations.of(context).rideNotFound,
+              );
+            }
 
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            _ensureRouteLoaded(ride);
-          });
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _ensureRouteLoaded(ride);
+            });
 
-          return _buildContent(ride);
-        },
+            return _buildContent(ride);
+          },
+        ),
       ),
     );
   }
@@ -241,7 +251,43 @@ class _RideBookingReviewScreenState
     final serviceFee = _serviceFee(fare);
     final total = fare + serviceFee;
     final isBooking = uiState.isBooking;
+    final useTabletLayout = context.screenWidth >= Breakpoints.medium;
 
+    if (useTabletLayout) {
+      return _buildTabletContent(
+        ride: ride,
+        selectedSeats: selectedSeats,
+        currencySymbol: currencySymbol,
+        pricePerSeat: pricePerSeat,
+        fare: fare,
+        serviceFee: serviceFee,
+        total: total,
+        isBooking: isBooking,
+      );
+    }
+
+    return _buildMobileContent(
+      ride: ride,
+      selectedSeats: selectedSeats,
+      currencySymbol: currencySymbol,
+      pricePerSeat: pricePerSeat,
+      fare: fare,
+      serviceFee: serviceFee,
+      total: total,
+      isBooking: isBooking,
+    );
+  }
+
+  Widget _buildMobileContent({
+    required RideModel ride,
+    required int selectedSeats,
+    required String currencySymbol,
+    required double pricePerSeat,
+    required double fare,
+    required double serviceFee,
+    required double total,
+    required bool isBooking,
+  }) {
     return ColoredBox(
       color: const Color(0xFFF8FAFC),
       child: SafeArea(
@@ -252,8 +298,10 @@ class _RideBookingReviewScreenState
               slivers: [
                 SliverToBoxAdapter(
                   child: _Header(
-                    title: 'Complete booking',
-                    subtitle: 'Review your ride before sending the request',
+                    title: AppLocalizations.of(context).complete_booking,
+                    subtitle: AppLocalizations.of(
+                      context,
+                    ).review_your_ride_before_sending_the_request,
                     onBack: () => context.pop(),
                   ),
                 ),
@@ -336,6 +384,124 @@ class _RideBookingReviewScreenState
       ),
     );
   }
+
+  Widget _buildTabletContent({
+    required RideModel ride,
+    required int selectedSeats,
+    required String currencySymbol,
+    required double pricePerSeat,
+    required double fare,
+    required double serviceFee,
+    required double total,
+    required bool isBooking,
+  }) {
+    return ColoredBox(
+      color: const Color(0xFFF8FAFC),
+      child: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(24.w, 16.h, 24.w, 24.h),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: CustomScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: _Header(
+                        title: AppLocalizations.of(context).complete_booking,
+                        subtitle: AppLocalizations.of(
+                          context,
+                        ).review_your_ride_before_sending_the_request,
+                        onBack: () => context.pop(),
+                      ),
+                    ),
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(8.w, 4.h, 8.w, 0),
+                        child: _BookingProgressHeader(),
+                      ),
+                    ),
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(8.w, 20.h, 8.w, 0),
+                        child: _RideSummaryHero(
+                          ride: ride,
+                          controller: _mapController,
+                        ),
+                      ),
+                    ),
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(8.w, 16.h, 8.w, 0),
+                        child: _LocationTimelineCard(ride: ride),
+                      ),
+                    ),
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(8.w, 16.h, 8.w, 24.h),
+                        child: const _TrustAndPolicyCard(),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(width: 24.w),
+              SizedBox(
+                width: responsiveValue<double>(
+                  context,
+                  compact: 360,
+                  medium: 380,
+                  expanded: 420,
+                  large: 440,
+                ),
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      _PassengerOptionsCard(
+                        ride: ride,
+                        selectedSeats: selectedSeats,
+                        onDecrease: selectedSeats <= 1
+                            ? null
+                            : () {
+                                unawaited(HapticFeedback.selectionClick());
+                                _uiNotifier.setSelectedSeats(selectedSeats - 1);
+                              },
+                        onIncrease: selectedSeats >= ride.remainingSeats
+                            ? null
+                            : () {
+                                unawaited(HapticFeedback.selectionClick());
+                                _uiNotifier.setSelectedSeats(selectedSeats + 1);
+                              },
+                      ),
+                      SizedBox(height: 16.h),
+                      _PriceBreakdownCard(
+                        currencySymbol: currencySymbol,
+                        selectedSeats: selectedSeats,
+                        pricePerSeat: pricePerSeat,
+                        fare: fare,
+                        serviceFee: serviceFee,
+                        total: total,
+                      ),
+                      SizedBox(height: 16.h),
+                      _TabletBookingSidebar(
+                        currencySymbol: currencySymbol,
+                        total: total,
+                        isLoading: isBooking,
+                        onPressed: isBooking
+                            ? null
+                            : () => _confirmBooking(ride),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _Header extends StatelessWidget {
@@ -402,9 +568,9 @@ class _BookingProgressHeader extends StatelessWidget {
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
       child: Row(
         children: [
-          const _ProgressStep(
+          _ProgressStep(
             number: '1',
-            label: 'Ride',
+            label: AppLocalizations.of(context).ride,
             isDone: true,
             isActive: false,
           ),
@@ -415,9 +581,9 @@ class _BookingProgressHeader extends StatelessWidget {
               color: AppColors.primary.withValues(alpha: 0.18),
             ),
           ),
-          const _ProgressStep(
+          _ProgressStep(
             number: '2',
-            label: 'Review',
+            label: AppLocalizations.of(context).review,
             isDone: false,
             isActive: true,
           ),
@@ -428,9 +594,9 @@ class _BookingProgressHeader extends StatelessWidget {
               color: AppColors.border,
             ),
           ),
-          const _ProgressStep(
+          _ProgressStep(
             number: '3',
-            label: 'Pending',
+            label: AppLocalizations.of(context).pending,
             isDone: false,
             isActive: false,
           ),
@@ -518,6 +684,8 @@ class _RideSummaryHero extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final uiState = ref.watch(rideDetailUiViewModelProvider(ride.id));
     final route = uiState.routeInfo;
+    final l10n = AppLocalizations.of(context);
+    final localeName = Localizations.localeOf(context).toLanguageTag();
 
     return _PremiumCard(
       padding: EdgeInsets.zero,
@@ -613,9 +781,9 @@ class _RideSummaryHero extends ConsumerWidget {
                         SizedBox(height: 8.h),
                         _HeroMetaPill(
                           icon: Icons.calendar_month_rounded,
-                          label: DateFormat(
-                            'EEE, MMM d • HH:mm',
-                          ).format(ride.departureTime),
+                          label: DateFormat.MMMEd(
+                            localeName,
+                          ).add_jm().format(ride.departureTime),
                         ),
                       ],
                     ),
@@ -625,7 +793,7 @@ class _RideSummaryHero extends ConsumerWidget {
                     bottom: 16.h,
                     child: _HeroMetaPill(
                       icon: Icons.event_seat_rounded,
-                      label: '${ride.remainingSeats} seats left',
+                      label: l10n.seatsLeftCount(ride.remainingSeats),
                     ),
                   ),
                 ],
@@ -646,7 +814,8 @@ class _RideSummaryHero extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          route?.formattedDistance ?? 'Route distance',
+                          route?.formattedDistance ??
+                              l10n.routeDistanceFallback,
                           style: TextStyle(
                             color: AppColors.textPrimary,
                             fontSize: 17.sp,
@@ -656,7 +825,9 @@ class _RideSummaryHero extends ConsumerWidget {
                         SizedBox(height: 3.h),
                         Text(
                           route?.formattedDuration ??
-                              '${ride.route.durationMinutes ?? 60} min estimated',
+                              l10n.estimatedMinutes(
+                                ride.route.durationMinutes ?? 60,
+                              ),
                           style: TextStyle(
                             color: AppColors.textSecondary,
                             fontSize: 13.sp,
@@ -666,8 +837,8 @@ class _RideSummaryHero extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  const _MiniBadge(
-                    label: 'Secure',
+                  _MiniBadge(
+                    label: AppLocalizations.of(context).secure,
                     color: AppColors.success,
                     icon: Icons.verified_user_rounded,
                   ),
@@ -771,8 +942,10 @@ class _PassengerOptionsCard extends StatelessWidget {
         children: [
           _OptionRow(
             icon: Icons.event_seat_rounded,
-            title: 'Seats',
-            subtitle: 'Choose how many seats you need',
+            title: AppLocalizations.of(context).seats,
+            subtitle: AppLocalizations.of(
+              context,
+            ).choose_how_many_seats_you_need,
             trailing: _SeatStepper(
               value: selectedSeats,
               onDecrease: onDecrease,
@@ -780,12 +953,14 @@ class _PassengerOptionsCard extends StatelessWidget {
             ),
           ),
           _SoftDivider(),
-          const _OptionRow(
+          _OptionRow(
             icon: Icons.account_circle_rounded,
-            title: 'Booking request',
-            subtitle: 'The driver will approve your request',
+            title: AppLocalizations.of(context).booking_request,
+            subtitle: AppLocalizations.of(
+              context,
+            ).the_driver_will_approve_your_request,
             trailing: _MiniBadge(
-              label: 'Pending',
+              label: AppLocalizations.of(context).pending,
               color: AppColors.primary,
               icon: Icons.schedule_rounded,
             ),
@@ -793,8 +968,10 @@ class _PassengerOptionsCard extends StatelessWidget {
           _SoftDivider(),
           _OptionRow(
             icon: Icons.shield_rounded,
-            title: 'Protected booking',
-            subtitle: 'Your request is safely recorded in SportConnect',
+            title: AppLocalizations.of(context).protected_booking,
+            subtitle: AppLocalizations.of(
+              context,
+            ).your_request_is_safely_recorded_in_sportconnect,
             trailing: Icon(
               Icons.chevron_right_rounded,
               color: AppColors.textSecondary,
@@ -820,7 +997,7 @@ class _LocationTimelineCard extends StatelessWidget {
           _TimelinePoint(
             color: AppColors.primary,
             icon: Icons.radio_button_checked_rounded,
-            label: 'Pickup point',
+            label: AppLocalizations.of(context).pickup_point,
             title: _placeTitle(ride.origin.address, ride.origin.city),
             subtitle: ride.origin.address,
             showLine: true,
@@ -829,7 +1006,7 @@ class _LocationTimelineCard extends StatelessWidget {
           _TimelinePoint(
             color: AppColors.success,
             icon: Icons.location_on_rounded,
-            label: 'Drop-off point',
+            label: AppLocalizations.of(context).dropoff_point,
             title: _placeTitle(ride.destination.address, ride.destination.city),
             subtitle: ride.destination.address,
             showLine: false,
@@ -959,7 +1136,7 @@ class _PriceBreakdownCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Price summary',
+            AppLocalizations.of(context).price_summary,
             style: TextStyle(
               color: AppColors.textPrimary,
               fontSize: 18.sp,
@@ -969,22 +1146,22 @@ class _PriceBreakdownCard extends StatelessWidget {
           ),
           SizedBox(height: 16.h),
           _PriceLine(
-            label: 'Seat price',
+            label: AppLocalizations.of(context).seat_price,
             value: '$currencySymbol${pricePerSeat.toStringAsFixed(2)}',
           ),
           SizedBox(height: 12.h),
           _PriceLine(
-            label: 'Seats selected',
+            label: AppLocalizations.of(context).seats_selected,
             value: '$selectedSeats',
           ),
           SizedBox(height: 12.h),
           _PriceLine(
-            label: 'Fare',
+            label: AppLocalizations.of(context).fare,
             value: '$currencySymbol${fare.toStringAsFixed(2)}',
           ),
           SizedBox(height: 12.h),
           _PriceLine(
-            label: 'Service fee',
+            label: AppLocalizations.of(context).service_fee,
             value: '$currencySymbol${serviceFee.toStringAsFixed(2)}',
             info: true,
           ),
@@ -993,7 +1170,7 @@ class _PriceBreakdownCard extends StatelessWidget {
             child: const Divider(color: AppColors.border, height: 1),
           ),
           _PriceLine(
-            label: 'Total',
+            label: AppLocalizations.of(context).total,
             value: '$currencySymbol${total.toStringAsFixed(2)}',
             isTotal: true,
           ),
@@ -1022,7 +1199,7 @@ class _TrustAndPolicyCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Cancellation policy',
+                  AppLocalizations.of(context).cancellation_policy,
                   style: TextStyle(
                     color: AppColors.textPrimary,
                     fontSize: 16.sp,
@@ -1031,7 +1208,9 @@ class _TrustAndPolicyCard extends StatelessWidget {
                 ),
                 SizedBox(height: 4.h),
                 Text(
-                  'You can cancel before the driver accepts your request.',
+                  AppLocalizations.of(
+                    context,
+                  ).you_can_cancel_before_the_driver_accepts_your_request,
                   style: TextStyle(
                     color: AppColors.textSecondary,
                     fontSize: 13.sp,
@@ -1091,7 +1270,7 @@ class _BookingFooter extends StatelessWidget {
                   style: const TextStyle(color: AppColors.textPrimary),
                   children: [
                     TextSpan(
-                      text: 'Total\n',
+                      text: AppLocalizations.of(context).totaln,
                       style: TextStyle(
                         color: AppColors.textSecondary,
                         fontSize: 14.sp,
@@ -1116,7 +1295,9 @@ class _BookingFooter extends StatelessWidget {
             SizedBox(
               width: 196.w,
               child: _PrimaryActionButton(
-                label: isLoading ? 'Booking...' : 'Send request',
+                label: isLoading
+                    ? AppLocalizations.of(context).bookingInProgress
+                    : AppLocalizations.of(context).sendRequest,
                 icon: Icons.arrow_forward_rounded,
                 isLoading: isLoading,
                 onPressed: onPressed,
@@ -1124,6 +1305,78 @@ class _BookingFooter extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _TabletBookingSidebar extends StatelessWidget {
+  const _TabletBookingSidebar({
+    required this.currencySymbol,
+    required this.total,
+    required this.isLoading,
+    required this.onPressed,
+  });
+
+  final String currencySymbol;
+  final double total;
+  final bool isLoading;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return _PremiumCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            AppLocalizations.of(context).bookingRequestTitle,
+            style: TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 18.sp,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          SizedBox(height: 8.h),
+          Text(
+            AppLocalizations.of(
+              context,
+            ).review_your_ride_before_sending_the_request,
+            style: TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 13.sp,
+              height: 1.35,
+            ),
+          ),
+          SizedBox(height: 20.h),
+          Text(
+            AppLocalizations.of(context).total,
+            style: TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 13.sp,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          SizedBox(height: 4.h),
+          Text(
+            '$currencySymbol${total.toStringAsFixed(2)}',
+            style: TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 32.sp,
+              fontWeight: FontWeight.w900,
+              letterSpacing: -1,
+            ),
+          ),
+          SizedBox(height: 20.h),
+          _PrimaryActionButton(
+            label: isLoading
+                ? AppLocalizations.of(context).bookingInProgress
+                : AppLocalizations.of(context).sendRequest,
+            icon: Icons.arrow_forward_rounded,
+            isLoading: isLoading,
+            onPressed: onPressed,
+          ),
+        ],
       ),
     );
   }

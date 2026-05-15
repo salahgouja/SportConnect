@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -21,6 +22,7 @@ import 'package:sport_connect/features/rides/services/ride_request_service.dart'
 import 'package:sport_connect/features/rides/view_models/driver_requests_view_model.dart';
 import 'package:sport_connect/features/rides/view_models/driver_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 
 // ─────────────────────────────────────────────────────────────────
 // SCREEN ENTRY POINT
@@ -406,7 +408,7 @@ class _PendingRequestCard extends ConsumerWidget {
               CircleAvatar(
                 radius: 20.r,
                 backgroundImage: passengerPhoto != null
-                    ? NetworkImage(passengerPhoto)
+                        ? CachedNetworkImageProvider(passengerPhoto)
                     : null,
                 backgroundColor: AppColors.primarySurface,
                 child: passengerPhoto == null

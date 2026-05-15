@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,6 +12,7 @@ import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/features/profile/view_models/user_search_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
@@ -24,7 +26,9 @@ class UserSearchScreen extends ConsumerWidget {
     final searchResults = ref.watch(searchResultsProvider(uiState.query));
 
     return AdaptiveScaffold(
-      body: SafeArea(
+      body: MaxWidthContainer(
+        maxWidth: kMaxWidthContent,
+        child: SafeArea(
         child: Column(
           children: [
             _buildHeader(context),
@@ -44,12 +48,13 @@ class UserSearchScreen extends ConsumerWidget {
           ],
         ),
       ),
+    ),
     );
   }
 
   Widget _buildHeader(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
+      padding: adaptiveScreenPadding(context).copyWith(top: 12.h, bottom: 12.h),
       child: Row(
         children: [
           GestureDetector(
@@ -102,7 +107,7 @@ class UserSearchScreen extends ConsumerWidget {
     UserSearchUiState uiState,
   ) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
+      padding: adaptiveScreenPadding(context).copyWith(bottom: 8.h, top: 8.h),
       child: Container(
         decoration: BoxDecoration(
           color: AppColors.cardBg,
@@ -362,7 +367,7 @@ class UserSearchScreen extends ConsumerWidget {
         await Future<void>.delayed(const Duration(milliseconds: 250));
       },
       child: ListView.builder(
-        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
+        padding: adaptiveScreenPadding(context).copyWith(bottom: 8.h, top: 8.h),
         physics: const AlwaysScrollableScrollPhysics(),
         itemCount: users.length,
         itemBuilder: (context, index) {
@@ -465,7 +470,7 @@ class _UserCard extends StatelessWidget {
                         : null,
                     image: user.photoUrl != null
                         ? DecorationImage(
-                            image: NetworkImage(user.photoUrl!),
+              image: CachedNetworkImageProvider(user.photoUrl!),
                             fit: BoxFit.cover,
                           )
                         : null,

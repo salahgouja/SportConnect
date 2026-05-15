@@ -12,6 +12,8 @@ import 'package:reactive_forms/reactive_forms.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/theme/app_spacing.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/core/widgets/reactive_adaptive_text_field.dart';
 import 'package:sport_connect/core/widgets/utility_widgets.dart';
 import 'package:sport_connect/features/auth/models/auth_exception.dart';
@@ -130,11 +132,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         opacity: _fadeAnimation,
         child: SingleChildScrollView(
           child: Padding(
-            padding: EdgeInsets.fromLTRB(
-              24.w,
-              0,
-              24.w,
-              MediaQuery.viewInsetsOf(context).bottom + 16.h,
+            padding: adaptiveScreenPadding(context).copyWith(
+              bottom: MediaQuery.viewInsetsOf(context).bottom + AppSpacing.lg,
             ),
             child: ReactiveForm(
               formGroup: _form,
@@ -173,7 +172,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       ),
     );
 
-    return AdaptiveScaffold(body: loginBody);
+    return AdaptiveScaffold(
+      body: MaxWidthContainer(maxWidth: kMaxWidthFormNarrow, child: loginBody),
+    );
   }
 
   Widget _buildLogoHeader() {
@@ -184,7 +185,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         // reads "SportConnect logo" once, and exclude the inner Icon so its
         // raw name isn't announced as a second node.
         Semantics(
-          label: 'SportConnect logo',
+          label: AppLocalizations.of(context).appTitle,
           image: true,
           child:
               ClipRRect(
@@ -262,8 +263,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       keyboardType: TextInputType.emailAddress,
       textInputAction: TextInputAction.next,
       validationMessages: {
-        ValidationMessage.required: (_) => 'Email is required',
-        ValidationMessage.email: (_) => 'Please enter a valid email address',
+        ValidationMessage.required: (_) =>
+            AppLocalizations.of(context).email_is_required,
+        ValidationMessage.email: (_) =>
+            AppLocalizations.of(context).please_enter_a_valid_email_address,
       },
       labelText: emailLabel,
       hintText: emailHint,
@@ -285,9 +288,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       obscureText: _obscurePassword,
       textInputAction: TextInputAction.done,
       validationMessages: {
-        ValidationMessage.required: (_) => 'Password is required',
-        ValidationMessage.minLength: (_) =>
-            'Password must be at least 8 characters',
+        ValidationMessage.required: (_) =>
+            AppLocalizations.of(context).password_is_required,
+        ValidationMessage.minLength: (_) => AppLocalizations.of(
+          context,
+        ).password_must_be_at_least_8_characters,
       },
       labelText: passwordLabel,
       hintText: passwordHint,
@@ -344,7 +349,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         onPressed: isDisabled ? null : _handleLogin,
         child: isEmailLoading
             ? Semantics(
-                label: 'Signing in, please wait',
+                label: AppLocalizations.of(context).signingInMessage,
                 liveRegion: true,
                 child: SizedBox(
                   height: 18.h,
@@ -398,7 +403,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         if (socialState.isLoading)
           Positioned.fill(
             child: Semantics(
-              label: 'Signing in, please wait',
+              label: AppLocalizations.of(context).signingInMessage,
               liveRegion: true,
               excludeSemantics: true,
               child: Container(

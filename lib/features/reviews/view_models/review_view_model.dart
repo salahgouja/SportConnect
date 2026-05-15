@@ -173,7 +173,7 @@ class ReviewFormViewModel extends _$ReviewFormViewModel {
       try {
         final profileRepo = ref.read(profileRepositoryProvider);
         await profileRepo.addXP(currentUser.uid, 15);
-      } on Exception catch (e, st) {
+      } on Exception {
         // XP failure is non-fatal
       }
 
@@ -181,7 +181,7 @@ class ReviewFormViewModel extends _$ReviewFormViewModel {
       // Reset form after successful submission
       state = const ReviewFormState();
       return true;
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       if (!ref.mounted) return false;
       state = state.copyWith(
         isSubmitting: false,
@@ -217,7 +217,7 @@ class ReviewsListViewModel extends _$ReviewsListViewModel {
         hasMore: nextCursor != null,
         nextCursor: nextCursor,
       );
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       return ReviewsListState(
         error: 'Failed to load reviews: $e',
       );
@@ -262,7 +262,7 @@ class ReviewsListViewModel extends _$ReviewsListViewModel {
           nextCursor: nextCursor,
         ),
       );
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       if (!ref.mounted) return;
       state = AsyncValue.data(
         current.copyWith(

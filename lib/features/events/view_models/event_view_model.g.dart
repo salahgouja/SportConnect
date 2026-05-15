@@ -360,7 +360,7 @@ final class EventListViewModelProvider
 }
 
 String _$eventListViewModelHash() =>
-    r'0ecbafac358b1f5c2e65d9741526179b052a2f3f';
+    r'5c832e364de07c67ad4f62a06bb12494e531f6d1';
 
 /// ViewModel for the event list screen.
 ///

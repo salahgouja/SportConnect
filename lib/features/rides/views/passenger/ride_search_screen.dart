@@ -14,6 +14,7 @@ import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/models/location/location_point.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/core/widgets/custom_button.dart';
 import 'package:sport_connect/core/widgets/driver_info_widget.dart';
@@ -98,7 +99,9 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
     });
 
     return AdaptiveScaffold(
-      body: RefreshIndicator.adaptive(
+      body: MaxWidthContainer(
+        maxWidth: kMaxWidthWide,
+        child: RefreshIndicator.adaptive(
         onRefresh: _handlePullToRefresh,
         child: CustomScrollView(
           controller: _scrollController,
@@ -132,6 +135,7 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
             SliverToBoxAdapter(child: SizedBox(height: 100.h)),
           ],
         ),
+      ),
       ),
       floatingActionButton: _buildFloatingFilterButton(),
     );
@@ -628,9 +632,12 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
   Widget _buildQuickDateSelection() {
     final now = DateTime.now();
     final dates = [
-      ('Today', now),
-      ('Tomorrow', now.add(const Duration(days: 1))),
-      ('This Weekend', _getNextWeekend()),
+      (AppLocalizations.of(context).today, now),
+      (
+        AppLocalizations.of(context).tomorrow,
+        now.add(const Duration(days: 1)),
+      ),
+      (AppLocalizations.of(context).thisWeekend, _getNextWeekend()),
     ];
 
     return Container(
@@ -1155,17 +1162,17 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
   String _getSortLabel() {
     switch (_searchState.draftSortBy) {
       case 'price_low':
-        return 'Price ↑';
+        return AppLocalizations.of(context).lowestPrice2;
       case 'price_high':
-        return 'Price ↓';
+        return AppLocalizations.of(context).highestPrice;
       case 'rating':
-        return 'Rating';
+        return AppLocalizations.of(context).highestRated2;
       case 'duration':
-        return 'Duration';
+        return AppLocalizations.of(context).shortestDuration;
       case 'departure':
-        return 'Departure';
+        return AppLocalizations.of(context).earliestDeparture2;
       default:
-        return 'Recommended';
+        return AppLocalizations.of(context).recommended;
     }
   }
 
@@ -1568,7 +1575,9 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
 
     final result = await MapLocationPicker.show(
       context,
-      title: isFrom ? 'Select Pickup Location' : 'Select Destination',
+      title: isFrom
+          ? AppLocalizations.of(context).selectPickupLocation
+          : AppLocalizations.of(context).selectDestinationTitle,
       initialLocation: initialLocation,
     );
 
@@ -1597,29 +1606,15 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
     final normalizedDate = DateTime(date.year, date.month, date.day);
 
     if (normalizedDate == today) {
-      return 'Today';
+      return AppLocalizations.of(context).today;
     }
 
     if (normalizedDate == today.add(const Duration(days: 1))) {
-      return 'Tomorrow';
+      return AppLocalizations.of(context).tomorrow;
     }
-
-    final months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-
-    return '${months[date.month - 1]} ${date.day}';
+    return DateFormat.MMMd(
+      Localizations.localeOf(context).toLanguageTag(),
+    ).format(date);
   }
 
   Widget _buildResultsList() {
@@ -1690,14 +1685,18 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
 
   Widget _buildRideModelCard(RideModel ride) {
     final departureTimeFormatted = DateFormat(
-      'h:mm a',
+      'jm',
+      Localizations.localeOf(context).toLanguageTag(),
     ).format(ride.departureTime);
 
     final estimatedArrival = ride.departureTime.add(
       Duration(minutes: ride.durationMinutes ?? 60),
     );
 
-    final arrivalTimeFormatted = DateFormat('h:mm a').format(estimatedArrival);
+    final arrivalTimeFormatted = DateFormat(
+      'jm',
+      Localizations.localeOf(context).toLanguageTag(),
+    ).format(estimatedArrival);
     final durationFormatted = _formatDuration(ride.durationMinutes ?? 60);
 
     return Container(
@@ -1938,13 +1937,13 @@ class _RideSearchScreenState extends ConsumerState<RideSearchScreen> {
       if (ride.isPremium)
         RideInfoChip(
           icon: Icons.star_rounded,
-          label: 'Premium',
+          label: AppLocalizations.of(context).premium,
           color: AppColors.warning,
         ),
       if (ride.xpReward > 0)
         RideInfoChip(
           icon: Icons.bolt_rounded,
-          label: '+${ride.xpReward} XP',
+          label: AppLocalizations.of(context).valueXp(ride.xpReward),
           color: AppColors.primary,
         ),
     ];

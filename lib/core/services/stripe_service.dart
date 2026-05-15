@@ -33,15 +33,21 @@ class StripeService {
   Future<Map<String, dynamic>> getAccountStatus({
     required String accountId,
   }) async {
-    final result = await _functions.httpsCallable('getAccountStatus').call({
-      'accountId': accountId,
-    });
+    // ignore: inference_failure_on_function_invocation
+    final result = await _functions
+        .httpsCallable('getAccountStatus')
+        .call<Map<String, dynamic>>(<String, dynamic>{
+          'accountId': accountId,
+        });
 
     return Map<String, dynamic>.from(result.data as Map);
   }
 
   Future<void> syncDriverBalance() async {
-    await _functions.httpsCallable('syncDriverBalance').call();
+    // ignore: inference_failure_on_function_invocation
+    await _functions
+        .httpsCallable('syncDriverBalance')
+        .call<Map<String, dynamic>>();
   }
 
   Future<Map<String, dynamic>> getDriverPayoutEligibility({
@@ -181,9 +187,6 @@ class StripeService {
             buttonType: PlatformButtonType.book,
           ),
           returnURL: 'flutterstripe://redirect',
-          // Delayed methods (SEPA, iDEAL) must be off — passenger could board
-          // before async payment confirms, leaving driver unpaid.
-          allowsDelayedPaymentMethods: false,
           billingDetailsCollectionConfiguration:
               const BillingDetailsCollectionConfiguration(
                 name: CollectionMode.automatic,

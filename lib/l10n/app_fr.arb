@@ -6091,5 +6091,461 @@
   "attachEvidence": "Joindre une preuve",
   "cancelnanytime": "Annulable à tout moment",
   "securenpayment": "Paiement sécurisé",
-  "helpCenterRidesCancelQuestion": "Trad_Help Center Rides Cancel Question"
+  "helpCenterRidesCancelQuestion": "Trad_Help Center Rides Cancel Question",
+  "adminDashboard": "Tableau de bord administrateur",
+  "adminAccessRequired": "Accès administrateur requis",
+  "adminAccessCheckFailed": "Échec de vérification d'accès: {error}",
+  "@adminAccessCheckFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "noRefundRequests": "Aucune demande de remboursement",
+  "noDisputes": "Aucun litige",
+  "noSupportTickets": "Aucun ticket de support",
+  "refundsTab": "Remboursements",
+  "disputesTab": "Litiges",
+  "supportTab": "Support",
+  "stripeEurBalance": "Solde EUR",
+  "@stripeEurBalance": {
+    "description": "Label for Stripe EUR balance display"
+  },
+  "badgeFirstRide": "Premier trajet",
+  "@badgeFirstRide": {
+    "description": "Achievement badge name in achievements_screen.dart"
+  },
+  "badgeFirstRideDesc": "Effectuez votre premier trajet",
+  "@badgeFirstRideDesc": {
+    "description": "Achievement badge description in achievements_screen.dart"
+  },
+  "badgeRoadWarrior": "Guerrier de la route",
+  "@badgeRoadWarrior": {
+    "description": "Achievement badge name in achievements_screen.dart"
+  },
+  "badgeRoadWarriorDesc": "Effectuez 10 trajets",
+  "@badgeRoadWarriorDesc": {
+    "description": "Achievement badge description in achievements_screen.dart"
+  },
+  "badgeEcoHero": "Héro écologique",
+  "@badgeEcoHero": {
+    "description": "Achievement badge name in achievements_screen.dart"
+  },
+  "badgeEcoHeroDesc": "Économisez 50 kg de CO₂",
+  "@badgeEcoHeroDesc": {
+    "description": "Achievement badge description in achievements_screen.dart"
+  },
+  "badgeSocialButterfly": "Papillon social",
+  "@badgeSocialButterfly": {
+    "description": "Achievement badge name in achievements_screen.dart"
+  },
+  "badgeSocialButterflyDesc": "Connectez-vous avec 10 passagers",
+  "@badgeSocialButterflyDesc": {
+    "description": "Achievement badge description in achievements_screen.dart"
+  },
+  "badgeRoadTripper": "Routard",
+  "@badgeRoadTripper": {
+    "description": "Achievement badge name in achievements_screen.dart"
+  },
+  "badgeRoadTripperDesc": "Parcourez 50 km au total",
+  "@badgeRoadTripperDesc": {
+    "description": "Achievement badge description in achievements_screen.dart"
+  },
+  "badgeSpeedDemon": "Démon de vitesse",
+  "@badgeSpeedDemon": {
+    "description": "Achievement badge name in achievements_screen.dart"
+  },
+  "badgeSpeedDemonDesc": "Maintenez une série de 7 jours",
+  "@badgeSpeedDemonDesc": {
+    "description": "Achievement badge description in achievements_screen.dart"
+  },
+  "adminCouldNotLoadIssues": "Impossible de charger les problèmes : {error}",
+  "@adminCouldNotLoadIssues": {
+    "description": "Error message in admin_dashboard_screen.dart",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "adminDashboardSettingsSubtitle": "Examiner les remboursements, litiges et tickets d’assistance",
+  "adminApproveRefund": "Approuver le remboursement",
+  "adminReject": "Rejeter",
+  "adminRefund": "Rembourser",
+  "adminResolve": "Résoudre",
+  "actionUpdated": "Mis à jour",
+  "yearlyMonthlyEstimate": "≈ 4,17 € / mois",
+  "premiumSubscribeHeroSubtitle": "Tout ce qu’il vous faut pour voyager plus intelligemment, ensemble.",
+  "alreadyPremiumTitle": "Vous êtes déjà membre",
+  "alreadyPremiumSubtitle": "Votre abonnement SportConnect Premium est actif. Profitez de toutes les fonctionnalités premium.",
+  "backToApp": "Retour à l’app",
+  "chatChipImAtPickup": "Je suis au point de ramassage",
+  "@chatChipImAtPickup": {
+    "description": "Quick message chip in active_ride_screen.dart"
+  },
+  "chatChipRunningLate": "Je suis en retard",
+  "@chatChipRunningLate": {
+    "description": "Quick message chip in active_ride_screen.dart"
+  },
+  "pleaseTryAgainLater": "Veuillez réessayer plus tard.",
+  "@pleaseTryAgainLater": {
+    "description": "Generic retry message in error_boundary.dart"
+  },
+  "routeDistanceFallback": "Distance du trajet",
+  "@routeDistanceFallback": {
+    "description": "Libellé de secours pour la distance dans ride_booking_review_screen.dart"
+  },
+  "estimatedMinutes": "{minutes} min estimées",
+  "@estimatedMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "seatsLeftCount": "{count} places restantes",
+  "@seatsLeftCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "bookingInProgress": "Réservation...",
+  "sendRequest": "Envoyer la demande",
+  "rideSharedDistanceSummary": "{distance} km partagés ensemble",
+  "@rideSharedDistanceSummary": {
+    "placeholders": {
+      "distance": {
+        "type": "String"
+      }
+    }
+  },
+  "rideCarpooledWithCount": "{count, plural, =1{Covoituré avec 1 personne} other{Covoituré avec {count} personnes}}",
+  "@rideCarpooledWithCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "avgSpeedLabel": "Vitesse moy.",
+  "avgSpeedKmhValue": "{value} km/h",
+  "@avgSpeedKmhValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "baseFareSeatCount": "Tarif de base ({count} places)",
+  "@baseFareSeatCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "baseFareSeatsByPrice": "Tarif de base ({count} places × {price})",
+  "@baseFareSeatsByPrice": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "serviceFeeWithRate": "Frais de service ({rate})",
+  "@serviceFeeWithRate": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "rideCompletionDriverRating": "Note {value}",
+  "@rideCompletionDriverRating": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "billingPeriodMonthShort": "/mois",
+  "billingPeriodYearShort": "/an",
+  "fallbackMonthlyPrice": "4,99 €",
+  "fallbackYearlyPrice": "49,99 €",
+  "yearlyMonthlyAtPrice": "≈ {price}/mois",
+  "@yearlyMonthlyAtPrice": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "premiumRenewsUntilCancelled": "L’abonnement se renouvelle automatiquement jusqu’à résiliation. Annulez à tout moment dans les réglages de l’App Store.",
+  "premiumRenewsEachPeriodAtPrice": "Renouvellement automatique chaque {period} à {price} jusqu’à résiliation. Annulez à tout moment dans les réglages de l’App Store.",
+  "@premiumRenewsEachPeriodAtPrice": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "cancellationReasonBannerMessage": "Dites-nous pourquoi vous annulez afin que nous puissions améliorer notre service.",
+  "cancelReasonChangeOfPlansTitle": "Changement de programme",
+  "cancelReasonChangeOfPlansDescription": "Mon emploi du temps a changé et je ne peux plus faire ce trajet.",
+  "cancelReasonFoundAnotherRideTitle": "Autre trajet trouvé",
+  "cancelReasonFoundAnotherRideDescription": "J’ai trouvé une option de trajet plus pratique.",
+  "cancelReasonPriceTooHighTitle": "Prix trop élevé",
+  "cancelReasonPriceTooHighDescription": "Le coût du trajet est plus élevé que prévu.",
+  "cancelReasonSafetyConcernTitle": "Problème de sécurité",
+  "cancelReasonSafetyConcernDescription": "J’ai des inquiétudes concernant la sécurité de ce trajet.",
+  "cancelReasonDriverNotRespondingTitle": "Conducteur injoignable",
+  "cancelReasonDriverNotRespondingDescription": "Le conducteur ne répond pas aux messages.",
+  "cancelReasonIncorrectDetailsTitle": "Détails incorrects",
+  "cancelReasonIncorrectDetailsDescription": "Les détails du trajet sont incorrects ou ont changé.",
+  "cancelReasonEmergencyTitle": "Urgence",
+  "cancelReasonEmergencyDescription": "J’ai une urgence imprévue.",
+  "cancelReasonOtherTitle": "Autre",
+  "cancelReasonOtherDescription": "Une autre raison non listée ci-dessus.",
+  "cancelReasonVehicleIssueTitle": "Problème de véhicule",
+  "cancelReasonVehicleIssueDescription": "Mon véhicule a un problème mécanique ou n’est pas disponible.",
+  "cancelReasonPassengerNotAtPickupTitle": "Passager absent au point de prise en charge",
+  "cancelReasonPassengerNotAtPickupDescription": "Le passager n’était pas au lieu de prise en charge convenu.",
+  "cancelReasonPassengerNotRespondingTitle": "Passager injoignable",
+  "cancelReasonPassengerNotRespondingDescription": "Le passager ne répond pas aux messages.",
+  "cancelReasonRouteIssueTitle": "Problème d’itinéraire",
+  "cancelReasonRouteIssueDescription": "Il y a une route fermée ou un problème d’itinéraire.",
+  "pleaseFixFields": "Veuillez corriger : {fields}",
+  "@pleaseFixFields": {
+    "placeholders": {
+      "fields": {
+        "type": "String"
+      }
+    }
+  },
+  "nameTooLongError": "Le nom est trop long",
+  "ridingDetails": "Détails du trajet",
+  "riderOnboardingFormLabel": "Formulaire d’intégration passager",
+  "payoutStepInitiated": "Lancé",
+  "payoutStepCouldNotComplete": "Impossible de finaliser",
+  "payoutStepPreparingTransfer": "Stripe prépare votre transfert",
+  "payoutStepExpected": "Prévu {date}",
+  "@payoutStepExpected": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "payoutStepOnItsWayToYourBank": "En route vers votre banque",
+  "payoutStepWaitingForProcessing": "En attente de la fin du traitement",
+  "payoutStepDepositedToYourAccount": "Déposé sur votre compte",
+  "payoutMethodInstantDescription": "Instantané (généralement quelques minutes)",
+  "payoutMethodStandardDescription": "Standard (1 à 3 jours ouvrés)",
+  "payoutDestinationLabel": "Destination",
+  "onboardingStepCount": "Étape {current} sur {total}",
+  "@onboardingStepCount": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "onboardingCreateAccountPrompt": "Créez votre compte gratuit pour trouver un trajet vers votre prochain événement sportif.",
+  "onboardingRunningEventLabel": "ÉVÉNEMENT COURSE",
+  "onboardingRideBadgeOpen": "OUVERT",
+  "onboardingRideBadgeSet": "PRÊT",
+  "onboardingSharedLabel": "Partagé",
+  "onboardingDriverRouteLabel": "Trajet conducteur",
+  "onboardingSharedArrivalLabel": "Arrivée partagée",
+  "onboardingEventLabel": "Événement",
+  "identityAndRoleStep": "Identité et rôle",
+  "@identityAndRoleStep": {
+    "description": "Libellé de l’étape identité et rôle dans l’inscription"
+  },
+  "dayLabel": "Jour",
+  "@dayLabel": {
+    "description": "Libellé court pour la colonne jour dans le sélecteur de date"
+  },
+  "monthLabel": "Mois",
+  "@monthLabel": {
+    "description": "Libellé court pour la colonne mois dans le sélecteur de date"
+  },
+  "passwordMinLengthError": "Le mot de passe doit comporter au moins 8 caractères",
+  "@passwordMinLengthError": {
+    "description": "Message de validation pour la longueur minimale du mot de passe"
+  },
+  "passwordStrengthWeak": "Faible",
+  "@passwordStrengthWeak": {
+    "description": "Libellé de force du mot de passe"
+  },
+  "passwordStrengthFair": "Moyen",
+  "@passwordStrengthFair": {
+    "description": "Libellé de force du mot de passe"
+  },
+  "passwordStrengthGood": "Bon",
+  "@passwordStrengthGood": {
+    "description": "Libellé de force du mot de passe"
+  },
+  "passwordStrengthStrong": "Fort",
+  "@passwordStrengthStrong": {
+    "description": "Libellé de force du mot de passe"
+  },
+  "invalidValue": "Valeur invalide",
+  "@invalidValue": {
+    "description": "Message générique de validation"
+  },
+  "supportSubjectRequired": "Veuillez saisir un objet",
+  "@supportSubjectRequired": {
+    "description": "Validation message when support subject is empty"
+  },
+  "supportSubjectMinLength": "L'objet doit contenir au moins 3 caractères",
+  "@supportSubjectMinLength": {
+    "description": "Validation message when support subject is too short"
+  },
+  "supportMessageRequired": "Veuillez décrire votre problème",
+  "@supportMessageRequired": {
+    "description": "Validation message when support message is empty"
+  },
+  "supportMessageMinLength": "Veuillez fournir au moins 10 caractères",
+  "@supportMessageMinLength": {
+    "description": "Validation message when support message is too short"
+  },
+  "thisWeekend": "Ce week-end",
+  "@thisWeekend": {
+    "description": "Quick date filter for the coming weekend"
+  },
+  "highestPrice": "Prix décroissant",
+  "@highestPrice": {
+    "description": "Sort label for highest price"
+  },
+  "badgePerfectScore": "Score parfait",
+  "@badgePerfectScore": {
+    "description": "Achievement badge name in achievements_screen.dart"
+  },
+  "badgePerfectScoreDesc": "Maintenez une note de 5 étoiles",
+  "@badgePerfectScoreDesc": {
+    "description": "Achievement badge description in achievements_screen.dart"
+  },
+  "badgeRoadMaster": "Maître de la route",
+  "@badgeRoadMaster": {
+    "description": "Achievement badge name in achievements_screen.dart"
+  },
+  "badgeRoadMasterDesc": "Effectuez 100 trajets",
+  "@badgeRoadMasterDesc": {
+    "description": "Achievement badge description in achievements_screen.dart"
+  },
+  "badgeNightOwl": "Oiseau de nuit",
+  "@badgeNightOwl": {
+    "description": "Achievement badge name in achievements_screen.dart"
+  },
+  "badgeNightOwlDesc": "Effectuez 20 trajets de nuit",
+  "@badgeNightOwlDesc": {
+    "description": "Achievement badge description in achievements_screen.dart"
+  },
+  "badgeEarlyBird": "Lève-tôt",
+  "@badgeEarlyBird": {
+    "description": "Achievement badge name in achievements_screen.dart"
+  },
+  "badgeEarlyBirdDesc": "Effectuez 20 trajets le matin",
+  "@badgeEarlyBirdDesc": {
+    "description": "Achievement badge description in achievements_screen.dart"
+  },
+  "badgeMarathonDriver": "Marathonien",
+  "@badgeMarathonDriver": {
+    "description": "Achievement badge name in achievements_screen.dart"
+  },
+  "badgeMarathonDriverDesc": "Parcourez 1000 km au total",
+  "@badgeMarathonDriverDesc": {
+    "description": "Achievement badge description in achievements_screen.dart"
+  },
+  "badgeVerifiedPro": "Pro vérifié",
+  "@badgeVerifiedPro": {
+    "description": "Achievement badge name in achievements_screen.dart"
+  },
+  "badgeVerifiedProDesc": "Faites vérifier votre identité",
+  "@badgeVerifiedProDesc": {
+    "description": "Achievement badge description in achievements_screen.dart"
+  },
+  "challengeDailyCommuter": "Navetteur quotidien",
+  "@challengeDailyCommuter": {
+    "description": "Challenge name in achievements_screen.dart"
+  },
+  "challengeDailyCommuterDesc": "Effectuez 1 trajet aujourd'hui",
+  "@challengeDailyCommuterDesc": {
+    "description": "Challenge description in achievements_screen.dart"
+  },
+  "challengeWeekWarrior": "Guerrier de la semaine",
+  "@challengeWeekWarrior": {
+    "description": "Challenge name in achievements_screen.dart"
+  },
+  "challengeWeekWarriorDesc": "Effectuez 5 trajets cette semaine",
+  "@challengeWeekWarriorDesc": {
+    "description": "Challenge description in achievements_screen.dart"
+  },
+  "challengeStreakKeeper": "Gardien de série",
+  "@challengeStreakKeeper": {
+    "description": "Challenge name in achievements_screen.dart"
+  },
+  "challengeStreakKeeperDesc": "Maintenez une série de 3 jours",
+  "@challengeStreakKeeperDesc": {
+    "description": "Challenge description in achievements_screen.dart"
+  },
+  "challengeExplorer": "Explorateur",
+  "@challengeExplorer": {
+    "description": "Challenge name in achievements_screen.dart"
+  },
+  "challengeExplorerDesc": "Essayez 3 nouveaux itinéraires ce mois-ci",
+  "@challengeExplorerDesc": {
+    "description": "Challenge description in achievements_screen.dart"
+  },
+  "challengeSocialRider": "Passager social",
+  "@challengeSocialRider": {
+    "description": "Challenge name in achievements_screen.dart"
+  },
+  "challengeSocialRiderDesc": "Notez 5 conducteurs cette semaine",
+  "@challengeSocialRiderDesc": {
+    "description": "Challenge description in achievements_screen.dart"
+  },
+  "challengeEcoWarrior": "Guerrier écolo",
+  "@challengeEcoWarrior": {
+    "description": "Challenge name in achievements_screen.dart"
+  },
+  "challengeEcoWarriorDesc": "Partagez 3 trajets aujourd'hui",
+  "@challengeEcoWarriorDesc": {
+    "description": "Challenge description in achievements_screen.dart"
+  },
+  "challengeResetsInHours": "Réinitialisation dans {value} h",
+  "@challengeResetsInHours": {
+    "description": "Challenge timer label in achievements_screen.dart",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "challengeResetsInDays": "Réinitialisation dans {value} j",
+  "@challengeResetsInDays": {
+    "description": "Challenge timer label in achievements_screen.dart",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "challengeKeepGoing": "Continuez !",
+  "@challengeKeepGoing": {
+    "description": "Challenge encouragement label in achievements_screen.dart"
+  }
 }

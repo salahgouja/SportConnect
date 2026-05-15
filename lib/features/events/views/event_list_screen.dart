@@ -12,6 +12,7 @@ import 'package:intl/intl.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/core/widgets/premium_card.dart';
@@ -90,7 +91,7 @@ class EventListScreen extends ConsumerWidget {
                 child: _buildEmptyState(context, vm.filterType),
               )
             else
-              _buildEventList(vm.filteredEvents),
+              _buildEventList(context, vm.filteredEvents),
           ],
         ),
       ),
@@ -151,11 +152,12 @@ class EventListScreen extends ConsumerWidget {
     WidgetRef ref,
     EventListState vm,
   ) {
+    final pad = adaptiveScreenPadding(context);
     return Padding(
       padding: EdgeInsets.fromLTRB(
-        AppSpacing.screenPadding,
+        pad.left,
         4.h,
-        AppSpacing.screenPadding,
+        pad.right,
         8.h,
       ),
       child: TextField(
@@ -201,6 +203,7 @@ class EventListScreen extends ConsumerWidget {
     WidgetRef ref,
     EventListState vm,
   ) {
+    final pad = adaptiveScreenPadding(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -208,7 +211,7 @@ class EventListScreen extends ConsumerWidget {
           height: 44.h,
           child: ListView(
             scrollDirection: Axis.horizontal,
-            padding: EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
+            padding: EdgeInsets.symmetric(horizontal: pad.left),
             children: [
               _FilterChip(
                 label: AppLocalizations.of(context).filterAll,
@@ -233,7 +236,7 @@ class EventListScreen extends ConsumerWidget {
         ),
         SizedBox(height: 8.h),
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
+          padding: EdgeInsets.symmetric(horizontal: pad.left),
           child: GestureDetector(
             onTap: () async {
               await _showRadiusPicker(context, ref, vm);
@@ -407,12 +410,52 @@ class EventListScreen extends ConsumerWidget {
   // -------------------------------------------------------------------
   // Event list
   // -------------------------------------------------------------------
-  SliverPadding _buildEventList(List<EventModel> events) {
+  SliverPadding _buildEventList(BuildContext context, List<EventModel> events) {
+    final crossAxisCount = responsiveValue<int>(
+      context,
+      phone: 1,
+      tablet: 2,
+      desktop: 3,
+    );
+    final screenPadding = adaptiveScreenPadding(context);
+
+    if (crossAxisCount > 1) {
+      return SliverPadding(
+        padding: EdgeInsets.fromLTRB(
+          screenPadding.left,
+          16.h,
+          screenPadding.right,
+          100.h,
+        ),
+        sliver: SliverGrid(
+          delegate: SliverChildBuilderDelegate(
+            (context, index) {
+              final event = events[index];
+              return _EventCard(event: event)
+                  .animate()
+                  .fadeIn(
+                    delay: Duration(milliseconds: 50 * index.clamp(0, 10)),
+                    duration: 350.ms,
+                  )
+                  .slideY(begin: 0.04, end: 0);
+            },
+            childCount: events.length,
+          ),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            mainAxisSpacing: 12.h,
+            crossAxisSpacing: 12.w,
+            childAspectRatio: 0.72,
+          ),
+        ),
+      );
+    }
+
     return SliverPadding(
       padding: EdgeInsets.fromLTRB(
-        AppSpacing.screenPadding,
+        screenPadding.left,
         16.h,
-        AppSpacing.screenPadding,
+        screenPadding.right,
         100.h,
       ),
       sliver: SliverList.separated(

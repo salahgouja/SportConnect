@@ -15,6 +15,7 @@ import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/services/location_service.dart';
 import 'package:sport_connect/core/services/push_notification_service.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/features/home/view_models/driver_location_view_model.dart';
@@ -261,10 +262,12 @@ class _DriverDashboard extends ConsumerWidget {
           ref.refresh(upcomingDriverRidesProvider.future),
         ]);
       },
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final isSmall = constraints.maxWidth < 360;
-          final hPad = isSmall ? 14.0 : 20.0;
+      child: MaxWidthContainer(
+        maxWidth: kMaxWidthWide,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isSmall = constraints.maxWidth < 360;
+            final hPad = isSmall ? 14.0 : 20.0;
 
           return CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -322,6 +325,7 @@ class _DriverDashboard extends ConsumerWidget {
             ],
           );
         },
+      ),
       ),
     );
   }

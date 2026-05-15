@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod/src/providers/future_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/repositories/ride_repository.dart';
@@ -11,7 +12,7 @@ part 'driver_requests_view_model.g.dart';
 ///
 /// Request lists do not need a live ride stream per row; a short-lived cache
 /// removes repeated Firestore reads when switching tabs or revisiting the list.
-final requestCardRideProvider = FutureProvider.autoDispose
+final FutureProviderFamily<RideModel?, String> requestCardRideProvider = FutureProvider.autoDispose
     .family<RideModel?, String>((ref, rideId) async {
       final ride = await ref.read(rideRepositoryProvider).getRideById(rideId);
       final cacheLink = ref.keepAlive();

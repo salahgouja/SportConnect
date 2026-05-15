@@ -248,15 +248,18 @@ class AppMaterialTheme {
     return ElevatedButtonThemeData(
       style: ButtonStyle(
         backgroundColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.disabled))
+          if (states.contains(WidgetState.disabled)) {
             return cs.primary.withValues(alpha: 0.38);
-          if (states.contains(WidgetState.pressed))
+          }
+          if (states.contains(WidgetState.pressed)) {
             return cs.primary.withValues(alpha: 0.88);
+          }
           return cs.primary;
         }),
         foregroundColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.disabled))
+          if (states.contains(WidgetState.disabled)) {
             return cs.onPrimary.withValues(alpha: 0.6);
+          }
           return cs.onPrimary;
         }),
         // White overlay on any brightness — green-on-green overlay is invisible in dark
@@ -296,8 +299,9 @@ class AppMaterialTheme {
     return OutlinedButtonThemeData(
       style: ButtonStyle(
         foregroundColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.disabled))
+          if (states.contains(WidgetState.disabled)) {
             return cs.primary.withValues(alpha: 0.38);
+          }
           return cs.primary;
         }),
         overlayColor: WidgetStateProperty.all(
@@ -344,8 +348,9 @@ class AppMaterialTheme {
     return TextButtonThemeData(
       style: ButtonStyle(
         foregroundColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.disabled))
+          if (states.contains(WidgetState.disabled)) {
             return cs.primary.withValues(alpha: 0.38);
+          }
           return cs.primary;
         }),
         overlayColor: WidgetStateProperty.all(
@@ -366,8 +371,9 @@ class AppMaterialTheme {
     return IconButtonThemeData(
       style: ButtonStyle(
         iconColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.disabled))
+          if (states.contains(WidgetState.disabled)) {
             return iconColor.withValues(alpha: 0.38);
+          }
           return iconColor;
         }),
         overlayColor: WidgetStateProperty.all(

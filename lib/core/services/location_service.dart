@@ -88,7 +88,7 @@ class LocationService {
         'Current position: ${position.latitude}, ${position.longitude}',
       );
       return position;
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       TalkerService.error('Failed to get current position', e);
       return null;
     }
@@ -115,7 +115,7 @@ class LocationService {
         final place = placemarks.first;
         return '${place.street}, ${place.locality}, ${place.country}';
       }
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       TalkerService.error('Failed to get address from coordinates', e);
     }
     return null;
@@ -140,7 +140,7 @@ class LocationService {
           headingAccuracy: 0,
         );
       }
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       TalkerService.error('Failed to get coordinates from address', e);
     }
     return null;

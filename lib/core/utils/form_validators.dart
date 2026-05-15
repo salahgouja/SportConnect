@@ -22,7 +22,7 @@ class FormValidators {
     String? Function(String?) validator,
     String errorKey,
   ) {
-    return Validators.delegate((AbstractControl<dynamic> control) {
+    return Validators.delegate((control) {
       final error = validator(control.value as String?);
       return error != null ? {errorKey: error} : null;
     });

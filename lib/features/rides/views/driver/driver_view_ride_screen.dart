@@ -18,6 +18,7 @@ import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/core/widgets/app_map_tile_layer.dart';
 import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/core/widgets/passenger_info_widget.dart';
@@ -184,7 +185,9 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen> {
         .toList();
 
     return AdaptiveScaffold(
-      body: NestedScrollView(
+      body: MaxWidthContainer(
+        maxWidth: kMaxWidthWide,
+        child: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) {
           return [
             _buildSliverAppBar(ride, confirmedBookings, uiState),
@@ -217,6 +220,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen> {
             _buildPassengersTab(ride, confirmedBookings),
           ],
         ),
+      ),
       ),
       bottomNavigationBar: _buildBottomActions(ride),
     );
@@ -1611,7 +1615,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen> {
           context,
         ).bookingConfirmedForValue(passengerName),
       );
-    } on Exception catch (e, st) {
+    } on Exception {
       _showErrorMessage('Could not confirm booking. Please try again.');
     }
   }
@@ -1667,7 +1671,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen> {
       if (!success) {
         _showErrorMessage('Could not decline booking. Please try again.');
       }
-    } on Exception catch (e, st) {
+    } on Exception {
       _showErrorMessage('Could not decline booking. Please try again.');
     }
   }
@@ -1754,7 +1758,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen> {
             bookingId: booking.id,
             newStatus: BookingStatus.cancelled,
           );
-    } on Exception catch (e, st) {
+    } on Exception {
       _showErrorMessage('Could not remove passenger. Please try again.');
     }
   }
@@ -1808,7 +1812,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen> {
         pathParameters: {'id': chat.id},
         extra: passengerUser,
       );
-    } on Exception catch (e, st) {
+    } on Exception {
       _showErrorMessage('Failed to open chat. Please try again.');
     }
   }
@@ -1902,7 +1906,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen> {
       if (mounted) {
         context.push('${AppRoutes.driverActiveRide.path}?rideId=${ride.id}');
       }
-    } on Exception catch (e, st) {
+    } on Exception {
       _showErrorMessage('Could not start ride. Please try again.');
     }
   }
@@ -1941,7 +1945,7 @@ class _DriverViewRideScreenState extends ConsumerState<DriverViewRideScreen> {
         message: AppLocalizations.of(context).rideCompleted,
         backgroundColor: AppColors.textPrimary,
       );
-    } on Exception catch (e, st) {
+    } on Exception {
       _showErrorMessage('Could not complete ride. Please try again.');
     }
   }

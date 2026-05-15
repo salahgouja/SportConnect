@@ -12,10 +12,13 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 import 'package:reactive_forms/reactive_forms.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/models/user/models.dart';
+import 'package:sport_connect/core/theme/app_spacing.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/core/widgets/expertise_picker.dart';
 import 'package:sport_connect/core/widgets/intl_phone_input.dart';
 import 'package:sport_connect/core/widgets/reactive_adaptive_text_field.dart';
@@ -49,6 +52,28 @@ const _kText = Color(0xFF1A1A1A);
 DateTime _adultCutoffDate({int years = 18}) {
   final today = DateTime.now();
   return DateTime(today.year - years, today.month, today.day);
+}
+
+List<String> _signupStepLabels(AppLocalizations l10n) => [
+  l10n.account_setup,
+  l10n.identityAndRoleStep,
+  l10n.yourProfileStep,
+];
+
+String _localizedSignupValidationError(
+  AppLocalizations l10n,
+  Object error,
+) {
+  return switch (error.toString()) {
+    'name_cannot_contain_numbers' => l10n.name_cannot_contain_numbers,
+    'name_contains_invalid_characters' => l10n.name_contains_invalid_characters,
+    'include_at_least_one_uppercase_letter' =>
+      l10n.include_at_least_one_uppercase_letter,
+    'include_at_least_one_lowercase_letter' =>
+      l10n.include_at_least_one_lowercase_letter,
+    'include_at_least_one_number' => l10n.include_at_least_one_number,
+    _ => error.toString(),
+  };
 }
 
 // UX: 3 steps
@@ -101,13 +126,13 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
               if (value == null || value.trim().isEmpty) return null;
               final trimmed = value.trim();
               if (RegExp('[0-9]').hasMatch(trimmed)) {
-                return {'name': 'Name cannot contain numbers'};
+                return {'name': 'name_cannot_contain_numbers'};
               }
               if (!RegExp(
                 r"^[\p{L}\s\-'.]+$",
                 unicode: true,
               ).hasMatch(trimmed)) {
-                return {'name': 'Name contains invalid characters'};
+                return {'name': 'name_contains_invalid_characters'};
               }
               return null;
             }),
@@ -127,13 +152,13 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
               final value = control.value as String?;
               if (value == null || value.isEmpty) return null;
               if (!RegExp('[A-Z]').hasMatch(value)) {
-                return {'password': 'Include at least one uppercase letter'};
+                return {'password': 'include_at_least_one_uppercase_letter'};
               }
               if (!RegExp('[a-z]').hasMatch(value)) {
-                return {'password': 'Include at least one lowercase letter'};
+                return {'password': 'include_at_least_one_lowercase_letter'};
               }
               if (!RegExp('[0-9]').hasMatch(value)) {
-                return {'password': 'Include at least one number'};
+                return {'password': 'include_at_least_one_number'};
               }
               return null;
             }),
@@ -206,7 +231,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
 
     // Move to next step or complete
     if (target >= 3) {
-      _handleSignup();
+      unawaited(_handleSignup());
       return;
     }
 
@@ -261,7 +286,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
     final picker = ImagePicker();
     final xf = await picker.pickImage(
       source: ImageSource.gallery,
-      maxWidth: 512,
+      maxWidth: kMaxWidthFormNarrow,
       maxHeight: 512,
       imageQuality: 85,
     );
@@ -327,14 +352,17 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
         if (!didPop) _prevStep();
       },
       child: AdaptiveScaffold(
-        body: SafeArea(
-          child: Column(
-            children: [
-              _buildTopBar(theme),
-              _buildStepIndicator(),
-              Expanded(child: _buildCard(theme)),
-              _buildBottomCTA(theme, registerState, socialState),
-            ],
+        body: MaxWidthContainer(
+          maxWidth: context.isExpandedOrLarger ? 1180 : kMaxWidthFormNarrow,
+          child: SafeArea(
+            child: Column(
+              children: [
+                _buildTopBar(theme),
+                _buildStepIndicator(),
+                Expanded(child: _buildAdaptiveContent(theme)),
+                _buildBottomCTA(theme, registerState, socialState),
+              ],
+            ),
           ),
         ),
       ),
@@ -345,7 +373,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
   Widget _buildTopBar(_StepTheme theme) {
     final wizardUiState = ref.watch(signupWizardUiViewModelProvider);
     final l10n = AppLocalizations.of(context);
-    final stepLabels = ['Account Setup', 'Identity & Role', 'Your Profile'];
+    final stepLabels = _signupStepLabels(l10n);
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
       child: Row(
@@ -450,7 +478,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
   // ── Tinder Card Stack ───────────────────────────────────────────────────────
   Widget _buildCard(_StepTheme theme) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20.w),
+      padding: adaptiveScreenPadding(context),
       child: Container(
         decoration: BoxDecoration(
           color: _kCard,
@@ -467,6 +495,120 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
           borderRadius: BorderRadius.circular(24.r),
           child: _buildStepContent(theme),
         ),
+      ),
+    );
+  }
+
+  Widget _buildAdaptiveContent(_StepTheme theme) {
+    if (!context.isExpandedOrLarger) {
+      return _buildCard(theme);
+    }
+
+    return Padding(
+      padding: adaptiveScreenPadding(context),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            flex: 4,
+            child: _buildTabletOverview(theme),
+          ),
+          SizedBox(width: 20.w),
+          Expanded(
+            flex: 6,
+            child: _buildCard(theme),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTabletOverview(_StepTheme theme) {
+    final l10n = AppLocalizations.of(context);
+    final wizardUiState = ref.watch(signupWizardUiViewModelProvider);
+    final stepLabels = _signupStepLabels(l10n);
+    final stepDescriptions = [
+      l10n.authFullNameHint,
+      l10n.verification_requirements,
+      l10n.addAProfilePhoto,
+    ];
+
+    return Container(
+      padding: EdgeInsets.all(24.w),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            theme.accent.withOpacity(0.12),
+            theme.accent.withOpacity(0.04),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(28.r),
+        border: Border.all(color: theme.accent.withOpacity(0.15)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+            decoration: BoxDecoration(
+              color: theme.accent.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(999.r),
+            ),
+            child: Text(
+              l10n.stepOfCount(
+                wizardUiState.currentStep + 1,
+                stepLabels.length,
+              ),
+              style: TextStyle(
+                fontSize: 12.sp,
+                fontWeight: FontWeight.w700,
+                color: theme.accent,
+              ),
+            ),
+          ),
+          SizedBox(height: 20.h),
+          Text(
+            stepLabels[wizardUiState.currentStep],
+            style: TextStyle(
+              fontFamily: 'Syne',
+              fontSize: 28.sp,
+              fontWeight: FontWeight.w800,
+              color: theme.text,
+            ),
+          ),
+          SizedBox(height: 8.h),
+          Text(
+            stepDescriptions[wizardUiState.currentStep],
+            style: TextStyle(
+              fontSize: 14.sp,
+              height: 1.5,
+              color: theme.text.withOpacity(0.72),
+            ),
+          ),
+          SizedBox(height: 28.h),
+          for (var i = 0; i < stepLabels.length; i++) ...[
+            _TabletStepTile(
+              index: i + 1,
+              title: stepLabels[i],
+              description: stepDescriptions[i],
+              accent: theme.accent,
+              active: wizardUiState.currentStep == i,
+              complete: wizardUiState.currentStep > i,
+            ),
+            if (i < stepLabels.length - 1) SizedBox(height: 12.h),
+          ],
+          const Spacer(),
+          _SecurityBadge(
+            accent: theme.accent,
+            text: wizardUiState.currentStep == 0
+                ? l10n.passwordStrength
+                : wizardUiState.currentStep == 1
+                ? l10n.verification_requirements
+                : l10n.almost_there,
+          ),
+        ],
       ),
     );
   }
@@ -525,7 +667,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
             ),
             SizedBox(height: 24.h),
           ],
-          _Divider(accent: theme.accent, label: 'Or continue with email'),
+          _Divider(accent: theme.accent, label: l10n.or_continue_with_email),
           SizedBox(height: 24.h),
 
           // Name
@@ -535,11 +677,10 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
             hint: l10n.authFullNameHint,
             icon: Icons.person_outline_rounded,
             validationMessages: {
-              ValidationMessage.required: (_) => 'Full name is required',
-              ValidationMessage.minLength: (_) =>
-                  'Name must be at least 2 characters',
-              ValidationMessage.maxLength: (_) => 'Name is too long',
-              'name': (error) => error as String,
+              ValidationMessage.required: (_) => l10n.nameRequiredError,
+              ValidationMessage.minLength: (_) => l10n.nameMinLengthError,
+              ValidationMessage.maxLength: (_) => l10n.nameTooLongError,
+              'name': (error) => _localizedSignupValidationError(l10n, error),
             },
             theme: theme,
             capitalization: TextCapitalization.words,
@@ -554,9 +695,9 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
             icon: Icons.alternate_email_rounded,
             keyboardType: TextInputType.emailAddress,
             validationMessages: {
-              ValidationMessage.required: (_) => 'Email is required',
+              ValidationMessage.required: (_) => l10n.email_is_required,
               ValidationMessage.email: (_) =>
-                  'Please enter a valid email address',
+                  l10n.please_enter_a_valid_email_address,
             },
             theme: theme,
           ),
@@ -573,16 +714,16 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
                 .read(signupWizardUiViewModelProvider.notifier)
                 .setPasswordText(control.value ?? ''),
             validationMessages: {
-              ValidationMessage.required: (_) => 'Password is required',
-              ValidationMessage.minLength: (_) =>
-                  'Password must be at least 8 characters',
-              'password': (error) => error as String,
+              ValidationMessage.required: (_) => l10n.password_is_required,
+              ValidationMessage.minLength: (_) => l10n.passwordMinLengthError,
+              'password': (error) =>
+                  _localizedSignupValidationError(l10n, error),
             },
             theme: theme,
             suffix: IconButton(
               tooltip: wizardUiState.obscurePassword
-                  ? 'Show password'
-                  : 'Hide password',
+                  ? l10n.tooltipShowPassword
+                  : l10n.tooltipHidePassword,
               icon: Icon(
                 wizardUiState.obscurePassword
                     ? Icons.visibility_outlined
@@ -604,14 +745,15 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
             icon: Icons.lock_outline_rounded,
             obscure: wizardUiState.obscureConfirmPassword,
             validationMessages: {
-              ValidationMessage.required: (_) => 'Please confirm your password',
-              ValidationMessage.mustMatch: (_) => 'Passwords do not match',
+              ValidationMessage.required: (_) =>
+                  l10n.please_confirm_your_password,
+              ValidationMessage.mustMatch: (_) => l10n.passwords_do_not_match,
             },
             theme: theme,
             suffix: IconButton(
               tooltip: wizardUiState.obscureConfirmPassword
-                  ? 'Show password'
-                  : 'Hide password',
+                  ? l10n.tooltipShowPassword
+                  : l10n.tooltipHidePassword,
               icon: Icon(
                 wizardUiState.obscureConfirmPassword
                     ? Icons.visibility_outlined
@@ -700,7 +842,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
           SizedBox(height: 28.h),
 
           Text(
-            'Verification Requirements',
+            l10n.verification_requirements,
             style: TextStyle(
               fontFamily: 'Syne',
               fontSize: 16.sp,
@@ -768,8 +910,8 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
             child: Semantics(
               button: true,
               label: wizardUiState.profileImage == null
-                  ? 'Add profile photo'
-                  : 'Change profile photo',
+                  ? l10n.addAProfilePhoto
+                  : l10n.changeProfilePhoto,
               child: GestureDetector(
                 onTap: _pickImage,
                 child: Stack(
@@ -845,7 +987,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
             child: Column(
               children: [
                 Text(
-                  'Almost There!',
+                  l10n.almost_there,
                   style: TextStyle(
                     fontFamily: 'Syne',
                     fontSize: 18.sp,
@@ -975,7 +1117,7 @@ class _SignupWizardScreenState extends ConsumerState<SignupWizardScreen> {
                   minimumSize: const Size(double.infinity, 48),
                 ),
                 child: Text(
-                  'Skip for now',
+                  AppLocalizations.of(context).skip_for_now,
                   style: TextStyle(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w600,
@@ -1000,7 +1142,7 @@ class _SecurityBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: EdgeInsets.all(16.w),
+    padding: EdgeInsets.all(AppSpacing.lg),
     decoration: BoxDecoration(
       color: accent.withOpacity(0.08),
       borderRadius: BorderRadius.circular(16.r),
@@ -1034,14 +1176,12 @@ class _StyledField extends StatelessWidget {
     this.suffix,
     this.capitalization = TextCapitalization.none,
     this.onChanged,
-    this.maxLines = 1,
   });
   final String formControlName;
   final String label;
   final String hint;
   final IconData icon;
   final bool obscure;
-  final int maxLines;
   final TextInputType? keyboardType;
   final Map<String, String Function(Object)>? validationMessages;
   final Widget? suffix;
@@ -1053,7 +1193,7 @@ class _StyledField extends StatelessWidget {
   Widget build(BuildContext context) => AdaptiveReactiveTextField(
     formControlName: formControlName,
     obscureText: obscure,
-    maxLines: maxLines,
+    maxLines: 1,
     keyboardType: keyboardType,
     validationMessages: validationMessages,
     textCapitalization: capitalization,
@@ -1102,22 +1242,15 @@ class _DobPickerState extends State<_DobPicker>
   late int _month;
   late int _year;
 
-  static const _monthNames = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
-
   int get _daysInMonth => DateTime(_year, _month + 1 + 1, 0).day;
+
+  List<String> _monthNames(BuildContext context) {
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    return List.generate(
+      12,
+      (index) => DateFormat.MMM(locale).format(DateTime(2000, index + 1)),
+    );
+  }
 
   @override
   void initState() {
@@ -1155,7 +1288,7 @@ class _DobPickerState extends State<_DobPicker>
 
   void _toggle() {
     setState(() => _expanded = !_expanded);
-    _expanded ? _expandCtrl.forward() : _expandCtrl.reverse();
+    unawaited(_expanded ? _expandCtrl.forward() : _expandCtrl.reverse());
     unawaited(HapticFeedback.selectionClick());
   }
 
@@ -1172,6 +1305,10 @@ class _DobPickerState extends State<_DobPicker>
     final accent = widget.accent;
     final textCol = widget.textColor;
     final cardBg = widget.cardBg;
+    final l10n = AppLocalizations.of(context);
+    final monthNames = _monthNames(context);
+    final localeTag = Localizations.localeOf(context).toLanguageTag();
+    final dateFormatter = DateFormat.yMMMd(localeTag);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1179,8 +1316,8 @@ class _DobPickerState extends State<_DobPicker>
         // ── Trigger row ──────────────────────────────────────────────
         Semantics(
           button: true,
-          label: AppLocalizations.of(context).authDateOfBirth,
-          hint: hasValue ? 'Selected' : 'Tap to select',
+          label: l10n.authDateOfBirth,
+          hint: hasValue ? l10n.selected : l10n.authDobPrompt,
           child: GestureDetector(
             onTap: _toggle,
             child: AnimatedContainer(
@@ -1207,7 +1344,7 @@ class _DobPickerState extends State<_DobPicker>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          AppLocalizations.of(context).authDateOfBirth,
+                          l10n.authDateOfBirth,
                           style: TextStyle(
                             fontSize: 11.sp,
                             fontWeight: FontWeight.w600,
@@ -1217,10 +1354,8 @@ class _DobPickerState extends State<_DobPicker>
                         SizedBox(height: 2.h),
                         Text(
                           hasValue
-                              ? '${widget.selected!.day} '
-                                    '${_monthNames[widget.selected!.month - 1]} '
-                                    '${widget.selected!.year}'
-                              : AppLocalizations.of(context).authDobPrompt,
+                              ? dateFormatter.format(widget.selected!)
+                              : l10n.authDobPrompt,
                           style: TextStyle(
                             fontSize: 15.sp,
                             fontWeight: FontWeight.w600,
@@ -1269,8 +1404,9 @@ class _DobPickerState extends State<_DobPicker>
                   child: Row(
                     children: [
                       Expanded(child: _colLabel('DAY', accent)),
-                      Expanded(child: _colLabel('MONTH', accent)),
-                      Expanded(child: _colLabel('YEAR', accent)),
+                      Expanded(child: _colLabel(l10n.dayLabel, accent)),
+                      Expanded(child: _colLabel(l10n.monthLabel, accent)),
+                      Expanded(child: _colLabel(l10n.year, accent)),
                     ],
                   ),
                 ),
@@ -1325,7 +1461,7 @@ class _DobPickerState extends State<_DobPicker>
                               childDelegate: ListWheelChildBuilderDelegate(
                                 childCount: 12,
                                 builder: (_, i) => _wheelCell(
-                                  _monthNames[i],
+                                  monthNames[i],
                                   i == _month,
                                   accent,
                                   textCol,
@@ -1408,7 +1544,7 @@ class _DobPickerState extends State<_DobPicker>
                       ),
                     ),
                     child: Text(
-                      'Confirm Date',
+                      l10n.confirm_date,
                       style: TextStyle(
                         fontSize: 14.sp,
                         fontWeight: FontWeight.w700,
@@ -1522,6 +1658,7 @@ class _PasswordStrengthBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final pw = password;
     var s = 0;
     if (pw.length >= 8) s++;
@@ -1529,7 +1666,12 @@ class _PasswordStrengthBar extends StatelessWidget {
     if (pw.contains(_digitRegExp)) s++;
     if (pw.contains(_specialCharRegExp)) s++;
     final colors = [Colors.red, Colors.orange, Colors.lightBlue, Colors.green];
-    final labels = ['Weak', 'Fair', 'Good', 'Strong'];
+    final labels = [
+      l10n.passwordStrengthWeak,
+      l10n.passwordStrengthFair,
+      l10n.passwordStrengthGood,
+      l10n.passwordStrengthStrong,
+    ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1585,13 +1727,17 @@ class _TermsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Semantics(
-    label: 'Agree to Terms of Service and Privacy Policy',
+    label:
+        '${AppLocalizations.of(context).iAgreeToThe}'
+        '${AppLocalizations.of(context).termsOfServiceTitle}'
+        '${AppLocalizations.of(context).andConnector}'
+        '${AppLocalizations.of(context).privacyPolicyTitle}',
     checked: agreed,
     child: GestureDetector(
       onTap: onToggle,
       child: AnimatedContainer(
         duration: 200.ms,
-        padding: EdgeInsets.all(16.w),
+        padding: EdgeInsets.all(AppSpacing.lg),
         decoration: BoxDecoration(
           color: agreed ? accent.withOpacity(0.1) : Colors.transparent,
           borderRadius: BorderRadius.circular(14.r),
@@ -1650,6 +1796,95 @@ class _TermsCard extends StatelessWidget {
       ),
     ),
   );
+}
+
+class _TabletStepTile extends StatelessWidget {
+  const _TabletStepTile({
+    required this.index,
+    required this.title,
+    required this.description,
+    required this.accent,
+    required this.active,
+    required this.complete,
+  });
+
+  final int index;
+  final String title;
+  final String description;
+  final Color accent;
+  final bool active;
+  final bool complete;
+
+  @override
+  Widget build(BuildContext context) {
+    final surfaceColor = active
+        ? accent.withOpacity(0.12)
+        : Colors.white.withOpacity(0.72);
+
+    return AnimatedContainer(
+      duration: 250.ms,
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: surfaceColor,
+        borderRadius: BorderRadius.circular(20.r),
+        border: Border.all(
+          color: active || complete
+              ? accent.withOpacity(active ? 0.5 : 0.25)
+              : accent.withOpacity(0.12),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40.w,
+            height: 40.w,
+            decoration: BoxDecoration(
+              color: active || complete ? accent : Colors.white,
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: complete
+                  ? Icon(Icons.check_rounded, color: Colors.white, size: 18.sp)
+                  : Text(
+                      '$index',
+                      style: TextStyle(
+                        fontSize: 15.sp,
+                        fontWeight: FontWeight.w800,
+                        color: active ? Colors.white : accent,
+                      ),
+                    ),
+            ),
+          ),
+          SizedBox(width: 14.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontFamily: 'Syne',
+                    fontSize: 15.sp,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black87,
+                  ),
+                ),
+                SizedBox(height: 4.h),
+                Text(
+                  description,
+                  style: TextStyle(
+                    fontSize: 12.5.sp,
+                    height: 1.35,
+                    color: Colors.black54,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _RoleCard extends StatelessWidget {

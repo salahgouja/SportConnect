@@ -14,6 +14,7 @@ import 'package:reactive_forms/reactive_forms.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/core/widgets/reactive_adaptive_text_field.dart';
 import 'package:sport_connect/features/profile/view_models/profile_view_model.dart';
@@ -71,9 +72,10 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
   }
 
   Future<void> _pickFiles() async {
+    final l10n = AppLocalizations.of(context);
     final source = await AppModalSheet.show<ImageSource>(
       context: context,
-      title: 'Attach image',
+      title: l10n.attach_image,
       maxHeightFactor: 0.45,
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -96,7 +98,7 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
 
     final picked = await _imagePicker.pickImage(
       source: source,
-      maxWidth: 1920,
+      maxWidth: double.infinity,
       maxHeight: 1920,
       imageQuality: 80,
     );
@@ -151,12 +153,15 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
           onPressed: () => context.pop(),
         ),
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.symmetric(horizontal: 24.w),
-          child: supportState.isSubmitted
-              ? _buildSuccessState()
-              : _buildFormState(l10n, supportState),
+      body: MaxWidthContainer(
+        maxWidth: kMaxWidthFormNarrow,
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: adaptiveScreenPadding(context),
+            child: supportState.isSubmitted
+                ? _buildSuccessState()
+                : _buildFormState(l10n, supportState),
+          ),
         ),
       ),
     );
@@ -264,9 +269,9 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
                 .read(contactSupportViewModelProvider.notifier)
                 .setSubject(control.value ?? ''),
             validationMessages: {
-              ValidationMessage.required: (_) => 'Please enter a subject',
+              ValidationMessage.required: (_) => l10n.supportSubjectRequired,
               ValidationMessage.minLength: (_) =>
-                  'Subject must be at least 3 characters',
+                  l10n.supportSubjectMinLength,
             },
             labelText: l10n.subjectLabel,
             hintText: l10n.subjectHint,
@@ -293,9 +298,9 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
                 .read(contactSupportViewModelProvider.notifier)
                 .setMessage(control.value ?? ''),
             validationMessages: {
-              ValidationMessage.required: (_) => 'Please describe your issue',
+              ValidationMessage.required: (_) => l10n.supportMessageRequired,
               ValidationMessage.minLength: (_) =>
-                  'Please provide at least 10 characters',
+                  l10n.supportMessageMinLength,
             },
             hintText: l10n.messageFieldHint,
           ).animate().fadeIn(delay: 300.ms),

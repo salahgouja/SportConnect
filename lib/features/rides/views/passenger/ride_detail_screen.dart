@@ -21,6 +21,7 @@ import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/core/widgets/app_map_tile_layer.dart';
 import 'package:sport_connect/core/widgets/driver_info_widget.dart';
 import 'package:sport_connect/core/widgets/map_location_picker.dart';
@@ -109,7 +110,9 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
     final bookings = vmState.bookings;
 
     return AdaptiveScaffold(
-      body: vmState.ride.when(
+      body: MaxWidthContainer(
+        maxWidth: kMaxWidthWide,
+        child: vmState.ride.when(
         loading: _buildLoadingSkeleton,
         error: (error, _) => _buildErrorState(error.toString()),
         data: (ride) {
@@ -127,6 +130,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
 
           return _buildContent(ride, bookings);
         },
+      ),
       ),
     );
   }
@@ -289,7 +293,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
 
                   // Ride progress timeline
                   Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 20.w),
+                        padding: adaptiveScreenPadding(context),
                         child: RideProgressTimeline(
                           rideStatus: ride.status,
                           bookingStatus:
@@ -685,7 +689,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
 
   Widget _buildRouteCard(RideModel ride) {
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+      margin: adaptiveScreenPadding(context).copyWith(bottom: 16.h, top: 16.h),
       padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
         color: AppColors.cardBg,
@@ -824,7 +828,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
 
   Widget _buildDriverCard(RideModel ride) {
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
+      margin: adaptiveScreenPadding(context).copyWith(bottom: 8.h, top: 8.h),
       child: GestureDetector(
         onTap: () {
           unawaited(HapticFeedback.lightImpact());
@@ -983,7 +987,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
 
   Widget _buildCarInfo(RideModel ride) {
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
+      margin: adaptiveScreenPadding(context).copyWith(bottom: 8.h, top: 8.h),
       child: PremiumCard(
         child: Row(
           children: [
@@ -1100,7 +1104,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
     }
 
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
+      margin: adaptiveScreenPadding(context).copyWith(bottom: 8.h, top: 8.h),
       child: PremiumCard(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1184,7 +1188,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
         .toList();
 
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 20.w),
+      margin: adaptiveScreenPadding(context),
       child: PremiumCard(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1350,7 +1354,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
         .toList();
 
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 20.w),
+      margin: adaptiveScreenPadding(context),
       child: PremiumCard(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1537,7 +1541,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
         AppLocalizations.of(context).requestAccepted,
         backgroundColor: Colors.green,
       );
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       if (!mounted) return;
       _showSnackBar(
         AppLocalizations.of(context).errorValue(e),
@@ -1555,7 +1559,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
 
       if (!mounted) return;
       _showSnackBar(AppLocalizations.of(context).requestDeclined);
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       if (!mounted) return;
       _showSnackBar(
         AppLocalizations.of(context).errorValue(e),
@@ -1866,7 +1870,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
         child: GestureDetector(
           onTap: onTap,
           child: Container(
-            padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 14.h),
+            padding: adaptiveScreenPadding(context).copyWith(bottom: 14.h, top: 14.h),
             decoration: BoxDecoration(
               color: bgColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(14.r),
@@ -2468,7 +2472,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
           message: AppLocalizations.of(context).failedToBookRidePlease,
         );
       }
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       if (!mounted) return;
       _uiNotifier.setBooking(false);
       await FeedbackAnimations.showError(

@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -12,6 +13,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:sport_connect/core/models/location/location_point.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/core/widgets/map_location_picker.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
@@ -94,7 +96,10 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
         ),
         title: AppLocalizations.of(context).editEventTitle,
       ),
-      body: _buildBody(editState, eventActions),
+      body: MaxWidthContainer(
+        maxWidth: kMaxWidthForm,
+        child: _buildBody(editState, eventActions),
+      ),
     );
   }
 
@@ -175,7 +180,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
     }
 
     return ListView(
-      padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 32.h),
+      padding: adaptiveScreenPadding(context),
       children: [
         _buildSportTypeSelector(editState),
         SizedBox(height: 20.h),
@@ -319,7 +324,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
       return DecorationImage(image: FileImage(imageFile), fit: BoxFit.cover);
     }
     if (imageUrl != null && imageUrl.isNotEmpty) {
-      return DecorationImage(image: NetworkImage(imageUrl), fit: BoxFit.cover);
+      return DecorationImage(image: CachedNetworkImageProvider(imageUrl), fit: BoxFit.cover);
     }
     return null;
   }
@@ -363,7 +368,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
   Future<void> _pickImage() async {
     final image = await ImagePicker().pickImage(
       source: ImageSource.gallery,
-      maxWidth: 1200,
+      maxWidth: kMaxWidthWide,
       maxHeight: 800,
       imageQuality: 85,
     );
@@ -719,7 +724,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
             ),
             if (patterns.isEmpty)
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
+                padding: adaptiveScreenPadding(context).copyWith(bottom: 8.h, top: 8.h),
                 child: Text(
                   '${AppLocalizations.of(context).no_recurrence_pattern_fits_this_startend_window}'
                   '${AppLocalizations.of(context).extend_end_time_or_set_a_later_repeat_end_date}',

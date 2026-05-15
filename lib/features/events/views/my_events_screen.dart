@@ -12,6 +12,7 @@ import 'package:sport_connect/core/models/models.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/core/widgets/premium_card.dart';
 import 'package:sport_connect/core/widgets/skeleton_loader.dart';
@@ -40,7 +41,6 @@ class _MyEventsScreenState extends ConsumerState<MyEventsScreen> {
     final isDriver = role.value == UserRole.driver;
     final l10n = AppLocalizations.of(context);
     final actionButton = AdaptiveFloatingActionButton(
-      heroTag: null,
       onPressed: () => context.push(AppRoutes.createEvent.path),
       backgroundColor: AppColors.primary,
       child: Icon(Icons.add_rounded, size: 24.sp),
@@ -58,14 +58,17 @@ class _MyEventsScreenState extends ConsumerState<MyEventsScreen> {
         ),
         title: l10n.myEventsTitle,
       ),
-      body: AdaptiveTabBarView(
-        tabs: [l10n.myEventsCreatedTab, l10n.myEventsJoinedTab],
-        selectedColor: Colors.white,
-        backgroundColor: AppColors.primary,
-        children: [
-          _CreatedTab(userId: userId, isDriver: isDriver),
-          _JoinedTab(userId: userId, isDriver: isDriver),
-        ],
+      body: MaxWidthContainer(
+        maxWidth: kMaxWidthContent,
+        child: AdaptiveTabBarView(
+          tabs: [l10n.myEventsCreatedTab, l10n.myEventsJoinedTab],
+          selectedColor: Colors.white,
+          backgroundColor: AppColors.primary,
+          children: [
+            _CreatedTab(userId: userId, isDriver: isDriver),
+            _JoinedTab(userId: userId, isDriver: isDriver),
+          ],
+        ),
       ),
       floatingActionButton: actionButton.animate().scale(
         delay: 300.ms,
@@ -87,8 +90,9 @@ class _CreatedTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    if (userId.isEmpty)
+    if (userId.isEmpty) {
       return _EmptyTab(message: l10n.signInFirstMessage, isDriver: isDriver);
+    }
     final stream = ref.watch(eventsByCreatorStreamProvider(userId));
 
     return stream.when(
@@ -117,8 +121,9 @@ class _JoinedTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    if (userId.isEmpty)
+    if (userId.isEmpty) {
       return _EmptyTab(message: l10n.signInFirstMessage, isDriver: isDriver);
+    }
     final stream = ref.watch(joinedEventsStreamProvider(userId));
 
     return stream.when(

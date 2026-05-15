@@ -11,6 +11,7 @@ import 'package:intl/intl.dart';
 import 'package:sliver_tools/sliver_tools.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
 import 'package:sport_connect/core/widgets/rating_and_profile_widgets.dart';
 import 'package:sport_connect/core/widgets/skeleton_loader.dart';
@@ -46,20 +47,24 @@ class ReviewsListScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: RefreshIndicator.adaptive(
-        color: AppColors.primary,
-        onRefresh: () async {
-          ref.read(reviewsListViewModelProvider(userId).notifier).refresh();
-        },
-        child: asyncState.when(
-          loading: () => const SkeletonLoader(
-            type: SkeletonType.compactTile,
-            itemCount: 5,
+      body: MaxWidthContainer(
+        maxWidth: kMaxWidthContent,
+        child: RefreshIndicator.adaptive(
+          color: AppColors.primary,
+          onRefresh: () async {
+            ref.read(reviewsListViewModelProvider(userId).notifier).refresh();
+          },
+          child: asyncState.when(
+            loading: () => const SkeletonLoader(
+              type: SkeletonType.compactTile,
+              itemCount: 5,
+            ),
+            error: (error, _) =>
+                _buildErrorState(context, error.toString(), ref),
+            data: (state) => state.error != null
+                ? _buildErrorState(context, state.error!, ref)
+                : _buildContent(context, state, ref),
           ),
-          error: (error, _) => _buildErrorState(context, error.toString(), ref),
-          data: (state) => state.error != null
-              ? _buildErrorState(context, state.error!, ref)
-              : _buildContent(context, state, ref),
         ),
       ),
     );
@@ -323,7 +328,7 @@ class ReviewsListScreen extends ConsumerWidget {
       child: Row(
         children: [
           _FilterChip(
-            label: 'All',
+            label: AppLocalizations.of(context).filterAll,
             isSelected: state.filterType == null,
             onTap: () {
               ref
@@ -333,7 +338,7 @@ class ReviewsListScreen extends ConsumerWidget {
           ),
           SizedBox(width: 8.w),
           _FilterChip(
-            label: 'As Driver',
+            label: AppLocalizations.of(context).as_driver,
             isSelected: state.filterType == ReviewType.driver,
             onTap: () {
               ref
@@ -343,7 +348,7 @@ class ReviewsListScreen extends ConsumerWidget {
           ),
           SizedBox(width: 8.w),
           _FilterChip(
-            label: 'As Rider',
+            label: AppLocalizations.of(context).as_rider,
             isSelected: state.filterType == ReviewType.rider,
             onTap: () {
               ref
@@ -467,8 +472,8 @@ class _ReviewCard extends StatelessWidget {
               AdaptivePopupMenuButton.icon<String>(
                 icon: Icons.adaptive.more,
                 items: [
-                  const AdaptivePopupMenuItem<String>(
-                    label: 'Report Review',
+                  AdaptivePopupMenuItem<String>(
+                    label: AppLocalizations.of(context).report_review,
                     icon: Icons.flag_outlined,
                     value: 'report',
                   ),

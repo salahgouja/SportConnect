@@ -17,6 +17,7 @@ import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/core/widgets/permission_dialog_helper.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 
 /// Dispute filing screen for ride fare or service disagreements.
 class DisputeScreen extends ConsumerStatefulWidget {
@@ -80,7 +81,7 @@ class _DisputeScreenState extends ConsumerState<DisputeScreen> {
     final l10n = AppLocalizations.of(context);
     final source = await AppModalSheet.show<ImageSource>(
       context: context,
-      title: 'Attach evidence',
+      title: l10n.attachEvidence,
       maxHeightFactor: 0.45,
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -104,16 +105,12 @@ class _DisputeScreenState extends ConsumerState<DisputeScreen> {
 
     final accepted = await PermissionDialogHelper.showCameraRationale(
       context,
-      customMessage:
-          'Access to your ${source == ImageSource.camera ? 'camera' : 'photo library'} '
-          'is needed to attach evidence to your dispute. '
-          'Photos are only uploaded when you submit the dispute.',
     );
     if (!accepted) return;
 
     final picked = await _imagePicker.pickImage(
       source: source,
-      maxWidth: 1920,
+      maxWidth: double.infinity,
       maxHeight: 1920,
       imageQuality: 80,
     );
@@ -169,9 +166,12 @@ class _DisputeScreenState extends ConsumerState<DisputeScreen> {
           onPressed: () => context.pop(),
         ),
       ),
-      body: formState.isSubmitted
-          ? _buildSuccessView(l10n)
-          : _buildFormView(formState, l10n),
+      body: MaxWidthContainer(
+        maxWidth: kMaxWidthForm,
+        child: formState.isSubmitted
+            ? _buildSuccessView(l10n)
+            : _buildFormView(formState, l10n),
+      ),
     );
   }
 

@@ -11,6 +11,8 @@ import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/theme/app_spacing.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/core/utils/user_facing_error.dart';
 import 'package:sport_connect/core/widgets/custom_button.dart';
 import 'package:sport_connect/core/widgets/glass_panel.dart';
@@ -115,10 +117,12 @@ class RoleSelectionScreen extends ConsumerWidget {
     }
 
     return AdaptiveScaffold(
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.symmetric(horizontal: 24.w),
-          child: Column(
+      body: MaxWidthContainer(
+        maxWidth: kMaxWidthForm,
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: adaptiveScreenPadding(context),
+            child: Column(
             children: [
               SizedBox(height: 32.h),
 
@@ -130,8 +134,16 @@ class RoleSelectionScreen extends ConsumerWidget {
 
               SizedBox(height: 32.h),
 
-              // Role options
-              _buildRoleCard(
+              // Role options — side-by-side on tablet, stacked on phone
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final crossAxisCount = responsiveValue<int>(
+                    context,
+                    phone: 1,
+                    tablet: 2,
+                    desktop: 3,
+                  );
+                  final riderCard = _buildRoleCard(
                     onRoleSelected: (role) => ref
                         .read(roleSelectionViewModelProvider.notifier)
                         .selectRole(role),
@@ -146,14 +158,9 @@ class RoleSelectionScreen extends ConsumerWidget {
                       l10n.riderFeatureChat,
                       l10n.riderFeatureTrack,
                     ],
-                  )
-                  .animate()
-                  .fadeIn(duration: 500.ms, delay: 200.ms)
-                  .slideX(begin: -0.2, curve: Curves.easeOutCubic),
+                  ).animate().fadeIn(duration: 500.ms, delay: 200.ms).slideX(begin: -0.2, curve: Curves.easeOutCubic);
 
-              SizedBox(height: 16.h),
-
-              _buildRoleCard(
+                  final driverCard = _buildRoleCard(
                     onRoleSelected: (role) => ref
                         .read(roleSelectionViewModelProvider.notifier)
                         .selectRole(role),
@@ -168,10 +175,27 @@ class RoleSelectionScreen extends ConsumerWidget {
                       l10n.driverFeatureAccept,
                       l10n.driverFeatureEarn,
                     ],
-                  )
-                  .animate()
-                  .fadeIn(duration: 500.ms, delay: 300.ms)
-                  .slideX(begin: 0.2, curve: Curves.easeOutCubic),
+                  ).animate().fadeIn(duration: 500.ms, delay: 300.ms).slideX(begin: 0.2, curve: Curves.easeOutCubic);
+
+                  if (crossAxisCount >= 2) {
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(child: riderCard),
+                        SizedBox(width: AppSpacing.md),
+                        Expanded(child: driverCard),
+                      ],
+                    );
+                  }
+                  return Column(
+                    children: [
+                      riderCard,
+                      SizedBox(height: AppSpacing.md),
+                      driverCard,
+                    ],
+                  );
+                },
+              ),
 
               SizedBox(height: 32.h),
 
@@ -231,6 +255,7 @@ class RoleSelectionScreen extends ConsumerWidget {
             ],
           ),
         ),
+      ),
       ),
     );
   }

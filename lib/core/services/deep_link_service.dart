@@ -144,8 +144,8 @@ class DeepLinkService {
         TalkerService.info('🔗 Incoming App Link: $uri');
         unawaited(_handleDeepLink(router, uri));
       },
-      onError: (error) {
-        TalkerService.error('❌ App Link error', error);
+      onError: (Object error, StackTrace stackTrace) {
+        TalkerService.error('❌ App Link error', error, stackTrace);
       },
     );
   }
@@ -218,7 +218,7 @@ class DeepLinkService {
                 'Could not resolve receiver for deep-link chat $routeId; '
                 'redirecting to notifications.',
               );
-              router.pushNamed(AppRoutes.notifications.name);
+              await router.pushNamed(AppRoutes.notifications.name);
               return;
             }
 
@@ -229,7 +229,7 @@ class DeepLinkService {
               _ => AppRoutes.chatDetail.name,
             };
 
-            router.pushNamed(
+            await router.pushNamed(
               routeName,
               pathParameters: {handler.paramKey!: routeId},
               extra: receiver,
@@ -246,16 +246,16 @@ class DeepLinkService {
               TalkerService.warning(
                 '🔗 Deep-link target not found (${handler.routeName}/$routeId) — redirecting.',
               );
-              router.pushNamed(AppRoutes.notifications.name);
+              await router.pushNamed(AppRoutes.notifications.name);
               return;
             }
-            router.pushNamed(
+            await router.pushNamed(
               handler.routeName,
               pathParameters: {handler.paramKey!: routeId},
             );
           }
         } else {
-          router.pushNamed(handler.routeName);
+          await router.pushNamed(handler.routeName);
         }
         return;
       }
@@ -282,7 +282,7 @@ class DeepLinkService {
       }
       // For any other resource type, default to allowing navigation.
       return true;
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       TalkerService.error('_resourceExists check failed', e);
       return true; // fail-open — let destination screen handle the error
     }
@@ -341,7 +341,7 @@ class DeepLinkService {
         ),
         chatType: ChatType.private,
       );
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       TalkerService.error('Failed to resolve chat receiver from deep link', e);
       return (receiver: null, chatType: ChatType.private);
     }

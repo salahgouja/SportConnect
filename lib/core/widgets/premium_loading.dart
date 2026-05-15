@@ -218,7 +218,6 @@ class SkeletonShimmer extends StatelessWidget {
     if (!isLoading) return child;
 
     return Skeletonizer(
-      enabled: true,
       containersColor: baseColor ?? AppColors.border.withValues(alpha: 0.5),
       child: child,
     );
@@ -249,7 +248,6 @@ class SkeletonBox extends StatelessWidget {
     );
 
     return Skeletonizer(
-      enabled: true,
       containersColor: AppColors.border.withValues(alpha: 0.5),
       child: box,
     );
@@ -273,7 +271,6 @@ class SkeletonCircle extends StatelessWidget {
     );
 
     return Skeletonizer(
-      enabled: true,
       containersColor: AppColors.border.withValues(alpha: 0.5),
       child: circle,
     );

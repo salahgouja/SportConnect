@@ -5,7 +5,9 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
+import 'package:sport_connect/core/models/models.dart' show UserModel;
 import 'package:sport_connect/core/models/user/models.dart';
+import 'package:sport_connect/core/models/user/user_model.dart' show UserModel;
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/services/firebase_service.dart';
 import 'package:sport_connect/core/services/talker_service.dart';
@@ -330,7 +332,6 @@ class ProfileRepository {
     // --- SharedPreferences logic for local streak tracking ---
     // This code assumes it is running in a Flutter environment.
     // If you want to keep this logic in the repository, you must add shared_preferences as a dependency.
-    // ignore: unnecessary_import
     final prefs = await SharedPreferences.getInstance();
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -338,8 +339,8 @@ class ProfileRepository {
     final lastActive = lastActiveMillis > 0
         ? DateTime.fromMillisecondsSinceEpoch(lastActiveMillis)
         : null;
-    int currentStreak = prefs.getInt('current_streak') ?? 0;
-    int longestStreak = prefs.getInt('longest_streak') ?? 0;
+    var currentStreak = prefs.getInt('current_streak') ?? 0;
+    var longestStreak = prefs.getInt('longest_streak') ?? 0;
 
     if (lastActive == null) {
       currentStreak = 1;
@@ -494,7 +495,7 @@ class ProfileRepository {
     if (user.role == UserRole.pending) return;
 
     // Get current rating breakdown
-    var breakdown = RatingBreakdown();
+    var breakdown = const RatingBreakdown();
     if (user is RiderModel) {
       breakdown = user.rating;
     } else if (user is DriverModel) {

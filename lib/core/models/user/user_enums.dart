@@ -50,6 +50,23 @@ enum UserLevel {
     }
     return UserLevel.bronze;
   }
+
+  String get displayName => name;
+
+  String get description {
+    switch (this) {
+      case UserLevel.bronze:
+        return 'Bronze level user';
+      case UserLevel.silver:
+        return 'Silver level user';
+      case UserLevel.gold:
+        return 'Gold level user';
+      case UserLevel.platinum:
+        return 'Platinum level user';
+      case UserLevel.diamond:
+        return 'Diamond level user';
+    }
+  }
 }
 
 /// Expertise ranks for users
@@ -63,6 +80,8 @@ enum Expertise {
   final String displayName;
 
   const Expertise(this.displayName);
+
+  String get displayValue => displayName;
 }
 
 enum AppLocale {
@@ -71,5 +90,6 @@ enum AppLocale {
   ;
 
   final String code;
+
   const AppLocale(this.code);
 }

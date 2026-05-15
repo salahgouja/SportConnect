@@ -16,6 +16,7 @@ import 'package:sport_connect/features/payments/models/premium_plan.dart';
 import 'package:sport_connect/features/payments/services/premium_iap_service.dart';
 import 'package:sport_connect/features/payments/view_models/premium_checkout_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Feature data
@@ -97,7 +98,9 @@ class _PremiumSubscribeScreenState
   String _price(PremiumPlan plan) {
     final product = _products[plan];
     if (product != null) return product.price;
-    return plan == PremiumPlan.monthly ? '€4.99' : '€49.99';
+    return plan == PremiumPlan.monthly
+        ? AppLocalizations.of(context).fallbackMonthlyPrice
+        : AppLocalizations.of(context).fallbackYearlyPrice;
   }
 
   /// Per-month equivalent for the yearly plan.
@@ -106,9 +109,11 @@ class _PremiumSubscribeScreenState
     if (product != null) {
       final sym = product.currencySymbol;
       final monthly = product.rawPrice / 12;
-      return '≈ $sym${monthly.toStringAsFixed(2)}/mo';
+      return AppLocalizations.of(
+        context,
+      ).yearlyMonthlyAtPrice('$sym${monthly.toStringAsFixed(2)}');
     }
-    return '≈ €4.17/mo';
+    return AppLocalizations.of(context).yearlyMonthlyEstimate;
   }
 
   /// Label shown on the CTA button: price + period.
@@ -117,7 +122,9 @@ class _PremiumSubscribeScreenState
     if (_loadFailed) return l10n.pricingUnavailableCheckYourConnection;
     final plan = _selected;
     final price = _price(plan);
-    final period = plan == PremiumPlan.monthly ? '/mo' : '/yr';
+    final period = plan == PremiumPlan.monthly
+        ? l10n.billingPeriodMonthShort
+        : l10n.billingPeriodYearShort;
     return '${l10n.subscribe_now} · $price $period';
   }
 
@@ -125,10 +132,14 @@ class _PremiumSubscribeScreenState
   String _renewalText() {
     final plan = _selected;
     if (_loadingProducts || _loadFailed) {
-      return 'Subscription renews automatically until cancelled. Cancel anytime in App Store Settings.';
+      return AppLocalizations.of(context).premiumRenewsUntilCancelled;
     }
-    final period = plan == PremiumPlan.monthly ? 'month' : 'year';
-    return 'Automatically renews each $period at ${_price(plan)} until cancelled. Cancel anytime in App Store Settings.';
+    final period = plan == PremiumPlan.monthly
+        ? AppLocalizations.of(context).month
+        : AppLocalizations.of(context).year;
+    return AppLocalizations.of(
+      context,
+    ).premiumRenewsEachPeriodAtPrice(period, _price(plan));
   }
 
   bool get _canPurchase =>
@@ -184,6 +195,7 @@ class _PremiumSubscribeScreenState
     final checkoutState = ref.watch(premiumCheckoutViewModelProvider);
     final bottomPad = MediaQuery.paddingOf(context).bottom;
     final isProcessing = checkoutState.isProcessing;
+    final isTabletLayout = context.screenWidth >= Breakpoints.medium;
 
     // If the user is already Premium, show a simple confirmation instead of
     // the subscribe flow so they cannot accidentally initiate a duplicate purchase.
@@ -205,36 +217,336 @@ class _PremiumSubscribeScreenState
       ),
       child: Scaffold(
         backgroundColor: Colors.white,
-        body: Stack(
-          children: [
-            // ── Scrollable content ─────────────────────────────────────────
-            CustomScrollView(
-              slivers: [
-                _buildHeader(l10n),
-                _buildHeroSection(l10n),
-                _buildFeatureList(l10n),
-                _buildPlanSelector(l10n),
-                // Spacer so content clears the sticky CTA bar.
-                SliverToBoxAdapter(
-                  child: SizedBox(height: 160.h + bottomPad),
-                ),
-              ],
-            ),
+        body: isTabletLayout
+            ? _buildTabletLayout(l10n, checkoutState, isProcessing)
+            : _buildMobileLayout(l10n, checkoutState, isProcessing, bottomPad),
+      ),
+    );
+  }
 
-            // ── Sticky bottom CTA ──────────────────────────────────────────
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: _buildStickyBottom(
-                l10n,
-                checkoutState,
-                isProcessing,
-                bottomPad,
-              ),
+  Widget _buildMobileLayout(
+    AppLocalizations l10n,
+    PremiumCheckoutState checkoutState,
+    bool isProcessing,
+    double bottomPad,
+  ) {
+    return Stack(
+      children: [
+        CustomScrollView(
+          slivers: [
+            _buildHeader(l10n),
+            _buildHeroSection(l10n),
+            _buildFeatureList(l10n),
+            _buildPlanSelector(l10n),
+            SliverToBoxAdapter(
+              child: SizedBox(height: 160.h + bottomPad),
             ),
           ],
         ),
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          child: _buildStickyBottom(
+            l10n,
+            checkoutState,
+            isProcessing,
+            bottomPad,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTabletLayout(
+    AppLocalizations l10n,
+    PremiumCheckoutState checkoutState,
+    bool isProcessing,
+  ) {
+    final sidebarWidth = responsiveValue<double>(
+      context,
+      compact: 360,
+      medium: 380,
+      expanded: 420,
+      large: 460,
+    );
+
+    return SafeArea(
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1440),
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(24.w, 16.h, 24.w, 24.h),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FBFA),
+                      borderRadius: BorderRadius.circular(28.r),
+                      border: Border.all(color: AppColors.borderLight),
+                    ),
+                    child: CustomScrollView(
+                      slivers: [
+                        _buildHeader(l10n),
+                        _buildHeroSection(l10n),
+                        _buildFeatureList(l10n),
+                        SliverToBoxAdapter(
+                          child: SizedBox(height: 24.h),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SizedBox(width: 24.w),
+                SizedBox(
+                  width: sidebarWidth,
+                  child: _buildTabletPurchaseSidebar(
+                    l10n,
+                    checkoutState,
+                    isProcessing,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTabletPurchaseSidebar(
+    AppLocalizations l10n,
+    PremiumCheckoutState checkoutState,
+    bool isProcessing,
+  ) {
+    return Container(
+      padding: EdgeInsets.all(24.w),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(28.r),
+        border: Border.all(color: AppColors.borderLight),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            l10n.premium_checkout,
+            style: TextStyle(
+              fontSize: 22.sp,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          SizedBox(height: 8.h),
+          Text(
+            l10n.premiumSubscribeHeroSubtitle,
+            style: TextStyle(
+              fontSize: 13.sp,
+              color: AppColors.textSecondary,
+              height: 1.5,
+            ),
+          ),
+          SizedBox(height: 24.h),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  _buildTabletPlanSelector(l10n),
+                  SizedBox(height: 20.h),
+                  _buildTabletValueCard(l10n),
+                  SizedBox(height: 20.h),
+                  _buildTabletCheckoutPanel(l10n, checkoutState, isProcessing),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTabletPlanSelector(AppLocalizations l10n) {
+    return Column(
+      children: [
+        _PlanCard(
+          label: l10n.monthly,
+          priceLabel: _loadingProducts
+              ? '…'
+              : _loadFailed
+              ? '—'
+              : _price(PremiumPlan.monthly),
+          sublabel: l10n.cancelAnytime,
+          isSelected: _selected == PremiumPlan.monthly,
+          isBestValue: false,
+          isLoading: _loadingProducts,
+          onTap: () => _select(PremiumPlan.monthly),
+        ),
+        SizedBox(height: 12.h),
+        _PlanCard(
+          label: l10n.yearly,
+          priceLabel: _loadingProducts
+              ? '…'
+              : _loadFailed
+              ? '—'
+              : _price(PremiumPlan.yearly),
+          sublabel: _loadingProducts
+              ? ''
+              : _loadFailed
+              ? l10n.yearlyMonthlyEstimate
+              : _yearlyMonthly(),
+          badgeLabel: l10n.bestValue,
+          isSelected: _selected == PremiumPlan.yearly,
+          isBestValue: true,
+          isLoading: _loadingProducts,
+          onTap: () => _select(PremiumPlan.yearly),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTabletValueCard(AppLocalizations l10n) {
+    return Container(
+      padding: EdgeInsets.all(18.w),
+      decoration: BoxDecoration(
+        color: AppColors.primarySurface,
+        borderRadius: BorderRadius.circular(20.r),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l10n.bestValue,
+            style: TextStyle(
+              fontSize: 12.sp,
+              fontWeight: FontWeight.w700,
+              color: AppColors.primaryDark,
+            ),
+          ),
+          SizedBox(height: 8.h),
+          Text(
+            l10n.save_about_16_compared_to_monthly,
+            style: TextStyle(
+              fontSize: 15.sp,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          SizedBox(height: 6.h),
+          Text(
+            l10n.billedMonthly,
+            style: TextStyle(
+              fontSize: 12.sp,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTabletCheckoutPanel(
+    AppLocalizations l10n,
+    PremiumCheckoutState checkoutState,
+    bool isProcessing,
+  ) {
+    return Container(
+      padding: EdgeInsets.all(18.w),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF7F9FC),
+        borderRadius: BorderRadius.circular(20.r),
+        border: Border.all(color: AppColors.borderLight),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (checkoutState.errorMessage != null) ...[
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+              margin: EdgeInsets.only(bottom: 12.h),
+              decoration: BoxDecoration(
+                color: AppColors.errorSurface,
+                borderRadius: BorderRadius.circular(12.r),
+                border: Border.all(
+                  color: AppColors.error.withValues(alpha: 0.25),
+                ),
+              ),
+              child: Text(
+                checkoutState.errorMessage!,
+                style: TextStyle(
+                  fontSize: 13.sp,
+                  color: AppColors.error,
+                  fontWeight: FontWeight.w500,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
+          if (_loadFailed) ...[
+            GestureDetector(
+              onTap: _loadProducts,
+              child: Text(
+                l10n.retry_loading_plans,
+                style: TextStyle(
+                  fontSize: 13.sp,
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            SizedBox(height: 12.h),
+          ],
+          SizedBox(
+            width: double.infinity,
+            height: 52.h,
+            child: _SubscribeButton(
+              label: _ctaLabel(l10n),
+              isEnabled: _canPurchase && !isProcessing,
+              isLoading: isProcessing,
+              onPressed: _onSubscribe,
+            ),
+          ),
+          SizedBox(height: 12.h),
+          Text(
+            _renewalText(),
+            style: TextStyle(
+              fontSize: 11.sp,
+              color: AppColors.textTertiary,
+              height: 1.5,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: 12.h),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _LegalLink(
+                label: l10n.termsOfServiceTitle,
+                onTap: () => context.push(AppRoutes.terms.path),
+              ),
+              Text(
+                '  ·  ',
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  color: AppColors.textTertiary,
+                ),
+              ),
+              _LegalLink(
+                label: l10n.privacyPolicyTitle,
+                onTap: () => context.push(AppRoutes.privacy.path),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -323,7 +635,7 @@ class _PremiumSubscribeScreenState
                 .fadeIn(),
             SizedBox(height: 16.h),
             Text(
-              'SportConnect Premium',
+              l10n.sportconnect_premium,
               style: TextStyle(
                 fontSize: 26.sp,
                 fontWeight: FontWeight.w800,
@@ -334,7 +646,7 @@ class _PremiumSubscribeScreenState
             ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.2),
             SizedBox(height: 6.h),
             Text(
-              'Everything you need to ride smarter, together.',
+              l10n.premiumSubscribeHeroSubtitle,
               style: TextStyle(
                 fontSize: 15.sp,
                 color: AppColors.textSecondary,
@@ -355,13 +667,15 @@ class _PremiumSubscribeScreenState
     final items = _features(l10n);
     return SliverToBoxAdapter(
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 20.w),
+        padding: adaptiveScreenPadding(context),
         child: Container(
           decoration: BoxDecoration(
             color: AppColors.primarySurface,
             borderRadius: BorderRadius.circular(20.r),
           ),
-          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+          padding: adaptiveScreenPadding(
+            context,
+          ).copyWith(bottom: 16.h, top: 16.h),
           child: Column(
             children: [
               for (int i = 0; i < items.length; i++) ...[
@@ -393,7 +707,7 @@ class _PremiumSubscribeScreenState
           children: [
             Expanded(
               child: _PlanCard(
-                label: 'Monthly',
+                label: l10n.monthly,
                 priceLabel: _loadingProducts
                     ? '…'
                     : _loadFailed
@@ -409,7 +723,7 @@ class _PremiumSubscribeScreenState
             SizedBox(width: 12.w),
             Expanded(
               child: _PlanCard(
-                label: 'Yearly',
+                label: l10n.yearly,
                 priceLabel: _loadingProducts
                     ? '…'
                     : _loadFailed
@@ -418,7 +732,7 @@ class _PremiumSubscribeScreenState
                 sublabel: _loadingProducts
                     ? ''
                     : _loadFailed
-                    ? '≈ €4.17/mo'
+                    ? l10n.yearlyMonthlyEstimate
                     : _yearlyMonthly(),
                 badgeLabel: l10n.bestValue,
                 isSelected: _selected == PremiumPlan.yearly,
@@ -815,7 +1129,7 @@ class _AlreadyPremiumScreen extends StatelessWidget {
               ),
               SizedBox(height: 24.h),
               Text(
-                "You're already a member",
+                l10n.alreadyPremiumTitle,
                 style: TextStyle(
                   fontSize: 22.sp,
                   fontWeight: FontWeight.w800,
@@ -825,7 +1139,7 @@ class _AlreadyPremiumScreen extends StatelessWidget {
               ),
               SizedBox(height: 10.h),
               Text(
-                'Your SportConnect Premium subscription is active. Enjoy all premium features.',
+                l10n.alreadyPremiumSubtitle,
                 style: TextStyle(
                   fontSize: 15.sp,
                   color: AppColors.textSecondary,
@@ -847,7 +1161,7 @@ class _AlreadyPremiumScreen extends StatelessWidget {
                     ),
                   ),
                   child: Text(
-                    'Back to App',
+                    l10n.backToApp,
                     style: TextStyle(
                       fontSize: 15.sp,
                       fontWeight: FontWeight.w700,

@@ -6,6 +6,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:reactive_forms/reactive_forms.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/theme/app_spacing.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/core/widgets/glass_panel.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/core/widgets/reactive_adaptive_text_field.dart';
@@ -109,16 +111,19 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
         ),
         title: l10n.changePasswordTitle,
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.symmetric(horizontal: 24.w),
-          child: Column(
-            children: [
-              if (vmState.isSuccess)
-                _buildSuccessState()
-              else
-                _buildFormState(l10n, vmState),
-            ],
+      body: MaxWidthContainer(
+        maxWidth: kMaxWidthFormNarrow,
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: adaptiveScreenPadding(context),
+            child: Column(
+              children: [
+                if (vmState.isSuccess)
+                  _buildSuccessState()
+                else
+                  _buildFormState(l10n, vmState),
+              ],
+            ),
           ),
         ),
       ),
@@ -194,10 +199,17 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
             ),
             obscureText: vmState.obscureNewPassword,
             validationMessages: {
-              ValidationMessage.required: (_) => 'Password is required',
-              ValidationMessage.minLength: (_) =>
-                  'Password must be at least 8 characters',
-              'password': (error) => error as String,
+              ValidationMessage.required: (_) => l10n.password_is_required,
+              ValidationMessage.minLength: (_) => l10n.passwordMinLengthError,
+              'password': (error) => switch (error as String) {
+                'Include at least one uppercase letter' =>
+                  l10n.include_at_least_one_uppercase_letter,
+                'Include at least one lowercase letter' =>
+                  l10n.include_at_least_one_lowercase_letter,
+                'Include at least one number' =>
+                  l10n.include_at_least_one_number,
+                _ => error,
+              },
             },
           ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.1),
 
@@ -224,8 +236,9 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
             ),
             obscureText: vmState.obscureConfirmPassword,
             validationMessages: {
-              ValidationMessage.required: (_) => 'Please confirm your password',
-              ValidationMessage.mustMatch: (_) => 'Passwords do not match',
+              ValidationMessage.required: (_) =>
+                  l10n.please_confirm_your_password,
+              ValidationMessage.mustMatch: (_) => l10n.passwords_do_not_match,
             },
           ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1),
 

@@ -6,6 +6,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:reactive_forms/reactive_forms.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/theme/app_spacing.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/core/widgets/glass_panel.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/core/widgets/reactive_adaptive_text_field.dart';
@@ -64,12 +66,15 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           onPressed: () => context.pop(),
         ),
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.symmetric(horizontal: 24.w),
-          child: vmState.emailSent
-              ? _buildSuccessState(l10n, vmState)
-              : _buildFormState(l10n, vmState),
+      body: MaxWidthContainer(
+        maxWidth: kMaxWidthFormNarrow,
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: adaptiveScreenPadding(context),
+            child: vmState.emailSent
+                ? _buildSuccessState(l10n, vmState)
+                : _buildFormState(l10n, vmState),
+          ),
         ),
       ),
     );
@@ -130,9 +135,9 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             prefixIcon: const Icon(Icons.email_outlined),
             keyboardType: TextInputType.emailAddress,
             validationMessages: {
-              ValidationMessage.required: (_) => 'Email is required',
+              ValidationMessage.required: (_) => l10n.email_is_required,
               ValidationMessage.email: (_) =>
-                  'Please enter a valid email address',
+                  l10n.please_enter_a_valid_email_address,
             },
           ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.1),
 

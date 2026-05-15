@@ -121,8 +121,8 @@ class AdminRepository {
   }) {
     return _call('approveRefundRequest', {
       'refundRequestId': refundRequestId,
-      if (amountInCents != null) 'amountInCents': amountInCents,
-      if (note != null) 'note': note,
+      'amountInCents': ?amountInCents,
+      'note': ?note,
     });
   }
 
@@ -132,7 +132,7 @@ class AdminRepository {
   }) {
     return _call('rejectRefundRequest', {
       'refundRequestId': refundRequestId,
-      if (note != null) 'note': note,
+      'note': ?note,
     });
   }
 
@@ -143,8 +143,8 @@ class AdminRepository {
   }) {
     return _call('approveDisputeRefund', {
       'disputeId': disputeId,
-      if (amountInCents != null) 'amountInCents': amountInCents,
-      if (note != null) 'note': note,
+      'amountInCents': ?amountInCents,
+      'note': ?note,
     });
   }
 
@@ -154,7 +154,7 @@ class AdminRepository {
   }) {
     return _call('rejectDispute', {
       'disputeId': disputeId,
-      if (note != null) 'note': note,
+      'note': ?note,
     });
   }
 
@@ -164,7 +164,7 @@ class AdminRepository {
   }) {
     return _call('resolveSupportTicket', {
       'ticketId': ticketId,
-      if (note != null) 'note': note,
+      'note': ?note,
     });
   }
 

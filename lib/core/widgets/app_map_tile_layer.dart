@@ -1,6 +1,5 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_map_cache/flutter_map_cache.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/services/map_service.dart';
@@ -25,7 +24,7 @@ class AppMapTileLayer extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final CachedTileProvider? tileProvider =
+    final tileProvider =
         ref.watch(mapTileProviderProvider.select((a) => a.value));
     return TileLayer(
       urlTemplate:

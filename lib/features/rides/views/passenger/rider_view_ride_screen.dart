@@ -4,6 +4,7 @@ import 'dart:async';
 
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -19,6 +20,7 @@ import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/theme/app_spacing.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/core/widgets/app_map_tile_layer.dart';
 import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/core/widgets/driver_info_widget.dart';
@@ -219,7 +221,9 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
     }
 
     return AdaptiveScaffold(
-      body: Stack(
+      body: MaxWidthContainer(
+        maxWidth: kMaxWidthWide,
+        child: Stack(
         children: [
           CustomScrollView(
             slivers: [
@@ -241,6 +245,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
             child: _buildBookingBar(ride, uiState),
           ),
         ],
+      ),
       ),
     );
   }
@@ -1185,7 +1190,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
               CircleAvatar(
                 radius: 16.r,
                 backgroundImage: review.reviewerPhotoUrl != null
-                    ? NetworkImage(review.reviewerPhotoUrl!)
+                              ? CachedNetworkImageProvider(review.reviewerPhotoUrl!)
                     : null,
                 child: review.reviewerPhotoUrl == null
                     ? Text(
@@ -1631,7 +1636,7 @@ class _RiderViewRideScreenState extends ConsumerState<RiderViewRideScreen> {
           AppRoutes.rideBookingPending.path.replaceFirst(':rideId', ride.id),
         );
       }
-    } on Exception catch (e, st) {
+    } on Exception {
       if (mounted) {
         AdaptiveSnackBar.show(
           context,

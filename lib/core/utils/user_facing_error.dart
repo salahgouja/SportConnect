@@ -1,5 +1,4 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:sport_connect/features/auth/models/auth_exception.dart';
 
 String userFacingError(

@@ -9,6 +9,7 @@ import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/utils/payment_error_handler.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/features/payments/view_models/payment_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
@@ -131,15 +132,18 @@ class _DriverStripeOnboardingScreenState
 
   Widget _buildShell({required Widget child}) {
     return AdaptiveScaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [_screenBg, Colors.white],
+      body: MaxWidthContainer(
+        maxWidth: kMaxWidthForm,
+        child: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [_screenBg, Colors.white],
+            ),
           ),
+          child: SafeArea(child: child),
         ),
-        child: SafeArea(child: child),
       ),
     );
   }
@@ -284,14 +288,14 @@ class _DriverStripeOnboardingScreenState
               SizedBox(height: 24.h),
               _buildBalanceCard(),
               SizedBox(height: 13.h),
-                  Row(
+              Row(
                 children: [
                   Expanded(
                     child: _MiniFeatureTile(
                       icon: Icons.bolt_rounded,
                       title: l10n.fast_payouts,
                       subtitle: l10n.business_days_1_to_2,
-                      color: Color(0xFF10B981),
+                      color: const Color(0xFF10B981),
                     ),
                   ),
                   SizedBox(width: 8.w),
@@ -309,7 +313,7 @@ class _DriverStripeOnboardingScreenState
                       icon: Icons.percent_rounded,
                       title: l10n.lowFees,
                       subtitle: l10n.transparent_pricing,
-                      color: Color(0xFF2FA66A),
+                      color: const Color(0xFF2FA66A),
                     ),
                   ),
                 ],
@@ -346,7 +350,10 @@ class _DriverStripeOnboardingScreenState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('EUR balance', style: _labelStyle(_muted)),
+                Text(
+                  AppLocalizations.of(context).stripeEurBalance,
+                  style: _labelStyle(_muted),
+                ),
                 SizedBox(height: 8.h),
                 Text(
                   '14 320,50 €',
@@ -485,7 +492,7 @@ class _DriverStripeOnboardingScreenState
                   _ChecklistRow(
                     icon: Icons.account_balance_rounded,
                     iconColor: _primaryGreen,
-                    iconBg: Color(0xFFE9F9EF),
+                    iconBg: const Color(0xFFE9F9EF),
                     title: l10n.french_iban,
                     subtitle: l10n.to_receive_eur_payouts,
                   ),
@@ -493,7 +500,7 @@ class _DriverStripeOnboardingScreenState
                   _ChecklistRow(
                     icon: Icons.badge_rounded,
                     iconColor: _mintGreen,
-                    iconBg: Color(0xFFEAF8ED),
+                    iconBg: const Color(0xFFEAF8ED),
                     title: l10n.identity_verification,
                     subtitle: l10n.carte_didentit_or_passport,
                   ),
@@ -501,7 +508,7 @@ class _DriverStripeOnboardingScreenState
                   _ChecklistRow(
                     icon: Icons.description_rounded,
                     iconColor: _successGreen,
-                    iconBg: Color(0xFFE8FAF0),
+                    iconBg: const Color(0xFFE8FAF0),
                     title: l10n.french_tax_details,
                     subtitle: l10n.for_french_tax_records,
                   ),
@@ -751,182 +758,193 @@ class _DriverStripeOnboardingScreenState
           onPressed: _showCancelConfirmation,
         ),
       ),
-      body: Stack(
-        children: [
-          InAppWebView(
-            initialUrlRequest: URLRequest(
-              url: WebUri(onboardingState.onboardingUrl!),
-            ),
-            initialSettings: InAppWebViewSettings(
-              useShouldOverrideUrlLoading: true,
-              supportZoom: false,
-              builtInZoomControls: false,
-            ),
-            onWebViewCreated: (controller) {
-              _webViewController = controller;
-            },
-            onProgressChanged: (controller, progress) {
-              ref
-                  .read(driverStripeOnboardingFlowViewModelProvider.notifier)
-                  .setWebViewProgress(progress / 100);
-            },
-            onLoadStart: (controller, url) {},
-            onLoadStop: (controller, url) async {
-              final urlStr = url?.toString() ?? '';
-
-              if (urlStr.contains('stripe-refresh')) {
-                await ref
+      body: MaxWidthContainer(
+        maxWidth: kMaxWidthForm,
+        child: Stack(
+          children: [
+            InAppWebView(
+              initialUrlRequest: URLRequest(
+                url: WebUri(onboardingState.onboardingUrl!),
+              ),
+              initialSettings: InAppWebViewSettings(
+                useShouldOverrideUrlLoading: true,
+                supportZoom: false,
+                builtInZoomControls: false,
+              ),
+              onWebViewCreated: (controller) {
+                _webViewController = controller;
+              },
+              onProgressChanged: (controller, progress) {
+                ref
                     .read(driverStripeOnboardingFlowViewModelProvider.notifier)
-                    .resumeOnboarding();
-                final newUrl = ref
-                    .read(driverStripeOnboardingFlowViewModelProvider)
-                    .onboardingUrl;
-                if (newUrl != null && newUrl.isNotEmpty) {
-                  await controller.loadUrl(
-                    urlRequest: URLRequest(url: WebUri(newUrl)),
-                  );
+                    .setWebViewProgress(progress / 100);
+              },
+              onLoadStart: (controller, url) {},
+              onLoadStop: (controller, url) async {
+                final urlStr = url?.toString() ?? '';
+
+                if (urlStr.contains('stripe-refresh')) {
+                  await ref
+                      .read(
+                        driverStripeOnboardingFlowViewModelProvider.notifier,
+                      )
+                      .resumeOnboarding();
+                  final newUrl = ref
+                      .read(driverStripeOnboardingFlowViewModelProvider)
+                      .onboardingUrl;
+                  if (newUrl != null && newUrl.isNotEmpty) {
+                    await controller.loadUrl(
+                      urlRequest: URLRequest(url: WebUri(newUrl)),
+                    );
+                  }
+                } else if (urlStr.contains('stripe-return') &&
+                    !onboardingState.completionHandled) {
+                  ref
+                      .read(
+                        driverStripeOnboardingFlowViewModelProvider.notifier,
+                      )
+                      .markCompletionHandled();
+                  await _handleOnboardingComplete();
                 }
-              } else if (urlStr.contains('stripe-return') &&
-                  !onboardingState.completionHandled) {
+              },
+              onReceivedError: (controller, request, error) {
                 ref
                     .read(driverStripeOnboardingFlowViewModelProvider.notifier)
-                    .markCompletionHandled();
-                await _handleOnboardingComplete();
-              }
-            },
-            onReceivedError: (controller, request, error) {
-              ref
-                  .read(driverStripeOnboardingFlowViewModelProvider.notifier)
-                  .failWebViewLoad(l10n.stripePageLoadFailed);
-            },
-            shouldOverrideUrlLoading: (controller, navigationAction) async {
-              final url = navigationAction.request.url?.toString() ?? '';
+                    .failWebViewLoad(l10n.stripePageLoadFailed);
+              },
+              shouldOverrideUrlLoading: (controller, navigationAction) async {
+                final url = navigationAction.request.url?.toString() ?? '';
 
-              if (url.contains('stripe-return') &&
-                  !onboardingState.completionHandled) {
-                ref
-                    .read(driverStripeOnboardingFlowViewModelProvider.notifier)
-                    .markCompletionHandled();
-                await _handleOnboardingComplete();
+                if (url.contains('stripe-return') &&
+                    !onboardingState.completionHandled) {
+                  ref
+                      .read(
+                        driverStripeOnboardingFlowViewModelProvider.notifier,
+                      )
+                      .markCompletionHandled();
+                  await _handleOnboardingComplete();
+                  return NavigationActionPolicy.CANCEL;
+                }
+
+                if (url.startsWith('sportconnect://') &&
+                    !onboardingState.completionHandled) {
+                  ref
+                      .read(
+                        driverStripeOnboardingFlowViewModelProvider.notifier,
+                      )
+                      .markCompletionHandled();
+                  await _handleOnboardingComplete();
+                  return NavigationActionPolicy.CANCEL;
+                }
+
+                if (url.contains('stripe.com') ||
+                    url.contains('connect.stripe.com') ||
+                    url.contains('verify.stripe.com') ||
+                    url.contains('uploads.stripe.com') ||
+                    url.contains('hooks.stripe.com') ||
+                    url.contains('sportaxitrip.com') ||
+                    url.contains('stripe-refresh')) {
+                  return NavigationActionPolicy.ALLOW;
+                }
+
                 return NavigationActionPolicy.CANCEL;
-              }
-
-              if (url.startsWith('sportconnect://') &&
-                  !onboardingState.completionHandled) {
-                ref
-                    .read(driverStripeOnboardingFlowViewModelProvider.notifier)
-                    .markCompletionHandled();
-                await _handleOnboardingComplete();
-                return NavigationActionPolicy.CANCEL;
-              }
-
-              if (url.contains('stripe.com') ||
-                  url.contains('connect.stripe.com') ||
-                  url.contains('verify.stripe.com') ||
-                  url.contains('uploads.stripe.com') ||
-                  url.contains('hooks.stripe.com') ||
-                  url.contains('sportaxitrip.com') ||
-                  url.contains('stripe-refresh')) {
-                return NavigationActionPolicy.ALLOW;
-              }
-
-              return NavigationActionPolicy.CANCEL;
-            },
-          ),
-          if (onboardingState.webViewProgress < 1.0)
-            PositionedDirectional(
-              top: 0,
-              start: 0,
-              end: 0,
-              child: LinearProgressIndicator(
-                value: onboardingState.webViewProgress == 0
-                    ? null
-                    : onboardingState.webViewProgress,
-                minHeight: 3.h,
-                color: AppColors.primary,
-                backgroundColor: AppColors.primary.withValues(alpha: 0.10),
-              ),
+              },
             ),
-          if (onboardingState.webViewProgress == 0.0)
-            ColoredBox(
-              color: AppColors.background,
-              child: Center(
-                child:
-                    Container(
-                          margin: EdgeInsets.symmetric(horizontal: 28.w),
-                          padding: EdgeInsets.all(24.w),
-                          decoration: BoxDecoration(
-                            color: AppColors.surface,
-                            borderRadius: BorderRadius.circular(26.r),
-                            border: Border.all(
-                              color: AppColors.border.withValues(alpha: 0.50),
+            if (onboardingState.webViewProgress < 1.0)
+              PositionedDirectional(
+                top: 0,
+                start: 0,
+                end: 0,
+                child: LinearProgressIndicator(
+                  value: onboardingState.webViewProgress == 0
+                      ? null
+                      : onboardingState.webViewProgress,
+                  minHeight: 3.h,
+                  color: AppColors.primary,
+                  backgroundColor: AppColors.primary.withValues(alpha: 0.10),
+                ),
+              ),
+            if (onboardingState.webViewProgress == 0.0)
+              ColoredBox(
+                color: AppColors.background,
+                child: Center(
+                  child:
+                      Container(
+                            margin: EdgeInsets.symmetric(horizontal: 28.w),
+                            padding: EdgeInsets.all(24.w),
+                            decoration: BoxDecoration(
+                              color: AppColors.surface,
+                              borderRadius: BorderRadius.circular(26.r),
+                              border: Border.all(
+                                color: AppColors.border.withValues(alpha: 0.50),
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.06),
+                                  blurRadius: 28.r,
+                                  offset: Offset(0, 14.h),
+                                ),
+                              ],
                             ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.06),
-                                blurRadius: 28.r,
-                                offset: Offset(0, 14.h),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                width: 62.w,
-                                height: 62.w,
-                                decoration: BoxDecoration(
-                                  color: AppColors.primary.withValues(
-                                    alpha: 0.10,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 62.w,
+                                  height: 62.w,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary.withValues(
+                                      alpha: 0.10,
+                                    ),
+                                    shape: BoxShape.circle,
                                   ),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Center(
-                                  child: SizedBox(
-                                    width: 27.w,
-                                    height: 27.w,
-                                    child:
-                                        const CircularProgressIndicator.adaptive(
-                                          strokeWidth: 2.5,
-                                          valueColor:
-                                              AlwaysStoppedAnimation<Color>(
-                                                AppColors.primary,
-                                              ),
-                                        ),
+                                  child: Center(
+                                    child: SizedBox(
+                                      width: 27.w,
+                                      height: 27.w,
+                                      child:
+                                          const CircularProgressIndicator.adaptive(
+                                            strokeWidth: 2.5,
+                                            valueColor:
+                                                AlwaysStoppedAnimation<Color>(
+                                                  AppColors.primary,
+                                                ),
+                                          ),
+                                    ),
                                   ),
                                 ),
-                              ),
-                              SizedBox(height: 18.h),
-                              Text(
-                                l10n.stripeLoadingConnect,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: AppColors.textPrimary,
-                                  fontSize: 16.sp,
-                                  fontWeight: FontWeight.w900,
+                                SizedBox(height: 18.h),
+                                Text(
+                                  l10n.stripeLoadingConnect,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: AppColors.textPrimary,
+                                    fontSize: 16.sp,
+                                    fontWeight: FontWeight.w900,
+                                  ),
                                 ),
-                              ),
-                              SizedBox(height: 8.h),
-                              Text(
-                                l10n.poweredByStripe,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: AppColors.textSecondary,
-                                  fontSize: 12.sp,
-                                  fontWeight: FontWeight.w600,
+                                SizedBox(height: 8.h),
+                                Text(
+                                  l10n.poweredByStripe,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: AppColors.textSecondary,
+                                    fontSize: 12.sp,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
+                          )
+                          .animate()
+                          .fadeIn(duration: 250.ms)
+                          .scale(
+                            begin: const Offset(0.97, 0.97),
                           ),
-                        )
-                        .animate()
-                        .fadeIn(duration: 250.ms)
-                        .scale(
-                          begin: const Offset(0.97, 0.97),
-                        ),
+                ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }

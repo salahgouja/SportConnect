@@ -45,7 +45,7 @@ final class NotificationViewModelProvider
 }
 
 String _$notificationViewModelHash() =>
-    r'4be60262eaee26cb361f51bf32ac8c79ae7abc36';
+    r'a9f5e45368b9054bb417947ef99913be78ac5315';
 
 /// ViewModel for notifications screen
 

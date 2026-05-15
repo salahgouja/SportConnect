@@ -197,7 +197,7 @@ class HomeViewModel extends _$HomeViewModel {
         isLoadingLocation: false,
         userHeading: position.heading,
       );
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       TalkerService.error('Error getting location: $e');
       if (!ref.mounted) return;
       state = state.copyWith(

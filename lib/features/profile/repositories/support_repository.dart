@@ -64,7 +64,7 @@ class SupportRepository {
 
       TalkerService.info('Report submitted: ${docRef.id}');
       return docRef.id;
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       TalkerService.error('Error submitting report: $e');
       rethrow;
     }
@@ -107,7 +107,7 @@ class SupportRepository {
 
       TalkerService.info('Support ticket submitted: ${docRef.id}');
       return docRef.id;
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       TalkerService.error('Error submitting support ticket: $e');
       rethrow;
     }

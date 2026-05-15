@@ -32,8 +32,6 @@ functions/.env
 # VS Code which you may wish to be included in version control, so this line
 # is commented out by default.
 #.vscode/
-.agents
-.claude
 .kiro
 
 # Flutter/Dart/Pub related
@@ -51,6 +49,14 @@ app.*.symbols
 
 # Obfuscation related
 app.*.map.json
+
+.mcp.json
+.claude-flow/
+.sisyphus/
+.claude
+.agents
+.omx
+opencode.json
 
 # Android Studio will place build artifacts here
 /android/app/debug

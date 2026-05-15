@@ -40,7 +40,7 @@ class RideService extends _$RideService {
     try {
       final profileRepo = ref.read(profileRepositoryProvider);
       await profileRepo.addXP(ride.driverId, 10);
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       TalkerService.error('Failed to award ride creation XP: $e');
     }
 
@@ -122,7 +122,7 @@ class RideService extends _$RideService {
           await repo.cancelBooking(rideId: rideId, bookingId: booking.id);
         }
       }
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       TalkerService.error('Failed to cancel bookings for ride $rideId: $e');
     }
 
@@ -169,7 +169,7 @@ class RideService extends _$RideService {
           completedPassengerIds.add(booking.passengerId);
         }
       }
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       TalkerService.error('Failed to update booking statuses: $e');
     }
     if (!ref.mounted) return;
@@ -269,7 +269,7 @@ class RideService extends _$RideService {
       TalkerService.info(
         'Ride $rideId completed. XP awarded: $xp, estimated fare: ${estimatedFareInCents / 100}',
       );
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       // Stats failure should NOT roll back the completion
       TalkerService.error('Failed to record ride completion stats: $e');
     }
@@ -348,7 +348,7 @@ class RideService extends _$RideService {
           reason: reason,
         );
       }
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       // Notification failure should not break the main cancellation flow
       TalkerService.error('Failed to notify passengers of cancellation: $e');
     }
@@ -375,7 +375,7 @@ class RideService extends _$RideService {
       final profileRepo = ref.read(profileRepositoryProvider);
       await profileRepo.addXP(passengerId, -20);
       await profileRepo.resetStreak(passengerId);
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       TalkerService.error('Failed to apply no-show gamification penalty: $e');
     }
 
@@ -407,7 +407,7 @@ class RideService extends _$RideService {
           priority: NotificationPriority.high,
         ),
       );
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       TalkerService.error('Failed to send no-show notification: $e');
     }
   }
@@ -481,7 +481,7 @@ class RideService extends _$RideService {
           ),
         );
       }
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       TalkerService.error('Failed to send delay notifications: $e');
     }
   }

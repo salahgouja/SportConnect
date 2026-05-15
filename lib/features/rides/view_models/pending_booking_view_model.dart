@@ -445,7 +445,6 @@ class PendingBookingViewModel extends _$PendingBookingViewModel {
         paymentIntentClientSecret: paymentData['clientSecret'] as String,
         customerId: customerId,
         ephemeralKeySecret: paymentData['ephemeralKey'] as String?,
-        currency: 'eur',
       );
       if (!ref.mounted) {
         return;
@@ -477,7 +476,7 @@ class PendingBookingViewModel extends _$PendingBookingViewModel {
               bookingId: booking.id,
               paymentIntentId: paymentIntentId,
             );
-      } on Exception catch (e, st) {
+      } on Exception {
         // Best effort only.
       }
 

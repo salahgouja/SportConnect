@@ -182,7 +182,7 @@ class PremiumCheckoutViewModel extends _$PremiumCheckoutViewModel {
             email: currentUser.email,
             name: currentUser.username,
             phone: switch (currentUser) {
-              RiderModel rider => rider.phoneNumber,
+              final RiderModel rider => rider.phoneNumber,
               _ => null,
             },
             existingCustomerId: existingCustomerId,

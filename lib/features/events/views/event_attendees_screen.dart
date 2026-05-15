@@ -1,4 +1,5 @@
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -7,6 +8,7 @@ import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/features/events/view_models/event_view_model.dart';
 import 'package:sport_connect/features/messaging/view_models/chat_view_model.dart';
@@ -33,50 +35,52 @@ class EventAttendeesScreen extends ConsumerWidget {
             ? '${l10n.eventParticipants} (${eventAsync.value!.participantIds.length})'
             : l10n.eventParticipants,
       ),
-      body: eventAsync.when(
-        loading: () => const SkeletonLoader(
-          type: SkeletonType.profileCard,
-          itemCount: 5,
-        ),
-        error: (e, _) => Center(
-          child: Text(
-            l10n.errorLoadingData,
-            style: const TextStyle(color: AppColors.error),
+      body: MaxWidthContainer(
+        child: eventAsync.when(
+          loading: () => const SkeletonLoader(
+            type: SkeletonType.profileCard,
+            itemCount: 5,
           ),
-        ),
-        data: (event) {
-          if (event == null || event.participantIds.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.group_off_rounded,
-                    size: 48.sp,
-                    color: AppColors.textTertiary,
-                  ),
-                  SizedBox(height: 12.h),
-                  Text(
-                    l10n.noResultsFound,
-                    style: TextStyle(
-                      fontSize: 15.sp,
-                      color: AppColors.textSecondary,
+          error: (e, _) => Center(
+            child: Text(
+              l10n.errorLoadingData,
+              style: const TextStyle(color: AppColors.error),
+            ),
+          ),
+          data: (event) {
+            if (event == null || event.participantIds.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.group_off_rounded,
+                      size: 48.sp,
+                      color: AppColors.textTertiary,
                     ),
-                  ),
-                ],
+                    SizedBox(height: 12.h),
+                    Text(
+                      l10n.noResultsFound,
+                      style: TextStyle(
+                        fontSize: 15.sp,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+            return ListView.separated(
+              padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
+              itemCount: event.participantIds.length,
+              separatorBuilder: (_, _) => SizedBox(height: 8.h),
+              itemBuilder: (context, i) => _AttendeeCard(
+                userId: event.participantIds[i],
+                eventId: eventId,
               ),
             );
-          }
-          return ListView.separated(
-            padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
-            itemCount: event.participantIds.length,
-            separatorBuilder: (_, _) => SizedBox(height: 8.h),
-            itemBuilder: (context, i) => _AttendeeCard(
-              userId: event.participantIds[i],
-              eventId: eventId,
-            ),
-          );
-        },
+          },
+        ),
       ),
     );
   }
@@ -153,7 +157,7 @@ class _AttendeeCard extends ConsumerWidget {
             radius: 24.r,
             backgroundColor: AppColors.primarySurface,
             backgroundImage: profile?.photoUrl != null
-                ? NetworkImage(profile!.photoUrl!)
+                ? CachedNetworkImageProvider(profile!.photoUrl!)
                 : null,
             child: profile?.photoUrl == null
                 ? Icon(
@@ -290,7 +294,7 @@ class _AttendeeCard extends ConsumerWidget {
         pathParameters: {'id': chat.id},
         extra: profile,
       );
-    } on Exception catch (e, st) {
+    } on Exception {
       if (context.mounted) {
         AdaptiveSnackBar.show(
           context,

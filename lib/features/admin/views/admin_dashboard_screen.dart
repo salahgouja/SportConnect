@@ -6,28 +6,34 @@ import 'package:intl/intl.dart';
 import 'package:sport_connect/core/providers/admin_access_provider.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/features/admin/repositories/admin_repository.dart';
+import 'package:sport_connect/l10n/generated/app_localizations.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 
 class AdminDashboardScreen extends ConsumerWidget {
   const AdminDashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final access = ref.watch(adminAccessProvider);
 
     return AdaptiveScaffold(
       appBar: AdaptiveAppBar(
-        title: 'Admin Dashboard',
+        title: l10n.adminDashboard,
       ),
       body: access.when(
         data: (allowed) {
           if (!allowed) {
-            return const Center(child: Text('Admin access required'));
+            return Center(child: Text(l10n.adminAccessRequired));
           }
-          return const _AdminDashboardBody();
+          return const MaxWidthContainer(
+            maxWidth: kMaxWidthWide,
+            child: _AdminDashboardBody(),
+          );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) =>
-            Center(child: Text('Access check failed: $error')),
+            Center(child: Text(l10n.adminAccessCheckFailed(error.toString()))),
       ),
     );
   }
@@ -38,17 +44,18 @@ class _AdminDashboardBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     return DefaultTabController(
       length: 3,
       child: Column(
         children: [
           Material(
             color: Theme.of(context).colorScheme.surface,
-            child: const TabBar(
+            child: TabBar(
               tabs: [
-                Tab(text: 'Refunds'),
-                Tab(text: 'Disputes'),
-                Tab(text: 'Support'),
+                Tab(text: l10n.refundsTab),
+                Tab(text: l10n.disputesTab),
+                Tab(text: l10n.supportTab),
               ],
             ),
           ),
@@ -57,17 +64,17 @@ class _AdminDashboardBody extends ConsumerWidget {
               children: [
                 _IssueList(
                   issues: ref.watch(adminRefundRequestsProvider),
-                  emptyText: 'No refund requests',
+                  emptyText: l10n.noRefundRequests,
                   type: _IssueType.refund,
                 ),
                 _IssueList(
                   issues: ref.watch(adminDisputesProvider),
-                  emptyText: 'No disputes',
+                  emptyText: l10n.noDisputes,
                   type: _IssueType.dispute,
                 ),
                 _IssueList(
                   issues: ref.watch(adminSupportTicketsProvider),
-                  emptyText: 'No support tickets',
+                  emptyText: l10n.noSupportTickets,
                   type: _IssueType.support,
                 ),
               ],
@@ -102,19 +109,16 @@ class _IssueList extends ConsumerWidget {
             switch (type) {
               case _IssueType.refund:
                 ref.invalidate(adminRefundRequestsProvider);
-                break;
               case _IssueType.dispute:
                 ref.invalidate(adminDisputesProvider);
-                break;
               case _IssueType.support:
                 ref.invalidate(adminSupportTicketsProvider);
-                break;
             }
           },
           child: ListView.separated(
             padding: EdgeInsets.all(16.w),
             itemCount: items.length,
-            separatorBuilder: (_, __) => SizedBox(height: 10.h),
+            separatorBuilder: (_, _) => SizedBox(height: 10.h),
             itemBuilder: (context, index) => _IssueTile(
               issue: items[index],
               type: type,
@@ -123,8 +127,13 @@ class _IssueList extends ConsumerWidget {
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stack) =>
-          Center(child: Text('Could not load issues: $error')),
+      error: (error, stack) => Center(
+        child: Text(
+          AppLocalizations.of(context).adminCouldNotLoadIssues(
+            error.toString(),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -187,7 +196,7 @@ class _IssueTile extends ConsumerWidget {
             children: [
               if (type == _IssueType.refund && needsAction)
                 _ActionButton(
-                  label: 'Approve refund',
+                  label: AppLocalizations.of(context).adminApproveRefund,
                   icon: Icons.undo_rounded,
                   onPressed: () => _run(
                     context,
@@ -200,7 +209,7 @@ class _IssueTile extends ConsumerWidget {
                 ),
               if (type == _IssueType.refund && needsAction)
                 _ActionButton(
-                  label: 'Reject',
+                  label: AppLocalizations.of(context).adminReject,
                   icon: Icons.close_rounded,
                   isDestructive: true,
                   onPressed: () => _run(
@@ -214,7 +223,7 @@ class _IssueTile extends ConsumerWidget {
                 ),
               if (type == _IssueType.dispute && needsAction)
                 _ActionButton(
-                  label: 'Refund',
+                  label: AppLocalizations.of(context).adminRefund,
                   icon: Icons.undo_rounded,
                   onPressed: () => _run(
                     context,
@@ -227,7 +236,7 @@ class _IssueTile extends ConsumerWidget {
                 ),
               if (type == _IssueType.dispute && needsAction)
                 _ActionButton(
-                  label: 'Close',
+                  label: AppLocalizations.of(context).actionClose,
                   icon: Icons.done_rounded,
                   onPressed: () => _run(
                     context,
@@ -240,7 +249,7 @@ class _IssueTile extends ConsumerWidget {
                 ),
               if (type == _IssueType.support && needsAction)
                 _ActionButton(
-                  label: 'Resolve',
+                  label: AppLocalizations.of(context).adminResolve,
                   icon: Icons.done_rounded,
                   onPressed: () => _run(
                     context,
@@ -279,7 +288,7 @@ class _IssueTile extends ConsumerWidget {
       if (!context.mounted) return;
       AdaptiveSnackBar.show(
         context,
-        message: 'Updated',
+        message: AppLocalizations.of(context).actionUpdated,
         type: AdaptiveSnackBarType.success,
       );
     } on Exception catch (error) {

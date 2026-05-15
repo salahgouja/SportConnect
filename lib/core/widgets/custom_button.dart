@@ -152,7 +152,6 @@ class GradientIconButton extends StatelessWidget {
       onPressed: onPressed,
       icon: icon,
       enabled: onPressed != null,
-      style: AdaptiveButtonStyle.filled,
       color: AppColors.primary,
       size: AdaptiveButtonSize.large,
     );

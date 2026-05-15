@@ -67,7 +67,7 @@ class RoleSelectionViewModel extends _$RoleSelectionViewModel {
         isSuccess: true,
         clearError: true,
       );
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       if (!ref.mounted) return;
       state = state.copyWith(
         isLoading: false,

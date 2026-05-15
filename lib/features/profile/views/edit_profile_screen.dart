@@ -15,6 +15,7 @@ import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/core/widgets/address_autocomplete_field.dart';
 import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/core/widgets/custom_button.dart';
@@ -380,195 +381,201 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     final l10n = AppLocalizations.of(context);
     final isDriver = user.isDriver;
 
-    return Stack(
-      children: [
-        ListView(
-          physics: const BouncingScrollPhysics(),
-          padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 120.h),
-          children: [
-            _AvatarHeader(
-              user: user,
-              editState: editState,
-              onTap: _showPhotoSheet,
-            ).animate().fadeIn(duration: 320.ms).slideY(begin: 0.05, end: 0),
+    return MaxWidthContainer(
+      maxWidth: kMaxWidthFormNarrow,
+      child: Stack(
+        children: [
+          ListView(
+            physics: const BouncingScrollPhysics(),
+            padding: adaptiveScreenPadding(context).copyWith(bottom: 120.h),
+            children: [
+              _AvatarHeader(
+                user: user,
+                editState: editState,
+                onTap: _showPhotoSheet,
+              ).animate().fadeIn(duration: 320.ms).slideY(begin: 0.05, end: 0),
 
-            SizedBox(height: 28.h),
+              SizedBox(height: 28.h),
 
-            ReactiveForm(
-              formGroup: _form,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _SectionHeader(
-                    icon: Icons.person_outline_rounded,
-                    title: l10n.personalInformation,
-                  ),
-                  SizedBox(height: 12.h),
-                  _Card(
-                    children: [
-                      AdaptiveReactiveTextField(
-                        formControlName: 'name',
-                        labelText: l10n.authFullName,
-                        prefixIcon: Icon(
-                          Icons.person_outline_rounded,
-                          color: AppColors.primary,
-                          size: 20.sp,
+              ReactiveForm(
+                formGroup: _form,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _SectionHeader(
+                      icon: Icons.person_outline_rounded,
+                      title: l10n.personalInformation,
+                    ),
+                    SizedBox(height: 12.h),
+                    _Card(
+                      children: [
+                        AdaptiveReactiveTextField(
+                          formControlName: 'name',
+                          labelText: l10n.authFullName,
+                          prefixIcon: Icon(
+                            Icons.person_outline_rounded,
+                            color: AppColors.primary,
+                            size: 20.sp,
+                          ),
+                          validationMessages: {
+                            ValidationMessage.required: (_) =>
+                                l10n.requiredField,
+                            ValidationMessage.minLength: (_) =>
+                                'Name must be at least 2 characters',
+                            ValidationMessage.maxLength: (_) =>
+                                'Name is too long',
+                            'name': (error) => error as String,
+                          },
                         ),
-                        validationMessages: {
-                          ValidationMessage.required: (_) => l10n.requiredField,
-                          ValidationMessage.minLength: (_) =>
-                              'Name must be at least 2 characters',
-                          ValidationMessage.maxLength: (_) =>
-                              'Name is too long',
-                          'name': (error) => error as String,
-                        },
-                      ),
-                      SizedBox(height: 14.h),
-                      AdaptiveReactiveTextField(
-                        formControlName: 'email',
-                        readOnly: true,
-                        labelText: l10n.authEmail,
-                        prefixIcon: Icon(
-                          Icons.email_outlined,
-                          color: AppColors.primary,
-                          size: 20.sp,
+                        SizedBox(height: 14.h),
+                        AdaptiveReactiveTextField(
+                          formControlName: 'email',
+                          readOnly: true,
+                          labelText: l10n.authEmail,
+                          prefixIcon: Icon(
+                            Icons.email_outlined,
+                            color: AppColors.primary,
+                            size: 20.sp,
+                          ),
+                          suffixIcon: Icon(
+                            Icons.lock_outline_rounded,
+                            size: 16.sp,
+                            color: AppColors.textTertiary,
+                          ),
                         ),
-                        suffixIcon: Icon(
-                          Icons.lock_outline_rounded,
-                          size: 16.sp,
-                          color: AppColors.textTertiary,
+                        SizedBox(height: 14.h),
+                        IntlPhoneInput(
+                          key: _phoneKey,
+                          label: 'Phone Number',
+                          hint: 'Enter your phone number',
+                          accentColor: AppColors.primary,
+                          fillColor: AppColors.primary.withValues(alpha: 0.06),
+                          initialValue: switch (user) {
+                            final RiderModel r => r.asRider?.phoneNumber,
+                            final DriverModel d => d.asDriver?.phoneNumber,
+                            _ => null,
+                          },
+                          onChanged: (phone) {
+                            ref
+                                .read(
+                                  profileEditViewModelProvider(
+                                    user.uid,
+                                  ).notifier,
+                                )
+                                .setPhoneNumber(phone.fullNumber);
+                          },
                         ),
-                      ),
-                      SizedBox(height: 14.h),
-                      IntlPhoneInput(
-                        key: _phoneKey,
-                        label: 'Phone Number',
-                        hint: 'Enter your phone number',
-                        accentColor: AppColors.primary,
-                        fillColor: AppColors.primary.withValues(alpha: 0.06),
-                        initialValue: switch (user) {
-                          final RiderModel r => r.asRider?.phoneNumber,
-                          final DriverModel d => d.asDriver?.phoneNumber,
-                          _ => null,
-                        },
-                        onChanged: (phone) {
-                          ref
+                      ],
+                    ),
+
+                    SizedBox(height: 24.h),
+                    _SectionHeader(
+                      icon: Icons.tune_rounded,
+                      title: l10n.aboutYou,
+                    ),
+                    SizedBox(height: 12.h),
+                    _Card(
+                      children: [
+                        AddressAutocompleteField(
+                          key: _addressKey,
+                          label: 'Address',
+                          hint: 'Search your address...',
+                          accentColor: AppColors.primary,
+                          initialValue: switch (user) {
+                            final RiderModel r => r.asRider?.address,
+                            final DriverModel d => d.asDriver?.address,
+                            _ => null,
+                          },
+                          onSelected: (result) => ref
                               .read(
                                 profileEditViewModelProvider(user.uid).notifier,
                               )
-                              .setPhoneNumber(phone.fullNumber);
-                        },
-                      ),
-                    ],
-                  ),
+                              .setAddressResult(result),
+                        ),
+                        SizedBox(height: 16.h),
+                        ExpertisePicker(
+                          label: l10n.expertiseLevel,
+                          value: editState.expertise,
+                          accent: AppColors.primary,
+                          textColor: AppColors.textPrimary,
+                          cardBg: AppColors.surface,
+                          onChanged: (level) => ref
+                              .read(
+                                profileEditViewModelProvider(user.uid).notifier,
+                              )
+                              .setExpertise(level),
+                        ),
+                      ],
+                    ),
 
-                  SizedBox(height: 24.h),
-                  _SectionHeader(
-                    icon: Icons.tune_rounded,
-                    title: l10n.aboutYou,
-                  ),
-                  SizedBox(height: 12.h),
-                  _Card(
-                    children: [
-                      AddressAutocompleteField(
-                        key: _addressKey,
-                        label: 'Address',
-                        hint: 'Search your address...',
-                        accentColor: AppColors.primary,
-                        initialValue: switch (user) {
-                          final RiderModel r => r.asRider?.address,
-                          final DriverModel d => d.asDriver?.address,
-                          _ => null,
-                        },
-                        onSelected: (result) => ref
-                            .read(
-                              profileEditViewModelProvider(user.uid).notifier,
-                            )
-                            .setAddressResult(result),
-                      ),
-                      SizedBox(height: 16.h),
-                      ExpertisePicker(
-                        label: l10n.expertiseLevel,
-                        value: editState.expertise,
-                        accent: AppColors.primary,
-                        textColor: AppColors.textPrimary,
-                        cardBg: AppColors.surface,
-                        onChanged: (level) => ref
-                            .read(
-                              profileEditViewModelProvider(user.uid).notifier,
-                            )
-                            .setExpertise(level),
-                      ),
-                    ],
-                  ),
-
-                  SizedBox(height: 24.h),
-                  _SectionHeader(
-                    icon: Icons.badge_outlined,
-                    title: l10n.demographics,
-                  ),
-                  SizedBox(height: 12.h),
-                  _Card(
-                    children: [
-                      _PickerTile(
-                        icon: Icons.wc_rounded,
-                        label: l10n.gender,
-                        value: editState.gender ?? '—',
-                        onTap: _showGenderPicker,
-                      ),
-                      Divider(
-                        height: 1,
-                        color: AppColors.border.withValues(alpha: 0.5),
-                      ),
-                      _PickerTile(
-                        icon: Icons.cake_outlined,
-                        label: l10n.birthday,
-                        value: editState.dateOfBirth == null
-                            ? '—'
-                            : _formatDate(editState.dateOfBirth!),
-                        onTap: _selectDateOfBirth,
-                      ),
-                    ],
-                  ),
-
-                  if (isDriver) ...[
                     SizedBox(height: 24.h),
                     _SectionHeader(
-                      icon: Icons.directions_car_outlined,
-                      title: l10n.driverSettings,
+                      icon: Icons.badge_outlined,
+                      title: l10n.demographics,
                     ),
                     SizedBox(height: 12.h),
                     _Card(
                       children: [
                         _PickerTile(
-                          icon: Icons.directions_car_rounded,
-                          label: l10n.myVehicles,
-                          value:
-                              '${user.asDriver?.vehicles.length ?? 0} Active',
-                          onTap: () =>
-                              context.push(AppRoutes.driverVehicles.path),
+                          icon: Icons.wc_rounded,
+                          label: l10n.gender,
+                          value: editState.gender ?? '—',
+                          onTap: _showGenderPicker,
+                        ),
+                        Divider(
+                          height: 1,
+                          color: AppColors.border.withValues(alpha: 0.5),
+                        ),
+                        _PickerTile(
+                          icon: Icons.cake_outlined,
+                          label: l10n.birthday,
+                          value: editState.dateOfBirth == null
+                              ? '—'
+                              : _formatDate(editState.dateOfBirth!),
+                          onTap: _selectDateOfBirth,
                         ),
                       ],
                     ),
-                  ],
-                ],
-              ),
-            ),
-          ],
-        ),
 
-        Positioned(
-          left: 0,
-          right: 0,
-          bottom: 0,
-          child: _SaveBar(
-            enabled: editState.hasChanges,
-            isLoading: editState.isLoading,
-            onPressed: _save,
-            label: l10n.saveChanges,
+                    if (isDriver) ...[
+                      SizedBox(height: 24.h),
+                      _SectionHeader(
+                        icon: Icons.directions_car_outlined,
+                        title: l10n.driverSettings,
+                      ),
+                      SizedBox(height: 12.h),
+                      _Card(
+                        children: [
+                          _PickerTile(
+                            icon: Icons.directions_car_rounded,
+                            label: l10n.myVehicles,
+                            value:
+                                '${user.asDriver?.vehicles.length ?? 0} Active',
+                            onTap: () =>
+                                context.push(AppRoutes.driverVehicles.path),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
           ),
-        ),
-      ],
+
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: _SaveBar(
+              enabled: editState.hasChanges,
+              isLoading: editState.isLoading,
+              onPressed: _save,
+              label: l10n.saveChanges,
+            ),
+          ),
+        ],
+      ),
     );
   }
 

@@ -300,7 +300,7 @@ class RiderHomeViewModel extends _$RiderHomeViewModel {
       }
 
       _startLocationStream();
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       TalkerService.error('Failed to get initial position: $e');
       if (!ref.mounted) return;
       state = state.copyWith(locationState: LocationPermissionState.ready);
@@ -322,7 +322,7 @@ class RiderHomeViewModel extends _$RiderHomeViewModel {
         currentLocation: LatLng(position.latitude, position.longitude),
         userHeading: position.heading,
       );
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       TalkerService.error('Failed to refetch location: $e');
     }
   }

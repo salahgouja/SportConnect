@@ -10,6 +10,7 @@ import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/core/widgets/app_map_tile_layer.dart';
 import 'package:sport_connect/core/widgets/driver_info_widget.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
@@ -152,130 +153,134 @@ class _RideBookingPendingScreenState
       appBar: AdaptiveAppBar(
         title: AppLocalizations.of(context).bookingRequestTitle,
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(
-          24.w,
-          32.h,
-          24.w,
-          32.h + MediaQuery.paddingOf(context).bottom,
-        ),
-        child: Column(
-          children: [
-            // Animated icon
-            Container(
-              width: 88.w,
-              height: 88.w,
-              decoration: BoxDecoration(
-                color: isAcceptedNeedsPayment
-                    ? AppColors.primary.withAlpha(30)
-                    : AppColors.success.withAlpha(30),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                isAcceptedNeedsPayment
-                    ? Icons.payment_rounded
-                    : Icons.mark_email_read_rounded,
-                color: isAcceptedNeedsPayment
-                    ? AppColors.primary
-                    : AppColors.success,
-                size: 48.sp,
-              ),
-            ).animate().scale(duration: 500.ms, curve: Curves.elasticOut),
-            SizedBox(height: 20.h),
-
-            Text(
-              isAcceptedNeedsPayment
-                  ? AppLocalizations.of(context).bookingAcceptedTitle
-                  : AppLocalizations.of(context).requestSentTitle,
-              style: TextStyle(
-                fontSize: 26.sp,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-            ).animate().fadeIn(delay: 200.ms),
-            SizedBox(height: 8.h),
-
-            Text(
-              isAcceptedNeedsPayment
-                  ? AppLocalizations.of(context).completePaymentMessage
-                  : AppLocalizations.of(context).waitingForConfirmation,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14.sp,
-                color: AppColors.textSecondary,
-                height: 1.5,
-              ),
-            ).animate().fadeIn(delay: 300.ms),
-
-            SizedBox(height: 24.h),
-
-            // Route map preview
-            _buildRouteMapPreview(ride).animate().fadeIn(delay: 350.ms),
-
-            SizedBox(height: 16.h),
-
-            // Ride info card
-            _buildRideCard(ride).animate().slideY(delay: 400.ms),
-
-            SizedBox(height: 16.h),
-
-            // Driver info — shows who confirmed/offered the ride
-            _buildDriverInfoCard(ride).animate().fadeIn(delay: 500.ms),
-
-            SizedBox(height: 24.h),
-
-            // Payment section when driver accepted and online payment is needed
-            if (isAcceptedNeedsPayment && booking != null) ...[
-              if (state.isProcessingPayment)
-                Column(
-                  children: [
-                    SizedBox(height: 8.h),
-                    const CircularProgressIndicator.adaptive(),
-                    SizedBox(height: 12.h),
-                    Text(
-                      AppLocalizations.of(context).processingPaymentLoading,
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                )
-              else
-                PremiumButton(
-                  text: AppLocalizations.of(context).completePaymentButton,
-                  onPressed: notifier.processPayment,
+      body: MaxWidthContainer(
+        maxWidth: kMaxWidthForm,
+        child: SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(
+            24.w,
+            32.h,
+            24.w,
+            32.h + MediaQuery.paddingOf(context).bottom,
+          ),
+          child: Column(
+            children: [
+              // Animated icon
+              Container(
+                width: 88.w,
+                height: 88.w,
+                decoration: BoxDecoration(
+                  color: isAcceptedNeedsPayment
+                      ? AppColors.primary.withAlpha(30)
+                      : AppColors.success.withAlpha(30),
+                  shape: BoxShape.circle,
                 ),
-              SizedBox(height: 32.h),
-            ],
+                child: Icon(
+                  isAcceptedNeedsPayment
+                      ? Icons.payment_rounded
+                      : Icons.mark_email_read_rounded,
+                  color: isAcceptedNeedsPayment
+                      ? AppColors.primary
+                      : AppColors.success,
+                  size: 48.sp,
+                ),
+              ).animate().scale(duration: 500.ms, curve: Curves.elasticOut),
+              SizedBox(height: 20.h),
 
-            // Expiry countdown (only when pending)
-            if (!isAcceptedNeedsPayment &&
-                booking?.createdAt != null &&
-                state.timeRemaining > Duration.zero)
-              _buildExpiryChip(expiryText).animate().fadeIn(delay: 500.ms),
+              Text(
+                isAcceptedNeedsPayment
+                    ? AppLocalizations.of(context).bookingAcceptedTitle
+                    : AppLocalizations.of(context).requestSentTitle,
+                style: TextStyle(
+                  fontSize: 26.sp,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ).animate().fadeIn(delay: 200.ms),
+              SizedBox(height: 8.h),
 
-            if (!isAcceptedNeedsPayment) SizedBox(height: 32.h),
+              Text(
+                isAcceptedNeedsPayment
+                    ? AppLocalizations.of(context).completePaymentMessage
+                    : AppLocalizations.of(context).waitingForConfirmation,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  color: AppColors.textSecondary,
+                  height: 1.5,
+                ),
+              ).animate().fadeIn(delay: 300.ms),
 
-            // Cancel request button (only when pending)
-            if (booking != null && booking.status == BookingStatus.pending) ...[
-              PremiumButton(
-                text: AppLocalizations.of(context).cancelRequestButton,
-                isLoading: state.isCancelling,
-                style: PremiumButtonStyle.danger,
-                onPressed: notifier.cancelBooking,
+              SizedBox(height: 24.h),
+
+              // Route map preview
+              _buildRouteMapPreview(ride).animate().fadeIn(delay: 350.ms),
+
+              SizedBox(height: 16.h),
+
+              // Ride info card
+              _buildRideCard(ride).animate().slideY(delay: 400.ms),
+
+              SizedBox(height: 16.h),
+
+              // Driver info — shows who confirmed/offered the ride
+              _buildDriverInfoCard(ride).animate().fadeIn(delay: 500.ms),
+
+              SizedBox(height: 24.h),
+
+              // Payment section when driver accepted and online payment is needed
+              if (isAcceptedNeedsPayment && booking != null) ...[
+                if (state.isProcessingPayment)
+                  Column(
+                    children: [
+                      SizedBox(height: 8.h),
+                      const CircularProgressIndicator.adaptive(),
+                      SizedBox(height: 12.h),
+                      Text(
+                        AppLocalizations.of(context).processingPaymentLoading,
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  )
+                else
+                  PremiumButton(
+                    text: AppLocalizations.of(context).completePaymentButton,
+                    onPressed: notifier.processPayment,
+                  ),
+                SizedBox(height: 32.h),
+              ],
+
+              // Expiry countdown (only when pending)
+              if (!isAcceptedNeedsPayment &&
+                  booking?.createdAt != null &&
+                  state.timeRemaining > Duration.zero)
+                _buildExpiryChip(expiryText).animate().fadeIn(delay: 500.ms),
+
+              if (!isAcceptedNeedsPayment) SizedBox(height: 32.h),
+
+              // Cancel request button (only when pending)
+              if (booking != null &&
+                  booking.status == BookingStatus.pending) ...[
+                PremiumButton(
+                  text: AppLocalizations.of(context).cancelRequestButton,
+                  isLoading: state.isCancelling,
+                  style: PremiumButtonStyle.danger,
+                  onPressed: notifier.cancelBooking,
+                ),
+                SizedBox(height: 12.h),
+              ],
+
+              TextButton(
+                onPressed: () => context.go(AppRoutes.riderMyRides.path),
+                child: Text(
+                  AppLocalizations.of(context).viewAllMyRidesButton,
+                  style: TextStyle(color: AppColors.primary, fontSize: 14.sp),
+                ),
               ),
-              SizedBox(height: 12.h),
             ],
-
-            TextButton(
-              onPressed: () => context.go(AppRoutes.riderMyRides.path),
-              child: Text(
-                AppLocalizations.of(context).viewAllMyRidesButton,
-                style: TextStyle(color: AppColors.primary, fontSize: 14.sp),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

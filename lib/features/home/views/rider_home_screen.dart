@@ -15,6 +15,7 @@ import 'package:sport_connect/core/constants/app_constants.dart';
 import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/core/widgets/app_map_tile_layer.dart';
 import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/core/widgets/driver_info_widget.dart';
@@ -177,10 +178,39 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
       body: switch (locationState) {
         LocationPermissionState.unknown => _buildLocationGate(),
         LocationPermissionState.acquiring => _buildAcquiringState(),
-        LocationPermissionState.ready =>
-          vmState.showMapView
-              ? _buildMapHome(vmState)
-              : _buildFeedHome(vmState),
+        LocationPermissionState.ready => ResponsiveLayoutBuilder(
+            phone: (_) => vmState.showMapView
+                ? _buildMapHome(vmState)
+                : _buildFeedHome(vmState),
+            tablet: (_) => Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: vmState.showMapView
+                      ? _buildMapHome(vmState)
+                      : _buildFeedHome(vmState),
+                ),
+                Expanded(
+                  flex: 1,
+                  child: _buildFeedHome(vmState),
+                ),
+              ],
+            ),
+            desktop: (_) => Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: vmState.showMapView
+                      ? _buildMapHome(vmState)
+                      : _buildFeedHome(vmState),
+                ),
+                Expanded(
+                  flex: 1,
+                  child: _buildFeedHome(vmState),
+                ),
+              ],
+            ),
+          ),
         LocationPermissionState.deniedSoft => _buildDeniedSoftState(),
         LocationPermissionState.deniedHard => _buildDeniedHardState(),
         LocationPermissionState.serviceDisabled => _buildServiceDisabledState(),
@@ -870,7 +900,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
             right: 0,
             child: Center(
               child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
+                padding: adaptiveScreenPadding(context).copyWith(bottom: 12.h, top: 12.h),
                 decoration: BoxDecoration(
                   color: AppColors.surface,
                   borderRadius: BorderRadius.circular(24.r),

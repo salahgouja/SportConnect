@@ -1,9 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
-import 'dart:async';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -103,99 +105,105 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
           // ── Main content ───────────────────────────────────────────────
           SafeArea(
-            child: Column(
-              children: [
-                SizedBox(height: size.height * 0.14),
+            child: MaxWidthContainer(
+              maxWidth: kMaxWidthFormNarrow,
+              child: Column(
+                children: [
+                  SizedBox(height: size.height * 0.14),
 
-                // ── Logo ──────────────────────────────────────────────────
-                _buildLogo(),
+                  // ── Logo ──────────────────────────────────────────────────
+                  FractionallySizedBox(
+                    widthFactor: 0.3,
+                    child: _buildLogo(),
+                  ),
 
-                SizedBox(height: 28.h),
+                  SizedBox(height: 28.h),
 
-                // ── App name ──────────────────────────────────────────────
-                Text(
-                      AppLocalizations.of(context).sportconnect,
-                      style: TextStyle(
-                        fontSize: 34.sp,
-                        fontWeight: FontWeight.w800,
-                        color: _textMain,
-                        letterSpacing: -1,
-                        height: 1,
-                      ),
-                    )
-                    .animate(controller: _entryController)
-                    .fadeIn(delay: 200.ms, duration: 500.ms)
-                    .slideY(begin: 0.2, end: 0, curve: Curves.easeOutCubic),
-
-                SizedBox(height: 12.h),
-
-                // ── Pill badge ────────────────────────────────────────────
-                Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 14.w,
-                        vertical: 6.h,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _greenLight,
-                        borderRadius: BorderRadius.circular(20.r),
-                        border: Border.all(
-                          color: _green.withValues(alpha: 0.25),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 6.w,
-                            height: 6.w,
-                            decoration: const BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: _green,
-                            ),
-                          ),
-                          SizedBox(width: 6.w),
-                          Text(
-                            AppLocalizations.of(context).carpoolingForRunners,
-                            style: TextStyle(
-                              fontSize: 10.sp,
-                              fontWeight: FontWeight.w600,
-                              color: _green,
-                              letterSpacing: 1.4,
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                    .animate(controller: _entryController)
-                    .fadeIn(delay: 350.ms, duration: 500.ms),
-
-                const Spacer(),
-
-                // ── Tagline ───────────────────────────────────────────────
-                Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 52.w),
-                      child: Text(
-                        AppLocalizations.of(context).shareRidesRunTogetherGo,
-                        textAlign: TextAlign.center,
+                  // ── App name ──────────────────────────────────────────────
+                  Text(
+                        AppLocalizations.of(context).sportconnect,
                         style: TextStyle(
-                          fontSize: 15.sp,
-                          fontWeight: FontWeight.w400,
-                          color: _textSub,
-                          height: 1.55,
-                          letterSpacing: 0.1,
+                          fontSize: 34.sp,
+                          fontWeight: FontWeight.w800,
+                          color: _textMain,
+                          letterSpacing: -1,
+                          height: 1,
                         ),
-                      ),
-                    )
-                    .animate(controller: _entryController)
-                    .fadeIn(delay: 500.ms, duration: 500.ms),
+                      )
+                      .animate(controller: _entryController)
+                      .fadeIn(delay: 200.ms, duration: 500.ms)
+                      .slideY(begin: 0.2, end: 0, curve: Curves.easeOutCubic),
 
-                SizedBox(height: 44.h),
+                  SizedBox(height: 12.h),
 
-                // ── Progress ──────────────────────────────────────────────
-                _buildProgress(),
+                  // ── Pill badge ────────────────────────────────────────────
+                  Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 14.w,
+                          vertical: 6.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _greenLight,
+                          borderRadius: BorderRadius.circular(20.r),
+                          border: Border.all(
+                            color: _green.withValues(alpha: 0.25),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 6.w,
+                              height: 6.w,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: _green,
+                              ),
+                            ),
+                            SizedBox(width: 6.w),
+                            Text(
+                              AppLocalizations.of(context).carpoolingForRunners,
+                              style: TextStyle(
+                                fontSize: 10.sp,
+                                fontWeight: FontWeight.w600,
+                                color: _green,
+                                letterSpacing: 1.4,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                      .animate(controller: _entryController)
+                      .fadeIn(delay: 350.ms, duration: 500.ms),
 
-                SizedBox(height: 52.h),
-              ],
+                  const Spacer(),
+
+                  // ── Tagline ───────────────────────────────────────────────
+                  Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 52.w),
+                        child: Text(
+                          AppLocalizations.of(context).shareRidesRunTogetherGo,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 15.sp,
+                            fontWeight: FontWeight.w400,
+                            color: _textSub,
+                            height: 1.55,
+                            letterSpacing: 0.1,
+                          ),
+                        ),
+                      )
+                      .animate(controller: _entryController)
+                      .fadeIn(delay: 500.ms, duration: 500.ms),
+
+                  SizedBox(height: 44.h),
+
+                  // ── Progress ──────────────────────────────────────────────
+                  _buildProgress(),
+
+                  SizedBox(height: 52.h),
+                ],
+              ),
             ),
           ),
         ],

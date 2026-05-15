@@ -23,6 +23,7 @@ import 'package:sport_connect/features/payments/view_models/payment_view_model.d
 import 'package:sport_connect/features/rides/models/driver_stats.dart';
 import 'package:sport_connect/features/rides/repositories/driver_stats_repository.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 
 /// Driver Earnings Screen  - View earnings with real Firestore data
 ///
@@ -71,7 +72,6 @@ class DriverEarningsScreen extends ConsumerWidget {
       AdaptiveSnackBar.show(
         context,
         message: AppLocalizations.of(context).noData,
-        type: AdaptiveSnackBarType.info,
       );
       return;
     }
@@ -460,15 +460,12 @@ class DriverEarningsScreen extends ConsumerWidget {
           case 'today':
             displayEarnings = stats.earningsTodayInCents / 100;
             displayRides = stats.totalRides;
-            break;
           case 'thisWeek':
             displayEarnings = stats.earningsThisWeekInCents / 100;
             displayRides = stats.ridesThisWeek;
-            break;
           case 'thisMonth':
             displayEarnings = stats.earningsThisMonthInCents / 100;
             displayRides = stats.ridesThisMonth;
-            break;
           default:
             displayEarnings = stats.totalEarningsInCents / 100;
             displayRides = stats.totalRides;
@@ -677,7 +674,7 @@ class DriverEarningsScreen extends ConsumerWidget {
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(20.r),
         ),
-        child: const SkeletonLoader(type: SkeletonType.rideCard, itemCount: 3),
+        child: const SkeletonLoader(itemCount: 3),
       ),
       error: (_, _) => _buildErrorPlaceholder(context),
     );
@@ -1383,7 +1380,6 @@ class DriverEarningsScreen extends ConsumerWidget {
             padding: EdgeInsets.symmetric(horizontal: 20.w),
             child: const SkeletonLoader(
               type: SkeletonType.compactTile,
-              itemCount: 4,
             ),
           ),
           error: (_, _) => Container(
@@ -1435,7 +1431,7 @@ class _SectionHeader extends StatelessWidget {
               fontSize: 11.sp,
               fontWeight: FontWeight.w700,
               color: AppColors.textTertiary,
-              letterSpacing: 1.0,
+              letterSpacing: 1,
             ),
           ),
         ],

@@ -379,7 +379,7 @@ class PushNotificationService {
             }),
           );
         }
-      } on Exception catch (e, st) {
+      } on Exception {
         // Best-effort — navigation must not fail if this read fails.
       }
     }
@@ -523,7 +523,7 @@ class PushNotificationService {
         ),
         chatType: ChatType.private,
       );
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       TalkerService.error(
         'Failed to resolve chat receiver from notification',
         e,

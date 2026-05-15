@@ -64,7 +64,7 @@ class ChangePasswordViewModel extends _$ChangePasswordViewModel {
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, isSuccess: true);
       _pendingPassword = null;
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       if (!ref.mounted) return;
       if (e is AuthException && e.code == 'requires-recent-login') {
         state = state.copyWith(isLoading: false, requiresReauth: true);

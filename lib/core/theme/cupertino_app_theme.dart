@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'
-    show Colors, BorderSide, BoxDecoration, BoxShadow, LinearGradient;
+    show BorderSide, BoxDecoration, BoxShadow, Colors, LinearGradient;
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 
@@ -53,14 +53,14 @@ class AppCupertinoTheme {
   // ═══════════════════════════════════════════════════════════════════════════
 
   static CupertinoTextThemeData _buildTextTheme(Brightness brightness) {
-    final bool isDark = brightness == Brightness.dark;
-    final Color text = isDark
+    final isDark = brightness == Brightness.dark;
+    final text = isDark
         ? AppColors.textPrimaryDark
         : AppColors.textPrimary;
-    final Color muted = isDark
+    final muted = isDark
         ? AppColors.textSecondaryDark
         : AppColors.textSecondary;
-    final Color brand = isDark ? AppColors.primaryDarkMode : AppColors.primary;
+    final brand = isDark ? AppColors.primaryDarkMode : AppColors.primary;
 
     return CupertinoTextThemeData(
       primaryColor: brand,
@@ -220,10 +220,9 @@ class AppCupertinoTheme {
     return CupertinoButton(
       onPressed: onPressed,
       padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
-      minSize: minSize ?? 50.h,
       borderRadius: BorderRadius.circular(14.r),
       // Light: 0.08 alpha (fine on white); Dark: 0.15 alpha — still subtle but visible tint
-      color: c.withValues(alpha: isDark ? 0.15 : 0.08),
+      color: c.withValues(alpha: isDark ? 0.15 : 0.08), minimumSize: Size(minSize ?? 50.h, minSize ?? 50.h),
       child: DefaultTextStyle(
         style: TextStyle(
           fontFamily: '.SF Pro Text',
@@ -246,8 +245,7 @@ class AppCupertinoTheme {
   }) {
     return CupertinoButton(
       onPressed: onPressed,
-      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 12.h),
-      minSize: 44.h,
+      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 12.h), minimumSize: Size(44.h, 44.h),
       child: DefaultTextStyle(
         style: TextStyle(
           fontFamily: '.SF Pro Text',
@@ -272,10 +270,9 @@ class AppCupertinoTheme {
     return CupertinoButton(
       onPressed: onPressed,
       padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
-      minSize: 50.h,
       borderRadius: BorderRadius.circular(14.r),
       // Error at 0.12 alpha on dark: tinted bg, label provides contrast (5.94:1) ✓
-      color: errorColor.withValues(alpha: isDark ? 0.12 : 0.10),
+      color: errorColor.withValues(alpha: isDark ? 0.12 : 0.10), minimumSize: Size(50.h, 50.h),
       child: DefaultTextStyle(
         style: TextStyle(
           fontFamily: '.SF Pro Text',
@@ -337,7 +334,7 @@ class AppCupertinoTheme {
   static Border navBarBorder({bool isDark = false}) => Border(
     bottom: BorderSide(
       color: isDark ? AppColors.dividerDark : CupertinoColors.separator,
-      width: 0.0,
+      width: 0,
     ),
   );
 
@@ -453,7 +450,7 @@ class AppCupertinoTheme {
   // Destructive and Cancel use system colors per HIG — do not rebrand these.
   static const TextStyle actionSheetDestructiveStyle = TextStyle(
     fontFamily: '.SF Pro Text',
-    fontSize: 20.0,
+    fontSize: 20,
     fontWeight: FontWeight.w400,
     letterSpacing: -0.45,
     color: CupertinoColors.systemRed,
@@ -461,7 +458,7 @@ class AppCupertinoTheme {
 
   static const TextStyle actionSheetCancelStyle = TextStyle(
     fontFamily: '.SF Pro Text',
-    fontSize: 20.0,
+    fontSize: 20,
     fontWeight: FontWeight.w600,
     letterSpacing: -0.45,
     color: CupertinoColors.systemBlue,
@@ -496,7 +493,7 @@ class AppCupertinoTheme {
 
   static const TextStyle badgeTextStyle = TextStyle(
     fontFamily: '.SF Pro Text',
-    fontSize: 10.0,
+    fontSize: 10,
     fontWeight: FontWeight.w700,
     color: CupertinoColors.white,
   );
@@ -670,7 +667,7 @@ extension AppCupertinoThemeExtension on BuildContext {
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [
-      isDark ? AppColors.primaryDarkMode : AppColors.primary,
+      if (isDark) AppColors.primaryDarkMode else AppColors.primary,
       (isDark ? AppColors.primaryDarkMode : AppColors.primary).withValues(
         alpha: 0.8,
       ),

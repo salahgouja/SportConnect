@@ -108,7 +108,7 @@ class DriverLocationViewModel extends _$DriverLocationViewModel {
         if (!ref.mounted) return;
         _startLocationTracking();
       }
-    } on Exception catch (e, st) {
+    } on Exception {
       if (!ref.mounted) return;
       state = state.copyWith(
         isLoading: false,
@@ -166,7 +166,7 @@ class DriverLocationViewModel extends _$DriverLocationViewModel {
         if (!ref.mounted) return;
         _startLocationTracking();
       }
-    } on Exception catch (e, st) {
+    } on Exception {
       if (!ref.mounted) return;
       state = state.copyWith(
         isLoading: false,

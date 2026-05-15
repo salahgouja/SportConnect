@@ -17508,6 +17508,888 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Help Center Rides Cancel Question'**
   String get helpCenterRidesCancelQuestion;
+
+  /// No description provided for @adminDashboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin Dashboard'**
+  String get adminDashboard;
+
+  /// No description provided for @adminAccessRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin access required'**
+  String get adminAccessRequired;
+
+  /// No description provided for @adminAccessCheckFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Access check failed: {error}'**
+  String adminAccessCheckFailed(String error);
+
+  /// No description provided for @noRefundRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'No refund requests'**
+  String get noRefundRequests;
+
+  /// No description provided for @noDisputes.
+  ///
+  /// In en, this message translates to:
+  /// **'No disputes'**
+  String get noDisputes;
+
+  /// No description provided for @noSupportTickets.
+  ///
+  /// In en, this message translates to:
+  /// **'No support tickets'**
+  String get noSupportTickets;
+
+  /// No description provided for @refundsTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Refunds'**
+  String get refundsTab;
+
+  /// No description provided for @disputesTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Disputes'**
+  String get disputesTab;
+
+  /// No description provided for @supportTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Support'**
+  String get supportTab;
+
+  /// Label for Stripe EUR balance display
+  ///
+  /// In en, this message translates to:
+  /// **'EUR balance'**
+  String get stripeEurBalance;
+
+  /// Achievement badge name in achievements_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'First Ride'**
+  String get badgeFirstRide;
+
+  /// Achievement badge description in achievements_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Complete your first ride'**
+  String get badgeFirstRideDesc;
+
+  /// Achievement badge name in achievements_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Road Warrior'**
+  String get badgeRoadWarrior;
+
+  /// Achievement badge description in achievements_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Complete 10 rides'**
+  String get badgeRoadWarriorDesc;
+
+  /// Achievement badge name in achievements_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Eco Hero'**
+  String get badgeEcoHero;
+
+  /// Achievement badge description in achievements_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Save 50 kg of CO₂'**
+  String get badgeEcoHeroDesc;
+
+  /// Achievement badge name in achievements_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Social Butterfly'**
+  String get badgeSocialButterfly;
+
+  /// Achievement badge description in achievements_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Connect with 10 riders'**
+  String get badgeSocialButterflyDesc;
+
+  /// Achievement badge name in achievements_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Road Tripper'**
+  String get badgeRoadTripper;
+
+  /// Achievement badge description in achievements_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Travel 50 km total'**
+  String get badgeRoadTripperDesc;
+
+  /// Achievement badge name in achievements_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Speed Demon'**
+  String get badgeSpeedDemon;
+
+  /// Achievement badge description in achievements_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Maintain a 7-day streak'**
+  String get badgeSpeedDemonDesc;
+
+  /// Error message in admin_dashboard_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load issues: {error}'**
+  String adminCouldNotLoadIssues(String error);
+
+  /// No description provided for @adminDashboardSettingsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Review refunds, disputes, and support tickets'**
+  String get adminDashboardSettingsSubtitle;
+
+  /// No description provided for @adminApproveRefund.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve refund'**
+  String get adminApproveRefund;
+
+  /// No description provided for @adminReject.
+  ///
+  /// In en, this message translates to:
+  /// **'Reject'**
+  String get adminReject;
+
+  /// No description provided for @adminRefund.
+  ///
+  /// In en, this message translates to:
+  /// **'Refund'**
+  String get adminRefund;
+
+  /// No description provided for @adminResolve.
+  ///
+  /// In en, this message translates to:
+  /// **'Resolve'**
+  String get adminResolve;
+
+  /// No description provided for @actionUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated'**
+  String get actionUpdated;
+
+  /// No description provided for @yearlyMonthlyEstimate.
+  ///
+  /// In en, this message translates to:
+  /// **'≈ €4.17/mo'**
+  String get yearlyMonthlyEstimate;
+
+  /// No description provided for @premiumSubscribeHeroSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything you need to ride smarter, together.'**
+  String get premiumSubscribeHeroSubtitle;
+
+  /// No description provided for @alreadyPremiumTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re already a member'**
+  String get alreadyPremiumTitle;
+
+  /// No description provided for @alreadyPremiumSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your SportConnect Premium subscription is active. Enjoy all premium features.'**
+  String get alreadyPremiumSubtitle;
+
+  /// No description provided for @backToApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to App'**
+  String get backToApp;
+
+  /// Quick message chip in active_ride_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'I\'m at pickup'**
+  String get chatChipImAtPickup;
+
+  /// Quick message chip in active_ride_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Running late'**
+  String get chatChipRunningLate;
+
+  /// Generic retry message in error_boundary.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Please try again later.'**
+  String get pleaseTryAgainLater;
+
+  /// Fallback label for route distance in ride_booking_review_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Route distance'**
+  String get routeDistanceFallback;
+
+  /// No description provided for @estimatedMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min estimated'**
+  String estimatedMinutes(int minutes);
+
+  /// No description provided for @seatsLeftCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} seats left'**
+  String seatsLeftCount(int count);
+
+  /// No description provided for @bookingInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Booking...'**
+  String get bookingInProgress;
+
+  /// No description provided for @sendRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Send request'**
+  String get sendRequest;
+
+  /// No description provided for @rideSharedDistanceSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{distance} km shared together'**
+  String rideSharedDistanceSummary(String distance);
+
+  /// No description provided for @rideCarpooledWithCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Carpooled with 1 person} other{Carpooled with {count} people}}'**
+  String rideCarpooledWithCount(int count);
+
+  /// No description provided for @avgSpeedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Avg Speed'**
+  String get avgSpeedLabel;
+
+  /// No description provided for @avgSpeedKmhValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} km/h'**
+  String avgSpeedKmhValue(String value);
+
+  /// No description provided for @baseFareSeatCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Base Fare ({count} seats)'**
+  String baseFareSeatCount(int count);
+
+  /// No description provided for @baseFareSeatsByPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Base Fare ({count} seats × {price})'**
+  String baseFareSeatsByPrice(int count, String price);
+
+  /// No description provided for @serviceFeeWithRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Service Fee ({rate})'**
+  String serviceFeeWithRate(String rate);
+
+  /// No description provided for @rideCompletionDriverRating.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} rating'**
+  String rideCompletionDriverRating(String value);
+
+  /// No description provided for @billingPeriodMonthShort.
+  ///
+  /// In en, this message translates to:
+  /// **'/mo'**
+  String get billingPeriodMonthShort;
+
+  /// No description provided for @billingPeriodYearShort.
+  ///
+  /// In en, this message translates to:
+  /// **'/yr'**
+  String get billingPeriodYearShort;
+
+  /// No description provided for @fallbackMonthlyPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'€4.99'**
+  String get fallbackMonthlyPrice;
+
+  /// No description provided for @fallbackYearlyPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'€49.99'**
+  String get fallbackYearlyPrice;
+
+  /// No description provided for @yearlyMonthlyAtPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'≈ {price}/mo'**
+  String yearlyMonthlyAtPrice(String price);
+
+  /// No description provided for @premiumRenewsUntilCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscription renews automatically until cancelled. Cancel anytime in App Store Settings.'**
+  String get premiumRenewsUntilCancelled;
+
+  /// No description provided for @premiumRenewsEachPeriodAtPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatically renews each {period} at {price} until cancelled. Cancel anytime in App Store Settings.'**
+  String premiumRenewsEachPeriodAtPrice(String period, String price);
+
+  /// No description provided for @cancellationReasonBannerMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Please let us know why you\'re cancelling so we can improve our service.'**
+  String get cancellationReasonBannerMessage;
+
+  /// No description provided for @cancelReasonChangeOfPlansTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Change of plans'**
+  String get cancelReasonChangeOfPlansTitle;
+
+  /// No description provided for @cancelReasonChangeOfPlansDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'My schedule changed and I can no longer make this ride.'**
+  String get cancelReasonChangeOfPlansDescription;
+
+  /// No description provided for @cancelReasonFoundAnotherRideTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Found another ride'**
+  String get cancelReasonFoundAnotherRideTitle;
+
+  /// No description provided for @cancelReasonFoundAnotherRideDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'I found a more convenient ride option.'**
+  String get cancelReasonFoundAnotherRideDescription;
+
+  /// No description provided for @cancelReasonPriceTooHighTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Price too high'**
+  String get cancelReasonPriceTooHighTitle;
+
+  /// No description provided for @cancelReasonPriceTooHighDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'The ride cost is more than I expected.'**
+  String get cancelReasonPriceTooHighDescription;
+
+  /// No description provided for @cancelReasonSafetyConcernTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Safety concern'**
+  String get cancelReasonSafetyConcernTitle;
+
+  /// No description provided for @cancelReasonSafetyConcernDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'I have concerns about the safety of this ride.'**
+  String get cancelReasonSafetyConcernDescription;
+
+  /// No description provided for @cancelReasonDriverNotRespondingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Driver not responding'**
+  String get cancelReasonDriverNotRespondingTitle;
+
+  /// No description provided for @cancelReasonDriverNotRespondingDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'The driver is not responding to messages.'**
+  String get cancelReasonDriverNotRespondingDescription;
+
+  /// No description provided for @cancelReasonIncorrectDetailsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Incorrect details'**
+  String get cancelReasonIncorrectDetailsTitle;
+
+  /// No description provided for @cancelReasonIncorrectDetailsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'The ride details are incorrect or have changed.'**
+  String get cancelReasonIncorrectDetailsDescription;
+
+  /// No description provided for @cancelReasonEmergencyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Emergency'**
+  String get cancelReasonEmergencyTitle;
+
+  /// No description provided for @cancelReasonEmergencyDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'I have an unexpected emergency.'**
+  String get cancelReasonEmergencyDescription;
+
+  /// No description provided for @cancelReasonOtherTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get cancelReasonOtherTitle;
+
+  /// No description provided for @cancelReasonOtherDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Another reason not listed above.'**
+  String get cancelReasonOtherDescription;
+
+  /// No description provided for @cancelReasonVehicleIssueTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Vehicle issue'**
+  String get cancelReasonVehicleIssueTitle;
+
+  /// No description provided for @cancelReasonVehicleIssueDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'My vehicle has a mechanical problem or is unavailable.'**
+  String get cancelReasonVehicleIssueDescription;
+
+  /// No description provided for @cancelReasonPassengerNotAtPickupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Passenger not at pickup'**
+  String get cancelReasonPassengerNotAtPickupTitle;
+
+  /// No description provided for @cancelReasonPassengerNotAtPickupDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'The passenger was not at the agreed pickup location.'**
+  String get cancelReasonPassengerNotAtPickupDescription;
+
+  /// No description provided for @cancelReasonPassengerNotRespondingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Passenger not responding'**
+  String get cancelReasonPassengerNotRespondingTitle;
+
+  /// No description provided for @cancelReasonPassengerNotRespondingDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'The passenger is not responding to messages.'**
+  String get cancelReasonPassengerNotRespondingDescription;
+
+  /// No description provided for @cancelReasonRouteIssueTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Route issue'**
+  String get cancelReasonRouteIssueTitle;
+
+  /// No description provided for @cancelReasonRouteIssueDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'There is a road closure or route problem.'**
+  String get cancelReasonRouteIssueDescription;
+
+  /// No description provided for @pleaseFixFields.
+  ///
+  /// In en, this message translates to:
+  /// **'Please fix: {fields}'**
+  String pleaseFixFields(String fields);
+
+  /// No description provided for @nameTooLongError.
+  ///
+  /// In en, this message translates to:
+  /// **'Name is too long'**
+  String get nameTooLongError;
+
+  /// No description provided for @ridingDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Riding Details'**
+  String get ridingDetails;
+
+  /// No description provided for @riderOnboardingFormLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Rider onboarding form'**
+  String get riderOnboardingFormLabel;
+
+  /// No description provided for @payoutStepInitiated.
+  ///
+  /// In en, this message translates to:
+  /// **'Initiated'**
+  String get payoutStepInitiated;
+
+  /// No description provided for @payoutStepCouldNotComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not complete'**
+  String get payoutStepCouldNotComplete;
+
+  /// No description provided for @payoutStepPreparingTransfer.
+  ///
+  /// In en, this message translates to:
+  /// **'Stripe is preparing your transfer'**
+  String get payoutStepPreparingTransfer;
+
+  /// No description provided for @payoutStepExpected.
+  ///
+  /// In en, this message translates to:
+  /// **'Expected {date}'**
+  String payoutStepExpected(String date);
+
+  /// No description provided for @payoutStepOnItsWayToYourBank.
+  ///
+  /// In en, this message translates to:
+  /// **'On its way to your bank'**
+  String get payoutStepOnItsWayToYourBank;
+
+  /// No description provided for @payoutStepWaitingForProcessing.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for processing to complete'**
+  String get payoutStepWaitingForProcessing;
+
+  /// No description provided for @payoutStepDepositedToYourAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Deposited to your account'**
+  String get payoutStepDepositedToYourAccount;
+
+  /// No description provided for @payoutMethodInstantDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Instant (usually minutes)'**
+  String get payoutMethodInstantDescription;
+
+  /// No description provided for @payoutMethodStandardDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Standard (1–3 business days)'**
+  String get payoutMethodStandardDescription;
+
+  /// No description provided for @payoutDestinationLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Destination'**
+  String get payoutDestinationLabel;
+
+  /// No description provided for @onboardingStepCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Step {current} of {total}'**
+  String onboardingStepCount(int current, int total);
+
+  /// No description provided for @onboardingCreateAccountPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Create your free account to find rides to your next sporting event.'**
+  String get onboardingCreateAccountPrompt;
+
+  /// No description provided for @onboardingRunningEventLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'RUNNING EVENT'**
+  String get onboardingRunningEventLabel;
+
+  /// No description provided for @onboardingRideBadgeOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'OPEN'**
+  String get onboardingRideBadgeOpen;
+
+  /// No description provided for @onboardingRideBadgeSet.
+  ///
+  /// In en, this message translates to:
+  /// **'SET'**
+  String get onboardingRideBadgeSet;
+
+  /// No description provided for @onboardingSharedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared'**
+  String get onboardingSharedLabel;
+
+  /// No description provided for @onboardingDriverRouteLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Driver route'**
+  String get onboardingDriverRouteLabel;
+
+  /// No description provided for @onboardingSharedArrivalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared arrival'**
+  String get onboardingSharedArrivalLabel;
+
+  /// No description provided for @onboardingEventLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Event'**
+  String get onboardingEventLabel;
+
+  /// Signup wizard tablet/step label for identity and role step
+  ///
+  /// In en, this message translates to:
+  /// **'Identity & Role'**
+  String get identityAndRoleStep;
+
+  /// Short label for day column in signup date picker
+  ///
+  /// In en, this message translates to:
+  /// **'Day'**
+  String get dayLabel;
+
+  /// Short label for month column in signup date picker
+  ///
+  /// In en, this message translates to:
+  /// **'Month'**
+  String get monthLabel;
+
+  /// Validation message for minimum password length
+  ///
+  /// In en, this message translates to:
+  /// **'Password must be at least 8 characters'**
+  String get passwordMinLengthError;
+
+  /// Password strength label
+  ///
+  /// In en, this message translates to:
+  /// **'Weak'**
+  String get passwordStrengthWeak;
+
+  /// Password strength label
+  ///
+  /// In en, this message translates to:
+  /// **'Fair'**
+  String get passwordStrengthFair;
+
+  /// Password strength label
+  ///
+  /// In en, this message translates to:
+  /// **'Good'**
+  String get passwordStrengthGood;
+
+  /// Password strength label
+  ///
+  /// In en, this message translates to:
+  /// **'Strong'**
+  String get passwordStrengthStrong;
+
+  /// Generic validation fallback message
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid value'**
+  String get invalidValue;
+
+  /// Validation message when support subject is empty
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a subject'**
+  String get supportSubjectRequired;
+
+  /// Validation message when support subject is too short
+  ///
+  /// In en, this message translates to:
+  /// **'Subject must be at least 3 characters'**
+  String get supportSubjectMinLength;
+
+  /// Validation message when support message is empty
+  ///
+  /// In en, this message translates to:
+  /// **'Please describe your issue'**
+  String get supportMessageRequired;
+
+  /// Validation message when support message is too short
+  ///
+  /// In en, this message translates to:
+  /// **'Please provide at least 10 characters'**
+  String get supportMessageMinLength;
+
+  /// Quick date filter for the coming weekend
+  ///
+  /// In en, this message translates to:
+  /// **'This Weekend'**
+  String get thisWeekend;
+
+  /// Sort label for highest price
+  ///
+  /// In en, this message translates to:
+  /// **'Highest price'**
+  String get highestPrice;
+
+  /// Achievement badge name in achievements_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Perfect Score'**
+  String get badgePerfectScore;
+
+  /// Achievement badge description in achievements_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Maintain a 5-star rating'**
+  String get badgePerfectScoreDesc;
+
+  /// Achievement badge name in achievements_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Road Master'**
+  String get badgeRoadMaster;
+
+  /// Achievement badge description in achievements_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Complete 100 rides'**
+  String get badgeRoadMasterDesc;
+
+  /// Achievement badge name in achievements_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Night Owl'**
+  String get badgeNightOwl;
+
+  /// Achievement badge description in achievements_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Complete 20 night rides'**
+  String get badgeNightOwlDesc;
+
+  /// Achievement badge name in achievements_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Early Bird'**
+  String get badgeEarlyBird;
+
+  /// Achievement badge description in achievements_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Complete 20 morning rides'**
+  String get badgeEarlyBirdDesc;
+
+  /// Achievement badge name in achievements_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Marathon Driver'**
+  String get badgeMarathonDriver;
+
+  /// Achievement badge description in achievements_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Travel 1000 km total'**
+  String get badgeMarathonDriverDesc;
+
+  /// Achievement badge name in achievements_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Verified Pro'**
+  String get badgeVerifiedPro;
+
+  /// Achievement badge description in achievements_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Get identity verified'**
+  String get badgeVerifiedProDesc;
+
+  /// Challenge name in achievements_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Daily Commuter'**
+  String get challengeDailyCommuter;
+
+  /// Challenge description in achievements_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Complete 1 ride today'**
+  String get challengeDailyCommuterDesc;
+
+  /// Challenge name in achievements_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Week Warrior'**
+  String get challengeWeekWarrior;
+
+  /// Challenge description in achievements_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Complete 5 rides this week'**
+  String get challengeWeekWarriorDesc;
+
+  /// Challenge name in achievements_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Streak Keeper'**
+  String get challengeStreakKeeper;
+
+  /// Challenge description in achievements_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Maintain a 3-day streak'**
+  String get challengeStreakKeeperDesc;
+
+  /// Challenge name in achievements_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Explorer'**
+  String get challengeExplorer;
+
+  /// Challenge description in achievements_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Try 3 new routes this month'**
+  String get challengeExplorerDesc;
+
+  /// Challenge name in achievements_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Social Rider'**
+  String get challengeSocialRider;
+
+  /// Challenge description in achievements_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Rate 5 drivers this week'**
+  String get challengeSocialRiderDesc;
+
+  /// Challenge name in achievements_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Eco Warrior'**
+  String get challengeEcoWarrior;
+
+  /// Challenge description in achievements_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Share 3 rides today'**
+  String get challengeEcoWarriorDesc;
+
+  /// Challenge timer label in achievements_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Resets in {value}h'**
+  String challengeResetsInHours(String value);
+
+  /// Challenge timer label in achievements_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Resets in {value}d'**
+  String challengeResetsInDays(String value);
+
+  /// Challenge encouragement label in achievements_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Keep going!'**
+  String get challengeKeepGoing;
 }
 
 class _AppLocalizationsDelegate

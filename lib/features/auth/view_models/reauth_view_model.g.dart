@@ -56,7 +56,7 @@ final class ReauthViewModelProvider
   }
 }
 
-String _$reauthViewModelHash() => r'd052cabbe1d68a960f90dfbb03d3b387a1a51182';
+String _$reauthViewModelHash() => r'1968fe4449e76171d8fc8544b6a108fc544effb0';
 
 /// Manages the re-authentication flow for sensitive operations.
 ///

@@ -15,6 +15,7 @@ import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/core/utils/user_facing_error.dart';
 import 'package:sport_connect/core/widgets/address_autocomplete_field.dart';
 import 'package:sport_connect/core/widgets/custom_button.dart';
@@ -190,6 +191,7 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
   }
 
   Widget _buildNameDisplay(String name, bool hasPhoto, String? photoUrl) {
+    final l10n = AppLocalizations.of(context);
     return Container(
           padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
           decoration: BoxDecoration(
@@ -221,7 +223,7 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      name.isNotEmpty ? name : 'Your Name',
+                      name.isNotEmpty ? name : l10n.authFullName,
                       style: TextStyle(
                         fontSize: 16.sp,
                         fontWeight: FontWeight.w800,
@@ -239,7 +241,7 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
                         SizedBox(width: 4.w),
                         Expanded(
                           child: Text(
-                            'From your sign-in account',
+                            l10n.from_your_signin_account,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
@@ -316,8 +318,10 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
       context: context,
       builder: (ctx) => AlertDialog.adaptive(
         title: Text(AppLocalizations.of(context).discardChangesTitle),
-        content: const Text(
-          'Your profile info will not be saved if you go back.',
+        content: Text(
+          AppLocalizations.of(
+            context,
+          ).your_profile_info_will_not_be_saved_if_you_go_back,
         ),
         actions: [
           TextButton(
@@ -326,9 +330,9 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text(
-              'Discard',
-              style: TextStyle(color: AppColors.error),
+            child: Text(
+              AppLocalizations.of(context).discard,
+              style: const TextStyle(color: AppColors.error),
             ),
           ),
         ],
@@ -353,7 +357,9 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
     if (currentUser == null) {
       AdaptiveSnackBar.show(
         context,
-        message: '⚠️ Profile not loaded yet. Please wait a moment.',
+        message: AppLocalizations.of(
+          context,
+        ).profile_not_loaded_yet_please_wait_a_moment,
         type: AdaptiveSnackBarType.warning,
         duration: const Duration(seconds: 3),
       );
@@ -367,20 +373,26 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
       final needsManualName = currentUser.username.trim().isEmpty;
 
       if (needsManualName && _form.control(_FormFields.name).invalid) {
-        errors.add('Full name');
+        errors.add(AppLocalizations.of(context).authFullName);
       }
-      if (_form.control(_FormFields.gender).invalid) errors.add('Gender');
-      if (_form.control(_FormFields.dob).invalid) errors.add('Date of birth');
+      if (_form.control(_FormFields.gender).invalid) {
+        errors.add(AppLocalizations.of(context).gender);
+      }
+      if (_form.control(_FormFields.dob).invalid) {
+        errors.add(AppLocalizations.of(context).authDateOfBirth);
+      }
       if (_form.control(_FormFields.expertise).invalid) {
-        errors.add('Expertise level');
+        errors.add(AppLocalizations.of(context).expertiseLevel);
       }
       if (_form.control(_FormFields.terms).invalid) {
-        errors.add('Terms acceptance');
+        errors.add(AppLocalizations.of(context).settingsTermsConditions);
       }
 
       AdaptiveSnackBar.show(
         context,
-        message: 'Please fix: ${errors.join(', ')}',
+        message: AppLocalizations.of(
+          context,
+        ).pleaseFixFields(errors.join(', ')),
         type: AdaptiveSnackBarType.error,
       );
       return;
@@ -392,7 +404,7 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
     if (!phoneValid) {
       AdaptiveSnackBar.show(
         context,
-        message: 'Please enter a valid phone number.',
+        message: AppLocalizations.of(context).please_enter_a_valid_phone_number,
         type: AdaptiveSnackBarType.error,
       );
       return;
@@ -401,7 +413,7 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
     if (!addressValid) {
       AdaptiveSnackBar.show(
         context,
-        message: 'Please enter your address.',
+        message: AppLocalizations.of(context).please_enter_your_address,
         type: AdaptiveSnackBarType.error,
       );
       return;
@@ -540,7 +552,7 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
             prev?.completedAction != OnboardingAction.riderDone) {
           AdaptiveSnackBar.show(
             context,
-            message: '🎉 Profile complete! Welcome aboard.',
+            message: l10n.profile_complete_welcome_aboard,
             type: AdaptiveSnackBarType.success,
             duration: const Duration(seconds: 2),
           );
@@ -558,7 +570,7 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
             message: next.errorMessage!,
             type: AdaptiveSnackBarType.error,
             duration: const Duration(seconds: 5),
-            action: 'Retry',
+            action: l10n.retry,
             onActionPressed: () => _completeOnboarding(next),
           );
         }
@@ -575,7 +587,7 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
 
             AdaptiveSnackBar.show(
               context,
-              message: 'Your saved info has been pre-filled.',
+              message: l10n.your_saved_info_has_been_prefilled,
               duration: const Duration(seconds: 2),
             );
           }
@@ -586,11 +598,14 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
         if (next.hasError) {
           AdaptiveSnackBar.show(
             context,
-            message: 'Failed to load your profile. Some fields may be empty.',
+            message: l10n.failed_to_load_your_profile_some_fields_may_be_empty,
             type: AdaptiveSnackBarType.warning,
           );
         }
       });
+
+    final useTabletLayout = context.screenWidth >= Breakpoints.medium;
+    final maxWidth = useTabletLayout ? 1120.0 : kMaxWidthForm;
 
     return PopScope(
       canPop: false,
@@ -611,377 +626,390 @@ class _RiderOnboardingScreenState extends ConsumerState<RiderOnboardingScreen> {
             ),
           ],
         ),
-        body: SafeArea(
-          child: Semantics(
-            container: true,
-            label: 'Rider onboarding form',
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 20.w,
-                    vertical: 12.h,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Complete your profile',
-                            style: TextStyle(
-                              fontSize: 12.sp,
-                              color: AppColors.textSecondary,
+        body: MaxWidthContainer(
+          maxWidth: maxWidth,
+          child: SafeArea(
+            child: Semantics(
+              container: true,
+              label: l10n.riderOnboardingFormLabel,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: adaptiveScreenPadding(context).copyWith(
+                      bottom: 0,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              l10n.complete_your_profile,
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                color: AppColors.textSecondary,
+                              ),
                             ),
-                          ),
-                          Text(
-                            'Step 2 of 2',
-                            style: TextStyle(
-                              fontSize: 12.sp,
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.w600,
+                            Text(
+                              l10n.step_2_of_2,
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 6.h),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(4.r),
-                        child: LinearProgressIndicator(
-                          value: 1,
-                          minHeight: 4.h,
-                          backgroundColor: AppColors.primary.withValues(
-                            alpha: 0.12,
-                          ),
-                          valueColor: const AlwaysStoppedAnimation(
-                            AppColors.primary,
+                          ],
+                        ),
+                        SizedBox(height: 6.h),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(4.r),
+                          child: LinearProgressIndicator(
+                            value: 1,
+                            minHeight: 4.h,
+                            backgroundColor: AppColors.primary.withValues(
+                              alpha: 0.12,
+                            ),
+                            valueColor: const AlwaysStoppedAnimation(
+                              AppColors.primary,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                Expanded(
-                  child: ReactiveForm(
-                    formGroup: _form,
-                    child: SingleChildScrollView(
-                      padding: EdgeInsets.all(20.w),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          GlassPanel(
-                            padding: EdgeInsets.all(16.w),
-                            color: AppColors.surface.withValues(alpha: 0.62),
-                            borderColor: AppColors.primary.withValues(
-                              alpha: 0.2,
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  padding: EdgeInsets.all(12.w),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primary.withValues(
-                                      alpha: 0.15,
+                  Expanded(
+                    child: ReactiveForm(
+                      formGroup: _form,
+                      child: SingleChildScrollView(
+                        padding: EdgeInsets.all(20.w),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            GlassPanel(
+                              padding: EdgeInsets.all(16.w),
+                              color: AppColors.surface.withValues(alpha: 0.62),
+                              borderColor: AppColors.primary.withValues(
+                                alpha: 0.2,
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    padding: EdgeInsets.all(12.w),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primary.withValues(
+                                        alpha: 0.15,
+                                      ),
+                                      borderRadius: BorderRadius.circular(14.r),
                                     ),
-                                    borderRadius: BorderRadius.circular(14.r),
+                                    child: Icon(
+                                      Icons.person_add_alt_1_rounded,
+                                      color: AppColors.primary,
+                                      size: 28.sp,
+                                    ),
                                   ),
-                                  child: Icon(
-                                    Icons.person_add_alt_1_rounded,
-                                    color: AppColors.primary,
-                                    size: 28.sp,
+                                  SizedBox(width: 16.w),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          l10n.completeRiderProfile,
+                                          style: TextStyle(
+                                            fontSize: 18.sp,
+                                            fontWeight: FontWeight.w800,
+                                            color: AppColors.textPrimary,
+                                          ),
+                                        ),
+                                        SizedBox(height: 4.h),
+                                        Text(
+                                          l10n.riderProfileDescription,
+                                          style: TextStyle(
+                                            fontSize: 12.sp,
+                                            height: 1.4,
+                                            color: AppColors.textSecondary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            SizedBox(height: 24.h),
+
+                            _sectionLabel(l10n.personalInfo),
+
+                            if (!needsManualName) ...[
+                              _buildNameDisplay(
+                                displayName,
+                                hasPhoto,
+                                photoUrl,
+                              ),
+                            ] else ...[
+                              AdaptiveReactiveTextField(
+                                    formControlName: _FormFields.name,
+                                    labelText: l10n.authFullName,
+                                    hintText: l10n.authFullNameHint,
+                                    prefixIcon: const Icon(
+                                      Icons.person_rounded,
+                                    ),
+                                    textInputAction: TextInputAction.next,
+                                    validationMessages: {
+                                      ValidationMessage.required: (_) =>
+                                          l10n.nameRequiredError,
+                                      ValidationMessage.minLength: (_) =>
+                                          l10n.nameMinLengthError,
+                                      ValidationMessage.maxLength: (_) =>
+                                          l10n.nameTooLongError,
+                                      'name': (error) => error as String,
+                                    },
+                                  )
+                                  .animate()
+                                  .fadeIn(duration: 300.ms, delay: 0.ms)
+                                  .slideY(begin: 0.04, end: 0),
+                            ],
+
+                            SizedBox(height: 16.h),
+                            Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    GenderSegmentedField(
+                                      formControlName: _FormFields.gender,
+                                      label: l10n.gender,
+                                      maleLabel: l10n.genderMale,
+                                      femaleLabel: l10n.genderFemale,
+                                      validationMessages: {
+                                        ValidationMessage.required: (_) =>
+                                            l10n.driverGenderRequired,
+                                      },
+                                    ),
+                                    SizedBox(height: 14.h),
+                                    DateOfBirthField(
+                                      formControlName: _FormFields.dob,
+                                      label: l10n.authDateOfBirth,
+                                      validationMessages: {
+                                        ValidationMessage.required: (_) =>
+                                            l10n.authDobError,
+                                        'minAge': (_) => l10n.authDobMinAge,
+                                      },
+                                    ),
+                                  ],
+                                )
+                                .animate()
+                                .fadeIn(duration: 300.ms, delay: 60.ms)
+                                .slideY(begin: 0.04, end: 0),
+
+                            SizedBox(height: 24.h),
+
+                            _sectionLabel(l10n.contactAndAddress),
+
+                            IntlPhoneInput(
+                                  key: _phoneKey,
+                                  initialValue: switch (currentUser) {
+                                    final RiderModel rider => rider.phoneNumber,
+                                    final DriverModel driver =>
+                                      driver.phoneNumber,
+                                    _ => null,
+                                  },
+                                  label: l10n.authPhoneOptional,
+                                  hint: l10n.authPhoneHint,
+                                  accentColor: AppColors.primary,
+                                  fillColor: AppColors.background,
+                                  onChanged: (phone) => ref
+                                      .read(
+                                        onboardingViewModelProvider.notifier,
+                                      )
+                                      .setRiderDraftContact(
+                                        phoneNumber: phone.isValid
+                                            ? phone.fullNumber
+                                            : null,
+                                      ),
+                                )
+                                .animate()
+                                .fadeIn(duration: 300.ms, delay: 180.ms)
+                                .slideY(begin: 0.04, end: 0),
+
+                            SizedBox(height: 16.h),
+
+                            AddressAutocompleteField(
+                                  key: _addressKey,
+                                  label: l10n.address,
+                                  hint: l10n.searchAddressCityOrPlace,
+                                  initialValue: switch (currentUser) {
+                                    final RiderModel rider => rider.address,
+                                    final DriverModel driver => driver.address,
+                                    _ => null,
+                                  },
+                                  accentColor: AppColors.primary,
+                                  fillColor: AppColors.background,
+                                  onSelected: (_) {},
+                                  validator: (value) {
+                                    if (value == null || value.trim().isEmpty) {
+                                      return l10n.address_is_required;
+                                    }
+                                    return null;
+                                  },
+                                )
+                                .animate()
+                                .fadeIn(duration: 300.ms, delay: 240.ms)
+                                .slideY(begin: 0.04, end: 0),
+
+                            SizedBox(height: 24.h),
+
+                            _sectionLabel(l10n.ridingDetails),
+
+                            ReactiveExpertisePicker(
+                                  formControlName: _FormFields.expertise,
+                                  label: l10n.expertiseLevel,
+                                  accent: AppColors.primary,
+                                  textColor: AppColors.textPrimary,
+                                  cardBg: AppColors.surface,
+                                  validationMessages: {
+                                    ValidationMessage.required: (_) =>
+                                        l10n.expertiseLevelRequired,
+                                  },
+                                )
+                                .animate()
+                                .fadeIn(duration: 300.ms, delay: 300.ms)
+                                .slideY(begin: 0.04, end: 0),
+
+                            SizedBox(height: 24.h),
+
+                            Container(
+                              decoration: BoxDecoration(
+                                color: AppColors.surface.withValues(alpha: 0.5),
+                                borderRadius: BorderRadius.circular(12.r),
+                                border: Border.all(
+                                  color: AppColors.primary.withValues(
+                                    alpha: 0.2,
                                   ),
                                 ),
-                                SizedBox(width: 16.w),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                              ),
+                              child: ReactiveCheckboxListTile(
+                                formControlName: _FormFields.terms,
+                                controlAffinity:
+                                    ListTileControlAffinity.leading,
+                                activeColor: AppColors.primary,
+                                title: Text.rich(
+                                  TextSpan(
+                                    text: l10n.iAgreeToThe,
+                                    style: TextStyle(
+                                      fontSize: 13.sp,
+                                      color: AppColors.textSecondary,
+                                    ),
                                     children: [
-                                      Text(
-                                        l10n.completeRiderProfile,
-                                        style: TextStyle(
-                                          fontSize: 18.sp,
-                                          fontWeight: FontWeight.w800,
-                                          color: AppColors.textPrimary,
-                                        ),
-                                      ),
-                                      SizedBox(height: 4.h),
-                                      Text(
-                                        l10n.riderProfileDescription,
-                                        style: TextStyle(
-                                          fontSize: 12.sp,
-                                          height: 1.4,
-                                          color: AppColors.textSecondary,
+                                      TextSpan(
+                                        text: l10n.terms_conditions,
+                                        recognizer: TapGestureRecognizer()
+                                          ..onTap = () => context.push(
+                                            AppRoutes.terms.path,
+                                          ),
+                                        style: const TextStyle(
+                                          color: AppColors.primary,
+                                          fontWeight: FontWeight.w600,
+                                          decoration: TextDecoration.underline,
                                         ),
                                       ),
                                     ],
                                   ),
                                 ),
-                              ],
-                            ),
-                          ),
-                          SizedBox(height: 24.h),
-
-                          _sectionLabel('Personal Info'),
-
-                          if (!needsManualName) ...[
-                            _buildNameDisplay(displayName, hasPhoto, photoUrl),
-                          ] else ...[
-                            AdaptiveReactiveTextField(
-                                  formControlName: _FormFields.name,
-                                  labelText: l10n.authFullName,
-                                  hintText: l10n.authFullNameHint,
-                                  prefixIcon: const Icon(
-                                    Icons.person_rounded,
-                                  ),
-                                  textInputAction: TextInputAction.next,
-                                  validationMessages: {
-                                    ValidationMessage.required: (_) =>
-                                        l10n.nameRequiredError,
-                                    ValidationMessage.minLength: (_) =>
-                                        l10n.nameMinLengthError,
-                                    ValidationMessage.maxLength: (_) =>
-                                        'Name is too long',
-                                    'name': (error) => error as String,
-                                  },
-                                )
-                                .animate()
-                                .fadeIn(duration: 300.ms, delay: 0.ms)
-                                .slideY(begin: 0.04, end: 0),
-                          ],
-
-                          SizedBox(height: 16.h),
-                          Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  GenderSegmentedField(
-                                    formControlName: _FormFields.gender,
-                                    label: l10n.gender,
-                                    maleLabel: l10n.genderMale,
-                                    femaleLabel: l10n.genderFemale,
-                                    validationMessages: {
-                                      ValidationMessage.required: (_) =>
-                                          l10n.driverGenderRequired,
-                                    },
-                                  ),
-                                  SizedBox(height: 14.h),
-                                  DateOfBirthField(
-                                    formControlName: _FormFields.dob,
-                                    label: l10n.authDateOfBirth,
-                                    validationMessages: {
-                                      ValidationMessage.required: (_) =>
-                                          l10n.authDobError,
-                                      'minAge': (_) => l10n.authDobMinAge,
-                                    },
-                                  ),
-                                ],
-                              )
-                              .animate()
-                              .fadeIn(duration: 300.ms, delay: 60.ms)
-                              .slideY(begin: 0.04, end: 0),
-
-                          SizedBox(height: 24.h),
-
-                          _sectionLabel('Contact & Address'),
-
-                          IntlPhoneInput(
-                                key: _phoneKey,
-                                initialValue: switch (currentUser) {
-                                  final RiderModel rider => rider.phoneNumber,
-                                  final DriverModel driver =>
-                                    driver.phoneNumber,
-                                  _ => null,
-                                },
-                                label: l10n.authPhoneOptional,
-                                hint: l10n.authPhoneHint,
-                                accentColor: AppColors.primary,
-                                fillColor: AppColors.background,
-                                onChanged: (phone) => ref
-                                    .read(onboardingViewModelProvider.notifier)
-                                    .setRiderDraftContact(
-                                      phoneNumber: phone.isValid
-                                          ? phone.fullNumber
-                                          : null,
-                                    ),
-                              )
-                              .animate()
-                              .fadeIn(duration: 300.ms, delay: 180.ms)
-                              .slideY(begin: 0.04, end: 0),
-
-                          SizedBox(height: 16.h),
-
-                          AddressAutocompleteField(
-                                key: _addressKey,
-                                label: 'Address',
-                                hint: 'Search your address...',
-                                initialValue: switch (currentUser) {
-                                  final RiderModel rider => rider.address,
-                                  final DriverModel driver => driver.address,
-                                  _ => null,
-                                },
-                                accentColor: AppColors.primary,
-                                fillColor: AppColors.background,
-                                onSelected: (_) {},
-                                validator: (value) {
-                                  if (value == null || value.trim().isEmpty) {
-                                    return 'Address is required';
-                                  }
-                                  return null;
-                                },
-                              )
-                              .animate()
-                              .fadeIn(duration: 300.ms, delay: 240.ms)
-                              .slideY(begin: 0.04, end: 0),
-
-                          SizedBox(height: 24.h),
-
-                          _sectionLabel('Riding Details'),
-
-                          ReactiveExpertisePicker(
-                                formControlName: _FormFields.expertise,
-                                label: l10n.expertiseLevel,
-                                accent: AppColors.primary,
-                                textColor: AppColors.textPrimary,
-                                cardBg: AppColors.surface,
-                                validationMessages: {
-                                  ValidationMessage.required: (_) =>
-                                      l10n.expertiseLevelRequired,
-                                },
-                              )
-                              .animate()
-                              .fadeIn(duration: 300.ms, delay: 300.ms)
-                              .slideY(begin: 0.04, end: 0),
-
-                          SizedBox(height: 24.h),
-
-                          Container(
-                            decoration: BoxDecoration(
-                              color: AppColors.surface.withValues(alpha: 0.5),
-                              borderRadius: BorderRadius.circular(12.r),
-                              border: Border.all(
-                                color: AppColors.primary.withValues(alpha: 0.2),
                               ),
                             ),
-                            child: ReactiveCheckboxListTile(
-                              formControlName: _FormFields.terms,
-                              controlAffinity: ListTileControlAffinity.leading,
-                              activeColor: AppColors.primary,
-                              title: Text.rich(
-                                TextSpan(
-                                  text: 'I agree to the ',
-                                  style: TextStyle(
-                                    fontSize: 13.sp,
-                                    color: AppColors.textSecondary,
-                                  ),
-                                  children: [
-                                    TextSpan(
-                                      text: 'Terms & Conditions',
-                                      recognizer: TapGestureRecognizer()
-                                        ..onTap = () =>
-                                            context.push(AppRoutes.terms.path),
-                                      style: const TextStyle(
-                                        color: AppColors.primary,
-                                        fontWeight: FontWeight.w600,
-                                        decoration: TextDecoration.underline,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
 
-                          ReactiveFormConsumer(
-                            builder: (context, form, _) {
-                              final termsControl = form.control(
-                                _FormFields.terms,
-                              );
-                              final showError =
-                                  termsControl.touched && termsControl.invalid;
+                            ReactiveFormConsumer(
+                              builder: (context, form, _) {
+                                final termsControl = form.control(
+                                  _FormFields.terms,
+                                );
+                                final showError =
+                                    termsControl.touched &&
+                                    termsControl.invalid;
 
-                              return AnimatedSwitcher(
-                                duration: const Duration(milliseconds: 200),
-                                child: showError
-                                    ? Padding(
-                                        key: const ValueKey('terms-error'),
-                                        padding: EdgeInsets.only(
-                                          top: 6.h,
-                                          left: 14.w,
-                                        ),
-                                        child: Row(
-                                          children: [
-                                            Icon(
-                                              Icons.error_outline_rounded,
-                                              size: 14.sp,
-                                              color: AppColors.error,
-                                            ),
-                                            SizedBox(width: 6.w),
-                                            Expanded(
-                                              child: Text(
-                                                'You must accept the terms to continue.',
-                                                style: TextStyle(
-                                                  fontSize: 12.sp,
-                                                  color: AppColors.error,
+                                return AnimatedSwitcher(
+                                  duration: const Duration(milliseconds: 200),
+                                  child: showError
+                                      ? Padding(
+                                          key: const ValueKey('terms-error'),
+                                          padding: EdgeInsets.only(
+                                            top: 6.h,
+                                            left: 14.w,
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              Icon(
+                                                Icons.error_outline_rounded,
+                                                size: 14.sp,
+                                                color: AppColors.error,
+                                              ),
+                                              SizedBox(width: 6.w),
+                                              Expanded(
+                                                child: Text(
+                                                  l10n.you_must_accept_the_terms_to_continue,
+                                                  style: TextStyle(
+                                                    fontSize: 12.sp,
+                                                    color: AppColors.error,
+                                                  ),
                                                 ),
                                               ),
-                                            ),
-                                          ],
-                                        ),
-                                      )
-                                    : const SizedBox.shrink(
-                                        key: ValueKey('terms-ok'),
-                                      ),
-                              );
-                            },
-                          ),
-
-                          SizedBox(height: 28.h),
-
-                          ReactiveFormConsumer(
-                            builder: (context, form, _) {
-                              final isFormReady = form.valid;
-                              final isVmLoading = ref.watch(
-                                onboardingViewModelProvider.select(
-                                  (s) => s.isLoading,
-                                ),
-                              );
-
-                              return Semantics(
-                                button: true,
-                                label: 'Complete rider onboarding',
-                                child: AnimatedOpacity(
-                                  duration: const Duration(milliseconds: 250),
-                                  opacity: isFormReady ? 1.0 : 0.55,
-                                  child: PremiumButton(
-                                    text: isVmLoading
-                                        ? 'Saving...'
-                                        : l10n.completeSetupButton,
-                                    onPressed: isVmLoading
-                                        ? null
-                                        : () => _completeOnboarding(
-                                            ref.read(
-                                              onboardingViewModelProvider,
-                                            ),
+                                            ],
                                           ),
-                                    isLoading: isVmLoading,
-                                    style: isFormReady
-                                        ? PremiumButtonStyle.gradient
-                                        : PremiumButtonStyle.primary,
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
+                                        )
+                                      : const SizedBox.shrink(
+                                          key: ValueKey('terms-ok'),
+                                        ),
+                                );
+                              },
+                            ),
 
-                          SizedBox(height: 24.h),
-                        ],
+                            SizedBox(height: 28.h),
+
+                            ReactiveFormConsumer(
+                              builder: (context, form, _) {
+                                final isFormReady = form.valid;
+                                final isVmLoading = ref.watch(
+                                  onboardingViewModelProvider.select(
+                                    (s) => s.isLoading,
+                                  ),
+                                );
+
+                                return Semantics(
+                                  button: true,
+                                  label: l10n.completeSetupButton,
+                                  child: AnimatedOpacity(
+                                    duration: const Duration(milliseconds: 250),
+                                    opacity: isFormReady ? 1.0 : 0.55,
+                                    child: PremiumButton(
+                                      text: isVmLoading
+                                          ? l10n.processing
+                                          : l10n.completeSetupButton,
+                                      onPressed: isVmLoading
+                                          ? null
+                                          : () => _completeOnboarding(
+                                              ref.read(
+                                                onboardingViewModelProvider,
+                                              ),
+                                            ),
+                                      isLoading: isVmLoading,
+                                      style: isFormReady
+                                          ? PremiumButtonStyle.gradient
+                                          : PremiumButtonStyle.primary,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+
+                            SizedBox(height: 24.h),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

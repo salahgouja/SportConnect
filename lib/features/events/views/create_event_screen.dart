@@ -13,6 +13,7 @@ import 'package:intl/intl.dart';
 import 'package:reactive_forms/reactive_forms.dart';
 import 'package:sport_connect/core/models/location/location_point.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/core/widgets/map_location_picker.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
@@ -93,34 +94,37 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
         ),
         title: l10n.createEventTitle,
       ),
-      body: ReactiveForm(
-        formGroup: _form,
-        child: GestureDetector(
-          onTap: () => FocusScope.of(context).unfocus(),
-          child: SafeArea(
-            top: false,
-            child: ListView(
-              padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 32.h),
-              children: [
-                _buildSportTypeSelector(ref, createState, l10n),
-                SizedBox(height: 20.h),
-                _buildTitleField(ref, createState, l10n),
-                SizedBox(height: 14.h),
-                SizedBox(height: 14.h),
-                _buildDescriptionField(ref, createState, l10n),
-                SizedBox(height: 20.h),
-                _buildImagePicker(ref, createState, l10n),
-                SizedBox(height: 20.h),
-                _buildLocationPicker(context, ref, createState, l10n),
-                SizedBox(height: 20.h),
-                _buildWhenSection(context, ref, createState, l10n),
-                SizedBox(height: 20.h),
-                _buildParticipantSlider(ref, createState, l10n),
-                SizedBox(height: 20.h),
-                _buildRecurringToggle(context, ref, createState, l10n),
-                SizedBox(height: 32.h),
-                _buildSubmitButton(context, ref, createState, l10n),
-              ],
+      body: MaxWidthContainer(
+        maxWidth: kMaxWidthForm,
+        child: ReactiveForm(
+          formGroup: _form,
+          child: GestureDetector(
+            onTap: () => FocusScope.of(context).unfocus(),
+            child: SafeArea(
+              top: false,
+              child: ListView(
+                padding: adaptiveScreenPadding(context),
+                children: [
+                  _buildSportTypeSelector(ref, createState, l10n),
+                  SizedBox(height: 20.h),
+                  _buildTitleField(ref, createState, l10n),
+                  SizedBox(height: 14.h),
+                  SizedBox(height: 14.h),
+                  _buildDescriptionField(ref, createState, l10n),
+                  SizedBox(height: 20.h),
+                  _buildImagePicker(ref, createState, l10n),
+                  SizedBox(height: 20.h),
+                  _buildLocationPicker(context, ref, createState, l10n),
+                  SizedBox(height: 20.h),
+                  _buildWhenSection(context, ref, createState, l10n),
+                  SizedBox(height: 20.h),
+                  _buildParticipantSlider(ref, createState, l10n),
+                  SizedBox(height: 20.h),
+                  _buildRecurringToggle(context, ref, createState, l10n),
+                  SizedBox(height: 32.h),
+                  _buildSubmitButton(context, ref, createState, l10n),
+                ],
+              ),
             ),
           ),
         ),
@@ -315,7 +319,7 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
     final picker = ImagePicker();
     final image = await picker.pickImage(
       source: ImageSource.gallery,
-      maxWidth: 1200,
+      maxWidth: kMaxWidthWide,
       maxHeight: 800,
       imageQuality: 85,
     );
@@ -725,7 +729,9 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
             ),
             if (patterns.isEmpty)
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
+                padding: adaptiveScreenPadding(
+                  context,
+                ).copyWith(bottom: 8.h, top: 8.h),
                 child: Text(
                   '${l10n.no_recurrence_pattern_fits_this_startend_window}'
                   '${l10n.extend_end_time_or_set_a_later_repeat_end_date}',

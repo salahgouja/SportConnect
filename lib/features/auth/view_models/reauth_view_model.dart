@@ -52,7 +52,7 @@ class ReauthViewModel extends _$ReauthViewModel {
           .reauthenticateWithPassword(password);
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, isSuccess: true);
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       if (!ref.mounted) return;
       state = state.copyWith(
         isLoading: false,
@@ -71,7 +71,7 @@ class ReauthViewModel extends _$ReauthViewModel {
           .reauthenticateWithGoogle();
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, isSuccess: true);
-    } on Exception catch (e, st) {
+    } on Exception {
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, errorCode: 'google');
     }
@@ -85,7 +85,7 @@ class ReauthViewModel extends _$ReauthViewModel {
           .reauthenticateWithApple();
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, isSuccess: true);
-    } on Exception catch (e, st) {
+    } on Exception {
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, errorCode: 'apple');
     }

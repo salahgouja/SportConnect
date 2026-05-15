@@ -1,7 +1,5 @@
 import 'dart:async';
 
-
-
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -28,6 +26,7 @@ import 'package:sport_connect/features/rides/models/ride/ride_model.dart';
 import 'package:sport_connect/features/rides/view_models/ride_completion_view_model.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 
 /// Ride Completion / Trip Summary screen shown after a ride finishes.
 ///
@@ -70,6 +69,9 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
         ) ??
         const <RideBooking>[];
     final l10n = AppLocalizations.of(context);
+    final maxWidth = context.screenWidth >= Breakpoints.medium
+        ? 1440.0
+        : kMaxWidthForm;
 
     ref.listen<RideCompletionUiState>(
       rideCompletionUiViewModelProvider(widget.rideId),
@@ -87,54 +89,62 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
     );
 
     return AdaptiveScaffold(
-      body: rideAsync.when(
-        loading: () =>
-            const SkeletonLoader(),
-        error: (e, _) => Center(
-          child: Padding(
-            padding: EdgeInsets.all(24.w),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.error_outline, color: AppColors.error, size: 48.sp),
-                SizedBox(height: 16.h),
-                Text(
-                  l10n.somethingWentWrong,
-                  style: TextStyle(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
+      body: MaxWidthContainer(
+        maxWidth: maxWidth,
+        child: rideAsync.when(
+          loading: () => const SkeletonLoader(),
+          error: (e, _) => Center(
+            child: Padding(
+              padding: EdgeInsets.all(24.w),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    color: AppColors.error,
+                    size: 48.sp,
                   ),
-                ),
-                SizedBox(height: 8.h),
-                Text(
-                  'Unable to load ride completion details.',
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    color: AppColors.textSecondary,
+                  SizedBox(height: 16.h),
+                  Text(
+                    l10n.somethingWentWrong,
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
-                  textAlign: TextAlign.center,
-                ),
-                SizedBox(height: 16.h),
-                FilledButton.icon(
-                  onPressed: () =>
-                      ref.invalidate(rideStreamProvider(widget.rideId)),
-                  icon: const Icon(Icons.refresh),
-                  label: Text(l10n.retry),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.primary,
+                  SizedBox(height: 8.h),
+                  Text(
+                    AppLocalizations.of(
+                      context,
+                    ).unable_to_load_ride_completion_details,
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      color: AppColors.textSecondary,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                ),
-              ],
+                  SizedBox(height: 16.h),
+                  FilledButton.icon(
+                    onPressed: () =>
+                        ref.invalidate(rideStreamProvider(widget.rideId)),
+                    icon: const Icon(Icons.refresh),
+                    label: Text(l10n.retry),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
+          data: (ride) {
+            if (ride == null) {
+              return Center(child: Text(l10n.rideNotFound));
+            }
+            return _buildContent(context, ref, ride, l10n, bookings, uiState);
+          },
         ),
-        data: (ride) {
-          if (ride == null) {
-            return Center(child: Text(l10n.rideNotFound));
-          }
-          return _buildContent(context, ref, ride, l10n, bookings, uiState);
-        },
       ),
     );
   }
@@ -147,274 +157,310 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
     List<RideBooking> bookings,
     RideCompletionUiState uiState,
   ) {
-    final dateFormat = DateFormat('MMM d, yyyy');
-    final timeFormat = DateFormat('h:mm a');
+    final localeName = Localizations.localeOf(context).toLanguageTag();
+    final dateFormat = DateFormat.yMMMd(localeName);
+    final timeFormat = DateFormat.jm(localeName);
+    final useTabletLayout = context.screenWidth >= Breakpoints.medium;
+
+    Widget routeMapSection() {
+      if (uiState.osrmRouteRideId != ride.id) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref
+              .read(rideCompletionUiViewModelProvider(widget.rideId).notifier)
+              .ensureRouteLoaded(ride);
+        });
+      }
+      return _buildCompletedRouteMap(ride, uiState);
+    }
+
+    final header = _buildSuccessHeader(
+      context,
+    ).animate().fadeIn(duration: 500.ms).scale(begin: const Offset(0.8, 0.8));
+    final routeMap = routeMapSection().animate().fadeIn(delay: 100.ms);
+    final impactCard = _buildImpactCard(
+      context,
+      ride,
+      bookings,
+    ).animate().fadeIn(delay: 150.ms).slideY(begin: 0.05);
+    final summaryCard = _buildTripSummaryCard(
+      context,
+      ride,
+      dateFormat,
+      timeFormat,
+      l10n,
+      bookings,
+    ).animate().fadeIn(delay: 250.ms).slideY(begin: 0.05);
+    final fareCard = _buildFareBreakdownCard(
+      context,
+      ride,
+      l10n,
+      bookings,
+    ).animate().fadeIn(delay: 350.ms).slideY(begin: 0.05);
+    final participantCard = _buildParticipantCard(
+      context,
+      ref,
+      ride,
+      l10n,
+    ).animate().fadeIn(delay: 450.ms).slideY(begin: 0.05);
+    final actionsPanel = _buildActionPanel(
+      context,
+      ref,
+      ride,
+      l10n,
+      uiState,
+    );
+
+    if (!useTabletLayout) {
+      return SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              SizedBox(height: 20.h),
+              header,
+              SizedBox(height: 24.h),
+              routeMap,
+              SizedBox(height: 16.h),
+              impactCard,
+              SizedBox(height: 16.h),
+              summaryCard,
+              SizedBox(height: 16.h),
+              fareCard,
+              SizedBox(height: 16.h),
+              participantCard,
+              SizedBox(height: 32.h),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24.w),
+                child: actionsPanel,
+              ),
+              SizedBox(height: 32.h),
+            ],
+          ),
+        ),
+      );
+    }
 
     return SafeArea(
       child: SingleChildScrollView(
-        child: Column(
-          children: [
-            SizedBox(height: 20.h),
-
-            // Success header
-            _buildSuccessHeader(context)
-                .animate()
-                .fadeIn(duration: 500.ms)
-                .scale(begin: const Offset(0.8, 0.8)),
-
-            SizedBox(height: 24.h),
-
-            // Route map summary
-            Builder(
-              builder: (_) {
-                if (uiState.osrmRouteRideId != ride.id) {
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    ref
-                        .read(
-                          rideCompletionUiViewModelProvider(
-                            widget.rideId,
-                          ).notifier,
-                        )
-                        .ensureRouteLoaded(ride);
-                  });
-                }
-                return _buildCompletedRouteMap(ride, uiState);
-              },
-            ).animate().fadeIn(delay: 100.ms),
-
-            SizedBox(height: 16.h),
-
-            // Environmental impact card
-            _buildImpactCard(
-              context,
-              ride,
-              bookings,
-            ).animate().fadeIn(delay: 150.ms).slideY(begin: 0.05),
-
-            SizedBox(height: 16.h),
-
-            // Trip summary card
-            _buildTripSummaryCard(
-              context,
-              ride,
-              dateFormat,
-              timeFormat,
-              l10n,
-              bookings,
-            ).animate().fadeIn(delay: 250.ms).slideY(begin: 0.05),
-
-            SizedBox(height: 16.h),
-
-            // Fare breakdown card
-            _buildFareBreakdownCard(
-              context,
-              ride,
-              l10n,
-              bookings,
-            ).animate().fadeIn(delay: 350.ms).slideY(begin: 0.05),
-
-            SizedBox(height: 16.h),
-
-            // Driver/Rider info card
-            _buildParticipantCard(
-              context,
-              ref,
-              ride,
-              l10n,
-            ).animate().fadeIn(delay: 450.ms).slideY(begin: 0.05),
-
-            SizedBox(height: 32.h),
-
-            // Action buttons
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 24.w),
-              child: Column(
-                children: [
-                  // Show different rating CTA depending on the user's role
-                  Builder(
-                    builder: (ctx) {
-                      final uid = ref.read(currentAuthUidProvider).value;
-                      final isDriver = uid == ride.driverId;
-
-                      return SizedBox(
-                        width: double.infinity,
-                        child: isDriver
-                            ? PremiumButton(
-                                text: AppLocalizations.of(
-                                  context,
-                                ).ratePassenger,
-                                onPressed: () {
-                                  unawaited(HapticFeedback.mediumImpact());
-                                  context.push(
-                                    AppRoutes.driverRatePassenger.path
-                                        .replaceFirst(':rideId', widget.rideId),
-                                  );
-                                },
-                                icon: Icons.star_rounded,
-                              )
-                            : PremiumButton(
-                                text: AppLocalizations.of(
-                                  context,
-                                ).rateAndReview,
-                                onPressed: () async {
-                                  unawaited(HapticFeedback.mediumImpact());
-
-                                  // Fetch driver profile to get name for review screen
-                                  final driverProfile = await ref.read(
-                                    userProfileProvider(ride.driverId).future,
-                                  );
-
-                                  if (!ctx.mounted) return;
-
-                                  ctx.push(
-                                    '${AppRoutes.submitReview.path}'
-                                    '?rideId=${widget.rideId}'
-                                    '&revieweeId=${ride.driverId}'
-                                    '&revieweeName=${Uri.encodeComponent(driverProfile?.username ?? 'Driver')}'
-                                    '&reviewType=driverReview',
-                                  );
-                                },
-                                icon: Icons.star_rounded,
-                              ),
-                      );
-                    },
-                  ).animate().fadeIn(delay: 550.ms),
-
-                  SizedBox(height: 12.h),
-
-                  Row(
+        padding: EdgeInsets.fromLTRB(24.w, 20.h, 24.w, 24.h),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1440),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  flex: 7,
+                  child: Column(
                     children: [
-                      Expanded(
-                        child: uiState.isGeneratingPdf
-                            ? const Center(
-                                child: Padding(
-                                  padding: EdgeInsets.all(12),
-                                  child: SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator.adaptive(
-                                      strokeWidth: 2,
-                                    ),
-                                  ),
-                                ),
-                              )
-                            : PremiumButton(
-                                text: AppLocalizations.of(context).shareReceipt,
-                                onPressed: () async {
-                                  unawaited(HapticFeedback.lightImpact());
-                                  final l10n = AppLocalizations.of(context);
-                                  await ref
-                                      .read(
-                                        rideCompletionUiViewModelProvider(
-                                          widget.rideId,
-                                        ).notifier,
-                                      )
-                                      .shareReceipt(
-                                        ride,
-                                        receiptTitle: l10n.receiptTitle,
-                                        fromLabel: l10n.fromLabel,
-                                        toLabel: l10n.toLabel,
-                                        dateLabel: l10n.dateLabel,
-                                        driverLabel: l10n.driver,
-                                        baseFareLabel: l10n.receiptBaseFare,
-                                        serviceFeeLabel: l10n.receiptServiceFee,
-                                        totalLabel: l10n.totalLabel,
-                                        rideIdLabel: l10n.receiptRideId,
-                                      );
-                                },
-                                style: PremiumButtonStyle.secondary,
-                                icon: Icons.receipt_long_rounded,
-                              ),
-                      ),
-                      SizedBox(width: 12.w),
-                      Expanded(
-                        child: PremiumButton(
-                          text: AppLocalizations.of(context).reportIssue,
-                          onPressed: () {
-                            context.pushNamed(
-                              AppRoutes.dispute.name,
-                              pathParameters: {'id': widget.rideId},
-                            );
-                          },
-                          style: PremiumButtonStyle.ghost,
-                          icon: Icons.flag_outlined,
-                        ),
-                      ),
+                      header,
+                      SizedBox(height: 24.h),
+                      routeMap,
+                      SizedBox(height: 16.h),
+                      impactCard,
+                      SizedBox(height: 16.h),
+                      summaryCard,
                     ],
-                  ).animate().fadeIn(delay: 650.ms),
-
-                  SizedBox(height: 12.h),
-
-                  // Quick Rebook button
-                  SizedBox(
-                    width: double.infinity,
-                    child: PremiumButton(
-                      text: AppLocalizations.of(context).bookThisRouteAgain,
-                      onPressed: () {
-                        unawaited(HapticFeedback.lightImpact());
-                        context.pushNamed(
-                          AppRoutes.searchRides.name,
-                          extra: <String, dynamic>{
-                            'address': ride.destination.address,
-                            'latitude': ride.destination.latitude,
-                            'longitude': ride.destination.longitude,
-                          },
-                        );
-                      },
-                      style: PremiumButtonStyle.secondary,
-                      icon: Icons.replay_rounded,
-                    ),
-                  ).animate().fadeIn(delay: 700.ms),
-
-                  SizedBox(height: 16.h),
-
-                  Builder(
-                    builder: (ctx) {
-                      final uid = ref.read(currentAuthUidProvider).value;
-                      final isDriver = uid == ride.driverId;
-
-                      if (isDriver) {
-                        return Padding(
-                          padding: EdgeInsets.only(bottom: 16.h),
-                          child: PremiumButton(
-                            text: AppLocalizations.of(context).instantPayout,
-                            onPressed: () {
-                              unawaited(HapticFeedback.lightImpact());
-                              context.goNamed(
-                                AppRoutes.driverEarnings.name,
-                                extra: {'resetBranch': true},
-                              );
-                            },
-                            icon: Icons.euro_rounded,
-                          ),
-                        ).animate().fadeIn(delay: 720.ms);
-                      }
-                      return const SizedBox.shrink();
-                    },
                   ),
-
-                  TextButton(
-                    onPressed: () => context.goNamed(
-                      AppRoutes.driverHome.name,
-                      extra: {'resetBranch': true},
-                    ),
-                    child: Text(
-                      l10n.goHome,
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ).animate().fadeIn(delay: 750.ms),
-                ],
-              ),
+                ),
+                SizedBox(width: 24.w),
+                Expanded(
+                  flex: 5,
+                  child: Column(
+                    children: [
+                      fareCard,
+                      SizedBox(height: 16.h),
+                      participantCard,
+                      SizedBox(height: 16.h),
+                      actionsPanel,
+                    ],
+                  ),
+                ),
+              ],
             ),
-
-            SizedBox(height: 32.h),
-          ],
+          ),
         ),
       ),
+    );
+  }
+
+  Widget _buildActionPanel(
+    BuildContext context,
+    WidgetRef ref,
+    RideModel ride,
+    AppLocalizations l10n,
+    RideCompletionUiState uiState,
+  ) {
+    return Column(
+      children: [
+        Builder(
+          builder: (ctx) {
+            final uid = ref.read(currentAuthUidProvider).value;
+            final isDriver = uid == ride.driverId;
+
+            return SizedBox(
+              width: double.infinity,
+              child: isDriver
+                  ? PremiumButton(
+                      text: AppLocalizations.of(context).ratePassenger,
+                      onPressed: () {
+                        unawaited(HapticFeedback.mediumImpact());
+                        context.push(
+                          AppRoutes.driverRatePassenger.path.replaceFirst(
+                            ':rideId',
+                            widget.rideId,
+                          ),
+                        );
+                      },
+                      icon: Icons.star_rounded,
+                    )
+                  : PremiumButton(
+                      text: AppLocalizations.of(context).rateAndReview,
+                      onPressed: () async {
+                        unawaited(HapticFeedback.mediumImpact());
+                        final driverProfile = await ref.read(
+                          userProfileProvider(ride.driverId).future,
+                        );
+
+                        if (!ctx.mounted) return;
+
+                        ctx.push(
+                          '${AppRoutes.submitReview.path}'
+                          '?rideId=${widget.rideId}'
+                          '&revieweeId=${ride.driverId}'
+                          '&revieweeName=${Uri.encodeComponent(driverProfile?.username ?? l10n.driver)}'
+                          '&reviewType=driverReview',
+                        );
+                      },
+                      icon: Icons.star_rounded,
+                    ),
+            );
+          },
+        ).animate().fadeIn(delay: 550.ms),
+        SizedBox(height: 12.h),
+        Row(
+          children: [
+            Expanded(
+              child: uiState.isGeneratingPdf
+                  ? const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(12),
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator.adaptive(
+                            strokeWidth: 2,
+                          ),
+                        ),
+                      ),
+                    )
+                  : PremiumButton(
+                      text: AppLocalizations.of(context).shareReceipt,
+                      onPressed: () async {
+                        unawaited(HapticFeedback.lightImpact());
+                        final l10n = AppLocalizations.of(context);
+                        await ref
+                            .read(
+                              rideCompletionUiViewModelProvider(
+                                widget.rideId,
+                              ).notifier,
+                            )
+                            .shareReceipt(
+                              ride,
+                              receiptTitle: l10n.receiptTitle,
+                              fromLabel: l10n.fromLabel,
+                              toLabel: l10n.toLabel,
+                              dateLabel: l10n.dateLabel,
+                              driverLabel: l10n.driver,
+                              baseFareLabel: l10n.receiptBaseFare,
+                              serviceFeeLabel: l10n.receiptServiceFee,
+                              totalLabel: l10n.totalLabel,
+                              rideIdLabel: l10n.receiptRideId,
+                            );
+                      },
+                      style: PremiumButtonStyle.secondary,
+                      icon: Icons.receipt_long_rounded,
+                    ),
+            ),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: PremiumButton(
+                text: AppLocalizations.of(context).reportIssue,
+                onPressed: () {
+                  context.pushNamed(
+                    AppRoutes.dispute.name,
+                    pathParameters: {'id': widget.rideId},
+                  );
+                },
+                style: PremiumButtonStyle.ghost,
+                icon: Icons.flag_outlined,
+              ),
+            ),
+          ],
+        ).animate().fadeIn(delay: 650.ms),
+        SizedBox(height: 12.h),
+        SizedBox(
+          width: double.infinity,
+          child: PremiumButton(
+            text: AppLocalizations.of(context).bookThisRouteAgain,
+            onPressed: () {
+              unawaited(HapticFeedback.lightImpact());
+              context.pushNamed(
+                AppRoutes.searchRides.name,
+                extra: <String, dynamic>{
+                  'address': ride.destination.address,
+                  'latitude': ride.destination.latitude,
+                  'longitude': ride.destination.longitude,
+                },
+              );
+            },
+            style: PremiumButtonStyle.secondary,
+            icon: Icons.replay_rounded,
+          ),
+        ).animate().fadeIn(delay: 700.ms),
+        SizedBox(height: 16.h),
+        Builder(
+          builder: (_) {
+            final uid = ref.read(currentAuthUidProvider).value;
+            final isDriver = uid == ride.driverId;
+
+            if (isDriver) {
+              return Padding(
+                padding: EdgeInsets.only(bottom: 16.h),
+                child: PremiumButton(
+                  text: AppLocalizations.of(context).instantPayout,
+                  onPressed: () {
+                    unawaited(HapticFeedback.lightImpact());
+                    context.goNamed(
+                      AppRoutes.driverEarnings.name,
+                      extra: {'resetBranch': true},
+                    );
+                  },
+                  icon: Icons.euro_rounded,
+                ),
+              ).animate().fadeIn(delay: 720.ms);
+            }
+            return const SizedBox.shrink();
+          },
+        ),
+        TextButton(
+          onPressed: () {
+            final uid = ref.read(currentAuthUidProvider).value;
+            final isDriver = uid == ride.driverId;
+            context.goNamed(
+              isDriver ? AppRoutes.driverHome.name : AppRoutes.home.name,
+              extra: {'resetBranch': true},
+            );
+          },
+          child: Text(
+            l10n.goHome,
+            style: TextStyle(
+              fontSize: 14.sp,
+              color: AppColors.primary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ).animate().fadeIn(delay: 750.ms),
+      ],
     );
   }
 
@@ -440,7 +486,7 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
         ),
         SizedBox(height: 16.h),
         Text(
-          'Trip Completed!',
+          AppLocalizations.of(context).trip_completed,
           style: TextStyle(
             fontSize: 28.sp,
             fontWeight: FontWeight.w800,
@@ -449,7 +495,7 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
         ),
         SizedBox(height: 8.h),
         Text(
-          'Thanks for riding with SportConnect',
+          AppLocalizations.of(context).thanks_for_riding_with_sportconnect,
           style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
         ),
       ],
@@ -461,6 +507,7 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
     RideModel ride,
     List<RideBooking> bookings,
   ) {
+    final l10n = AppLocalizations.of(context);
     // Estimate: carpooling saves ~120g CO2/km on average
     final riders = bookings.length.clamp(1, 10);
     final distanceKm = ride.route.distanceKm ?? 15.0;
@@ -468,7 +515,7 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
 
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 24.w),
-      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+      padding: adaptiveScreenPadding(context).copyWith(bottom: 16.h, top: 16.h),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -503,7 +550,7 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '$totalSharedKm km shared together',
+                  l10n.rideSharedDistanceSummary(totalSharedKm),
                   style: TextStyle(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w700,
@@ -512,8 +559,7 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
                 ),
                 SizedBox(height: 2.h),
                 Text(
-                  'Carpooled with $riders '
-                  '${riders == 1 ? 'person' : 'people'}',
+                  l10n.rideCarpooledWithCount(riders),
                   style: TextStyle(
                     fontSize: 12.sp,
                     color: AppColors.textSecondary,
@@ -625,7 +671,7 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
                   ),
                   SizedBox(width: 4.w),
                   Text(
-                    'Completed',
+                    AppLocalizations.of(context).completed,
                     style: TextStyle(
                       fontSize: 11.sp,
                       fontWeight: FontWeight.w600,
@@ -735,7 +781,7 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Trip Summary',
+            l10n.trip_summary,
             style: TextStyle(
               fontSize: 16.sp,
               fontWeight: FontWeight.w700,
@@ -765,19 +811,19 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
               _buildStatItem(
                 Icons.calendar_today_rounded,
                 dateFormat.format(ride.departureTime),
-                'Date',
+                l10n.date,
               ),
               _buildStatDivider(),
               _buildStatItem(
                 Icons.access_time_rounded,
                 timeFormat.format(ride.departureTime),
-                'Time',
+                l10n.timeLabel,
               ),
               _buildStatDivider(),
               _buildStatItem(
                 Icons.people_rounded,
                 '${bookings.length}',
-                'Riders',
+                l10n.ridersLabel,
               ),
             ],
           ),
@@ -794,7 +840,7 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
                   _buildStatItem(
                     Icons.straighten_rounded,
                     ride.route.formattedDistance,
-                    'Distance',
+                    l10n.distance,
                   ),
                 if (ride.route.distanceKm != null &&
                     ride.route.durationMinutes != null)
@@ -803,14 +849,14 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
                   _buildStatItem(
                     Icons.timer_outlined,
                     ride.route.formattedDuration,
-                    'Duration',
+                    l10n.duration,
                   ),
                 if (averageSpeedKmh != null) ...[
                   _buildStatDivider(),
                   _buildStatItem(
                     Icons.speed_rounded,
-                    '$averageSpeedKmh km/h',
-                    'Avg Speed',
+                    l10n.avgSpeedKmhValue('$averageSpeedKmh'),
+                    l10n.avgSpeedLabel,
                   ),
                 ],
               ],
@@ -918,7 +964,7 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Fare Breakdown',
+                l10n.fare_breakdown,
                 style: TextStyle(
                   fontSize: 16.sp,
                   fontWeight: FontWeight.w700,
@@ -932,7 +978,7 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
                   borderRadius: BorderRadius.circular(8.r),
                 ),
                 child: Text(
-                  'PAID',
+                  l10n.paid,
                   style: TextStyle(
                     fontSize: 12.sp,
                     fontWeight: FontWeight.w700,
@@ -946,20 +992,25 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
           SizedBox(height: 16.h),
           _buildFareRow(
             isDriver
-                ? 'Base Fare (${ride.bookedSeats > 0 ? ride.bookedSeats : 1} seat${(ride.bookedSeats > 1) ? 's' : ''})'
+                ? l10n.baseFareSeatCount(
+                    ride.bookedSeats > 0 ? ride.bookedSeats : 1,
+                  )
                 : seatsBooked > 1
-                ? 'Base Fare ($seatsBooked seats × €${pricePerSeat.toStringAsFixed(2)})'
-                : 'Base Fare',
+                ? l10n.baseFareSeatsByPrice(
+                    seatsBooked,
+                    '€${pricePerSeat.toStringAsFixed(2)}',
+                  )
+                : l10n.receiptBaseFare,
             '€${(baseFare / 100).toStringAsFixed(2)}',
           ),
           SizedBox(height: 8.h),
           _buildFareRow(
-            'Service Fee (10%)',
+            l10n.serviceFeeWithRate('10%'),
             '€${(serviceFee / 100).toStringAsFixed(2)}',
           ),
           Divider(height: 24.h),
           _buildFareRow(
-            'Total',
+            l10n.total,
             '€${(total / 100).toStringAsFixed(2)}',
             isBold: true,
           ),
@@ -1041,7 +1092,9 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
                         ),
                         SizedBox(width: 4.w),
                         Text(
-                          '${rating.average.toStringAsFixed(1)} rating',
+                          l10n.rideCompletionDriverRating(
+                            rating.average.toStringAsFixed(1),
+                          ),
                           style: TextStyle(
                             fontSize: 13.sp,
                             color: AppColors.textSecondary,
@@ -1089,7 +1142,9 @@ class _RideCompletionScreenState extends ConsumerState<RideCompletionScreen> {
                     if (!context.mounted) return;
                     AdaptiveSnackBar.show(
                       context,
-                      message: 'Failed to open chat. Please try again.',
+                      message: AppLocalizations.of(
+                        context,
+                      ).failed_to_open_chat_please_try_again,
                       type: AdaptiveSnackBarType.error,
                     );
                   }

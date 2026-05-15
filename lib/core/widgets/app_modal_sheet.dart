@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:wolt_modal_sheet/wolt_modal_sheet.dart';
 
 /// App-standard modal sheet built on WoltModalSheet.
@@ -41,25 +42,28 @@ class AppModalSheet {
       ),
       child: SafeArea(
         top: false,
-        child: forceMaxHeight
-            ? SizedBox(
-                height: _resolvedContentHeight(
-                  context,
-                  title: title,
-                  showCloseButton: showCloseButton,
-                  leadingNavBarWidget: leadingNavBarWidget,
-                  trailingNavBarWidget: trailingNavBarWidget,
-                  maxHeightFactor: maxHeightFactor,
+        child: MaxWidthContainer(
+          maxWidth: context.isPhone ? double.infinity : 600,
+          child: forceMaxHeight
+              ? SizedBox(
+                  height: _resolvedContentHeight(
+                    context,
+                    title: title,
+                    showCloseButton: showCloseButton,
+                    leadingNavBarWidget: leadingNavBarWidget,
+                    trailingNavBarWidget: trailingNavBarWidget,
+                    maxHeightFactor: maxHeightFactor,
+                  ),
+                  child: child,
+                )
+              : ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight:
+                        MediaQuery.sizeOf(context).height * maxHeightFactor,
+                  ),
+                  child: child,
                 ),
-                child: child,
-              )
-            : ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxHeight:
-                      MediaQuery.sizeOf(context).height * maxHeightFactor,
-                ),
-                child: child,
-              ),
+        ),
       ),
     );
   }

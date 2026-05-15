@@ -1,11 +1,12 @@
-import 'package:flutter/material.dart';
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/features/profile/view_models/help_center_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
@@ -163,8 +164,10 @@ class HelpCenterScreen extends ConsumerWidget {
           onPressed: () => context.pop(),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(horizontal: 20.w),
+      body: MaxWidthContainer(
+        maxWidth: kMaxWidthContent,
+        child: SingleChildScrollView(
+        padding: adaptiveScreenPadding(context),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -215,6 +218,7 @@ class HelpCenterScreen extends ConsumerWidget {
           ],
         ),
       ),
+    ),
     );
   }
 

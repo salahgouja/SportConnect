@@ -63,7 +63,7 @@ class ForgotPasswordViewModel extends _$ForgotPasswordViewModel {
         sentEmail: email,
       );
       _startCooldown();
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       if (!ref.mounted) return;
       state = state.copyWith(
         isLoading: false,

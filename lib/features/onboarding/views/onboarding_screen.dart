@@ -10,6 +10,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/features/onboarding/view_models/onboarding_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
@@ -65,13 +66,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     unawaited(HapticFeedback.lightImpact());
 
     if (_currentPage == _onboardingSteps.length - 1) {
-      _completeOnboarding();
+      unawaited(_completeOnboarding());
       return;
     }
 
-    _pageController.nextPage(
-      duration: const Duration(milliseconds: 420),
-      curve: Curves.easeOutCubic,
+    unawaited(
+      _pageController.nextPage(
+        duration: const Duration(milliseconds: 420),
+        curve: Curves.easeOutCubic,
+      ),
     );
   }
 
@@ -79,15 +82,20 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     if (_currentPage == 0) return;
 
     unawaited(HapticFeedback.lightImpact());
-    _pageController.previousPage(
-      duration: const Duration(milliseconds: 420),
-      curve: Curves.easeOutCubic,
+    unawaited(
+      _pageController.previousPage(
+        duration: const Duration(milliseconds: 420),
+        curve: Curves.easeOutCubic,
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final vmState = ref.watch(onboardingViewModelProvider);
+    final maxWidth = context.screenWidth >= Breakpoints.medium
+        ? 1180.0
+        : kMaxWidthForm;
 
     return AdaptiveScaffold(
       body: DecoratedBox(
@@ -103,35 +111,38 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             ],
           ),
         ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              _OnboardingTopBar(
-                currentPage: _currentPage,
-                totalPages: _onboardingSteps.length,
-                onSkip: _completeOnboarding,
-              ),
-              Expanded(
-                child: PageView.builder(
-                  controller: _pageController,
-                  onPageChanged: _onPageChanged,
-                  itemCount: _onboardingSteps.length,
-                  itemBuilder: (context, index) {
-                    return _OnboardingPage(
-                      step: _onboardingSteps[index],
-                      index: index,
-                    );
-                  },
+        child: MaxWidthContainer(
+          maxWidth: maxWidth,
+          child: SafeArea(
+            child: Column(
+              children: [
+                _OnboardingTopBar(
+                  currentPage: _currentPage,
+                  totalPages: _onboardingSteps.length,
+                  onSkip: _completeOnboarding,
                 ),
-              ),
-              _OnboardingBottomControls(
-                currentPage: _currentPage,
-                totalPages: _onboardingSteps.length,
-                vmState: vmState,
-                onBack: _goBack,
-                onNext: _goNext,
-              ),
-            ],
+                Expanded(
+                  child: PageView.builder(
+                    controller: _pageController,
+                    onPageChanged: _onPageChanged,
+                    itemCount: _onboardingSteps.length,
+                    itemBuilder: (context, index) {
+                      return _OnboardingPage(
+                        step: _onboardingSteps[index],
+                        index: index,
+                      );
+                    },
+                  ),
+                ),
+                _OnboardingBottomControls(
+                  currentPage: _currentPage,
+                  totalPages: _onboardingSteps.length,
+                  vmState: vmState,
+                  onBack: _goBack,
+                  onNext: _goNext,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -261,6 +272,7 @@ class _StepIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     final pageCount = totalPages <= 0 ? 1 : totalPages;
     final page = currentPage.clamp(0, pageCount - 1);
+    final l10n = AppLocalizations.of(context);
     const activeColor = AppColors.primary;
     final completedColor = AppColors.primary.withValues(alpha: 0.82);
     final inactiveColor = AppColors.border.withValues(alpha: 0.62);
@@ -272,7 +284,7 @@ class _StepIndicator extends StatelessWidget {
     final lineHeight = _clamped(3.h, 2, 4);
 
     return Semantics(
-      label: 'Step ${page + 1} of $pageCount',
+      label: l10n.onboardingStepCount(page + 1, pageCount),
       child: ExcludeSemantics(
         child: SizedBox(
           height: _clamped(34.h, 30, 38),
@@ -431,10 +443,66 @@ class _OnboardingPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final horizontalPadding = _clamped(24.w, 18, 28);
-    final maxContentWidth = _clamped(430.w, 320, 460);
 
     return LayoutBuilder(
       builder: (context, constraints) {
+        final isTabletLayout = constraints.maxWidth >= Breakpoints.medium;
+        final maxContentWidth = isTabletLayout
+            ? _clamped(980.w, 760, 1040)
+            : _clamped(430.w, 320, 460);
+        final visual = _VisualCard(
+          visual: step.visual,
+        ).animate().fadeIn(duration: 360.ms).slideY(begin: 0.025);
+        final copy = Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: isTabletLayout
+              ? CrossAxisAlignment.start
+              : CrossAxisAlignment.center,
+          children: [
+            _Eyebrow(
+              text: step.eyebrow(l10n),
+            ).animate().fadeIn(delay: 100.ms, duration: 280.ms),
+            SizedBox(height: _clamped(10.h, 7, 12)),
+            Semantics(
+              header: true,
+              child: Text(
+                step.title(l10n),
+                textAlign: isTabletLayout ? TextAlign.start : TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: _clamped(29.sp, 24, 32),
+                  height: 1.08,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -0.55,
+                ),
+              ),
+            ).animate().fadeIn(delay: 150.ms).slideY(begin: 0.08),
+            SizedBox(height: _clamped(10.h, 7, 12)),
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: isTabletLayout
+                    ? _clamped(380.w, 320, 420)
+                    : _clamped(320.w, 280, 360),
+              ),
+              child: Text(
+                step.description(l10n),
+                textAlign: isTabletLayout ? TextAlign.start : TextAlign.center,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: _clamped(14.sp, 12.5, 15),
+                  height: 1.48,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ).animate().fadeIn(delay: 220.ms).slideY(begin: 0.08),
+            SizedBox(height: _clamped(12.h, 8, 16)),
+          ],
+        );
+
         return SingleChildScrollView(
           physics: const BouncingScrollPhysics(
             parent: AlwaysScrollableScrollPhysics(),
@@ -451,54 +519,23 @@ class _OnboardingPage extends StatelessWidget {
               alignment: Alignment.topCenter,
               child: ConstrainedBox(
                 constraints: BoxConstraints(maxWidth: maxContentWidth),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _VisualCard(
-                      visual: step.visual,
-                    ).animate().fadeIn(duration: 360.ms).slideY(begin: 0.025),
-                    SizedBox(height: _clamped(18.h, 12, 22)),
-                    _Eyebrow(
-                      text: step.eyebrow(l10n),
-                    ).animate().fadeIn(delay: 100.ms, duration: 280.ms),
-                    SizedBox(height: _clamped(10.h, 7, 12)),
-                    Semantics(
-                      header: true,
-                      child: Text(
-                        step.title(l10n),
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: AppColors.textPrimary,
-                          fontSize: _clamped(29.sp, 24, 32),
-                          height: 1.08,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: -0.55,
-                        ),
+                child: isTabletLayout
+                    ? Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Expanded(flex: 6, child: visual),
+                          SizedBox(width: _clamped(28.w, 24, 36)),
+                          Expanded(flex: 5, child: copy),
+                        ],
+                      )
+                    : Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          visual,
+                          SizedBox(height: _clamped(18.h, 12, 22)),
+                          copy,
+                        ],
                       ),
-                    ).animate().fadeIn(delay: 150.ms).slideY(begin: 0.08),
-                    SizedBox(height: _clamped(10.h, 7, 12)),
-                    ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxWidth: _clamped(320.w, 280, 360),
-                      ),
-                      child: Text(
-                        step.description(l10n),
-                        textAlign: TextAlign.center,
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: _clamped(14.sp, 12.5, 15),
-                          height: 1.48,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ).animate().fadeIn(delay: 220.ms).slideY(begin: 0.08),
-                    SizedBox(height: _clamped(12.h, 8, 16)),
-                  ],
-                ),
               ),
             ),
           ),
@@ -611,18 +648,22 @@ class _FindRideHeroCard extends StatelessWidget {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Expanded(
+                        Expanded(
                           child: _HeroEventTitle(
-                            title: 'PARIS',
+                            title: AppLocalizations.of(context).paris,
                             distance: '10K',
-                            location: 'RUNNING EVENT',
+                            location: AppLocalizations.of(
+                              context,
+                            ).onboardingRunningEventLabel,
                           ),
                         ),
                         SizedBox(width: _clamped(12.w, 8, 14)),
                         _EventBadge(
-                          labelTop: 'RIDE',
+                          labelTop: AppLocalizations.of(context).ride,
                           labelMain: '3',
-                          labelBottom: 'OPEN',
+                          labelBottom: AppLocalizations.of(
+                            context,
+                          ).onboardingRideBadgeOpen,
                           size: _clamped(70.w, 58, 76),
                         ),
                       ],
@@ -630,17 +671,19 @@ class _FindRideHeroCard extends StatelessWidget {
                     const Spacer(),
                     Row(
                       children: [
-                        const Expanded(
+                        Expanded(
                           child: _MiniStatPill(
                             icon: Icons.directions_car_filled_rounded,
-                            label: '3 rides',
+                            label: AppLocalizations.of(
+                              context,
+                            ).valueRidesAvailable(3),
                           ),
                         ),
                         SizedBox(width: _clamped(8.w, 6, 10)),
-                        const Expanded(
+                        Expanded(
                           child: _MiniStatPill(
                             icon: Icons.payments_outlined,
-                            label: 'From €8',
+                            label: AppLocalizations.of(context).from_8,
                           ),
                         ),
                       ],
@@ -673,8 +716,8 @@ class _RideAvailabilityCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const _StatusPill(
-                label: 'RIDES AVAILABLE',
+              _StatusPill(
+                label: AppLocalizations.of(context).rides_available,
                 icon: Icons.route_rounded,
               ),
               const Spacer(),
@@ -690,7 +733,7 @@ class _RideAvailabilityCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  'Ride to Paris 10K',
+                  AppLocalizations.of(context).ride_to_paris_10k,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -703,23 +746,23 @@ class _RideAvailabilityCard extends StatelessWidget {
                 ),
               ),
               SizedBox(width: _clamped(10.w, 8, 12)),
-              const _SmallPill(label: '2 seats'),
+              _SmallPill(label: AppLocalizations.of(context).valueSeats(2)),
             ],
           ),
           SizedBox(height: _clamped(14.h, 10, 16)),
-          const _InfoLine(
+          _InfoLine(
             icon: Icons.event_outlined,
-            text: 'Sun, 15 Jun 2025',
+            text: AppLocalizations.of(context).sun_15_jun_2025,
           ),
           SizedBox(height: _clamped(8.h, 5, 9)),
-          const _InfoLine(
+          _InfoLine(
             icon: Icons.location_on_outlined,
-            text: 'Pickup near Paris, France',
+            text: AppLocalizations.of(context).pickup_near_paris_france,
           ),
           SizedBox(height: _clamped(8.h, 5, 9)),
-          const _InfoLine(
+          _InfoLine(
             icon: Icons.euro_rounded,
-            text: 'Passenger contribution from €8',
+            text: AppLocalizations.of(context).passenger_contribution_from_8,
           ),
         ],
       ),
@@ -757,19 +800,19 @@ class _EarnSeatsVisual extends StatelessWidget {
               SizedBox(height: _clamped(14.h, 10, 16)),
               Row(
                 children: [
-                  const Expanded(
+                  Expanded(
                     child: _MiniSummaryTile(
                       icon: Icons.local_gas_station_outlined,
-                      label: 'Fuel offset',
-                      value: 'Shared',
+                      label: AppLocalizations.of(context).fuel_offset,
+                      value: AppLocalizations.of(context).onboardingSharedLabel,
                     ),
                   ),
                   SizedBox(width: _clamped(9.w, 7, 10)),
-                  const Expanded(
+                  Expanded(
                     child: _MiniSummaryTile(
                       icon: Icons.verified_user_outlined,
-                      label: 'Passengers',
-                      value: 'Verified',
+                      label: AppLocalizations.of(context).passengers,
+                      value: AppLocalizations.of(context).verified,
                     ),
                   ),
                 ],
@@ -818,7 +861,7 @@ class _EarningsHeroCard extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Offer your ride',
+                              AppLocalizations.of(context).offer_your_ride,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
@@ -830,7 +873,9 @@ class _EarningsHeroCard extends StatelessWidget {
                             ),
                             SizedBox(height: 4.h),
                             Text(
-                              'Paris 10K • 2 seats available',
+                              AppLocalizations.of(
+                                context,
+                              ).paris_10k_2_seats_available,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
@@ -843,7 +888,7 @@ class _EarningsHeroCard extends StatelessWidget {
                         ),
                       ),
                       SizedBox(width: _clamped(8.w, 6, 10)),
-                      const _SmallPill(label: 'Driver'),
+                      _SmallPill(label: AppLocalizations.of(context).driver),
                     ],
                   ),
                   SizedBox(height: _clamped(16.h, 12, 18)),
@@ -867,7 +912,7 @@ class _EarningsHeroCard extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'ESTIMATED EARNING',
+                                AppLocalizations.of(context).estimated_earning,
                                 style: TextStyle(
                                   color: AppColors.textSecondary,
                                   fontSize: _clamped(10.sp, 9, 11),
@@ -877,7 +922,7 @@ class _EarningsHeroCard extends StatelessWidget {
                               ),
                               SizedBox(height: _clamped(7.h, 5, 8)),
                               Text(
-                                'Fill 2 seats',
+                                AppLocalizations.of(context).fill_2_seats,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
@@ -925,7 +970,7 @@ class _SeatSelectorHeader extends StatelessWidget {
     return Row(
       children: [
         Text(
-          'Set available seats',
+          AppLocalizations.of(context).set_available_seats,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
@@ -937,7 +982,7 @@ class _SeatSelectorHeader extends StatelessWidget {
         ),
         const Spacer(),
         Text(
-          'Flexible',
+          AppLocalizations.of(context).flexible,
           style: TextStyle(
             color: AppColors.textSecondary,
             fontSize: _clamped(11.sp, 10, 12),
@@ -954,13 +999,17 @@ class _SeatChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const seats = ['1 seat', '2 seats', '3 seats', '4 seats'];
+    final l10n = AppLocalizations.of(context);
+    final seats = List<String>.generate(
+      4,
+      (index) => l10n.valueSeatValue(index + 1, index == 0 ? '' : 's'),
+    );
 
     return Wrap(
       spacing: _clamped(8.w, 6, 9),
       runSpacing: _clamped(8.h, 6, 9),
       children: seats.map((seat) {
-        final selected = seat == '2 seats';
+        final selected = seat == l10n.valueSeatValue(2, 's');
         return _SelectableChip(
           label: seat,
           selected: selected,
@@ -976,20 +1025,21 @@ class _SeatChips extends StatelessWidget {
 class _IncludedRideBenefits extends StatelessWidget {
   const _IncludedRideBenefits();
 
-  static const List<({IconData icon, String label})> items = [
-    (icon: Icons.payments_outlined, label: 'Earn'),
-    (icon: Icons.schedule_outlined, label: 'Set time'),
-    (icon: Icons.pin_drop_outlined, label: 'Pickup'),
-    (icon: Icons.chat_bubble_outline_rounded, label: 'Chat'),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final items = <({IconData icon, String label})>[
+      (icon: Icons.payments_outlined, label: l10n.earn),
+      (icon: Icons.schedule_outlined, label: l10n.set_time),
+      (icon: Icons.pin_drop_outlined, label: l10n.pickup),
+      (icon: Icons.chat_bubble_outline_rounded, label: l10n.chat),
+    ];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Driver tools',
+          l10n.driver_tools,
           style: TextStyle(
             color: AppColors.textPrimary,
             fontSize: _clamped(12.sp, 11, 13),
@@ -1046,7 +1096,7 @@ class _PlanPickupVisual extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Pickup route',
+                              AppLocalizations.of(context).pickup_route,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
@@ -1058,7 +1108,9 @@ class _PlanPickupVisual extends StatelessWidget {
                             ),
                             SizedBox(height: 3.h),
                             Text(
-                              'Coordinate pickup before the event',
+                              AppLocalizations.of(
+                                context,
+                              ).coordinate_pickup_before_the_event,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
@@ -1071,17 +1123,28 @@ class _PlanPickupVisual extends StatelessWidget {
                         ),
                       ),
                       SizedBox(width: _clamped(8.w, 6, 10)),
-                      const _SmallPill(label: 'Ride'),
+                      _SmallPill(label: AppLocalizations.of(context).ride),
                     ],
                   ),
                 ),
                 SizedBox(
                   height: mapHeight,
                   width: double.infinity,
-                  child: const CustomPaint(
+                  child: CustomPaint(
                     painter: _PickupRoutePainter(
                       color: AppColors.primary,
                       borderColor: AppColors.border,
+                      startLabel: AppLocalizations.of(context).start,
+                      pickupLabel: AppLocalizations.of(context).pickup,
+                      eventLabel: AppLocalizations.of(
+                        context,
+                      ).onboardingEventLabel,
+                      driverRouteLabel: AppLocalizations.of(
+                        context,
+                      ).onboardingDriverRouteLabel,
+                      sharedArrivalLabel: AppLocalizations.of(
+                        context,
+                      ).onboardingSharedArrivalLabel,
                     ),
                     child: SizedBox.expand(),
                   ),
@@ -1104,7 +1167,7 @@ class _PlanPickupVisual extends StatelessWidget {
               Row(
                 children: [
                   Text(
-                    'Trip plan',
+                    AppLocalizations.of(context).trip_plan,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -1115,7 +1178,7 @@ class _PlanPickupVisual extends StatelessWidget {
                   ),
                   const Spacer(),
                   Text(
-                    'Sun, 15 Jun',
+                    AppLocalizations.of(context).sun_15_jun,
                     style: TextStyle(
                       color: AppColors.textSecondary,
                       fontSize: _clamped(11.sp, 10, 12),
@@ -1125,24 +1188,28 @@ class _PlanPickupVisual extends StatelessWidget {
                 ],
               ),
               SizedBox(height: _clamped(14.h, 10, 16)),
-              const _TimelineItem(
+              _TimelineItem(
                 icon: Icons.home_outlined,
                 time: '06:15',
-                title: 'Driver starts',
-                subtitle: 'Route opens for passengers',
+                title: AppLocalizations.of(context).driver_starts,
+                subtitle: AppLocalizations.of(
+                  context,
+                ).route_opens_for_passengers,
                 isFirst: true,
               ),
-              const _TimelineItem(
+              _TimelineItem(
                 icon: Icons.person_pin_circle_outlined,
                 time: '06:40',
-                title: 'Pickup confirmed',
-                subtitle: 'Shared meeting point',
+                title: AppLocalizations.of(context).pickup_confirmed,
+                subtitle: AppLocalizations.of(context).shared_meeting_point,
               ),
-              const _TimelineItem(
+              _TimelineItem(
                 icon: Icons.flag_outlined,
                 time: '07:30',
-                title: 'Arrive at event',
-                subtitle: 'Paris 10K race village',
+                title: AppLocalizations.of(context).arrive_at_event,
+                subtitle: AppLocalizations.of(
+                  context,
+                ).paris_10k_race_village,
                 isLast: true,
               ),
             ],
@@ -1177,41 +1244,41 @@ class _ConnectGoVisual extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Row(
+              Row(
                 children: [
                   Expanded(
                     child: _FeatureTile(
                       icon: Icons.verified_user_outlined,
-                      title: 'Verified',
-                      subtitle: 'Trusted runners',
+                      title: AppLocalizations.of(context).verified,
+                      subtitle: AppLocalizations.of(context).trusted_runners,
                     ),
                   ),
                   SizedBox(width: 10),
                   Expanded(
                     child: _FeatureTile(
                       icon: Icons.chat_bubble_outline_rounded,
-                      title: 'Chat',
-                      subtitle: 'Before pickup',
+                      title: AppLocalizations.of(context).chat,
+                      subtitle: AppLocalizations.of(context).before_pickup,
                     ),
                   ),
                 ],
               ),
               SizedBox(height: _clamped(10.h, 8, 12)),
-              const Row(
+              Row(
                 children: [
                   Expanded(
                     child: _FeatureTile(
                       icon: Icons.location_on_outlined,
-                      title: 'Live route',
-                      subtitle: 'Trip visibility',
+                      title: AppLocalizations.of(context).live_route,
+                      subtitle: AppLocalizations.of(context).trip_visibility,
                     ),
                   ),
                   SizedBox(width: 10),
                   Expanded(
                     child: _FeatureTile(
                       icon: Icons.shield_outlined,
-                      title: 'Safer rides',
-                      subtitle: 'Event travel',
+                      title: AppLocalizations.of(context).safer_rides,
+                      subtitle: AppLocalizations.of(context).event_travel,
                     ),
                   ),
                 ],
@@ -1252,9 +1319,11 @@ class _ConfirmedRideCard extends StatelessWidget {
                   Row(
                     children: [
                       _EventBadge(
-                        labelTop: 'RIDE',
-                        labelMain: 'OK',
-                        labelBottom: 'SET',
+                        labelTop: AppLocalizations.of(context).ride,
+                        labelMain: AppLocalizations.of(context).ok,
+                        labelBottom: AppLocalizations.of(
+                          context,
+                        ).onboardingRideBadgeSet,
                         size: _clamped(76.w, 62, 82),
                         filled: true,
                       ),
@@ -1264,7 +1333,7 @@ class _ConfirmedRideCard extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Ride confirmed',
+                              AppLocalizations.of(context).booking_confirmed,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
@@ -1276,7 +1345,9 @@ class _ConfirmedRideCard extends StatelessWidget {
                             ),
                             SizedBox(height: _clamped(5.h, 4, 7)),
                             Text(
-                              'Paris 10K • 2 passengers',
+                              AppLocalizations.of(
+                                context,
+                              ).paris_10k_2_passengers,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
@@ -1286,7 +1357,9 @@ class _ConfirmedRideCard extends StatelessWidget {
                               ),
                             ),
                             SizedBox(height: _clamped(10.h, 8, 12)),
-                            const _SmallPill(label: 'Pickup 06:40'),
+                            _SmallPill(
+                              label: AppLocalizations.of(context).pickup_0640,
+                            ),
                           ],
                         ),
                       ),
@@ -1333,7 +1406,7 @@ class _ChatPreviewCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'In-app chat',
+                  AppLocalizations.of(context).inapp_chat,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -1344,7 +1417,9 @@ class _ChatPreviewCard extends StatelessWidget {
                 ),
                 SizedBox(height: 4.h),
                 Text(
-                  'Confirm bags, pickup spot, and arrival time.',
+                  AppLocalizations.of(
+                    context,
+                  ).confirm_bags_pickup_spot_and_arrival_time,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -1384,7 +1459,7 @@ class _RideNetworkCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Runner carpool network',
+                  AppLocalizations.of(context).runner_carpool_network,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -1395,7 +1470,9 @@ class _RideNetworkCard extends StatelessWidget {
                 ),
                 SizedBox(height: 4.h),
                 Text(
-                  'Travel with people going to the same event.',
+                  AppLocalizations.of(
+                    context,
+                  ).travel_with_people_going_to_the_same_event,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -1602,15 +1679,13 @@ class _EventBadge extends StatelessWidget {
 class _IconSquare extends StatelessWidget {
   const _IconSquare({
     required this.icon,
-    this.size,
   });
 
   final IconData icon;
-  final double? size;
 
   @override
   Widget build(BuildContext context) {
-    final resolvedSize = size ?? _clamped(44.w, 38, 48);
+    final resolvedSize = _clamped(44.w, 38, 48);
 
     return Container(
       width: resolvedSize,
@@ -2189,7 +2264,7 @@ class _OnboardingBottomControls extends StatelessWidget {
         children: [
           if (isLast) ...[
             Text(
-              'Create your free account to find rides to your next sporting event.',
+              AppLocalizations.of(context).onboardingCreateAccountPrompt,
               style: TextStyle(
                 fontSize: _clamped(12.sp, 11, 13),
                 color: AppColors.textSecondary,
@@ -2245,7 +2320,7 @@ class _BackButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
-      label: 'Previous step',
+      label: AppLocalizations.of(context).previous_step,
       child: Material(
         color: AppColors.surfaceVariant,
         borderRadius: BorderRadius.circular(16.r),
@@ -2575,10 +2650,20 @@ class _PickupRoutePainter extends CustomPainter {
   const _PickupRoutePainter({
     required this.color,
     required this.borderColor,
+    required this.startLabel,
+    required this.pickupLabel,
+    required this.eventLabel,
+    required this.driverRouteLabel,
+    required this.sharedArrivalLabel,
   });
 
   final Color color;
   final Color borderColor;
+  final String startLabel;
+  final String pickupLabel;
+  final String eventLabel;
+  final String driverRouteLabel;
+  final String sharedArrivalLabel;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -2700,15 +2785,27 @@ class _PickupRoutePainter extends CustomPainter {
         ..strokeJoin = StrokeJoin.round,
     );
 
-    _drawMarker(canvas, start, 'Start', Icons.home_outlined, filled: false);
+    _drawMarker(
+      canvas,
+      start,
+      startLabel,
+      Icons.home_outlined,
+      filled: false,
+    );
     _drawMarker(
       canvas,
       pickup,
-      'Pickup',
+      pickupLabel,
       Icons.person_pin_circle_outlined,
       filled: true,
     );
-    _drawMarker(canvas, event, 'Event', Icons.flag_outlined, filled: false);
+    _drawMarker(
+      canvas,
+      event,
+      eventLabel,
+      Icons.flag_outlined,
+      filled: false,
+    );
   }
 
   void _drawMarker(
@@ -2750,12 +2847,12 @@ class _PickupRoutePainter extends CustomPainter {
     _drawSoftLabel(
       canvas,
       Offset(size.width * 0.09, size.height * 0.16),
-      'Driver route',
+      driverRouteLabel,
     );
     _drawSoftLabel(
       canvas,
       Offset(size.width * 0.58, size.height * 0.71),
-      'Shared arrival',
+      sharedArrivalLabel,
     );
   }
 
@@ -2819,7 +2916,13 @@ class _PickupRoutePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _PickupRoutePainter oldDelegate) {
-    return oldDelegate.color != color || oldDelegate.borderColor != borderColor;
+    return oldDelegate.color != color ||
+        oldDelegate.borderColor != borderColor ||
+        oldDelegate.startLabel != startLabel ||
+        oldDelegate.pickupLabel != pickupLabel ||
+        oldDelegate.eventLabel != eventLabel ||
+        oldDelegate.driverRouteLabel != driverRouteLabel ||
+        oldDelegate.sharedArrivalLabel != sharedArrivalLabel;
   }
 }
 

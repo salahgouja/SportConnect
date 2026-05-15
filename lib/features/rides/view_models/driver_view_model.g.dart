@@ -84,7 +84,7 @@ final class PastDriverRidesProvider
   }
 }
 
-String _$pastDriverRidesHash() => r'2f378861e1971564179208d3da65860249d72dc3';
+String _$pastDriverRidesHash() => r'e5842eba14106f7e0fc07050657b3d678e64e8e6';
 
 /// ViewModel for all driver dashboard screens.
 
@@ -122,7 +122,7 @@ final class DriverViewModelProvider
   }
 }
 
-String _$driverViewModelHash() => r'8d71edd2161eb929ee53d5100c7de921cd10eac1';
+String _$driverViewModelHash() => r'04615af21277bbc312188ecfa77e5022026a8920';
 
 /// ViewModel for all driver dashboard screens.
 

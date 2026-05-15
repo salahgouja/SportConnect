@@ -40,6 +40,7 @@ String _vehicleColorLabel(BuildContext context, String label) {
 String? _reactiveErrorText(
   AbstractControl<dynamic> control,
   Map<String, String Function(Object)>? validationMessages,
+  BuildContext? context,
 ) {
   if (!(control.touched && control.invalid)) return null;
   if (control.errors.isEmpty) return null;
@@ -50,7 +51,9 @@ String? _reactiveErrorText(
 
   if (builder != null) return builder((error ?? key) as Object);
   if (error is String) return error;
-  return 'Invalid value';
+  return context == null
+      ? 'Invalid value'
+      : AppLocalizations.of(context).invalidValue;
 }
 
 class _VehicleColorOption {
@@ -425,7 +428,11 @@ class VehicleTextField extends StatelessWidget {
     return ReactiveValueListenableBuilder<String>(
       formControlName: formControlName,
       builder: (context, control, _) {
-        final errorText = _reactiveErrorText(control, validationMessages);
+        final errorText = _reactiveErrorText(
+          control,
+          validationMessages,
+          context,
+        );
         final hasError = errorText != null;
         final hasValue = (control.value ?? '').trim().isNotEmpty;
 
@@ -547,6 +554,7 @@ class _VehicleColorSelectorState extends State<VehicleColorSelector> {
         final errorText = _reactiveErrorText(
           control,
           widget.validationMessages,
+          context,
         );
         final hasError = errorText != null;
         final shouldShowCustom = _showCustomInput || isCustomValue;
@@ -886,7 +894,11 @@ class LicensePlateInput extends StatelessWidget {
     return ReactiveValueListenableBuilder<String>(
       formControlName: formControlName,
       builder: (context, control, _) {
-        final errorText = _reactiveErrorText(control, validationMessages);
+        final errorText = _reactiveErrorText(
+          control,
+          validationMessages,
+          context,
+        );
         final hasError = errorText != null;
         final hasValue = (control.value ?? '').trim().isNotEmpty;
 
@@ -992,7 +1004,11 @@ class SeatChipSelector extends StatelessWidget {
       builder: (context, control, _) {
         final l10n = AppLocalizations.of(context);
         final selected = int.tryParse(control.value ?? '') ?? 3;
-        final errorText = _reactiveErrorText(control, validationMessages);
+        final errorText = _reactiveErrorText(
+          control,
+          validationMessages,
+          context,
+        );
         final hasError = errorText != null;
 
         void updateSeats(int value) {

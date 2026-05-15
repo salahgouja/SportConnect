@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/config/app_config.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 class AboutScreen extends StatelessWidget {
@@ -26,99 +27,101 @@ class AboutScreen extends StatelessWidget {
           onPressed: () => context.pop(),
         ),
       ),
-      body: ListView(
-        padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 32.h),
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 64.w,
-                height: 64.w,
-                decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(18.r),
+      body: MaxWidthContainer(
+        child: ListView(
+          padding: adaptiveScreenPadding(context).copyWith(bottom: 32.h),
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 64.w,
+                  height: 64.w,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(18.r),
+                  ),
+                  child: Icon(
+                    Icons.sports_rounded,
+                    size: 34.sp,
+                    color: Colors.white,
+                  ),
                 ),
-                child: Icon(
-                  Icons.sports_rounded,
-                  size: 34.sp,
-                  color: Colors.white,
-                ),
-              ),
-              SizedBox(width: 16.w),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      AppConfig.appName,
-                      style: TextStyle(
-                        fontSize: 24.sp,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textPrimary,
+                SizedBox(width: 16.w),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        AppConfig.appName,
+                        style: TextStyle(
+                          fontSize: 24.sp,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
-                    ),
-                    SizedBox(height: 4.h),
-                    Text(
-                      l10n.appVersion(AppConfig.appVersion),
-                      style: TextStyle(
-                        fontSize: 13.sp,
-                        color: AppColors.textTertiary,
+                      SizedBox(height: 4.h),
+                      Text(
+                        l10n.appVersion(AppConfig.appVersion),
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          color: AppColors.textTertiary,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-          SizedBox(height: 20.h),
-          Text(
-            l10n.sportconnectDescription,
-            style: TextStyle(
-              fontSize: 14.sp,
-              height: 1.5,
-              color: AppColors.textSecondary,
+              ],
             ),
-          ),
-          SizedBox(height: 28.h),
-          _InfoCard(
-            children: [
-              _LinkTile(
-                icon: Icons.description_outlined,
-                title: l10n.settingsTermsConditions,
-                onTap: () => context.push(AppRoutes.terms.path),
+            SizedBox(height: 20.h),
+            Text(
+              l10n.sportconnectDescription,
+              style: TextStyle(
+                fontSize: 14.sp,
+                height: 1.5,
+                color: AppColors.textSecondary,
               ),
-              _Divider(),
-              _LinkTile(
-                icon: Icons.privacy_tip_outlined,
-                title: l10n.settingsPrivacyPolicy,
-                onTap: () => context.push(AppRoutes.privacy.path),
-              ),
-              _Divider(),
-              _LinkTile(
-                icon: Icons.help_center_outlined,
-                title: l10n.settingsHelpCenter,
-                onTap: () => context.push(AppRoutes.helpCenter.path),
-              ),
-              _Divider(),
-              _LinkTile(
-                icon: Icons.code_rounded,
-                title: l10n.open_source_licenses,
-                onTap: () => showLicensePage(
-                  context: context,
-                  applicationName: AppConfig.appName,
-                  applicationVersion: AppConfig.appVersion,
+            ),
+            SizedBox(height: 28.h),
+            _InfoCard(
+              children: [
+                _LinkTile(
+                  icon: Icons.description_outlined,
+                  title: l10n.settingsTermsConditions,
+                  onTap: () => context.push(AppRoutes.terms.path),
                 ),
-              ),
-            ],
-          ),
-          SizedBox(height: 28.h),
-          Text(
-            l10n.copyrightNotice,
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 12.sp, color: AppColors.textTertiary),
-          ),
-        ],
+                _Divider(),
+                _LinkTile(
+                  icon: Icons.privacy_tip_outlined,
+                  title: l10n.settingsPrivacyPolicy,
+                  onTap: () => context.push(AppRoutes.privacy.path),
+                ),
+                _Divider(),
+                _LinkTile(
+                  icon: Icons.help_center_outlined,
+                  title: l10n.settingsHelpCenter,
+                  onTap: () => context.push(AppRoutes.helpCenter.path),
+                ),
+                _Divider(),
+                _LinkTile(
+                  icon: Icons.code_rounded,
+                  title: l10n.open_source_licenses,
+                  onTap: () => showLicensePage(
+                    context: context,
+                    applicationName: AppConfig.appName,
+                    applicationVersion: AppConfig.appVersion,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 28.h),
+            Text(
+              l10n.copyrightNotice,
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12.sp, color: AppColors.textTertiary),
+            ),
+          ],
+        ),
       ),
     );
   }

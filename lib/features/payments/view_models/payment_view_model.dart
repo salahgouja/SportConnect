@@ -329,7 +329,7 @@ class PaymentViewModel extends _$PaymentViewModel {
         existingCustomerId: existingCustomerId,
       );
       return result['customerId'] as String;
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       TalkerService.error('Error getting/creating customer: $e');
       rethrow;
     }
@@ -419,7 +419,7 @@ class DriverStripeOnboardingFlowViewModel
       if (status.isConnected) {
         state = state.copyWith(isConnected: true, clearError: true);
       }
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       TalkerService.error('Error checking existing Stripe account: $e');
     }
   }
@@ -664,7 +664,7 @@ class DriverConnectedAccountViewModel
     try {
       // Refresh from Firestore (webhooks keep it updated)
       ref.invalidateSelf();
-    } on Exception catch (e, st) {
+    } on Exception catch (e) {
       TalkerService.error('Error refreshing account status: $e');
       rethrow;
     }

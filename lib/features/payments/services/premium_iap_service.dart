@@ -168,15 +168,8 @@ class PremiumIapService extends _$PremiumIapService {
   Future<Map<PremiumPlan, ProductDetails>> _fetchAndroidAvailablePlans() async {
     final productId = PremiumPlan.monthly.googlePlayProductId;
     final isAvailable = await _iap.isAvailable();
-    debugPrint('Google Play IAP: isAvailable=$isAvailable');
 
     final response = await _iap.queryProductDetails({productId});
-    debugPrint(
-      'Google Play IAP query: '
-      'found=${response.productDetails.map((p) => p.id).toList()}, '
-      'notFound=${response.notFoundIDs}, '
-      'error=${response.error?.message}',
-    );
 
     if (response.error != null) {
       throw StateError(response.error!.message);
@@ -184,12 +177,6 @@ class PremiumIapService extends _$PremiumIapService {
 
     if (response.productDetails.isEmpty ||
         response.notFoundIDs.contains(productId)) {
-      debugPrint(
-        'Google Play IAP: queryProductDetails returned no results for "$productId". '
-        'notFoundIDs=${response.notFoundIDs}. '
-        'This usually means the app was not installed from a Play testing track '
-        'or the tester account has not opted in to Internal Testing.',
-      );
       throw StateError(
         'Play Store could not find the subscription "$productId". '
         'Make sure the app is installed from the Internal Testing track '
@@ -202,17 +189,6 @@ class PremiumIapService extends _$PremiumIapService {
     for (final product
         in response.productDetails.whereType<GooglePlayProductDetails>()) {
       final offer = _subscriptionOfferFor(product);
-
-      debugPrint(
-        'Google Play IAP product found: '
-        'productId=${product.id}, '
-        'price=${product.price}, '
-        'offerToken=${product.offerToken}, '
-        'subscriptionIndex=${product.subscriptionIndex}, '
-        'basePlanId=${offer?.basePlanId}, '
-        'offerId=${offer?.offerId}, '
-        'offerTags=${offer?.offerTags}',
-      );
 
       if (offer == null) continue;
 

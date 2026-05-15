@@ -9576,4 +9576,506 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get helpCenterRidesCancelQuestion =>
       'Help Center Rides Cancel Question';
+
+  @override
+  String get adminDashboard => 'Admin Dashboard';
+
+  @override
+  String get adminAccessRequired => 'Admin access required';
+
+  @override
+  String adminAccessCheckFailed(String error) {
+    return 'Access check failed: $error';
+  }
+
+  @override
+  String get noRefundRequests => 'No refund requests';
+
+  @override
+  String get noDisputes => 'No disputes';
+
+  @override
+  String get noSupportTickets => 'No support tickets';
+
+  @override
+  String get refundsTab => 'Refunds';
+
+  @override
+  String get disputesTab => 'Disputes';
+
+  @override
+  String get supportTab => 'Support';
+
+  @override
+  String get stripeEurBalance => 'EUR balance';
+
+  @override
+  String get badgeFirstRide => 'First Ride';
+
+  @override
+  String get badgeFirstRideDesc => 'Complete your first ride';
+
+  @override
+  String get badgeRoadWarrior => 'Road Warrior';
+
+  @override
+  String get badgeRoadWarriorDesc => 'Complete 10 rides';
+
+  @override
+  String get badgeEcoHero => 'Eco Hero';
+
+  @override
+  String get badgeEcoHeroDesc => 'Save 50 kg of CO₂';
+
+  @override
+  String get badgeSocialButterfly => 'Social Butterfly';
+
+  @override
+  String get badgeSocialButterflyDesc => 'Connect with 10 riders';
+
+  @override
+  String get badgeRoadTripper => 'Road Tripper';
+
+  @override
+  String get badgeRoadTripperDesc => 'Travel 50 km total';
+
+  @override
+  String get badgeSpeedDemon => 'Speed Demon';
+
+  @override
+  String get badgeSpeedDemonDesc => 'Maintain a 7-day streak';
+
+  @override
+  String adminCouldNotLoadIssues(String error) {
+    return 'Could not load issues: $error';
+  }
+
+  @override
+  String get adminDashboardSettingsSubtitle =>
+      'Review refunds, disputes, and support tickets';
+
+  @override
+  String get adminApproveRefund => 'Approve refund';
+
+  @override
+  String get adminReject => 'Reject';
+
+  @override
+  String get adminRefund => 'Refund';
+
+  @override
+  String get adminResolve => 'Resolve';
+
+  @override
+  String get actionUpdated => 'Updated';
+
+  @override
+  String get yearlyMonthlyEstimate => '≈ €4.17/mo';
+
+  @override
+  String get premiumSubscribeHeroSubtitle =>
+      'Everything you need to ride smarter, together.';
+
+  @override
+  String get alreadyPremiumTitle => 'You\'re already a member';
+
+  @override
+  String get alreadyPremiumSubtitle =>
+      'Your SportConnect Premium subscription is active. Enjoy all premium features.';
+
+  @override
+  String get backToApp => 'Back to App';
+
+  @override
+  String get chatChipImAtPickup => 'I\'m at pickup';
+
+  @override
+  String get chatChipRunningLate => 'Running late';
+
+  @override
+  String get pleaseTryAgainLater => 'Please try again later.';
+
+  @override
+  String get routeDistanceFallback => 'Route distance';
+
+  @override
+  String estimatedMinutes(int minutes) {
+    return '$minutes min estimated';
+  }
+
+  @override
+  String seatsLeftCount(int count) {
+    return '$count seats left';
+  }
+
+  @override
+  String get bookingInProgress => 'Booking...';
+
+  @override
+  String get sendRequest => 'Send request';
+
+  @override
+  String rideSharedDistanceSummary(String distance) {
+    return '$distance km shared together';
+  }
+
+  @override
+  String rideCarpooledWithCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Carpooled with $count people',
+      one: 'Carpooled with 1 person',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get avgSpeedLabel => 'Avg Speed';
+
+  @override
+  String avgSpeedKmhValue(String value) {
+    return '$value km/h';
+  }
+
+  @override
+  String baseFareSeatCount(int count) {
+    return 'Base Fare ($count seats)';
+  }
+
+  @override
+  String baseFareSeatsByPrice(int count, String price) {
+    return 'Base Fare ($count seats × $price)';
+  }
+
+  @override
+  String serviceFeeWithRate(String rate) {
+    return 'Service Fee ($rate)';
+  }
+
+  @override
+  String rideCompletionDriverRating(String value) {
+    return '$value rating';
+  }
+
+  @override
+  String get billingPeriodMonthShort => '/mo';
+
+  @override
+  String get billingPeriodYearShort => '/yr';
+
+  @override
+  String get fallbackMonthlyPrice => '€4.99';
+
+  @override
+  String get fallbackYearlyPrice => '€49.99';
+
+  @override
+  String yearlyMonthlyAtPrice(String price) {
+    return '≈ $price/mo';
+  }
+
+  @override
+  String get premiumRenewsUntilCancelled =>
+      'Subscription renews automatically until cancelled. Cancel anytime in App Store Settings.';
+
+  @override
+  String premiumRenewsEachPeriodAtPrice(String period, String price) {
+    return 'Automatically renews each $period at $price until cancelled. Cancel anytime in App Store Settings.';
+  }
+
+  @override
+  String get cancellationReasonBannerMessage =>
+      'Please let us know why you\'re cancelling so we can improve our service.';
+
+  @override
+  String get cancelReasonChangeOfPlansTitle => 'Change of plans';
+
+  @override
+  String get cancelReasonChangeOfPlansDescription =>
+      'My schedule changed and I can no longer make this ride.';
+
+  @override
+  String get cancelReasonFoundAnotherRideTitle => 'Found another ride';
+
+  @override
+  String get cancelReasonFoundAnotherRideDescription =>
+      'I found a more convenient ride option.';
+
+  @override
+  String get cancelReasonPriceTooHighTitle => 'Price too high';
+
+  @override
+  String get cancelReasonPriceTooHighDescription =>
+      'The ride cost is more than I expected.';
+
+  @override
+  String get cancelReasonSafetyConcernTitle => 'Safety concern';
+
+  @override
+  String get cancelReasonSafetyConcernDescription =>
+      'I have concerns about the safety of this ride.';
+
+  @override
+  String get cancelReasonDriverNotRespondingTitle => 'Driver not responding';
+
+  @override
+  String get cancelReasonDriverNotRespondingDescription =>
+      'The driver is not responding to messages.';
+
+  @override
+  String get cancelReasonIncorrectDetailsTitle => 'Incorrect details';
+
+  @override
+  String get cancelReasonIncorrectDetailsDescription =>
+      'The ride details are incorrect or have changed.';
+
+  @override
+  String get cancelReasonEmergencyTitle => 'Emergency';
+
+  @override
+  String get cancelReasonEmergencyDescription =>
+      'I have an unexpected emergency.';
+
+  @override
+  String get cancelReasonOtherTitle => 'Other';
+
+  @override
+  String get cancelReasonOtherDescription => 'Another reason not listed above.';
+
+  @override
+  String get cancelReasonVehicleIssueTitle => 'Vehicle issue';
+
+  @override
+  String get cancelReasonVehicleIssueDescription =>
+      'My vehicle has a mechanical problem or is unavailable.';
+
+  @override
+  String get cancelReasonPassengerNotAtPickupTitle => 'Passenger not at pickup';
+
+  @override
+  String get cancelReasonPassengerNotAtPickupDescription =>
+      'The passenger was not at the agreed pickup location.';
+
+  @override
+  String get cancelReasonPassengerNotRespondingTitle =>
+      'Passenger not responding';
+
+  @override
+  String get cancelReasonPassengerNotRespondingDescription =>
+      'The passenger is not responding to messages.';
+
+  @override
+  String get cancelReasonRouteIssueTitle => 'Route issue';
+
+  @override
+  String get cancelReasonRouteIssueDescription =>
+      'There is a road closure or route problem.';
+
+  @override
+  String pleaseFixFields(String fields) {
+    return 'Please fix: $fields';
+  }
+
+  @override
+  String get nameTooLongError => 'Name is too long';
+
+  @override
+  String get ridingDetails => 'Riding Details';
+
+  @override
+  String get riderOnboardingFormLabel => 'Rider onboarding form';
+
+  @override
+  String get payoutStepInitiated => 'Initiated';
+
+  @override
+  String get payoutStepCouldNotComplete => 'Could not complete';
+
+  @override
+  String get payoutStepPreparingTransfer => 'Stripe is preparing your transfer';
+
+  @override
+  String payoutStepExpected(String date) {
+    return 'Expected $date';
+  }
+
+  @override
+  String get payoutStepOnItsWayToYourBank => 'On its way to your bank';
+
+  @override
+  String get payoutStepWaitingForProcessing =>
+      'Waiting for processing to complete';
+
+  @override
+  String get payoutStepDepositedToYourAccount => 'Deposited to your account';
+
+  @override
+  String get payoutMethodInstantDescription => 'Instant (usually minutes)';
+
+  @override
+  String get payoutMethodStandardDescription => 'Standard (1–3 business days)';
+
+  @override
+  String get payoutDestinationLabel => 'Destination';
+
+  @override
+  String onboardingStepCount(int current, int total) {
+    return 'Step $current of $total';
+  }
+
+  @override
+  String get onboardingCreateAccountPrompt =>
+      'Create your free account to find rides to your next sporting event.';
+
+  @override
+  String get onboardingRunningEventLabel => 'RUNNING EVENT';
+
+  @override
+  String get onboardingRideBadgeOpen => 'OPEN';
+
+  @override
+  String get onboardingRideBadgeSet => 'SET';
+
+  @override
+  String get onboardingSharedLabel => 'Shared';
+
+  @override
+  String get onboardingDriverRouteLabel => 'Driver route';
+
+  @override
+  String get onboardingSharedArrivalLabel => 'Shared arrival';
+
+  @override
+  String get onboardingEventLabel => 'Event';
+
+  @override
+  String get identityAndRoleStep => 'Identity & Role';
+
+  @override
+  String get dayLabel => 'Day';
+
+  @override
+  String get monthLabel => 'Month';
+
+  @override
+  String get passwordMinLengthError => 'Password must be at least 8 characters';
+
+  @override
+  String get passwordStrengthWeak => 'Weak';
+
+  @override
+  String get passwordStrengthFair => 'Fair';
+
+  @override
+  String get passwordStrengthGood => 'Good';
+
+  @override
+  String get passwordStrengthStrong => 'Strong';
+
+  @override
+  String get invalidValue => 'Invalid value';
+
+  @override
+  String get supportSubjectRequired => 'Please enter a subject';
+
+  @override
+  String get supportSubjectMinLength => 'Subject must be at least 3 characters';
+
+  @override
+  String get supportMessageRequired => 'Please describe your issue';
+
+  @override
+  String get supportMessageMinLength => 'Please provide at least 10 characters';
+
+  @override
+  String get thisWeekend => 'This Weekend';
+
+  @override
+  String get highestPrice => 'Highest price';
+
+  @override
+  String get badgePerfectScore => 'Perfect Score';
+
+  @override
+  String get badgePerfectScoreDesc => 'Maintain a 5-star rating';
+
+  @override
+  String get badgeRoadMaster => 'Road Master';
+
+  @override
+  String get badgeRoadMasterDesc => 'Complete 100 rides';
+
+  @override
+  String get badgeNightOwl => 'Night Owl';
+
+  @override
+  String get badgeNightOwlDesc => 'Complete 20 night rides';
+
+  @override
+  String get badgeEarlyBird => 'Early Bird';
+
+  @override
+  String get badgeEarlyBirdDesc => 'Complete 20 morning rides';
+
+  @override
+  String get badgeMarathonDriver => 'Marathon Driver';
+
+  @override
+  String get badgeMarathonDriverDesc => 'Travel 1000 km total';
+
+  @override
+  String get badgeVerifiedPro => 'Verified Pro';
+
+  @override
+  String get badgeVerifiedProDesc => 'Get identity verified';
+
+  @override
+  String get challengeDailyCommuter => 'Daily Commuter';
+
+  @override
+  String get challengeDailyCommuterDesc => 'Complete 1 ride today';
+
+  @override
+  String get challengeWeekWarrior => 'Week Warrior';
+
+  @override
+  String get challengeWeekWarriorDesc => 'Complete 5 rides this week';
+
+  @override
+  String get challengeStreakKeeper => 'Streak Keeper';
+
+  @override
+  String get challengeStreakKeeperDesc => 'Maintain a 3-day streak';
+
+  @override
+  String get challengeExplorer => 'Explorer';
+
+  @override
+  String get challengeExplorerDesc => 'Try 3 new routes this month';
+
+  @override
+  String get challengeSocialRider => 'Social Rider';
+
+  @override
+  String get challengeSocialRiderDesc => 'Rate 5 drivers this week';
+
+  @override
+  String get challengeEcoWarrior => 'Eco Warrior';
+
+  @override
+  String get challengeEcoWarriorDesc => 'Share 3 rides today';
+
+  @override
+  String challengeResetsInHours(String value) {
+    return 'Resets in ${value}h';
+  }
+
+  @override
+  String challengeResetsInDays(String value) {
+    return 'Resets in ${value}d';
+  }
+
+  @override
+  String get challengeKeepGoing => 'Keep going!';
 }

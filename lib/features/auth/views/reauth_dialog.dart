@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:reactive_forms/reactive_forms.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/theme/app_spacing.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/core/widgets/app_modal_sheet.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/core/widgets/reactive_adaptive_text_field.dart';
@@ -20,7 +22,6 @@ Future<bool> showReauthDialog(BuildContext context, WidgetRef ref) async {
   final result = await AppModalSheet.show<bool>(
     context: context,
     title: AppLocalizations.of(context).reauthTitle,
-    maxHeightFactor: 0.9,
     child: const _ReauthBottomSheet(),
   );
   return result ?? false;
@@ -70,15 +71,17 @@ class _ReauthBottomSheetState extends ConsumerState<_ReauthBottomSheet> {
       padding: EdgeInsets.only(
         bottom: MediaQuery.viewInsetsOf(context).bottom,
       ),
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.background,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(24.r),
-            topRight: Radius.circular(24.r),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: kMaxWidthFormNarrow),
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppColors.background,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(24.r),
+              topRight: Radius.circular(24.r),
+            ),
           ),
-        ),
-        padding: EdgeInsets.all(24.w),
+          padding: EdgeInsets.all(AppSpacing.xl),
         child: ReactiveForm(
           formGroup: _form,
           child: Column(
@@ -249,6 +252,7 @@ class _ReauthBottomSheetState extends ConsumerState<_ReauthBottomSheet> {
             ],
           ),
         ),
+      ),
       ),
     );
   }

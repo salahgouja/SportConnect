@@ -13,6 +13,7 @@ import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/models/user/user_model.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/core/widgets/driver_info_widget.dart';
 import 'package:sport_connect/core/widgets/gamification_widgets.dart';
 import 'package:sport_connect/core/widgets/premium_avatar.dart';
@@ -240,7 +241,7 @@ class _GamificationStrip extends StatelessWidget {
     }
 
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 4.h),
+      padding: adaptiveScreenPadding(context).copyWith(bottom: 4.h, top: 4.h),
       child: Row(
         children: [
           Expanded(
@@ -323,7 +324,7 @@ class _NextRideCard extends ConsumerWidget {
         }
 
         return Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
+          padding: adaptiveScreenPadding(context).copyWith(bottom: 8.h, top: 8.h),
           child: GestureDetector(
             onTap: () {
               unawaited(HapticFeedback.selectionClick());
@@ -781,7 +782,7 @@ class _NearbyRidesSection extends ConsumerWidget {
 
     return nearbyRides.when(
       loading: () => Padding(
-        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
+        padding: adaptiveScreenPadding(context).copyWith(bottom: 8.h, top: 8.h),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -798,7 +799,7 @@ class _NearbyRidesSection extends ConsumerWidget {
       data: (rides) {
         if (rides.isEmpty) {
           return Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
+            padding: adaptiveScreenPadding(context).copyWith(bottom: 8.h, top: 8.h),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -854,7 +855,7 @@ class _NearbyRidesSection extends ConsumerWidget {
         final displayRides = rides.take(5).toList();
 
         return Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
+          padding: adaptiveScreenPadding(context).copyWith(bottom: 8.h, top: 8.h),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1093,14 +1094,14 @@ class _MapToggleCard extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
 
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
+      padding: adaptiveScreenPadding(context).copyWith(bottom: 8.h, top: 8.h),
       child: GestureDetector(
         onTap: () {
           unawaited(HapticFeedback.mediumImpact());
           onTap();
         },
         child: Container(
-          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+          padding: adaptiveScreenPadding(context).copyWith(bottom: 16.h, top: 16.h),
           decoration: BoxDecoration(
             color: AppColors.surfaceVariant,
             borderRadius: BorderRadius.circular(16.r),

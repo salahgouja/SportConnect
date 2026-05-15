@@ -6,6 +6,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/config/app_routes.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/theme/app_spacing.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/features/auth/view_models/email_verification_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
@@ -55,20 +57,23 @@ class EmailVerificationScreen extends ConsumerWidget {
       appBar: AdaptiveAppBar(
         title: l10n.emailVerifyTitle,
       ),
-      body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 24.w),
-          child: Column(
-            children: [
-              const Spacer(flex: 2),
-              if (isEmailVerified)
-                const _VerifiedState()
-              else
-                _PendingState(email: userEmail),
-              const Spacer(flex: 3),
-              const _VerificationActions(),
-              SizedBox(height: 32.h),
-            ],
+      body: MaxWidthContainer(
+        maxWidth: kMaxWidthFormNarrow,
+        child: SafeArea(
+          child: Padding(
+            padding: adaptiveScreenPadding(context),
+            child: Column(
+              children: [
+                const Spacer(flex: 2),
+                if (isEmailVerified)
+                  const _VerifiedState()
+                else
+                  _PendingState(email: userEmail),
+                const Spacer(flex: 3),
+                const _VerificationActions(),
+                SizedBox(height: 32.h),
+              ],
+            ),
           ),
         ),
       ),

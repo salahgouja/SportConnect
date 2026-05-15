@@ -7,7 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sport_connect/core/models/user/models.dart';
 import 'package:sport_connect/core/providers/user_providers.dart';
-import 'package:sport_connect/core/theme/app_colors.dart';
+import 'package:sport_connect/core/widgets/adaptive_shell_scaffold.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
 
 /// Main wrapper widget with bottom navigation
@@ -70,71 +70,68 @@ class _MainWrapperState extends ConsumerState<MainWrapper> {
         ? _driverDestinations(l10n)
         : _riderDestinations(l10n);
 
-    return AdaptiveScaffold(
-      body: SafeArea(bottom: false, child: widget.navigationShell),
-      bottomNavigationBar: AdaptiveBottomNavigationBar(
-        selectedIndex: activeIndex,
-        onTap: (index) => _navigateToBranch(index, isDriver),
-        selectedItemColor: AppColors.primaryLight,
-        items: destinations,
-      ),
+    return AdaptiveShellScaffold(
+      activeIndex: activeIndex,
+      onDestinationSelected: (index) => _navigateToBranch(index, isDriver),
+      destinations: destinations,
+      child: widget.navigationShell,
     );
   }
 
-  static List<AdaptiveNavigationDestination> _riderDestinations(
+  static List<AdaptiveShellDestination> _riderDestinations(
     AppLocalizations l10n,
   ) => [
-    AdaptiveNavigationDestination(
+    AdaptiveShellDestination(
       icon: Icons.home_outlined,
       selectedIcon: Icons.home_rounded,
       label: l10n.navHome,
     ),
-    AdaptiveNavigationDestination(
+    AdaptiveShellDestination(
       icon: Icons.directions_car_outlined,
       selectedIcon: Icons.directions_car_rounded,
       label: l10n.navRides,
     ),
-    AdaptiveNavigationDestination(
+    AdaptiveShellDestination(
       icon: Icons.add_circle_outline_rounded,
       selectedIcon: Icons.flag,
       label: l10n.events,
     ),
-    AdaptiveNavigationDestination(
+    AdaptiveShellDestination(
       icon: Icons.chat_bubble_outline_rounded,
       selectedIcon: Icons.chat_bubble_rounded,
       label: l10n.navChat,
     ),
-    AdaptiveNavigationDestination(
+    AdaptiveShellDestination(
       icon: Icons.person_outline_rounded,
       selectedIcon: Icons.person_rounded,
       label: l10n.navProfile,
     ),
   ];
 
-  static List<AdaptiveNavigationDestination> _driverDestinations(
+  static List<AdaptiveShellDestination> _driverDestinations(
     AppLocalizations l10n,
   ) => [
-    AdaptiveNavigationDestination(
+    AdaptiveShellDestination(
       icon: Icons.home_outlined,
       selectedIcon: Icons.home_rounded,
       label: l10n.navHome,
     ),
-    AdaptiveNavigationDestination(
+    AdaptiveShellDestination(
       icon: Icons.directions_car_outlined,
       selectedIcon: Icons.directions_car_rounded,
       label: l10n.navRides,
     ),
-    AdaptiveNavigationDestination(
+    AdaptiveShellDestination(
       icon: Icons.add_circle_outline_rounded,
       selectedIcon: Icons.add_circle_rounded,
       label: l10n.earnings,
     ),
-    AdaptiveNavigationDestination(
+    AdaptiveShellDestination(
       icon: Icons.chat_bubble_outline_rounded,
       selectedIcon: Icons.chat_bubble_rounded,
       label: l10n.navChat,
     ),
-    AdaptiveNavigationDestination(
+    AdaptiveShellDestination(
       icon: Icons.person_outline_rounded,
       selectedIcon: Icons.person_rounded,
       label: l10n.navProfile,

@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:sport_connect/core/theme/app_colors.dart';
 import 'package:sport_connect/core/utils/payment_error_handler.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 import 'package:sport_connect/core/widgets/skeleton_loader.dart';
 import 'package:sport_connect/features/payments/models/payment_model.dart';
 import 'package:sport_connect/features/payments/view_models/payment_view_model.dart';
@@ -40,7 +41,7 @@ class _PayoutDetailScreenState extends ConsumerState<PayoutDetailScreen> {
       body: payoutAsync.when(
         loading: () => const Padding(
           padding: EdgeInsets.all(20),
-          child: SkeletonLoader(type: SkeletonType.rideCard),
+          child: SkeletonLoader(),
         ),
         error: (e, _) => _ErrorView(
           message: PaymentErrorHandler.humanize(e),
@@ -66,7 +67,7 @@ class _PayoutDetailScreenState extends ConsumerState<PayoutDetailScreen> {
     if (payout.stripePayoutId == null) {
       AdaptiveSnackBar.show(
         context,
-        message: 'This payout cannot be cancelled — no Stripe reference found.',
+        message: l10n.this_payout_cannot_be_cancelled_no_stripe_reference_found,
         type: AdaptiveSnackBarType.error,
       );
       return;
@@ -152,60 +153,84 @@ class _PayoutContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return RefreshIndicator.adaptive(
-      onRefresh: () async =>
-          ProviderScope.containerOf(context).invalidate(
-            payoutDetailProvider(payoutId),
+    final l10n = AppLocalizations.of(context);
+    final isTabletLayout = context.screenWidth >= Breakpoints.medium;
+
+    final mainContent = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _AmountCard(
+          payout: payout,
+        ).animate().fadeIn(duration: 300.ms).slideY(begin: -0.05),
+        SizedBox(height: 20.h),
+        _PayoutTimeline(
+          status: payout.status,
+          payout: payout,
+        ).animate().fadeIn(delay: 100.ms, duration: 300.ms).slideY(begin: 0.05),
+      ],
+    );
+
+    final detailContent = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (payout.failureReason != null) ...[
+          _FailureBanner(
+            reason: payout.failureReason!,
+          ).animate().fadeIn(delay: 150.ms).shakeX(hz: 2, amount: 3),
+          SizedBox(height: 20.h),
+        ],
+        _DetailsCard(
+          payout: payout,
+        ).animate().fadeIn(delay: 200.ms, duration: 300.ms).slideY(begin: 0.05),
+        if (payout.isPending) ...[
+          SizedBox(height: 24.h),
+          Text(
+            l10n.instant_payouts_can_be_cancelled_while_still_pending_once_in_transit_your_bank_is_already_processing_the_transfer,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 11.sp,
+              color: AppColors.textTertiary,
+              height: 1.5,
+            ),
           ),
+          SizedBox(height: 12.h),
+          _CancelButton(
+            cancelling: cancelling,
+            onCancel: onCancel,
+          ).animate().fadeIn(delay: 300.ms),
+        ],
+      ],
+    );
+
+    return RefreshIndicator.adaptive(
+      onRefresh: () async => ProviderScope.containerOf(context).invalidate(
+        payoutDetailProvider(payoutId),
+      ),
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 40.h),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _AmountCard(payout: payout)
-                .animate()
-                .fadeIn(duration: 300.ms)
-                .slideY(begin: -0.05),
-            SizedBox(height: 20.h),
-
-            _PayoutTimeline(status: payout.status, payout: payout)
-                .animate()
-                .fadeIn(delay: 100.ms, duration: 300.ms)
-                .slideY(begin: 0.05),
-            SizedBox(height: 20.h),
-
-            if (payout.failureReason != null) ...[
-              _FailureBanner(reason: payout.failureReason!)
-                  .animate()
-                  .fadeIn(delay: 150.ms)
-                  .shakeX(hz: 2, amount: 3),
-              SizedBox(height: 20.h),
-            ],
-
-            _DetailsCard(payout: payout)
-                .animate()
-                .fadeIn(delay: 200.ms, duration: 300.ms)
-                .slideY(begin: 0.05),
-
-            if (payout.isPending) ...[
-              SizedBox(height: 24.h),
-              Text(
-                'Instant payouts can be cancelled while still pending. Once in transit, your bank is already processing the transfer.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 11.sp,
-                  color: AppColors.textTertiary,
-                  height: 1.5,
+        child: isTabletLayout
+            ? Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1320),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(flex: 6, child: mainContent),
+                      SizedBox(width: 24.w),
+                      Expanded(flex: 5, child: detailContent),
+                    ],
+                  ),
                 ),
+              )
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  mainContent,
+                  SizedBox(height: 20.h),
+                  detailContent,
+                ],
               ),
-              SizedBox(height: 12.h),
-              _CancelButton(cancelling: cancelling, onCancel: onCancel)
-                  .animate()
-                  .fadeIn(delay: 300.ms),
-            ],
-          ],
-        ),
       ),
     );
   }
@@ -218,11 +243,11 @@ class _AmountCard extends StatelessWidget {
   final DriverPayout payout;
 
   Color get _gradientStart => switch (payout.status) {
-        PayoutStatus.paid => AppColors.success,
-        PayoutStatus.failed => AppColors.error,
-        PayoutStatus.cancelled => AppColors.textSecondary,
-        PayoutStatus.inTransit || PayoutStatus.pending => AppColors.primary,
-      };
+    PayoutStatus.paid => AppColors.success,
+    PayoutStatus.failed => AppColors.error,
+    PayoutStatus.cancelled => AppColors.textSecondary,
+    PayoutStatus.inTransit || PayoutStatus.pending => AppColors.primary,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -291,20 +316,20 @@ class _AmountCard extends StatelessWidget {
   }
 
   IconData _statusIcon(PayoutStatus s) => switch (s) {
-        PayoutStatus.paid => Icons.check_circle_rounded,
-        PayoutStatus.failed => Icons.error_rounded,
-        PayoutStatus.cancelled => Icons.cancel_rounded,
-        PayoutStatus.inTransit => Icons.local_shipping_rounded,
-        PayoutStatus.pending => Icons.schedule_rounded,
-      };
+    PayoutStatus.paid => Icons.check_circle_rounded,
+    PayoutStatus.failed => Icons.error_rounded,
+    PayoutStatus.cancelled => Icons.cancel_rounded,
+    PayoutStatus.inTransit => Icons.local_shipping_rounded,
+    PayoutStatus.pending => Icons.schedule_rounded,
+  };
 
   String _statusLabel(AppLocalizations l, PayoutStatus s) => switch (s) {
-        PayoutStatus.paid => l.payoutPaid,
-        PayoutStatus.failed => l.statusFailed,
-        PayoutStatus.cancelled => l.statusCancelled,
-        PayoutStatus.inTransit => l.payoutInTransit,
-        PayoutStatus.pending => l.statusPending,
-      };
+    PayoutStatus.paid => l.payoutPaid,
+    PayoutStatus.failed => l.statusFailed,
+    PayoutStatus.cancelled => l.statusCancelled,
+    PayoutStatus.inTransit => l.payoutInTransit,
+    PayoutStatus.pending => l.statusPending,
+  };
 }
 
 class _Pill extends StatelessWidget {
@@ -349,6 +374,7 @@ class _PayoutTimeline extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final steps = _buildSteps(context);
+    final l10n = AppLocalizations.of(context);
 
     return Container(
       padding: EdgeInsets.all(20.w),
@@ -371,15 +397,14 @@ class _PayoutTimeline extends StatelessWidget {
                     PayoutStatus.failed => AppColors.error,
                     PayoutStatus.cancelled => AppColors.textSecondary,
                     PayoutStatus.inTransit ||
-                    PayoutStatus.pending =>
-                      AppColors.primary,
+                    PayoutStatus.pending => AppColors.primary,
                   },
                   borderRadius: BorderRadius.circular(2.r),
                 ),
               ),
               SizedBox(width: 10.w),
               Text(
-                'Payout Progress',
+                l10n.payout_progress,
                 style: TextStyle(
                   fontSize: 15.sp,
                   fontWeight: FontWeight.w700,
@@ -404,7 +429,10 @@ class _PayoutTimeline extends StatelessWidget {
   }
 
   List<_StepData> _buildSteps(BuildContext context) {
-    final fmt = DateFormat('MMM d, h:mm a');
+    final l10n = AppLocalizations.of(context);
+    final fmt = DateFormat.yMMMd(
+      Localizations.localeOf(context).toLanguageTag(),
+    ).add_jm();
 
     final isFailed = status == PayoutStatus.failed;
     final isCancelled = status == PayoutStatus.cancelled;
@@ -414,52 +442,52 @@ class _PayoutTimeline extends StatelessWidget {
 
     return [
       _StepData(
-        title: 'Payout Requested',
+        title: l10n.payout_requested,
         subtitle: payout.createdAt != null
             ? fmt.format(payout.createdAt!)
-            : 'Initiated',
+            : l10n.payoutStepInitiated,
         state: _StepState.done,
         icon: Icons.send_rounded,
       ),
       _StepData(
-        title: 'Processing',
+        title: l10n.processing,
         subtitle: isFailed
-            ? 'Could not complete'
+            ? l10n.payoutStepCouldNotComplete
             : isCancelled
-                ? 'Cancelled'
-                : 'Stripe is preparing your transfer',
-        state: isFailed || isCancelled
-            ? _StepState.failed
-            : _StepState.done,
+            ? l10n.statusCancelled
+            : l10n.payoutStepPreparingTransfer,
+        state: isFailed || isCancelled ? _StepState.failed : _StepState.done,
         icon: isFailed || isCancelled
             ? Icons.close_rounded
             : Icons.autorenew_rounded,
       ),
       _StepData(
-        title: 'In Transit to Bank',
+        title: l10n.in_transit_to_bank,
         subtitle: isInTransit
             ? (payout.expectedArrivalDate != null
-                  ? 'Expected ${fmt.format(payout.expectedArrivalDate!)}'
-                  : 'On its way to your bank')
+                  ? l10n.payoutStepExpected(
+                      fmt.format(payout.expectedArrivalDate!),
+                    )
+                  : l10n.payoutStepOnItsWayToYourBank)
             : isFailed || isCancelled
-                ? '—'
-                : 'Waiting for processing to complete',
+            ? '—'
+            : l10n.payoutStepWaitingForProcessing,
         state: isPaid
             ? _StepState.done
             : isInTransit
-                ? _StepState.active
-                : isFailed || isCancelled
-                    ? _StepState.skipped
-                    : _StepState.waiting,
+            ? _StepState.active
+            : isFailed || isCancelled
+            ? _StepState.skipped
+            : _StepState.waiting,
         icon: Icons.account_balance_rounded,
       ),
       _StepData(
-        title: 'Funds Arrived',
+        title: l10n.funds_arrived,
         subtitle: isPaid && payout.arrivedAt != null
             ? fmt.format(payout.arrivedAt!)
             : isPaid
-                ? 'Deposited to your account'
-                : '—',
+            ? l10n.payoutStepDepositedToYourAccount
+            : '—',
         state: isPaid ? _StepState.done : _StepState.waiting,
         icon: Icons.check_circle_rounded,
       ),
@@ -493,89 +521,95 @@ class _TimelineStep extends StatelessWidget {
   final int animDelay;
 
   Color get _color => switch (step.state) {
-        _StepState.done => AppColors.success,
-        _StepState.active => AppColors.primary,
-        _StepState.failed => AppColors.error,
-        _StepState.waiting => AppColors.border,
-        _StepState.skipped => AppColors.border,
-      };
+    _StepState.done => AppColors.success,
+    _StepState.active => AppColors.primary,
+    _StepState.failed => AppColors.error,
+    _StepState.waiting => AppColors.border,
+    _StepState.skipped => AppColors.border,
+  };
 
   @override
   Widget build(BuildContext context) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Icon + connector line
-        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 36.w,
-              height: 36.w,
-              decoration: BoxDecoration(
-                color: step.state == _StepState.waiting ||
-                        step.state == _StepState.skipped
-                    ? AppColors.border.withValues(alpha: 0.4)
-                    : _color.withValues(alpha: 0.15),
-                shape: BoxShape.circle,
-                border: Border.all(color: _color, width: 2),
-              ),
-              child: step.state == _StepState.active
-                  ? Padding(
-                      padding: EdgeInsets.all(8.w),
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation(_color),
-                      ),
-                    )
-                  : Icon(
-                      step.icon,
-                      size: 16.sp,
-                      color: step.state == _StepState.waiting ||
-                              step.state == _StepState.skipped
-                          ? AppColors.textTertiary
-                          : _color,
-                    ),
-            ),
-            if (!isLast)
-              Container(
-                width: 2.w,
-                height: 32.h,
-                color: _color.withValues(alpha: 0.3),
-              ),
-          ],
-        ),
-        SizedBox(width: 14.w),
-        Expanded(
-          child: Padding(
-            padding: EdgeInsets.only(top: 6.h, bottom: isLast ? 0 : 20.h),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            // Icon + connector line
+            Column(
               children: [
-                Text(
-                  step.title,
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w600,
-                    color: step.state == _StepState.waiting ||
+                Container(
+                  width: 36.w,
+                  height: 36.w,
+                  decoration: BoxDecoration(
+                    color:
+                        step.state == _StepState.waiting ||
                             step.state == _StepState.skipped
-                        ? AppColors.textTertiary
-                        : AppColors.textPrimary,
+                        ? AppColors.border.withValues(alpha: 0.4)
+                        : _color.withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: _color, width: 2),
                   ),
+                  child: step.state == _StepState.active
+                      ? Padding(
+                          padding: EdgeInsets.all(8.w),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation(_color),
+                          ),
+                        )
+                      : Icon(
+                          step.icon,
+                          size: 16.sp,
+                          color:
+                              step.state == _StepState.waiting ||
+                                  step.state == _StepState.skipped
+                              ? AppColors.textTertiary
+                              : _color,
+                        ),
                 ),
-                SizedBox(height: 3.h),
-                Text(
-                  step.subtitle,
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    color: AppColors.textSecondary,
+                if (!isLast)
+                  Container(
+                    width: 2.w,
+                    height: 32.h,
+                    color: _color.withValues(alpha: 0.3),
                   ),
-                ),
               ],
             ),
-          ),
-        ),
-      ],
-    ).animate().fadeIn(delay: Duration(milliseconds: animDelay)).slideX(begin: 0.05);
+            SizedBox(width: 14.w),
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.only(top: 6.h, bottom: isLast ? 0 : 20.h),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      step.title,
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w600,
+                        color:
+                            step.state == _StepState.waiting ||
+                                step.state == _StepState.skipped
+                            ? AppColors.textTertiary
+                            : AppColors.textPrimary,
+                      ),
+                    ),
+                    SizedBox(height: 3.h),
+                    Text(
+                      step.subtitle,
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        )
+        .animate()
+        .fadeIn(delay: Duration(milliseconds: animDelay))
+        .slideX(begin: 0.05);
   }
 }
 
@@ -597,14 +631,18 @@ class _FailureBanner extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.error_outline_rounded, color: AppColors.error, size: 20.sp),
+          Icon(
+            Icons.error_outline_rounded,
+            color: AppColors.error,
+            size: 20.sp,
+          ),
           SizedBox(width: 12.w),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Why did this fail?',
+                  AppLocalizations.of(context).why_did_this_fail,
                   style: TextStyle(
                     fontSize: 13.sp,
                     fontWeight: FontWeight.w700,
@@ -638,7 +676,9 @@ class _DetailsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final fmt = DateFormat('MMM dd, yyyy  HH:mm');
+    final fmt = DateFormat.yMMMd(
+      Localizations.localeOf(context).toLanguageTag(),
+    ).add_Hm();
 
     final rows = <({String label, String value})>[
       if (payout.createdAt != null)
@@ -651,13 +691,17 @@ class _DetailsCard extends StatelessWidget {
       if (payout.arrivedAt != null)
         (label: l10n.arrivedAt, value: fmt.format(payout.arrivedAt!)),
       (
-        label: 'Method',
+        label: l10n.method,
         value: payout.method == PayoutMethod.instant
-            ? 'Instant (usually minutes)'
-            : 'Standard (1–3 business days)',
+            ? l10n.payoutMethodInstantDescription
+            : l10n.payoutMethodStandardDescription,
       ),
       if (payout.destination != null)
-        (label: 'Destination', value: '••••  ${payout.destination!.length > 4 ? payout.destination!.substring(payout.destination!.length - 4) : payout.destination!}'),
+        (
+          label: l10n.payoutDestinationLabel,
+          value:
+              '••••  ${payout.destination!.length > 4 ? payout.destination!.substring(payout.destination!.length - 4) : payout.destination!}',
+        ),
       if (payout.stripePayoutId != null)
         (
           label: l10n.transactionId,
@@ -752,9 +796,9 @@ class _CancelButton extends StatelessWidget {
             ? SizedBox(
                 width: 20.w,
                 height: 20.w,
-                child: CircularProgressIndicator(
+                child: const CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: const AlwaysStoppedAnimation(AppColors.error),
+                  valueColor: AlwaysStoppedAnimation(AppColors.error),
                 ),
               )
             : Text(

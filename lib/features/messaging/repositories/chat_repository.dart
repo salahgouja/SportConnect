@@ -476,7 +476,7 @@ class ChatRepository {
       final chat = chatSnap.data();
       final clearedAt = chat?.clearedAtBy[userId];
 
-      Query<MessageModel> query = _messagesCollection(chatId)
+      var query = _messagesCollection(chatId)
           .where('isDeleted', isEqualTo: false)
           .orderBy('createdAt', descending: true)
           .limit(limit);
@@ -657,7 +657,7 @@ class ChatRepository {
     final chat = await getChatById(chatId);
     final clearedAt = chat?.clearedAtBy[userId];
 
-    Query<MessageModel> query = _messagesCollection(chatId)
+    var query = _messagesCollection(chatId)
         .where('isDeleted', isEqualTo: false)
         .where('createdAt', isLessThan: Timestamp.fromDate(beforeTimestamp))
         .orderBy('createdAt', descending: true)

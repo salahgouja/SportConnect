@@ -1,7 +1,5 @@
 import 'dart:async';
 
-
-
 import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -14,6 +12,7 @@ import 'package:sport_connect/core/theme/platform_adaptive.dart';
 import 'package:sport_connect/core/widgets/premium_button.dart';
 import 'package:sport_connect/features/rides/view_models/ride_view_model.dart';
 import 'package:sport_connect/l10n/generated/app_localizations.dart';
+import 'package:sport_connect/core/utils/responsive_utils.dart';
 
 /// Cancellation reason selection screen.
 ///
@@ -35,80 +34,66 @@ class CancellationReasonScreen extends ConsumerWidget {
 
   static const _riderReasons = [
     _CancelReason(
-      'Change of plans',
+      _CancelReasonId.riderChangeOfPlans,
       Icons.event_busy_rounded,
-      'My schedule changed and I can no longer make this ride.',
     ),
     _CancelReason(
-      'Found another ride',
+      _CancelReasonId.riderFoundAnotherRide,
       Icons.swap_horiz_rounded,
-      'I found a more convenient ride option.',
     ),
     _CancelReason(
-      'Price too high',
+      _CancelReasonId.riderPriceTooHigh,
       Icons.money_off_rounded,
-      'The ride cost is more than I expected.',
     ),
     _CancelReason(
-      'Safety concern',
+      _CancelReasonId.riderSafetyConcern,
       Icons.shield_outlined,
-      'I have concerns about the safety of this ride.',
     ),
     _CancelReason(
-      'Driver not responding',
+      _CancelReasonId.riderDriverNotResponding,
       Icons.chat_bubble_outline_rounded,
-      'The driver is not responding to messages.',
     ),
     _CancelReason(
-      'Incorrect details',
+      _CancelReasonId.riderIncorrectDetails,
       Icons.error_outline_rounded,
-      'The ride details are incorrect or have changed.',
     ),
     _CancelReason(
-      'Emergency',
+      _CancelReasonId.riderEmergency,
       Icons.emergency_rounded,
-      'I have an unexpected emergency.',
     ),
-    _CancelReason('Other', null, 'Another reason not listed above.'),
+    _CancelReason(_CancelReasonId.other, null),
   ];
 
   static const _driverReasons = [
     _CancelReason(
-      'Vehicle issue',
+      _CancelReasonId.driverVehicleIssue,
       Icons.car_repair_rounded,
-      'My vehicle has a mechanical problem or is unavailable.',
     ),
     _CancelReason(
-      'Passenger not at pickup',
+      _CancelReasonId.driverPassengerNotAtPickup,
       Icons.person_off_rounded,
-      'The passenger was not at the agreed pickup location.',
     ),
     _CancelReason(
-      'Change of plans',
+      _CancelReasonId.driverChangeOfPlans,
       Icons.event_busy_rounded,
-      'My schedule changed and I can no longer make this ride.',
     ),
     _CancelReason(
-      'Safety concern',
+      _CancelReasonId.driverSafetyConcern,
       Icons.shield_outlined,
-      'I have concerns about the safety of this ride.',
     ),
     _CancelReason(
-      'Passenger not responding',
+      _CancelReasonId.driverPassengerNotResponding,
       Icons.chat_bubble_outline_rounded,
-      'The passenger is not responding to messages.',
     ),
     _CancelReason(
-      'Route issue',
+      _CancelReasonId.driverRouteIssue,
       Icons.wrong_location_rounded,
-      'There is a road closure or route problem.',
     ),
     _CancelReason(
-      'Emergency',
+      _CancelReasonId.driverEmergency,
       Icons.emergency_rounded,
-      'I have an unexpected emergency.',
     ),
-    _CancelReason('Other', null, 'Another reason not listed above.'),
+    _CancelReason(_CancelReasonId.other, null),
   ];
 
   Future<void> _submitCancellation(BuildContext context, WidgetRef ref) async {
@@ -145,7 +130,9 @@ class CancellationReasonScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Are you sure you want to cancel this ride?',
+              AppLocalizations.of(
+                context,
+              ).are_you_sure_you_want_to_cancel_this_ride,
               style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
             ),
             SizedBox(height: 12.h),
@@ -158,41 +145,27 @@ class CancellationReasonScreen extends ConsumerWidget {
                   color: AppColors.warning.withValues(alpha: 0.3),
                 ),
               ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.info_outline_rounded,
-                    size: 18.sp,
-                    color: AppColors.warning,
-                  ),
-                  SizedBox(width: 8.w),
-                  Expanded(
-                    child: Text(
-                      'Frequent cancellations may affect your account rating.',
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        color: AppColors.warning,
-                      ),
-                    ),
-                  ),
-                ],
+              child: Text(
+                AppLocalizations.of(
+                  context,
+                ).frequent_cancellations_may_affect_your_account_rating,
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  color: AppColors.warningDark,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
           ],
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(AppLocalizations.of(context).keepRide),
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(AppLocalizations.of(context).actionClose),
           ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8.r),
-              ),
-            ),
-            onPressed: () => Navigator.pop(context, true),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
             child: Text(AppLocalizations.of(context).cancelRide2),
           ),
         ],
@@ -247,168 +220,200 @@ class CancellationReasonScreen extends ConsumerWidget {
           onPressed: () => context.pop(),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(horizontal: 24.w),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(height: 8.h),
+      body: MaxWidthContainer(
+        maxWidth: kMaxWidthForm,
+        child: SingleChildScrollView(
+          padding: EdgeInsets.symmetric(horizontal: 24.w),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(height: 8.h),
 
-            // Warning banner
-            Container(
-              padding: EdgeInsets.all(16.w),
-              decoration: BoxDecoration(
-                color: AppColors.error.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(12.r),
-                border: Border.all(
-                  color: AppColors.error.withValues(alpha: 0.2),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.info_outline_rounded,
-                    color: AppColors.error,
-                    size: 24.sp,
+              // Warning banner
+              Container(
+                padding: EdgeInsets.all(16.w),
+                decoration: BoxDecoration(
+                  color: AppColors.error.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(12.r),
+                  border: Border.all(
+                    color: AppColors.error.withValues(alpha: 0.2),
                   ),
-                  SizedBox(width: 12.w),
-                  Expanded(
-                    child: Text(
-                      "Please let us know why you're cancelling so we can "
-                      'improve our service.',
-                      style: TextStyle(
-                        fontSize: 13.sp,
-                        color: AppColors.error.withValues(alpha: 0.8),
-                        height: 1.4,
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline_rounded,
+                      color: AppColors.error,
+                      size: 24.sp,
+                    ),
+                    SizedBox(width: 12.w),
+                    Expanded(
+                      child: Text(
+                        AppLocalizations.of(
+                          context,
+                        ).cancellationReasonBannerMessage,
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          color: AppColors.error.withValues(alpha: 0.8),
+                          height: 1.4,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
+              ).animate().fadeIn(duration: 300.ms),
+
+              SizedBox(height: 24.h),
+
+              Text(
+                AppLocalizations.of(context).select_a_reason,
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ).animate().fadeIn(delay: 100.ms),
+
+              SizedBox(height: 16.h),
+
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final isTabletLayout =
+                      constraints.maxWidth >= Breakpoints.compact;
+                  final spacing = 12.w;
+                  final itemWidth = isTabletLayout
+                      ? (constraints.maxWidth - spacing) / 2
+                      : constraints.maxWidth;
+
+                  return Wrap(
+                    spacing: spacing,
+                    runSpacing: 10.h,
+                    children: List.generate(_reasons.length, (index) {
+                      final reason = _reasons[index];
+                      final title = reason.title(l10n);
+                      final isSelected = formState.selectedReason == title;
+                      return SizedBox(
+                        width: itemWidth,
+                        child:
+                            _buildReasonCard(
+                                  context,
+                                  reason,
+                                  isSelected,
+                                  () => ref
+                                      .read(
+                                        cancellationReasonViewModelProvider(
+                                          rideId,
+                                        ).notifier,
+                                      )
+                                      .selectReason(title),
+                                )
+                                .animate()
+                                .fadeIn(
+                                  delay: Duration(
+                                    milliseconds: 150 + (index * 50),
+                                  ),
+                                )
+                                .slideX(begin: 0.05),
+                      );
+                    }),
+                  );
+                },
               ),
-            ).animate().fadeIn(duration: 300.ms),
 
-            SizedBox(height: 24.h),
+              SizedBox(height: 20.h),
 
-            Text(
-              'Select a reason',
-              style: TextStyle(
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
-            ).animate().fadeIn(delay: 100.ms),
-
-            SizedBox(height: 16.h),
-
-            // Reason cards
-            ...List.generate(_reasons.length, (index) {
-              final reason = _reasons[index];
-              final isSelected = formState.selectedReason == reason.title;
-              return _buildReasonCard(
-                    reason,
-                    isSelected,
-                    () => ref
-                        .read(
-                          cancellationReasonViewModelProvider(rideId).notifier,
-                        )
-                        .selectReason(reason.title),
-                  )
-                  .animate()
-                  .fadeIn(delay: Duration(milliseconds: 150 + (index * 50)))
-                  .slideX(begin: 0.05);
-            }),
-
-            SizedBox(height: 20.h),
-
-            // Additional comments
-            Text(
-              'Additional comments (optional)',
-              style: TextStyle(
-                fontSize: 14.sp,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textSecondary,
-              ),
-            ).animate().fadeIn(delay: 600.ms),
-
-            SizedBox(height: 8.h),
-
-            TextField(
-              onChanged: (value) => ref
-                  .read(cancellationReasonViewModelProvider(rideId).notifier)
-                  .updateComment(value),
-              maxLines: 3,
-              maxLength: 500,
-              textCapitalization: TextCapitalization.sentences,
-              decoration: InputDecoration(
-                hintText: AppLocalizations.of(context).cancellationReasonHint,
-                hintStyle: TextStyle(
+              // Additional comments
+              Text(
+                AppLocalizations.of(context).additional_comments_optional,
+                style: TextStyle(
                   fontSize: 14.sp,
-                  color: AppColors.textTertiary,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary,
                 ),
-                filled: true,
-                fillColor: Colors.white,
-                counterStyle: TextStyle(
-                  fontSize: 11.sp,
-                  color: AppColors.textTertiary,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12.r),
-                  borderSide: const BorderSide(color: AppColors.border),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12.r),
-                  borderSide: const BorderSide(color: AppColors.border),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12.r),
-                  borderSide: const BorderSide(
-                    color: AppColors.primary,
-                    width: 1.5,
+              ).animate().fadeIn(delay: 600.ms),
+
+              SizedBox(height: 8.h),
+
+              TextField(
+                onChanged: (value) => ref
+                    .read(cancellationReasonViewModelProvider(rideId).notifier)
+                    .updateComment(value),
+                maxLines: 3,
+                maxLength: 500,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: InputDecoration(
+                  hintText: AppLocalizations.of(context).cancellationReasonHint,
+                  hintStyle: TextStyle(
+                    fontSize: 14.sp,
+                    color: AppColors.textTertiary,
+                  ),
+                  filled: true,
+                  fillColor: Colors.white,
+                  counterStyle: TextStyle(
+                    fontSize: 11.sp,
+                    color: AppColors.textTertiary,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                    borderSide: const BorderSide(color: AppColors.border),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                    borderSide: const BorderSide(color: AppColors.border),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                    borderSide: const BorderSide(
+                      color: AppColors.primary,
+                      width: 1.5,
+                    ),
                   ),
                 ),
-              ),
-            ).animate().fadeIn(delay: 650.ms),
+              ).animate().fadeIn(delay: 650.ms),
 
-            SizedBox(height: 32.h),
+              SizedBox(height: 32.h),
 
-            // Submit button
-            SizedBox(
-              width: double.infinity,
-              child: PremiumButton(
-                text: AppLocalizations.of(context).cancelRide2,
-                onPressed: formState.isSubmitting
-                    ? null
-                    : () => _submitCancellation(context, ref),
-                isLoading: formState.isSubmitting,
-                icon: Icons.cancel_rounded,
-                style: PremiumButtonStyle.danger,
-              ),
-            ).animate().fadeIn(delay: 700.ms),
+              // Submit button
+              SizedBox(
+                width: double.infinity,
+                child: PremiumButton(
+                  text: AppLocalizations.of(context).cancelRide2,
+                  onPressed: formState.isSubmitting
+                      ? null
+                      : () => _submitCancellation(context, ref),
+                  isLoading: formState.isSubmitting,
+                  icon: Icons.cancel_rounded,
+                  style: PremiumButtonStyle.danger,
+                ),
+              ).animate().fadeIn(delay: 700.ms),
 
-            SizedBox(height: 12.h),
+              SizedBox(height: 12.h),
 
-            SizedBox(
-              width: double.infinity,
-              child: PremiumButton(
-                text: AppLocalizations.of(context).keepRide,
-                onPressed: () => context.pop(false),
-                style: PremiumButtonStyle.ghost,
-                icon: Icons.adaptive.arrow_back_rounded,
-              ),
-            ).animate().fadeIn(delay: 750.ms),
+              SizedBox(
+                width: double.infinity,
+                child: PremiumButton(
+                  text: AppLocalizations.of(context).keepRide,
+                  onPressed: () => context.pop(false),
+                  style: PremiumButtonStyle.ghost,
+                  icon: Icons.adaptive.arrow_back_rounded,
+                ),
+              ).animate().fadeIn(delay: 750.ms),
 
-            SizedBox(height: 32.h),
-          ],
+              SizedBox(height: 32.h),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildReasonCard(
+    BuildContext context,
     _CancelReason reason,
     bool isSelected,
     VoidCallback onTap,
   ) {
+    final l10n = AppLocalizations.of(context);
     return GestureDetector(
       onTap: () {
         unawaited(HapticFeedback.selectionClick());
@@ -416,7 +421,6 @@ class CancellationReasonScreen extends ConsumerWidget {
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        margin: EdgeInsets.only(bottom: 10.h),
         padding: EdgeInsets.all(16.w),
         decoration: BoxDecoration(
           color: isSelected
@@ -459,7 +463,7 @@ class CancellationReasonScreen extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    reason.title,
+                    reason.title(l10n),
                     style: TextStyle(
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w600,
@@ -470,7 +474,7 @@ class CancellationReasonScreen extends ConsumerWidget {
                   ),
                   SizedBox(height: 2.h),
                   Text(
-                    reason.description,
+                    reason.description(l10n),
                     style: TextStyle(
                       fontSize: 12.sp,
                       color: AppColors.textTertiary,
@@ -502,15 +506,85 @@ class CancellationReasonScreen extends ConsumerWidget {
   }
 }
 
+enum _CancelReasonId {
+  riderChangeOfPlans,
+  riderFoundAnotherRide,
+  riderPriceTooHigh,
+  riderSafetyConcern,
+  riderDriverNotResponding,
+  riderIncorrectDetails,
+  riderEmergency,
+  driverVehicleIssue,
+  driverPassengerNotAtPickup,
+  driverChangeOfPlans,
+  driverSafetyConcern,
+  driverPassengerNotResponding,
+  driverRouteIssue,
+  driverEmergency,
+  other,
+}
+
 class _CancelReason {
-  const _CancelReason(this.title, this._staticIcon, this.description);
-  final String title;
-  final String description;
+  const _CancelReason(this.id, this._staticIcon);
+
+  final _CancelReasonId id;
   final IconData? _staticIcon;
+
+  String title(AppLocalizations l10n) => switch (id) {
+    _CancelReasonId.riderChangeOfPlans => l10n.cancelReasonChangeOfPlansTitle,
+    _CancelReasonId.riderFoundAnotherRide =>
+      l10n.cancelReasonFoundAnotherRideTitle,
+    _CancelReasonId.riderPriceTooHigh => l10n.cancelReasonPriceTooHighTitle,
+    _CancelReasonId.riderSafetyConcern => l10n.cancelReasonSafetyConcernTitle,
+    _CancelReasonId.riderDriverNotResponding =>
+      l10n.cancelReasonDriverNotRespondingTitle,
+    _CancelReasonId.riderIncorrectDetails =>
+      l10n.cancelReasonIncorrectDetailsTitle,
+    _CancelReasonId.riderEmergency => l10n.cancelReasonEmergencyTitle,
+    _CancelReasonId.driverVehicleIssue => l10n.cancelReasonVehicleIssueTitle,
+    _CancelReasonId.driverPassengerNotAtPickup =>
+      l10n.cancelReasonPassengerNotAtPickupTitle,
+    _CancelReasonId.driverChangeOfPlans => l10n.cancelReasonChangeOfPlansTitle,
+    _CancelReasonId.driverSafetyConcern => l10n.cancelReasonSafetyConcernTitle,
+    _CancelReasonId.driverPassengerNotResponding =>
+      l10n.cancelReasonPassengerNotRespondingTitle,
+    _CancelReasonId.driverRouteIssue => l10n.cancelReasonRouteIssueTitle,
+    _CancelReasonId.driverEmergency => l10n.cancelReasonEmergencyTitle,
+    _CancelReasonId.other => l10n.cancelReasonOtherTitle,
+  };
+
+  String description(AppLocalizations l10n) => switch (id) {
+    _CancelReasonId.riderChangeOfPlans =>
+      l10n.cancelReasonChangeOfPlansDescription,
+    _CancelReasonId.riderFoundAnotherRide =>
+      l10n.cancelReasonFoundAnotherRideDescription,
+    _CancelReasonId.riderPriceTooHigh =>
+      l10n.cancelReasonPriceTooHighDescription,
+    _CancelReasonId.riderSafetyConcern =>
+      l10n.cancelReasonSafetyConcernDescription,
+    _CancelReasonId.riderDriverNotResponding =>
+      l10n.cancelReasonDriverNotRespondingDescription,
+    _CancelReasonId.riderIncorrectDetails =>
+      l10n.cancelReasonIncorrectDetailsDescription,
+    _CancelReasonId.riderEmergency => l10n.cancelReasonEmergencyDescription,
+    _CancelReasonId.driverVehicleIssue =>
+      l10n.cancelReasonVehicleIssueDescription,
+    _CancelReasonId.driverPassengerNotAtPickup =>
+      l10n.cancelReasonPassengerNotAtPickupDescription,
+    _CancelReasonId.driverChangeOfPlans =>
+      l10n.cancelReasonChangeOfPlansDescription,
+    _CancelReasonId.driverSafetyConcern =>
+      l10n.cancelReasonSafetyConcernDescription,
+    _CancelReasonId.driverPassengerNotResponding =>
+      l10n.cancelReasonPassengerNotRespondingDescription,
+    _CancelReasonId.driverRouteIssue => l10n.cancelReasonRouteIssueDescription,
+    _CancelReasonId.driverEmergency => l10n.cancelReasonEmergencyDescription,
+    _CancelReasonId.other => l10n.cancelReasonOtherDescription,
+  };
 
   // This handles the runtime platform check
   IconData get icon {
-    if (title.toLowerCase() == 'other') {
+    if (id == _CancelReasonId.other) {
       return Icons.adaptive.more_rounded;
     }
     return _staticIcon ?? Icons.help_outline_rounded;
